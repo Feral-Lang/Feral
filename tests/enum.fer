@@ -1,0 +1,9 @@
+enum = import( 'std/enum' );
+
+EXIT_CODE = enum.new(
+	.OK,
+	.FAIL,
+	.IO_ERR,
+	.LEX_FAIL,
+	.PARSE_FAIL
+);

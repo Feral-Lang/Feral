@@ -1,0 +1,63 @@
+BLOCK = '{' [STATEMENT ';']* '}'
+
+STATEMENT = VAR_DECL
+	| TRAIT_DECL
+	| STRUCT_DECL
+	| FUNC_DECL
+	| LAMBDA_DECL
+	| RETURN
+	| CONDITIONAL
+	| FOR
+	| WHILE
+	| CONTINUE
+	| BREAK
+	| EXPR ';'
+
+TERM = iden | str | int | flt | atom
+
+BASE_VAR_DECL = iden '=' EXPR
+
+GLOBAL_VAR_DECL = 'global' BASE_VAR_DECL[, BASE_VAR_DECL]* ';'
+LOCAL_VAR_DECL = 'local' BASE_VAR_DECL[, BASE_VAR_DECL]* ';'
+VAR_DECL = GLOBAL_VAR_DECL | LOCAL_VAR_DECL
+
+FUNC_CALL = iden '(' ')'				# no args
+	| iden '(' EXPR [, EXPR]* ')'			# args
+	| iden '(' BASE_VAR_DECL [, BASE_VAR_DECL]* ')'	# kw args
+
+EXPR = TERM				# single term
+	| TERM OPER EXPR		# generic
+	| ('+' | '-') TERM		# unary +/-
+	| '(' EXPR ')'			# parenthesized expression
+	| FUNC_CALL			# function
+	| iden '[' EXPR ']'		# [] access
+
+FUNC_ARGS = iden [, iden]* [iden '...']{0,1}
+	| iden [, iden]* [, BASE_VAR_DECL]*
+	| [BASE_VAR_DECL]+ [iden '...']{0,1}
+
+TRAIT_DECL = 'trait' iden '{'
+	['fn' iden '(' [iden [, iden]*]{0,1} ')' ';']+
+
+STRUCT_DECL = 'struct' iden [< iden[, iden]*]{0,1} '{'
+	[LOCAL_VAR_DECL ';']+
+'}'
+
+FUNC_DECL = 'fn' ['<' iden [, iden]* '>']{0,1} iden '(' FUNC_ARGS ')'
+	BLOCK
+
+LAMBDA_DECL = 'lambda' '(' FUNC_ARGS ')'
+	BLOCK
+
+RETURN = 'return' EXPR ';'
+
+CONDITIONAL = 'if' EXPR BLOCK ['elif' EXPR BLOCK]* ['else' BLOCK]{0,1}
+
+FOR = 'for' iden 'in' EXPR BLOCK
+	| 'for' [EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
+
+WHILE = 'while' EXPR BLOCK
+
+CONTINUE = 'continue' ';'
+
+BREAK = 'break' ';'

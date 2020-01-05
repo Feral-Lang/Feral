@@ -1,0 +1,8 @@
+let io = import( 'std/io' );
+
+fn facto( num ) {
+	if num < 2 { return 1; }
+	return num * facto( num - 1 );
+}
+
+io.outln( 'factorial of 5 is: ', facto( 5 ) );
