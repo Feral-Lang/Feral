@@ -1,0 +1,11 @@
+let io = import( 'std/io' );
+
+let facto = lambda( num ) {
+	let fact = 1;
+	for i in range( num, 1, -1 ) {
+		fact *= i;
+	}
+	return fact;
+}
+
+io.outln( 'factorial of 5 is: ', facto( 5 ) );

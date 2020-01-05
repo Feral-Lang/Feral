@@ -1,0 +1,20 @@
+/*
+	Copyright (c) 2020, Electrux
+	All rights reserved.
+	Using the BSD 3-Clause license for the project,
+	main LICENSE file resides in project's root directory.
+	Please read that file and understand the license terms
+	before using or altering the project.
+*/
+
+#ifndef COMPILER_CONFIG_HPP
+#define COMPILER_CONFIG_HPP
+
+#define FERAL_VERSION_MAJOR @FERAL_VERSION_MAJOR@
+#define FERAL_VERSION_MINOR @FERAL_VERSION_MINOR@
+#define FERAL_VERSION_PATCH @FERAL_VERSION_PATCH@
+
+#define BUILD_CXX_COMPILER "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@"
+#define BUILD_DATE "@BUILD_DATE@"
+
+#endif // COMPILER_CONFIG_HPP
