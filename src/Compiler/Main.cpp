@@ -17,6 +17,7 @@
 #include "Config.hpp"
 #include "Args.hpp"
 #include "Lex.hpp"
+#include "Parser.hpp"
 
 int main( int argc, char ** argv )
 {
@@ -56,11 +57,23 @@ int main( int argc, char ** argv )
 		fprintf( stdout, "Tokens (%zu):\n", toks.size() );
 		for( size_t i = 0; i < toks.size(); ++i ) {
 			auto & tok = toks[ i ];
-			fprintf( stdout, "ID: %zu\tType: %s\tSymbol: %s\n",
-				 i, TokStrs[ tok.type ], tok.data.c_str() );
+			fprintf( stdout, "ID: %zu\tIdx: %zu\tType: %s\tSymbol: %s\n",
+				 i, tok.pos, TokStrs[ tok.type ], tok.data.c_str() );
 		}
 	}
 
+	phelper_t ph( main_src, toks );
+	ptree_t ptree;
+	err = parser::parse( main_src, toks, ptree, ph );
+	if( err != E_OK ) goto cleanup;
+	// show tree
+	if( flags & OPT_P ) {
+		fprintf( stdout, "Parse Tree (%zu):\n", ptree.size() );
+		for( auto it = ptree.begin(); it != ptree.end(); ++it ) {
+			( * it )->disp( it != ptree.end() - 1 );
+		}
+	}
 cleanup:
+	for( auto & p : ptree ) delete p;
 	return err;
 }

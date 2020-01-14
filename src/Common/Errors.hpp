@@ -21,6 +21,8 @@ enum Errors
 
 	E_LEX_FAIL,
 
+	E_PARSE_FAIL,
+
 	E_FAIL,
 };
 

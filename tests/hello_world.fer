@@ -1,0 +1,3 @@
+io = import( 'std/io' );
+
+io.outln( 'hello world!' );
