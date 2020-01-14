@@ -52,6 +52,14 @@ bool srcfile_t::is_main() const { return m_is_main; }
 
 void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
 {
+	va_list vargs;
+	va_start( vargs, msg );
+	fail( idx, msg, vargs );
+	va_end( vargs );
+}
+
+void srcfile_t::fail( const size_t idx, const char * msg, va_list vargs ) const
+{
 	size_t line, col_begin, col_end, col;
 	bool found = false;
 	for( size_t i = 0; i < m_cols.size(); ++i ) {
@@ -66,25 +74,20 @@ void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
 	}
 	if( !found ) {
 		fprintf( stderr, "could not find error: " );
-		va_list vargs;
-		va_start( vargs, msg );
 		vfprintf( stderr, msg, vargs );
 		fprintf( stderr, "\n" );
-		va_end( vargs );
 		fprintf( stderr, "in file: %s, with index: %zu\n", m_path.c_str(), idx );
 		return;
 	}
 
-	fprintf( stderr, "%s %zu[%zu]: error: ", m_path.c_str(), line, col );
+	fprintf( stderr, "%s %zu[%zu]: error: ", m_path.c_str(), line + 1, col + 1 );
 
-	va_list vargs;
-	va_start( vargs, msg );
 	vfprintf( stderr, msg, vargs );
 	fprintf( stderr, "\n" );
-	va_end( vargs );
 
 	std::string err_line = m_data.substr( col_begin, col_end - col_begin );
-	fprintf( stderr, "%s", err_line.c_str() );
+	if( err_line.back() == '\n' ) err_line.pop_back();
+	fprintf( stderr, "%s\n", err_line.c_str() );
 
 	std::string spcs;
 	int tab_count = 0;

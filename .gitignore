@@ -25,8 +25,8 @@ src/Compiler/Config.hpp
 # Extra data #
 #######################
 tmp*
-*.json
 tests/*.json
+/*.fer
 
 # Build file on BSD #
 #####################

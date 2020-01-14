@@ -1,6 +1,6 @@
 let io = import( 'std/io' );
 
-fn facto( num ) {
+let facto = fn( num ) {
 	if num < 2 { return 1; }
 	return num * facto( num - 1 );
 }

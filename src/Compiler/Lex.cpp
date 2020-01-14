@@ -1,3 +1,12 @@
+/*
+	Copyright (c) 2020, Electrux
+	All rights reserved.
+	Using the BSD 3-Clause license for the project,
+	main LICENSE file resides in project's root directory.
+	Please read that file and understand the license terms
+	before using or altering the project.
+*/
+
 #include "Lex.hpp"
 
 const char * TokStrs[ _TOK_LAST ] = {
@@ -11,6 +20,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	//Keywords
 	"global",
 	"let",
+	"defer",
 	"struct",
 	"trait",
 	"fn",
@@ -42,6 +52,11 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"/=",
 	"%=",
 	"**", // power
+	// Pre/Post Inc/Dec
+	"x++",
+	"++x",
+	"x--",
+	"--x",
 	// Unary (used by parser (in Expression.cpp))
 	"u+",
 	"u-",
@@ -70,6 +85,10 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"<<=",
 	">>=",
 
+	// Dummy
+	"()",
+	"[]",
+
 	// Varargs
 	"...",
 
@@ -90,6 +109,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"[",
 	"]",
 
+	"<EOF>",
 	"<INVALID>",
 };
 
@@ -112,7 +132,7 @@ static void remove_back_slash( std::string & s );
 namespace lex
 {
 
-Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_idx )
+Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t prefix_idx )
 {
 	const std::string src = src_file.get_data().substr( prefix_idx );
 	if( src.empty() ) return E_OK;
@@ -124,7 +144,7 @@ Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_
 	bool comment_line = false;
 
 	// tokenize the input
-	size_t i = 0;
+	size_t i = prefix_idx;
 	while( i < src_len ) {
 		if( comment_line && CURR( src ) == '\n' ) {
 			comment_line = false;
@@ -164,12 +184,13 @@ Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_
 		if( CURR( src ) == '#' ) { comment_line = true; ++i; continue; }
 
 		// strings
-		if( ( CURR( src ) == '.' && ( isalpha( NEXT( src ) ) || NEXT( src ) == '_' ) && !isalpha( PREV( src ) ) && PREV( src ) != '_' ) ||
+		if( ( CURR( src ) == '.' && ( isalpha( NEXT( src ) ) || NEXT( src ) == '_' ) && !isalnum( PREV( src ) ) && PREV( src ) != '_' &&
+		      PREV( src ) != ')' && PREV( src ) != ']' ) ||
 		    isalpha( CURR( src ) ) || CURR( src ) == '_' ) {
 			std::string str = get_name( src_file, i );
 			// check if string is a keyword
 			int kw_or_iden = classify_str( str );
-			toks.emplace_back( prefix_idx + i, kw_or_iden, str );
+			toks.emplace_back( i - str.size(), kw_or_iden, str );
 			continue;
 		}
 
@@ -181,7 +202,7 @@ Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_
 				err = E_LEX_FAIL;
 				break;
 			}
-			toks.emplace_back( prefix_idx + i, num_type, num );
+			toks.emplace_back( i - num.size(), num_type, num );
 			continue;
 		}
 
@@ -193,7 +214,7 @@ Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_
 				err = res;
 				break;
 			}
-			toks.emplace_back( prefix_idx + i, TOK_STR, str );
+			toks.emplace_back( i - str.size(), TOK_STR, str );
 			continue;
 		}
 
@@ -204,9 +225,9 @@ Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_
 			break;
 		}
 		if( op_type == TOK_TDOT ) {
-			toks.emplace_back( prefix_idx + i, op_type, TokStrs[ op_type ] );
+			toks.emplace_back( i - 3, op_type, TokStrs[ op_type ] );
 		} else {
-			toks.emplace_back( prefix_idx + i, op_type, "" );
+			toks.emplace_back( i - 1, op_type, "" );
 		}
 	}
 
@@ -234,6 +255,7 @@ static int classify_str( const std::string & str )
 {
 	if( str == TokStrs[ TOK_GLOBAL ] ) return TOK_GLOBAL;
 	else if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
+	else if( str == TokStrs[ TOK_DEFER ] ) return TOK_DEFER;
 	else if( str == TokStrs[ TOK_STRUCT ] ) return TOK_STRUCT;
 	else if( str == TokStrs[ TOK_TRAIT ] ) return TOK_TRAIT;
 	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
@@ -265,7 +287,7 @@ static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_ty
 	bool success = true;
 	int dot_encountered = -1;
 
-	while( i < src_len && is_valid_num_char( CURR( src ) ) ) {
+	while( i < src_len ) {
 		const char c = CURR( src );
 		const char next = NEXT( src );
 		switch( c ) {
@@ -297,7 +319,7 @@ static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_ty
 			}
 			break;
 		default:
-			if( isalnum( CURR( src ) ) ) {
+			if( isalnum( c ) ) {
 				SRC_FAIL( "encountered invalid character '%c' "
 					  "while retrieving a number (from column %d)",
 					  c, first_digit_at + 1 );
@@ -349,8 +371,11 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 		if( i < src_len - 1 ) {
 			if( NEXT( src ) == '=' ) {
 				++i;
-				op_type = TOK_ADD_ASSN;
-				break;
+				SET_OP_TYPE_BRK( TOK_ADD_ASSN );
+			}
+			if( NEXT( src ) == '+' ) {
+				++i;
+				SET_OP_TYPE_BRK( TOK_INC );
 			}
 		}
 		SET_OP_TYPE_BRK( TOK_ADD );
@@ -358,8 +383,11 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 		if( i < src_len - 1 ) {
 			if( NEXT( src ) == '=' ) {
 				++i;
-				op_type = TOK_SUB_ASSN;
-				break;
+				SET_OP_TYPE_BRK( TOK_SUB_ASSN );
+			}
+			if( NEXT( src ) == '-' ) {
+				++i;
+				SET_OP_TYPE_BRK( TOK_DEC );
 			}
 		}
 		SET_OP_TYPE_BRK( TOK_SUB );
@@ -523,12 +551,6 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 
 	++i;
 	return op_type;
-}
-
-static inline bool is_valid_num_char( const char c )
-{
-	return ( c >= '0' && c <= '9' ) || ( c >= 'a' && c <= 'f' ) || ( c >= 'A' && c <= 'F' )
-		|| c == '.' || c == '-' || c == '+' || c == 'o' || c == 'O' || c == 'x' || c == 'X';
 }
 
 static void remove_back_slash( std::string & s )

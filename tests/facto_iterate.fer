@@ -1,6 +1,6 @@
 let io = import( 'std/io' );
 
-let facto = lambda( num ) {
+let facto = fn( num ) {
 	let fact = 1;
 	for i in range( num, 1, -1 ) {
 		fact *= i;

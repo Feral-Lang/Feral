@@ -1,3 +1,12 @@
+/*
+	Copyright (c) 2020, Electrux
+	All rights reserved.
+	Using the BSD 3-Clause license for the project,
+	main LICENSE file resides in project's root directory.
+	Please read that file and understand the license terms
+	before using or altering the project.
+*/
+
 #ifndef COMPILER_LEX_HPP
 #define COMPILER_LEX_HPP
 
@@ -22,6 +31,7 @@ enum TokType
 	//Keywords
 	TOK_GLOBAL,
 	TOK_LET,
+	TOK_DEFER,
 	TOK_STRUCT,
 	TOK_TRAIT,
 	TOK_FN,
@@ -53,6 +63,11 @@ enum TokType
 	TOK_DIV_ASSN,
 	TOK_MOD_ASSN,
 	TOK_POW, // **
+	// Pre/Post Inc/Dec
+	TOK_INC,
+	TOK_PINC,
+	TOK_DEC,
+	TOK_PDEC,
 	// Unary
 	TOK_UADD,
 	TOK_USUB,
@@ -81,6 +96,10 @@ enum TokType
 	TOK_LSHIFT_ASSN,
 	TOK_RSHIFT_ASSN,
 
+	// Dummy
+	TOK_OPER_FN,
+	TOK_OPER_SUBS,
+
 	// Varargs
 	TOK_TDOT,
 
@@ -101,6 +120,7 @@ enum TokType
 	TOK_LBRACK,
 	TOK_RBRACK,
 
+	TOK_EOF,
 	TOK_INVALID,
 
 	_TOK_LAST,

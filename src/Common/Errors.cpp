@@ -7,6 +7,9 @@
 	before using or altering the project.
 */
 
+#include <cstring>
+#include <cstdarg>
+
 #include "Errors.hpp"
 
 namespace err

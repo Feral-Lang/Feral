@@ -1,6 +1,6 @@
 enum = import( 'std/enum' );
 
-EXIT_CODE = enum.new(
+let EXIT_CODE = enum.new(
 	.OK,
 	.FAIL,
 	.IO_ERR,
