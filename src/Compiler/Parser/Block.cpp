@@ -28,6 +28,8 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 		stmt_base_t * stmt = nullptr;
 		if( ph.accept( TOK_GLOBAL, TOK_LET ) ) {
 			if( parse_var_decl( ph, stmt ) != E_OK ) goto fail;
+		} else if( ph.accept( TOK_CONTINUE, TOK_BREAK ) || ph.accept( TOK_RETURN, TOK_DEFER ) ) {
+			if( parse_single_operand_stmt( ph, stmt ) != E_OK ) goto fail;
 		} else if( ph.accept( TOK_LBRACE ) ) {
 			if( parse_block( ph, stmt ) != E_OK ) goto fail;
 		} else if( parse_expr_cols( ph, stmt ) != E_OK ) {

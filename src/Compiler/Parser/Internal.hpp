@@ -43,4 +43,6 @@ Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc );
 
 Errors parse_fn_call_args( phelper_t & ph, stmt_base_t * & loc );
 
+Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc );
+
 #endif // COMPILER_PARSER_INTERNAL_HPP

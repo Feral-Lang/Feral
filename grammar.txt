@@ -4,12 +4,13 @@ STATEMENTS = [STATEMENT]*
 
 STATEMENT = VAR_DECL
 	| FUNC_DEF
-	| RETURN
 	| CONDITIONAL
 	| FOR
 	| WHILE
+	| RETURN
 	| CONTINUE
 	| BREAK
+	| DEFER
 	| EXPR_COLS
 
 EXPR_COLS = EXPR ';'
@@ -44,27 +45,19 @@ VA_ARGS = iden '...'
 KW_ARGS = atom
 KW_ARGS_CALL = iden '=' L13
 FUNC_DECL_ARGS = iden [',' iden]* [',' KW_ARGS]{0,1} [[',' DEF_ARGS]* | [',' VA_ARGS]{0,1}]
-FUNC_DECL_ARGS = iden [',' iden]* [',' KW_ARGS]{0,1}
-		| KW_ARGS
-		| DEF_ARGS [',' DEF_ARGS]*
-		| VA_ARGS
-		| 
+FUNC_CALL_ARGS = [KW_ARGS_CALL | L13]*
 
 FUNC_DEF = 'fn' '(' FUNC_DECL_ARGS ')'
 	BLOCK
 
-RETURN = 'return' EXPR ';'
+CONDITIONAL = 'if' L14 BLOCK ['elif' L14 BLOCK]* ['else' BLOCK]{0,1}
 
-CONDITIONAL = 'if' EXPR BLOCK ['elif' EXPR BLOCK]* ['else' BLOCK]{0,1}
-
-FOR = 'for' iden 'in' EXPR BLOCK
+FOR = 'for' iden 'in' L13 BLOCK
 	| 'for' [EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
 
-WHILE = 'while' EXPR BLOCK
+WHILE = 'while' L14 BLOCK
 
+RETURN = 'return' [L14]{0,1} ';'
 CONTINUE = 'continue' ';'
-
 BREAK = 'break' ';'
-
-DEFER = 'defer' BLOCK # for checking which option to choose, use the braces
-	| 'defer' EXPR ';'
+DEFER = 'defer' [BLOCK | L14 ';']
