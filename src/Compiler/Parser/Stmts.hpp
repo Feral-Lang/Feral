@@ -26,6 +26,7 @@ enum GramType
 	GT_FN_ARGS,
 	GT_FN_DEF,
 	GT_FN_CALL,
+	GT_SINGLE_OPERAND_STMT,
 };
 
 class stmt_base_t
@@ -190,6 +191,30 @@ public:
 
 	const std::vector< const stmt_base_t * > & args() const;
 	const std::vector< const stmt_base_t * > & assn_args() const;
+};
+
+/*
+enum SingleOperandStmtType
+{
+	SOST_RETURN,
+	SOST_CONTINUE,
+	SOST_BREAK,
+	SOST_DEFER,
+};
+*/
+class stmt_single_operand_stmt_t : public stmt_base_t
+{
+	// SingleOperandStmtType
+	const lex::tok_t * m_sost;
+	const stmt_base_t * m_operand;
+public:
+	stmt_single_operand_stmt_t( const lex::tok_t * sost, const stmt_base_t * operand );
+	~stmt_single_operand_stmt_t();
+
+	void disp( const bool has_next ) const;
+
+	const lex::tok_t * sost() const;
+	const stmt_base_t * operand() const;
 };
 
 #endif // COMPILER_PARSER_STMTS_HPP

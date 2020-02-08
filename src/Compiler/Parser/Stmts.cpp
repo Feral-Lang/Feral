@@ -286,3 +286,30 @@ void stmt_fn_call_args_t::disp( const bool has_next ) const
 }
 const std::vector< const stmt_base_t * > & stmt_fn_call_args_t::args() const { return m_args; }
 const std::vector< const stmt_base_t * > & stmt_fn_call_args_t::assn_args() const { return m_assn_args; }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// SINGLE_EXPR_STMT /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+stmt_single_operand_stmt_t::stmt_single_operand_stmt_t( const lex::tok_t * sost, const stmt_base_t * operand )
+	: stmt_base_t( GT_SINGLE_OPERAND_STMT, sost->pos ), m_sost( sost ), m_operand( operand ) {}
+stmt_single_operand_stmt_t::~stmt_single_operand_stmt_t()
+{
+	if( m_operand ) delete m_operand;
+}
+
+void stmt_single_operand_stmt_t::disp( const bool has_next ) const
+{
+	io::tadd( has_next );
+	io::print( has_next, "%s at %p\n", TokStrs[ m_sost->type ], this );
+	if( m_operand ) {
+		io::tadd( false );
+		io::print( false, "Operand:\n" );
+		m_operand->disp( false );
+		io::trem();
+	}
+	io::trem();
+}
+
+const lex::tok_t * stmt_single_operand_stmt_t::sost() const { return m_sost; }
+const stmt_base_t * stmt_single_operand_stmt_t::operand() const { return m_operand; }
