@@ -32,6 +32,14 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 			if( parse_single_operand_stmt( ph, stmt ) != E_OK ) goto fail;
 		} else if( ph.accept( TOK_IF ) ) {
 			if( parse_conditional( ph, stmt ) != E_OK ) goto fail;
+		} else if( ph.accept( TOK_FOR ) ) {
+			if( ph.peakt( 1 ) == TOK_IDEN && ph.peakt( 2 ) == TOK_IN ) {
+				if( parse_foreach( ph, stmt ) != E_OK ) goto fail;
+			} else {
+				if( parse_for( ph, stmt ) != E_OK ) goto fail;
+			}
+		} else if( ph.accept( TOK_WHILE ) ) {
+			if( parse_while( ph, stmt ) != E_OK ) goto fail;
 		} else if( ph.accept( TOK_LBRACE ) ) {
 			if( parse_block( ph, stmt ) != E_OK ) goto fail;
 		} else if( parse_expr_cols( ph, stmt ) != E_OK ) {

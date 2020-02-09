@@ -1,6 +1,4 @@
-BLOCK = '{' STATEMENTS '}'
-
-STATEMENTS = [STATEMENT]*
+BLOCK = '{' [STATEMENT]* '}'
 
 STATEMENT = VAR_DECL
 	| FUNC_DEF
@@ -38,6 +36,7 @@ L01 = '(' EXPR ')'
 TERM = iden | str | int | flt | atom
 
 VAR_DECL_BASE = L01 '=' L13
+VAR_DECL_LOCAL = 'let' VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
 VAR_DECL = ['global' | 'let'] VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
 
 DEF_ARGS = iden '=' L13 # default args
@@ -52,8 +51,8 @@ FUNC_DEF = 'fn' '(' FUNC_DECL_ARGS ')'
 
 CONDITIONAL = 'if' L14 BLOCK ['elif' L14 BLOCK]* ['else' BLOCK]{0,1}
 
-FOR = 'for' iden 'in' L13 BLOCK
-	| 'for' [EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
+FOR = 'for' iden 'in' L01 BLOCK
+	| 'for' [VAR_DECL_LOCAL | EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
 
 WHILE = 'while' L14 BLOCK
 

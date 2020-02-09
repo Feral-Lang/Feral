@@ -19,8 +19,7 @@ Errors parse( const srcfile_t & src, lex::toks_t & toks,
 	while( ph.valid() ) {
 		stmt_base_t * stmt = nullptr;
 		if( parse_block( ph, stmt, false ) != E_OK ) goto fail;
-		stmts = static_cast< const stmt_block_t * >( stmt )->stmts();
-		ptree.insert( ptree.end(), stmts.begin(), stmts.end() );
+		ptree.push_back( stmt );
 	}
 	return E_OK;
 fail:

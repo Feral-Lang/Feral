@@ -11,9 +11,9 @@
 
 Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc )
 {
-	size_t idx = ph.peak()->pos;
 	bool args_done = false;
-	stmt_base_t * args = nullptr, * block = nullptr;
+	stmt_base_t * args = nullptr, * body = nullptr;
+	size_t idx = ph.peak()->pos;
 
 	if( !ph.accept( TOK_FN ) ) {
 		ph.fail( "function declaration parsing requires function keyword" );
@@ -43,16 +43,16 @@ rparen:
 	goto rparen;
 
 post_args:
-	if( parse_block( ph, block ) != E_OK ) {
+	if( parse_block( ph, body ) != E_OK ) {
 		fprintf( stderr, "failed to parse block for function\n" );
 		goto fail;
 	}
 
-	loc = new stmt_fn_def_t( ( stmt_fn_def_args_t * )args, ( stmt_block_t * )block, idx );
+	loc = new stmt_fn_def_t( ( stmt_fn_def_args_t * )args, ( stmt_block_t * )body, idx );
 	return E_OK;
 fail:
 	if( args ) delete args;
-	if( block ) delete block;
+	if( body ) delete body;
 	return E_PARSE_FAIL;
 }
 

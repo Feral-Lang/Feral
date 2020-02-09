@@ -38,7 +38,7 @@ SimpleType stmt_simple_t::stype() const { return m_stype; }
 void stmt_simple_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Simple at %p\n", this );
+	io::print( has_next, "Simple at: %p\n", this );
 	io::tadd( false );
 	io::print( false, "Value: %s (type: %s)\n",
 		   m_stype == ST_DATA && !m_val->data.empty() ? m_val->data.c_str() : TokStrs[ m_val->type ],
@@ -52,11 +52,15 @@ void stmt_simple_t::disp( const bool has_next ) const
 
 stmt_block_t::stmt_block_t( const std::vector< const stmt_base_t * > & stmts, const size_t & idx )
 	: stmt_base_t( GT_BLOCK, idx ), m_stmts( stmts ) {}
+stmt_block_t::~stmt_block_t()
+{
+	for( auto & s : m_stmts ) delete s;
+}
 
 void stmt_block_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Block at %p\n", this );
+	io::print( has_next, "Block at: %p\n", this );
 	for( size_t i = 0; i < m_stmts.size(); ++i ) {
 		m_stmts[ i ]->disp( i != m_stmts.size() - 1 );
 	}
@@ -64,6 +68,8 @@ void stmt_block_t::disp( const bool has_next ) const
 }
 
 const std::vector< const stmt_base_t * > & stmt_block_t::stmts() const { return m_stmts; }
+
+void stmt_block_t::clear_stmts() { m_stmts.clear(); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////// EXPR //////////////////////////////////////////////////////////////
@@ -126,7 +132,7 @@ stmt_var_decl_base_t::~stmt_var_decl_base_t()
 void stmt_var_decl_base_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Var Decl Base at %p\n", this );
+	io::print( has_next, "Var Decl Base at: %p\n", this );
 	io::tadd( true );
 	io::print( true, "LHS:\n" );
 	m_lhs->disp( false );
@@ -145,9 +151,9 @@ const stmt_base_t * stmt_var_decl_base_t::rhs() const { return m_rhs; }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 stmt_var_decl_t::stmt_var_decl_t( const VarDeclType dtype,
-		const std::vector< const stmt_var_decl_base_t * > & decls,
-		const size_t & idx )
-	: stmt_base_t( GT_VAR_DECL_GLOBAL, idx ), m_dtype( dtype ), m_decls( decls ) {}
+				  const std::vector< const stmt_var_decl_base_t * > & decls,
+				  const size_t & idx )
+	: stmt_base_t( GT_VAR_DECL, idx ), m_dtype( dtype ), m_decls( decls ) {}
 
 stmt_var_decl_t::~stmt_var_decl_t()
 { for( auto & decl : m_decls ) delete decl; }
@@ -155,7 +161,7 @@ stmt_var_decl_t::~stmt_var_decl_t()
 void stmt_var_decl_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Var Decl(s) (%s) at %p\n",
+	io::print( has_next, "Var Decl(s) (%s) at: %p\n",
 		   m_dtype == VDT_GLOBAL ? "global" : "local", this );
 	for( size_t i = 0; i < m_decls.size(); ++i ) {
 		m_decls[ i ]->disp( i != m_decls.size() - 1 );
@@ -180,7 +186,7 @@ stmt_fn_assn_arg_t::~stmt_fn_assn_arg_t()
 void stmt_fn_assn_arg_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Assigned Argument at %p\n", this );
+	io::print( has_next, "Assigned Argument at: %p\n", this );
 	io::tadd( true );
 	io::print( m_rhs, "Parameter: %s\n", m_lhs->data.c_str() );
 	io::trem();
@@ -212,7 +218,7 @@ stmt_fn_def_args_t::~stmt_fn_def_args_t()
 void stmt_fn_def_args_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Arguments at %p\n", this );
+	io::print( has_next, "Arguments at: %p\n", this );
 	if( m_kwarg ) {
 		io::tadd( true );
 		io::print( m_vaarg || m_args.size() > 0, "Keyword Argument: %s\n", m_kwarg->data.c_str() );
@@ -236,27 +242,27 @@ const lex::tok_t * stmt_fn_def_args_t::vaarg() const { return m_vaarg; }
 //////////////////////////////////////////////////////// FUNC_DEF //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-stmt_fn_def_t::stmt_fn_def_t( const stmt_fn_def_args_t * args, const stmt_block_t * block,
+stmt_fn_def_t::stmt_fn_def_t( const stmt_fn_def_args_t * args, const stmt_block_t * body,
 			      const size_t & idx )
-	: stmt_base_t( GT_FN_DEF, idx ), m_args( args ), m_block( block ) {}
+	: stmt_base_t( GT_FN_DEF, idx ), m_args( args ), m_body( body ) {}
 stmt_fn_def_t::~stmt_fn_def_t()
 {
 	if( m_args ) delete m_args;
-	delete m_block;
+	delete m_body;
 }
 
 void stmt_fn_def_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Function definition at %p\n", this );
+	io::print( has_next, "Function definition at: %p\n", this );
 	if( m_args ) {
 		m_args->disp( true );
 	}
-	m_block->disp( false );
+	m_body->disp( false );
 	io::trem();
 }
 const stmt_fn_def_args_t * stmt_fn_def_t::args() const { return m_args; }
-const stmt_block_t * stmt_fn_def_t::block() const { return m_block; }
+const stmt_block_t * stmt_fn_def_t::body() const { return m_body; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////// FUNC_CALL_ARGS //////////////////////////////////////////////////////
@@ -275,7 +281,7 @@ stmt_fn_call_args_t::~stmt_fn_call_args_t()
 void stmt_fn_call_args_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Arguments at %p\n", this );
+	io::print( has_next, "Arguments at: %p\n", this );
 	for( size_t i = 0; i < m_args.size(); ++i ) {
 		m_args[ i ]->disp( i != m_args.size() - 1 || m_assn_args.size() > 0 );
 	}
@@ -301,7 +307,7 @@ stmt_single_operand_stmt_t::~stmt_single_operand_stmt_t()
 void stmt_single_operand_stmt_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "%s at %p\n", TokStrs[ m_sost->type ], this );
+	io::print( has_next, "%s at: %p\n", TokStrs[ m_sost->type ], this );
 	if( m_operand ) {
 		io::tadd( false );
 		io::print( false, "Operand:\n" );
@@ -317,20 +323,21 @@ const stmt_base_t * stmt_single_operand_stmt_t::operand() const { return m_opera
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// CONDITIONAL_STMT /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 stmt_conditional_t::stmt_conditional_t( const std::vector< conditional_t > & conds, const size_t & idx )
 	: stmt_base_t( GT_CONDITIONAL, idx ), m_conds( conds ) {}
 stmt_conditional_t::~stmt_conditional_t()
 {
 	for( auto & c : m_conds ) {
 		if( c.condition ) delete c.condition;
-		delete c.block;
+		delete c.body;
 	}
 }
 
 void stmt_conditional_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Conditional at %p\n", this );
+	io::print( has_next, "Conditional at: %p\n", this );
 	for( size_t i = 0; i < m_conds.size(); ++i ) {
 		io::tadd( i != m_conds.size() - 1 );
 		if( i == 0 ) {
@@ -343,10 +350,137 @@ void stmt_conditional_t::disp( const bool has_next ) const
 		if( m_conds[ i ].condition ) {
 			m_conds[ i ].condition->disp( true );
 		}
-		m_conds[ i ].block->disp( false );
+		m_conds[ i ].body->disp( false );
 		io::trem();
 	}
 	io::trem();
 }
 
 const std::vector< conditional_t > & stmt_conditional_t::conds() const { return m_conds; }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////// FOR_STMT /////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+stmt_for_t::stmt_for_t( const stmt_base_t * init, const stmt_base_t * cond,
+			const stmt_base_t * incr, const stmt_base_t * body,
+			const size_t & idx )
+	: stmt_base_t( GT_FOR, idx ), m_init( init ), m_cond( cond ),
+	  m_incr( incr ), m_body( body ) {}
+stmt_for_t::~stmt_for_t()
+{
+	if( m_init ) delete m_init;
+	if( m_cond ) delete m_cond;
+	if( m_incr ) delete m_incr;
+	delete m_body;
+}
+
+void stmt_for_t::disp( const bool has_next ) const
+{
+	io::tadd( has_next );
+	io::print( has_next, "For loop at: %p\n", this );
+
+	if( m_init ) {
+		io::tadd( true );
+		io::print( true, "Initialization:\n" );
+		m_init->disp( false );
+		io::trem();
+	}
+
+	if( m_cond ) {
+		io::tadd( true );
+		io::print( true, "Condition:\n" );
+		m_cond->disp( false );
+		io::trem();
+	}
+
+	if( m_incr ) {
+		io::tadd( true );
+		io::print( true, "Increment:\n" );
+		m_incr->disp( false );
+		io::trem();
+	}
+
+	io::tadd( false );
+
+	io::print( false, "Body:\n" );
+	m_body->disp( false );
+
+	io::trem( 2 );
+}
+
+const stmt_base_t * stmt_for_t::init() const { return m_init; }
+const stmt_base_t * stmt_for_t::cond() const { return m_cond; }
+const stmt_base_t * stmt_for_t::incr() const { return m_incr; }
+const stmt_base_t * stmt_for_t::body() const { return m_body; }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////// FOREACH_STMT ///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+stmt_foreach_t::stmt_foreach_t( const lex::tok_t * loop_var, const stmt_base_t * expr,
+				const stmt_base_t * body, const size_t & idx )
+	: stmt_base_t( GT_FOREACH, idx ), m_loop_var( loop_var ),
+	  m_expr( expr ), m_body( body ) {}
+stmt_foreach_t::~stmt_foreach_t()
+{
+	delete m_expr;
+	delete m_body;
+}
+
+void stmt_foreach_t::disp( const bool has_next ) const
+{
+	io::tadd( has_next );
+	io::print( has_next, "For loop at: %p\n", this );
+
+	io::tadd( true );
+	io::print( true, "Loop var: %s\n", m_loop_var->data.c_str() );
+	io::trem();
+
+	io::tadd( true );
+	io::print( true, "Expression:\n" );
+	m_expr->disp( false );
+	io::trem();
+
+	io::tadd( false );
+
+	io::print( false, "Body:\n" );
+	m_body->disp( false );
+
+	io::trem( 2 );
+}
+
+const lex::tok_t * stmt_foreach_t::loop_var() const { return m_loop_var; }
+const stmt_base_t * stmt_foreach_t::expr() const { return m_expr; }
+const stmt_base_t * stmt_foreach_t::body() const { return m_body; }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////// WHILE_STMT ////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+stmt_while_t::stmt_while_t( const stmt_base_t * expr, const stmt_base_t * body, const size_t & idx )
+	: stmt_base_t( GT_WHILE, idx ), m_expr( expr ), m_body( body ) {}
+stmt_while_t::~stmt_while_t()
+{
+	delete m_expr;
+	delete m_body;
+}
+
+void stmt_while_t::disp( const bool has_next ) const
+{
+	io::tadd( has_next );
+	io::print( has_next, "While loop at: %p\n", this );
+
+	io::tadd( true );
+	io::print( true, "Condition:\n" );
+	m_expr->disp( false );
+	io::trem();
+
+	io::tadd( false );
+	io::print( false, "Body:\n" );
+	m_body->disp( false );
+	io::trem( 2 );
+}
+
+const stmt_base_t * stmt_while_t::expr() const { return m_expr; }
+const stmt_base_t * stmt_while_t::body() const { return m_body; }

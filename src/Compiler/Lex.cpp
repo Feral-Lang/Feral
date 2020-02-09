@@ -21,17 +21,14 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"global",
 	"let",
 	"defer",
-	"struct",
-	"trait",
 	"fn",
-	"lambda",
-	"return",
 	"if",
 	"elif",
 	"else",
 	"for",
 	"in",
 	"while",
+	"return",
 	"continue",
 	"break",
 	"true",
@@ -256,17 +253,14 @@ static int classify_str( const std::string & str )
 	if( str == TokStrs[ TOK_GLOBAL ] ) return TOK_GLOBAL;
 	else if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
 	else if( str == TokStrs[ TOK_DEFER ] ) return TOK_DEFER;
-	else if( str == TokStrs[ TOK_STRUCT ] ) return TOK_STRUCT;
-	else if( str == TokStrs[ TOK_TRAIT ] ) return TOK_TRAIT;
 	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
-	else if( str == TokStrs[ TOK_LAMBDA ] ) return TOK_LAMBDA;
-	else if( str == TokStrs[ TOK_RETURN ] ) return TOK_RETURN;
 	else if( str == TokStrs[ TOK_IF ] ) return TOK_IF;
 	else if( str == TokStrs[ TOK_ELIF ] ) return TOK_ELIF;
 	else if( str == TokStrs[ TOK_ELSE ] ) return TOK_ELSE;
 	else if( str == TokStrs[ TOK_FOR ] ) return TOK_FOR;
 	else if( str == TokStrs[ TOK_IN ] ) return TOK_IN;
 	else if( str == TokStrs[ TOK_WHILE ] ) return TOK_WHILE;
+	else if( str == TokStrs[ TOK_RETURN ] ) return TOK_RETURN;
 	else if( str == TokStrs[ TOK_CONTINUE ] ) return TOK_CONTINUE;
 	else if( str == TokStrs[ TOK_BREAK ] ) return TOK_BREAK;
 	else if( str == TokStrs[ TOK_TRUE ] ) return TOK_TRUE;

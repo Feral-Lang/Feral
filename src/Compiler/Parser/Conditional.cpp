@@ -43,13 +43,13 @@ block:
 		ph.fail( "expected block for statement '%s'", TokStrs[ tok->type ] );
 		goto fail;
 	}
-	if( parse_block( ph, cond.block ) != E_OK ) {
+	if( parse_block( ph, cond.body ) != E_OK ) {
 		goto fail;
 	}
 
 	conds.push_back( cond );
 	cond.condition = nullptr;
-	cond.block = nullptr;
+	cond.body = nullptr;
 
 	cond.idx = ph.peak()->pos;
 	if( ph.accept( TOK_ELIF ) ) {
@@ -64,7 +64,7 @@ done:
 fail:
 	for( auto & c : conds ) {
 		if( c.condition ) delete c.condition;
-		delete c.block;
+		delete c.body;
 	}
 	return E_PARSE_FAIL;
 }
