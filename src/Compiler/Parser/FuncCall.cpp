@@ -15,7 +15,7 @@ Errors parse_fn_call_args( phelper_t & ph, stmt_base_t * & loc )
 	std::vector< const stmt_base_t * > args, assn_args;
 	stmt_base_t * expr = nullptr;
 
-	size_t idx = ph.idx();
+	size_t idx = ph.peak()->pos;
 begin:
 	if( ph.acceptd() && ph.peakt( 1 ) == TOK_ASSN ) {
 		const lex::tok_t * lhs = ph.peak();

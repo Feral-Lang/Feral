@@ -27,6 +27,7 @@ enum GramType
 	GT_FN_DEF,
 	GT_FN_CALL,
 	GT_SINGLE_OPERAND_STMT,
+	GT_CONDITIONAL,
 };
 
 class stmt_base_t
@@ -215,6 +216,25 @@ public:
 
 	const lex::tok_t * sost() const;
 	const stmt_base_t * operand() const;
+};
+
+struct conditional_t
+{
+	size_t idx;
+	stmt_base_t * condition;
+	stmt_base_t * block;
+};
+
+class stmt_conditional_t : public stmt_base_t
+{
+	const std::vector< conditional_t > m_conds;
+public:
+	stmt_conditional_t( const std::vector< conditional_t > & conds, const size_t & idx );
+	~stmt_conditional_t();
+
+	void disp( const bool has_next ) const;
+
+	const std::vector< conditional_t > & conds() const;
 };
 
 #endif // COMPILER_PARSER_STMTS_HPP

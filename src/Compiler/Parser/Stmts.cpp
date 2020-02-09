@@ -313,3 +313,40 @@ void stmt_single_operand_stmt_t::disp( const bool has_next ) const
 
 const lex::tok_t * stmt_single_operand_stmt_t::sost() const { return m_sost; }
 const stmt_base_t * stmt_single_operand_stmt_t::operand() const { return m_operand; }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// CONDITIONAL_STMT /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+stmt_conditional_t::stmt_conditional_t( const std::vector< conditional_t > & conds, const size_t & idx )
+	: stmt_base_t( GT_CONDITIONAL, idx ), m_conds( conds ) {}
+stmt_conditional_t::~stmt_conditional_t()
+{
+	for( auto & c : m_conds ) {
+		if( c.condition ) delete c.condition;
+		delete c.block;
+	}
+}
+
+void stmt_conditional_t::disp( const bool has_next ) const
+{
+	io::tadd( has_next );
+	io::print( has_next, "Conditional at %p\n", this );
+	for( size_t i = 0; i < m_conds.size(); ++i ) {
+		io::tadd( i != m_conds.size() - 1 );
+		if( i == 0 ) {
+			io::print( i != m_conds.size() - 1, "If:\n" );
+		} else if( m_conds[ i ].condition == nullptr ) {
+			io::print( i != m_conds.size() - 1, "Else:\n" );
+		} else {
+			io::print( i != m_conds.size() - 1, "Elif:\n" );
+		}
+		if( m_conds[ i ].condition ) {
+			m_conds[ i ].condition->disp( true );
+		}
+		m_conds[ i ].block->disp( false );
+		io::trem();
+	}
+	io::trem();
+}
+
+const std::vector< conditional_t > & stmt_conditional_t::conds() const { return m_conds; }

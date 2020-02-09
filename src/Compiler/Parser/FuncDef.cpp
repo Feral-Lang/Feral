@@ -11,7 +11,7 @@
 
 Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc )
 {
-	size_t idx = ph.idx();
+	size_t idx = ph.peak()->pos;
 	bool args_done = false;
 	stmt_base_t * args = nullptr, * block = nullptr;
 
@@ -62,7 +62,7 @@ Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc )
 	const lex::tok_t * kw_arg = nullptr, * va_arg = nullptr;
 	stmt_base_t * expr = nullptr;
 
-	size_t idx = ph.idx();
+	size_t idx = ph.peak()->pos;
 begin:
 	if( va_arg ) {
 		ph.fail( "cannot have any argument after variadic arg declaration" );
