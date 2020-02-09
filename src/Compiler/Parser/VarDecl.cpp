@@ -9,15 +9,16 @@
 
 #include "Internal.hpp"
 
-Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc )
+Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc, const bool local_only )
 {
 	std::vector< const stmt_var_decl_base_t * > decls;
 	stmt_base_t * decl = nullptr;
 	VarDeclType dtype = VDT_LOCAL;
 
 	size_t idx = ph.peak()->pos;
-	if( !ph.accept( TOK_GLOBAL, TOK_LET ) ) {
-		ph.fail( "expected keyword 'global' or 'let' here, but found: '%s'",
+	if( !ph.accept( TOK_LET ) && ( local_only || !ph.accept( TOK_GLOBAL ) ) ) {
+		ph.fail( "expected keyword %s here, but found: '%s'",
+			 local_only ? "'let'" : "'global' or 'let'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}

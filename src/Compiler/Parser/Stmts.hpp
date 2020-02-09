@@ -21,13 +21,16 @@ enum GramType
 	GT_EXPR,
 	GT_BLOCK,
 	GT_VAR_DECL_BASE,
-	GT_VAR_DECL_GLOBAL,
+	GT_VAR_DECL,
 	GT_FN_ASSN_ARG,
 	GT_FN_ARGS,
 	GT_FN_DEF,
 	GT_FN_CALL,
 	GT_SINGLE_OPERAND_STMT,
 	GT_CONDITIONAL,
+	GT_FOR,
+	GT_FOREACH,
+	GT_WHILE,
 };
 
 class stmt_base_t
@@ -74,10 +77,12 @@ class stmt_block_t : public stmt_base_t
 	std::vector< const stmt_base_t * > m_stmts;
 public:
 	stmt_block_t( const std::vector< const stmt_base_t * > & stmts, const size_t & idx );
+	~stmt_block_t();
 
 	void disp( const bool has_next ) const;
 
 	const std::vector< const stmt_base_t * > & stmts() const;
+	void clear_stmts();
 };
 
 class stmt_expr_t : public stmt_base_t
@@ -124,7 +129,8 @@ class stmt_var_decl_t : public stmt_base_t
 	VarDeclType m_dtype;
 	const std::vector< const stmt_var_decl_base_t * > m_decls;
 public:
-	stmt_var_decl_t( const VarDeclType dtype, const std::vector< const stmt_var_decl_base_t * > & decls, const size_t & idx );
+	stmt_var_decl_t( const VarDeclType dtype, const std::vector< const stmt_var_decl_base_t * > & decls,
+			 const size_t & idx );
 	~stmt_var_decl_t();
 
 	void disp( const bool has_next ) const;
@@ -167,16 +173,16 @@ public:
 class stmt_fn_def_t : public stmt_base_t
 {
 	const stmt_fn_def_args_t * m_args;
-	const stmt_block_t * m_block;
+	const stmt_block_t * m_body;
 public:
-	stmt_fn_def_t( const stmt_fn_def_args_t * args, const stmt_block_t * block,
+	stmt_fn_def_t( const stmt_fn_def_args_t * args, const stmt_block_t * body,
 		       const size_t & idx );
 	~stmt_fn_def_t();
 
 	void disp( const bool has_next ) const;
 
 	const stmt_fn_def_args_t * args() const;
-	const stmt_block_t * block() const;
+	const stmt_block_t * body() const;
 };
 
 class stmt_fn_call_args_t : public stmt_base_t
@@ -222,7 +228,7 @@ struct conditional_t
 {
 	size_t idx;
 	stmt_base_t * condition;
-	stmt_base_t * block;
+	stmt_base_t * body;
 };
 
 class stmt_conditional_t : public stmt_base_t
@@ -235,6 +241,55 @@ public:
 	void disp( const bool has_next ) const;
 
 	const std::vector< conditional_t > & conds() const;
+};
+
+class stmt_for_t : public stmt_base_t
+{
+	const stmt_base_t * m_init, * m_cond, * m_incr;
+	const stmt_base_t * m_body;
+public:
+	stmt_for_t( const stmt_base_t * init, const stmt_base_t * cond,
+		    const stmt_base_t * incr, const stmt_base_t * body,
+		    const size_t & idx );
+	~stmt_for_t();
+
+	void disp( const bool has_next ) const;
+
+	const stmt_base_t * init() const;
+	const stmt_base_t * cond() const;
+	const stmt_base_t * incr() const;
+	const stmt_base_t * body() const;
+};
+
+class stmt_foreach_t : public stmt_base_t
+{
+	const lex::tok_t * m_loop_var;
+	const stmt_base_t * m_expr;
+	const stmt_base_t * m_body;
+public:
+	stmt_foreach_t( const lex::tok_t * loop_var, const stmt_base_t * expr,
+			const stmt_base_t * body, const size_t & idx );
+	~stmt_foreach_t();
+
+	void disp( const bool has_next ) const;
+
+	const lex::tok_t * loop_var() const;
+	const stmt_base_t * expr() const;
+	const stmt_base_t * body() const;
+};
+
+class stmt_while_t : public stmt_base_t
+{
+	const stmt_base_t * m_expr;
+	const stmt_base_t * m_body;
+public:
+	stmt_while_t( const stmt_base_t * expr, const stmt_base_t * body, const size_t & idx );
+	~stmt_while_t();
+
+	void disp( const bool has_next ) const;
+
+	const stmt_base_t * expr() const;
+	const stmt_base_t * body() const;
 };
 
 #endif // COMPILER_PARSER_STMTS_HPP
