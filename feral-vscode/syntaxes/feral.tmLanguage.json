@@ -24,6 +24,9 @@
 			"include": "#atoms"
 		},
 		{
+			"include": "#struct_types"
+		},
+		{
 			"include": "#assignments"
 		},
 		{
@@ -120,6 +123,12 @@
 			"patterns": [{
 				"name": "entity.name.tag",
 				"match": "(^|[\\s]+)\\.[a-zA-Z0-9_]+"
+			}]
+		},
+		"struct_types": {
+			"patterns": [{
+				"name": "entity.name.class",
+				"match": "\\b[a-zA-Z0-9_]+_t\\b"
 			}]
 		},
 		"assignments": {

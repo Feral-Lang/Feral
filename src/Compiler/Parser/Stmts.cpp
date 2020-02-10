@@ -101,12 +101,12 @@ void stmt_expr_t::disp( const bool has_next ) const
 	io::print( m_lhs != nullptr || m_rhs != nullptr,
 		   "Operator: %s\n", m_oper != nullptr ? TokStrs[ m_oper->type ] : "(null)" );
 	io::trem();
-	io::tadd( m_rhs != nullptr );
 	if( m_lhs != nullptr ) {
+		io::tadd( m_rhs != nullptr );
 		io::print( m_rhs != nullptr, "LHS:\n" );
 		m_lhs->disp( false );
+		io::trem();
 	}
-	io::trem();
 	io::tadd( false );
 	if( m_rhs != nullptr ) {
 		io::print( false, "RHS:\n" );
@@ -120,12 +120,12 @@ void stmt_expr_t::disp( const bool has_next ) const
 /////////////////////////////////////////////////// VAR_DECL_BASE //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-stmt_var_decl_base_t::stmt_var_decl_base_t( const stmt_base_t * lhs, const stmt_base_t * rhs )
-	: stmt_base_t( GT_VAR_DECL_BASE, lhs->idx() ), m_lhs( lhs ), m_rhs( rhs ) {}
+stmt_var_decl_base_t::stmt_var_decl_base_t( const lex::tok_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs )
+	: stmt_base_t( GT_VAR_DECL_BASE, lhs->pos ), m_lhs( lhs ), m_in( in ), m_rhs( rhs ) {}
 
 stmt_var_decl_base_t::~stmt_var_decl_base_t()
 {
-	delete m_lhs;
+	delete m_in;
 	delete m_rhs;
 }
 
@@ -134,16 +134,23 @@ void stmt_var_decl_base_t::disp( const bool has_next ) const
 	io::tadd( has_next );
 	io::print( has_next, "Var Decl Base at: %p\n", this );
 	io::tadd( true );
-	io::print( true, "LHS:\n" );
-	m_lhs->disp( false );
+	io::print( true, "LHS: %s (type: %s)\n", m_lhs->data.c_str(),
+		   TokStrs[ m_lhs->type ] );
 	io::trem();
+	if( m_in ) {
+		io::tadd( true );
+		io::print( true, "In:\n" );
+		m_in->disp( false );
+		io::trem();
+	}
 	io::tadd( false );
 	io::print( false, "RHS:\n" );
 	m_rhs->disp( false );
 	io::trem( 2 );
 }
 
-const stmt_base_t * stmt_var_decl_base_t::lhs() const { return m_lhs; }
+const lex::tok_t * stmt_var_decl_base_t::lhs() const { return m_lhs; }
+const stmt_base_t * stmt_var_decl_base_t::in() const { return m_in; }
 const stmt_base_t * stmt_var_decl_base_t::rhs() const { return m_rhs; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
