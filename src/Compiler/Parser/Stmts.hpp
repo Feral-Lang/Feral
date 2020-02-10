@@ -106,15 +106,17 @@ public:
 
 class stmt_var_decl_base_t : public stmt_base_t
 {
-	const stmt_base_t * m_lhs;
+	const lex::tok_t * m_lhs;
+	const stmt_base_t * m_in;
 	const stmt_base_t * m_rhs;
 public:
-	stmt_var_decl_base_t( const stmt_base_t * lhs, const stmt_base_t * rhs );
+	stmt_var_decl_base_t( const lex::tok_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs );
 	~stmt_var_decl_base_t();
 
 	void disp( const bool has_next ) const;
 
-	const stmt_base_t * lhs() const;
+	const lex::tok_t * lhs() const;
+	const stmt_base_t * in() const;
 	const stmt_base_t * rhs() const;
 };
 

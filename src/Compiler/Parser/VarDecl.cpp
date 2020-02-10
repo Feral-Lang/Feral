@@ -26,7 +26,7 @@ Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc, const bool local_onl
 	ph.next();
 
 begin:
-	if( parse_var_decl_base( ph, decl ) != E_OK ) {
+	if( parse_var_decl_base( ph, decl, dtype == VDT_LOCAL ) != E_OK ) {
 		goto fail;
 	}
 	decls.push_back( ( stmt_var_decl_base_t * )decl );
@@ -50,16 +50,30 @@ fail:
 	return E_PARSE_FAIL;
 }
 
-Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc )
+Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc, const bool is_local )
 {
-	stmt_base_t * lhs = nullptr, * rhs = nullptr;
+	const lex::tok_t * lhs = nullptr;
+	stmt_base_t * in = nullptr, * rhs = nullptr;
 
 	// iden index
 	size_t idx = ph.peak()->pos;
 
-	// 01 = parenthesized expression, func call, subscript, dot
-	if( parse_expr_01( ph, lhs ) != E_OK ) {
-		goto fail;
+	// the variable in which data is to be stored, must be a const str
+	ph.sett( TOK_STR );
+	lhs = ph.peak();
+	ph.next();
+
+	if( ph.peakt() == TOK_IN ) {
+		// x in y = ... format is only allowed for 'let' variables (not 'global's)
+		if( !is_local ) {
+			ph.fail( "a variable inside an expression can only be created in 'let' statements" );
+			goto fail;
+		}
+		ph.next();
+		// 01 = parenthesized expression, func call, subscript, dot
+		if( parse_expr_01( ph, in ) != E_OK ) {
+			goto fail;
+		}
 	}
 
 	if( !ph.accept( TOK_ASSN ) ) {
@@ -74,10 +88,10 @@ Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc )
 		goto fail;
 	}
 
-	loc = new stmt_var_decl_base_t( lhs, rhs );
+	loc = new stmt_var_decl_base_t( lhs, in, rhs );
 	return E_OK;
 fail:
-	if( lhs ) delete lhs;
+	if( in ) delete in;
 	if( rhs ) delete rhs;
 	return E_PARSE_FAIL;
 }

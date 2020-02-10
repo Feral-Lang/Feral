@@ -6,6 +6,6 @@ let facto = fn( num ) {
 		fact *= i;
 	}
 	return fact;
-}
+};
 
 io.outln( 'factorial of 5 is: ', facto( 5 ) );
