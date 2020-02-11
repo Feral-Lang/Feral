@@ -13,20 +13,13 @@ namespace parser
 {
 
 Errors parse( const srcfile_t & src, lex::toks_t & toks,
-	      ptree_t & ptree, phelper_t & ph, const size_t begin )
+	      ptree_t * & ptree, phelper_t & ph, const size_t begin )
 {
 	std::vector< const stmt_base_t * > stmts;
-	while( ph.valid() ) {
-		stmt_base_t * stmt = nullptr;
-		if( parse_block( ph, stmt, false ) != E_OK ) goto fail;
-		ptree.push_back( stmt );
-	}
+	if( parse_block( ph, ( stmt_base_t * & )ptree, false ) != E_OK ) goto fail;
 	return E_OK;
 fail:
-	for( auto & p : ptree ) {
-		delete p;
-	}
-	ptree.clear();
+	delete ptree;
 	return E_PARSE_FAIL;
 }
 

@@ -18,6 +18,7 @@
 #include "Args.hpp"
 #include "Lex.hpp"
 #include "Parser.hpp"
+#include "CodeGen.hpp"
 
 int main( int argc, char ** argv )
 {
@@ -63,17 +64,34 @@ int main( int argc, char ** argv )
 	}
 
 	phelper_t ph( main_src, toks );
-	ptree_t ptree;
+	ptree_t * ptree = nullptr;
+
+	bcode_t bc;
+
 	err = parser::parse( main_src, toks, ptree, ph );
 	if( err != E_OK ) goto cleanup;
+
 	// show tree
 	if( flags & OPT_P ) {
-		fprintf( stdout, "Parse Tree (%zu):\n", ptree.size() );
-		for( auto it = ptree.begin(); it != ptree.end(); ++it ) {
-			( * it )->disp( it != ptree.end() - 1 );
+		fprintf( stdout, "Parse Tree:\n" );
+		for( auto it = ptree->stmts().begin(); it != ptree->stmts().end(); ++it ) {
+			( * it )->disp( it != ptree->stmts().end() - 1 );
+		}
+	}
+
+	err = gen::generate( ptree, bc );
+	if( err != E_OK ) goto cleanup;
+
+	// show bytecode
+	if( flags & OPT_B ) {
+		fprintf( stdout, "Byte Code (%zu):\n", bc.size() );
+		const std::vector< op_t > & bcode = bc.bcode();
+		for( size_t i = 0; i < bcode.size(); ++i ) {
+			fprintf( stdout, "ID: %zu\tInstruction: %s\n",
+				 i, OpCodeStrs[ bcode[ i ].op ] );
 		}
 	}
 cleanup:
-	for( auto & p : ptree ) delete p;
+	delete ptree;
 	return err;
 }
