@@ -16,7 +16,7 @@ namespace parser
 {
 
 Errors parse( const srcfile_t & src, lex::toks_t & toks,
-	      ptree_t & ptree, phelper_t & ph, const size_t begin = 0 );
+	      ptree_t * & ptree, phelper_t & ph, const size_t begin = 0 );
 
 }
 

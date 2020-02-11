@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 #include "SrcFile.hpp"
+#include "OpCodes.hpp"
 
 namespace vm
 {

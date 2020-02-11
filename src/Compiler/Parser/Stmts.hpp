@@ -47,8 +47,6 @@ public:
 	GramType type() const;
 };
 
-typedef std::vector< const stmt_base_t * > ptree_t;
-
 enum SimpleType
 {
 	ST_DATA,
@@ -85,6 +83,8 @@ public:
 	void clear_stmts();
 };
 
+typedef stmt_block_t ptree_t;
+
 class stmt_expr_t : public stmt_base_t
 {
 	const stmt_base_t * m_lhs, * m_rhs;
@@ -118,6 +118,8 @@ public:
 	const lex::tok_t * lhs() const;
 	const stmt_base_t * in() const;
 	const stmt_base_t * rhs() const;
+
+	bool has_in() const;
 };
 
 enum VarDeclType
