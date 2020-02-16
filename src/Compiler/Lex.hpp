@@ -25,7 +25,6 @@ enum TokType
 	TOK_FLT,
 
 	TOK_STR,
-	TOK_ATOM,
 	TOK_IDEN,
 
 	//Keywords
@@ -60,11 +59,11 @@ enum TokType
 	TOK_DIV_ASSN,
 	TOK_MOD_ASSN,
 	TOK_POW, // **
-	// Pre/Post Inc/Dec
-	TOK_INC,
-	TOK_PINC,
-	TOK_DEC,
-	TOK_PDEC,
+	// Post/Pre Inc/Dec
+	TOK_XINC,
+	TOK_INCX,
+	TOK_XDEC,
+	TOK_DECX,
 	// Unary
 	TOK_UADD,
 	TOK_USUB,
@@ -72,6 +71,7 @@ enum TokType
 	TOK_AND,
 	TOK_OR,
 	TOK_NOT,
+	// Comparison
 	TOK_EQ,
 	TOK_LT,
 	TOK_GT,
@@ -174,8 +174,7 @@ inline bool tok_type_is_data( const int type )
 	return type == TOK_INT || type == TOK_FLT ||
 	       type == TOK_STR || type == TOK_IDEN ||
 	       type == TOK_TRUE || type == TOK_FALSE ||
-	       type == TOK_NIL || type == TOK_TDOT ||
-	       type == TOK_ATOM;
+	       type == TOK_NIL || type == TOK_TDOT;
 }
 
 /**

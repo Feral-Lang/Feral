@@ -24,27 +24,23 @@ GramType stmt_base_t::type() const { return m_type; }
 /////////////////////////////////////////////////////// SIMPLE /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const char * SimpleTypeStrs[ ST_LAST ] = {
-	"Data",
-	"Operator",
-};
-
-stmt_simple_t::stmt_simple_t( const SimpleType stype, const lex::tok_t * val )
-	: stmt_base_t( GT_SIMPLE, val->pos ), m_stype( stype ), m_val( val ) {}
-
-const lex::tok_t * stmt_simple_t::val() const { return m_val; }
-SimpleType stmt_simple_t::stype() const { return m_stype; }
+stmt_simple_t::stmt_simple_t( const lex::tok_t * val )
+	: stmt_base_t( GT_SIMPLE, val->pos ), m_val( val ) {}
 
 void stmt_simple_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
 	io::print( has_next, "Simple at: %p\n", this );
 	io::tadd( false );
-	io::print( false, "Value: %s (type: %s)\n",
-		   m_stype == ST_DATA && !m_val->data.empty() ? m_val->data.c_str() : TokStrs[ m_val->type ],
-		   m_stype == ST_DATA ? TokStrs[ m_val->type ] : SimpleTypeStrs[ m_stype ] );
+	if( m_val ) {
+		io::print( false, "Value: %s (type: %s)\n",
+			   !m_val->data.empty() ? m_val->data.c_str() : TokStrs[ m_val->type ],
+			   TokStrs[ m_val->type ] );
+	}
 	io::trem( 2 );
 }
+
+const lex::tok_t * stmt_simple_t::val() const { return m_val; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////// BLOCK //////////////////////////////////////////////////////////////
@@ -120,12 +116,13 @@ void stmt_expr_t::disp( const bool has_next ) const
 /////////////////////////////////////////////////// VAR_DECL_BASE //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-stmt_var_decl_base_t::stmt_var_decl_base_t( const lex::tok_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs )
-	: stmt_base_t( GT_VAR_DECL_BASE, lhs->pos ), m_lhs( lhs ), m_in( in ), m_rhs( rhs ) {}
+stmt_var_decl_base_t::stmt_var_decl_base_t( const stmt_simple_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs )
+	: stmt_base_t( GT_VAR_DECL_BASE, lhs->val()->pos ), m_lhs( lhs ), m_in( in ), m_rhs( rhs ) {}
 
 stmt_var_decl_base_t::~stmt_var_decl_base_t()
 {
-	delete m_in;
+	delete m_lhs;
+	if( m_in ) delete m_in;
 	delete m_rhs;
 }
 
@@ -134,8 +131,8 @@ void stmt_var_decl_base_t::disp( const bool has_next ) const
 	io::tadd( has_next );
 	io::print( has_next, "Var Decl Base at: %p\n", this );
 	io::tadd( true );
-	io::print( true, "LHS: %s (type: %s)\n", m_lhs->data.c_str(),
-		   TokStrs[ m_lhs->type ] );
+	io::print( true, "LHS:\n" );
+	m_lhs->disp( false );
 	io::trem();
 	if( m_in ) {
 		io::tadd( true );
@@ -149,7 +146,7 @@ void stmt_var_decl_base_t::disp( const bool has_next ) const
 	io::trem( 2 );
 }
 
-const lex::tok_t * stmt_var_decl_base_t::lhs() const { return m_lhs; }
+const stmt_simple_t * stmt_var_decl_base_t::lhs() const { return m_lhs; }
 const stmt_base_t * stmt_var_decl_base_t::in() const { return m_in; }
 const stmt_base_t * stmt_var_decl_base_t::rhs() const { return m_rhs; }
 
@@ -185,10 +182,11 @@ const std::vector< const stmt_var_decl_base_t * > & stmt_var_decl_t::decls() con
 //////////////////////////////////////////////////// FUNC_ASSN_ARG /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-stmt_fn_assn_arg_t::stmt_fn_assn_arg_t( const lex::tok_t * lhs, const stmt_base_t * rhs )
-	: stmt_base_t( GT_FN_ASSN_ARG, lhs->pos ), m_lhs( lhs ), m_rhs( rhs ) {}
+stmt_fn_assn_arg_t::stmt_fn_assn_arg_t( const stmt_simple_t * lhs, const stmt_base_t * rhs )
+	: stmt_base_t( GT_FN_ASSN_ARG, lhs->val()->pos ), m_lhs( lhs ), m_rhs( rhs ) {}
 stmt_fn_assn_arg_t::~stmt_fn_assn_arg_t()
 {
+	delete m_lhs;
 	delete m_rhs;
 }
 
@@ -197,7 +195,8 @@ void stmt_fn_assn_arg_t::disp( const bool has_next ) const
 	io::tadd( has_next );
 	io::print( has_next, "Assigned Argument at: %p\n", this );
 	io::tadd( true );
-	io::print( m_rhs, "Parameter: %s\n", m_lhs->data.c_str() );
+	io::print( m_rhs, "Parameter:\n" );
+	m_lhs->disp( false );
 	io::trem();
 	if( m_rhs ) {
 		io::tadd( false );
@@ -208,7 +207,7 @@ void stmt_fn_assn_arg_t::disp( const bool has_next ) const
 	io::trem();
 }
 
-const lex::tok_t * stmt_fn_assn_arg_t::lhs() const { return m_lhs; }
+const stmt_simple_t * stmt_fn_assn_arg_t::lhs() const { return m_lhs; }
 const stmt_base_t * stmt_fn_assn_arg_t::rhs() const { return m_rhs; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,12 +215,14 @@ const stmt_base_t * stmt_fn_assn_arg_t::rhs() const { return m_rhs; }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 stmt_fn_def_args_t::stmt_fn_def_args_t( const std::vector< const stmt_base_t * > & args,
-					const lex::tok_t * kwarg, const lex::tok_t * vaarg,
+					const stmt_simple_t * kwarg, const stmt_simple_t * vaarg,
 					const size_t & idx )
 	: stmt_base_t( GT_FN_ARGS, idx ), m_args( args ), m_kwarg( kwarg ), m_vaarg( vaarg ) {}
 stmt_fn_def_args_t::~stmt_fn_def_args_t()
 {
 	for( auto & a : m_args ) delete a;
+	if( m_kwarg ) delete m_kwarg;
+	if( m_vaarg ) delete m_vaarg;
 }
 
 void stmt_fn_def_args_t::disp( const bool has_next ) const
@@ -230,12 +231,14 @@ void stmt_fn_def_args_t::disp( const bool has_next ) const
 	io::print( has_next, "Arguments at: %p\n", this );
 	if( m_kwarg ) {
 		io::tadd( true );
-		io::print( m_vaarg || m_args.size() > 0, "Keyword Argument: %s\n", m_kwarg->data.c_str() );
+		io::print( m_vaarg || m_args.size() > 0, "Keyword Argument:\n" );
+		m_kwarg->disp( m_vaarg || m_args.size() > 0 );
 		io::trem();
 	}
 	if( m_vaarg ) {
 		io::tadd( true );
-		io::print( m_args.size() > 0, "Variadic Argument: %s\n", m_vaarg->data.c_str() );
+		io::print( m_args.size() > 0, "Variadic Argument:\n" );
+		m_vaarg->disp( m_args.size() > 0 );
 		io::trem();
 	}
 	for( size_t i = 0; i < m_args.size(); ++i ) {
@@ -244,8 +247,8 @@ void stmt_fn_def_args_t::disp( const bool has_next ) const
 	io::trem();
 }
 const std::vector< const stmt_base_t * > & stmt_fn_def_args_t::args() const { return m_args; }
-const lex::tok_t * stmt_fn_def_args_t::kwarg() const { return m_kwarg; }
-const lex::tok_t * stmt_fn_def_args_t::vaarg() const { return m_vaarg; }
+const stmt_simple_t * stmt_fn_def_args_t::kwarg() const { return m_kwarg; }
+const stmt_simple_t * stmt_fn_def_args_t::vaarg() const { return m_vaarg; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////// FUNC_DEF //////////////////////////////////////////////////////////

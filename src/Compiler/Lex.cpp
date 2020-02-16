@@ -14,7 +14,6 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"FLT",
 
 	"STR",
-	"ATOM",
 	"IDEN",
 
 	//Keywords
@@ -49,7 +48,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"/=",
 	"%=",
 	"**", // power
-	// Pre/Post Inc/Dec
+	// Post/Pre Inc/Dec
 	"x++",
 	"++x",
 	"x--",
@@ -61,6 +60,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"&&",
 	"||",
 	"!",
+	// Comparison
 	"==",
 	"<",
 	">",
@@ -267,8 +267,8 @@ static int classify_str( const std::string & str )
 	else if( str == TokStrs[ TOK_FALSE ] ) return TOK_FALSE;
 	else if( str == TokStrs[ TOK_NIL ] ) return TOK_NIL;
 
-	// if string begins with dot, it's an atom, otherwise an identifier
-	return str[ 0 ] == '.' ? TOK_ATOM : TOK_IDEN;
+	// if string begins with dot, it's an atom (str), otherwise an identifier
+	return str[ 0 ] == '.' ? TOK_STR : TOK_IDEN;
 }
 
 static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_type )
@@ -369,7 +369,7 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 			}
 			if( NEXT( src ) == '+' ) {
 				++i;
-				SET_OP_TYPE_BRK( TOK_INC );
+				SET_OP_TYPE_BRK( TOK_XINC );
 			}
 		}
 		SET_OP_TYPE_BRK( TOK_ADD );
@@ -381,7 +381,7 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 			}
 			if( NEXT( src ) == '-' ) {
 				++i;
-				SET_OP_TYPE_BRK( TOK_DEC );
+				SET_OP_TYPE_BRK( TOK_XDEC );
 			}
 		}
 		SET_OP_TYPE_BRK( TOK_SUB );

@@ -79,16 +79,32 @@ int main( int argc, char ** argv )
 		}
 	}
 
-	err = gen::generate( ptree, bc );
+	err = gen::generate( ptree, bc ) ? E_OK : E_CODEGEN_FAIL;
 	if( err != E_OK ) goto cleanup;
 
 	// show bytecode
 	if( flags & OPT_B ) {
 		fprintf( stdout, "Byte Code (%zu):\n", bc.size() );
 		const std::vector< op_t > & bcode = bc.bcode();
+		int id_padding = std::to_string( bcode.size() ).size();
 		for( size_t i = 0; i < bcode.size(); ++i ) {
-			fprintf( stdout, "ID: %zu\tInstruction: %s\n",
-				 i, OpCodeStrs[ bcode[ i ].op ] );
+			fprintf( stdout, "ID: %-*zu  %*s ", id_padding, i, 12, OpCodeStrs[ bcode[ i ].op ] );
+			if( bcode[ i ].dtype == ODT_BOOL ) {
+				fprintf( stdout, "[%s]\t[BOOL]\n", bcode[ i ].data.b ? "yes" : "no" );
+			} else if( bcode[ i ].dtype == ODT_SZ ) {
+				if( bcode[ i ].op == OP_BINARY ) {
+					fprintf( stdout, "[%s]\t[SZ]\n", OpBinaryStrs[ bcode[ i ].data.sz ] );
+				} else if( bcode[ i ].op == OP_UNARY ) {
+					fprintf( stdout, "[%s]\t[SZ]\n", OpUnaryStrs[ bcode[ i ].data.sz ] );
+				} else if( bcode[ i ].op == OP_COMP ) {
+					fprintf( stdout, "[%s]\t[SZ]\n", OpCompStrs[ bcode[ i ].data.sz ] );
+				} else {
+					fprintf( stdout, "[%zu]\t[SZ]\n", bcode[ i ].data.sz );
+				}
+			} else {
+				fprintf( stdout, "[%s]\t[%s]\n", bcode[ i ].data.s,
+					 OpDataTypeStrs[ bcode[ i ].dtype ] );
+			}
 		}
 	}
 cleanup:
