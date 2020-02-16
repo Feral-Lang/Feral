@@ -23,6 +23,8 @@ enum Errors
 
 	E_PARSE_FAIL,
 
+	E_CODEGEN_FAIL,
+
 	E_FAIL,
 };
 

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "../../Common/IO.hpp" // for disp() functions
+#include "../../VM/OpCodes.hpp"
 #include "../Lex.hpp"
 
 enum GramType
@@ -43,31 +44,25 @@ public:
 
 	virtual void disp( const bool has_next ) const = 0;
 
+	// flags are used when necessary
+	// f1 = flag1, f2 = flag2
+	virtual bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const = 0;
+
 	size_t idx() const;
 	GramType type() const;
 };
 
-enum SimpleType
-{
-	ST_DATA,
-	ST_OPER,
-
-	ST_LAST,
-};
-
-extern const char * SimpleTypeStrs[ ST_LAST ];
-
 class stmt_simple_t : public stmt_base_t
 {
-	SimpleType m_stype;
 	const lex::tok_t * m_val;
 public:
-	stmt_simple_t( const SimpleType stype, const lex::tok_t * val );
+	stmt_simple_t( const lex::tok_t * val );
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const lex::tok_t * val() const;
-	SimpleType stype() const;
 };
 
 class stmt_block_t : public stmt_base_t
@@ -78,6 +73,8 @@ public:
 	~stmt_block_t();
 
 	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const std::vector< const stmt_base_t * > & stmts() const;
 	void clear_stmts();
@@ -97,6 +94,8 @@ public:
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const stmt_base_t * lhs() const;
 	const stmt_base_t * rhs() const;
 	const lex::tok_t * oper() const;
@@ -106,16 +105,18 @@ public:
 
 class stmt_var_decl_base_t : public stmt_base_t
 {
-	const lex::tok_t * m_lhs;
+	const stmt_simple_t * m_lhs;
 	const stmt_base_t * m_in;
 	const stmt_base_t * m_rhs;
 public:
-	stmt_var_decl_base_t( const lex::tok_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs );
+	stmt_var_decl_base_t( const stmt_simple_t * lhs, const stmt_base_t * in, const stmt_base_t * rhs );
 	~stmt_var_decl_base_t();
 
 	void disp( const bool has_next ) const;
 
-	const lex::tok_t * lhs() const;
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
+	const stmt_simple_t * lhs() const;
 	const stmt_base_t * in() const;
 	const stmt_base_t * rhs() const;
 
@@ -139,39 +140,45 @@ public:
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	VarDeclType dtype() const;
 	const std::vector< const stmt_var_decl_base_t * > & decls() const;
 };
 
 class stmt_fn_assn_arg_t : public stmt_base_t
 {
-	const lex::tok_t * m_lhs;
+	const stmt_simple_t * m_lhs;
 	const stmt_base_t * m_rhs;
 public:
-	stmt_fn_assn_arg_t( const lex::tok_t * lhs, const stmt_base_t * rhs );
+	stmt_fn_assn_arg_t( const stmt_simple_t * lhs, const stmt_base_t * rhs );
 	~stmt_fn_assn_arg_t();
 
 	void disp( const bool has_next ) const;
 
-	const lex::tok_t * lhs() const;
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
+	const stmt_simple_t * lhs() const;
 	const stmt_base_t * rhs() const;
 };
 
 class stmt_fn_def_args_t : public stmt_base_t
 {
 	const std::vector< const stmt_base_t * > m_args;
-	const lex::tok_t * m_kwarg, * m_vaarg;
+	const stmt_simple_t * m_kwarg, * m_vaarg;
 public:
 	stmt_fn_def_args_t( const std::vector< const stmt_base_t * > & args,
-			    const lex::tok_t * kwarg, const lex::tok_t * vaarg,
+			    const stmt_simple_t * kwarg, const stmt_simple_t * vaarg,
 			    const size_t & idx );
 	~stmt_fn_def_args_t();
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const std::vector< const stmt_base_t * > & args() const;
-	const lex::tok_t * kwarg() const;
-	const lex::tok_t * vaarg() const;
+	const stmt_simple_t * kwarg() const;
+	const stmt_simple_t * vaarg() const;
 };
 
 class stmt_fn_def_t : public stmt_base_t
@@ -184,6 +191,8 @@ public:
 	~stmt_fn_def_t();
 
 	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const stmt_fn_def_args_t * args() const;
 	const stmt_block_t * body() const;
@@ -199,6 +208,8 @@ public:
 	~stmt_fn_call_args_t();
 
 	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const std::vector< const stmt_base_t * > & args() const;
 	const std::vector< const stmt_base_t * > & assn_args() const;
@@ -224,6 +235,8 @@ public:
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const lex::tok_t * sost() const;
 	const stmt_base_t * operand() const;
 };
@@ -244,6 +257,8 @@ public:
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const std::vector< conditional_t > & conds() const;
 };
 
@@ -258,6 +273,8 @@ public:
 	~stmt_for_t();
 
 	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const stmt_base_t * init() const;
 	const stmt_base_t * cond() const;
@@ -277,6 +294,8 @@ public:
 
 	void disp( const bool has_next ) const;
 
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
 	const lex::tok_t * loop_var() const;
 	const stmt_base_t * expr() const;
 	const stmt_base_t * body() const;
@@ -291,6 +310,8 @@ public:
 	~stmt_while_t();
 
 	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const stmt_base_t * expr() const;
 	const stmt_base_t * body() const;

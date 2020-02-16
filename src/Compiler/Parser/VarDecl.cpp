@@ -88,7 +88,7 @@ Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc, const bool is_l
 		goto fail;
 	}
 
-	loc = new stmt_var_decl_base_t( lhs, in, rhs );
+	loc = new stmt_var_decl_base_t( new stmt_simple_t( lhs ), in, rhs );
 	return E_OK;
 fail:
 	if( in ) delete in;

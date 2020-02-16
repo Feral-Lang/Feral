@@ -430,11 +430,11 @@ Errors parse_expr_03( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 
 	// add operators in vector in reverse order
-	while( ph.accept( TOK_INC, TOK_DEC ) ||
+	while( ph.accept( TOK_XINC, TOK_XDEC ) ||
 	       ph.accept( TOK_ADD, TOK_SUB ) ||
 	       ph.accept( TOK_NOT, TOK_BNOT ) ) {
-		if( ph.peakt() == TOK_INC ) ph.sett( TOK_PINC );
-		else if( ph.peakt() == TOK_DEC ) ph.sett( TOK_PDEC );
+		if( ph.peakt() == TOK_XINC ) ph.sett( TOK_INCX );
+		else if( ph.peakt() == TOK_XDEC ) ph.sett( TOK_DECX );
 		else if( ph.peakt() == TOK_ADD ) ph.sett( TOK_UADD );
 		else if( ph.peakt() == TOK_SUB ) ph.sett( TOK_USUB );
 
@@ -467,7 +467,7 @@ Errors parse_expr_02( phelper_t & ph, stmt_base_t * & loc )
 		goto fail;
 	}
 
-	if( ph.accept( TOK_INC, TOK_DEC ) ) {
+	if( ph.accept( TOK_XINC, TOK_XDEC ) ) {
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();
@@ -483,7 +483,7 @@ fail:
 }
 
 // Left Associative
-// x() y[]
+// x(FN_CALL_ARGS) y[EXPR]
 // x.y
 // '(' EXPR ')'
 Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
@@ -565,7 +565,7 @@ Errors parse_term( phelper_t & ph, stmt_base_t * & loc, const bool make_const )
 {
 	if( ph.acceptd() ) {
 		if( make_const && ph.peakt() == TOK_IDEN ) ph.sett( TOK_STR );
-		loc = new stmt_simple_t( ST_DATA, ph.peak() );
+		loc = new stmt_simple_t( ph.peak() );
 		ph.next();
 	} else if( ph.accept( TOK_FN ) ) {
 		if( parse_fn_decl( ph, loc ) != E_OK ) goto fail;

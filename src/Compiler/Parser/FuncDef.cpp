@@ -68,7 +68,7 @@ begin:
 		ph.fail( "cannot have any argument after variadic arg declaration" );
 		goto fail;
 	}
-	if( ph.accept( TOK_ATOM ) ) { // check kw arg
+	if( ph.accept( TOK_STR ) ) { // check kw arg
 		if( kw_arg ) {
 			ph.fail( "function can't have multiple keyword args (previous: %s)",
 				 kw_arg->data.c_str() );
@@ -76,7 +76,7 @@ begin:
 		}
 		kw_arg = ph.peak();
 		ph.next();
-	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since ATOM is checked above, won't be bothered with it anymore
+	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since STR is checked above, won't be bothered with it anymore
 		if( ph.peakt( 1 ) == TOK_ASSN ) { // it's a default assignment
 			const lex::tok_t * lhs = ph.peak();
 			stmt_base_t * rhs = nullptr;
@@ -84,7 +84,7 @@ begin:
 			if( parse_expr_13( ph, rhs ) != E_OK ) {
 				goto fail;
 			}
-			args.push_back( new stmt_fn_assn_arg_t( lhs, rhs ) );
+			args.push_back( new stmt_fn_assn_arg_t( new stmt_simple_t( lhs ), rhs ) );
 		} else if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
 			va_arg = ph.peak();
 			ph.next(); ph.next();
@@ -101,7 +101,7 @@ begin:
 		goto begin;
 	}
 
-	loc = new stmt_fn_def_args_t( args, kw_arg, va_arg, idx );
+	loc = new stmt_fn_def_args_t( args, new stmt_simple_t( kw_arg ), new stmt_simple_t( va_arg ), idx );
 	return E_OK;
 fail:
 	for( auto & arg : args ) delete arg;

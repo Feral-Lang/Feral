@@ -12,8 +12,9 @@
 #include "OpCodes.hpp"
 
 const char * OpCodeStrs[ _OP_LAST ] = {
+	"CREATE",	// create a new variable
+	"GCREATE",	// create a new global variable
 	"STORE",	// store in a name, from stack
-	"GLOBAL_STORE",	// store in a name (globally), from stack
 	"LOAD",		// load from operand, onto stack
 	"UNLOAD",	// unload (pop) from stack
 
@@ -33,6 +34,79 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 
 	"BLK_TILL",	// block till
 	"ARG_TILL",	// args till
+
+	"RETURN",	// return data
+
+	// operators
+	"BINARY",
+	"UNARY",
+	"COMPARISON",
+};
+
+const char * OpBinaryStrs[ _OPB_LAST ] = {
+	"+",
+	"-",
+	"*",
+	"/",
+	"%",
+
+	"+=",
+	"-=",
+	"*=",
+	"/=",
+	"%=",
+
+	"**",
+
+	"&",
+	"|",
+	"~",
+	"^",
+
+	"&="
+	"|=",
+	"~=",
+	"^=",
+
+	"<<",
+	">>",
+
+	"<<=",
+	">>=",
+
+	"[]",
+};
+
+const char * OpUnaryStrs[ _OPU_LAST ] = {
+	"X++",
+	"++X",
+	"X--",
+	"--X",
+
+	"!",
+
+	"U+",
+	"U-",
+};
+
+const char * OpCompStrs[ _OPC_LAST ] = {
+	"==",
+	"<",
+	">",
+	"<=",
+	">=",
+	"!=",
+};
+
+const char * OpDataTypeStrs[ _ODT_LAST ] = {
+	"INT",
+	"FLT",
+	"STR",
+	"IDEN",
+	"BOOL",
+	"SZ",
+
+	"NONE",
 };
 
 inline char * scpy( const std::string & str )
@@ -43,30 +117,36 @@ inline char * scpy( const std::string & str )
 
 bcode_t::~bcode_t()
 {
-	for( auto & bc : m_bcode ) {
-		if( bc.dtype == ODT_S ) delete bc.data.s;
+	for( auto & op : m_bcode ) {
+		if( op.dtype != ODT_SZ && op.dtype != ODT_BOOL ) delete[] op.data.s;
 	}
 }
 
-void bcode_t::addu( const size_t & idx, const OpCodes op, const size_t & data )
+void bcode_t::add( const size_t & idx, const OpCodes op )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_U, { .u = data } } );
+	m_bcode.push_back( op_t{ idx, op, ODT_NONE, { .s = nullptr } } );
 }
-void bcode_t::addf( const size_t & idx, const OpCodes op, const double & data )
+void bcode_t::adds( const size_t & idx, const OpCodes op, const OpDataType dtype, const std::string & data )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_F, { .f = data } } );
-}
-void bcode_t::adds( const size_t & idx, const OpCodes op, const std::string & data )
-{
-	m_bcode.push_back( op_t{ idx, op, ODT_S, { .s = scpy( data ) } } );
-}
-void bcode_t::addi( const size_t & idx, const OpCodes op, const int & data )
-{
-	m_bcode.push_back( op_t{ idx, op, ODT_I, { .i = data } } );
+	m_bcode.push_back( op_t{ idx, op, dtype, { .s = scpy( data ) } } );
 }
 void bcode_t::addb( const size_t & idx, const OpCodes op, const bool & data )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_B, { .b = data } } );
+	m_bcode.push_back( op_t{ idx, op, ODT_BOOL, { .b = data } } );
+}
+void bcode_t::addsz( const size_t & idx, const OpCodes op, const std::string & data )
+{
+	m_bcode.push_back( op_t{ idx, op, ODT_SZ, { .sz = std::stoull( data ) } } );
+}
+void bcode_t::addsz( const size_t & idx, const OpCodes op, const size_t & data )
+{
+	m_bcode.push_back( op_t{ idx, op, ODT_SZ, { .sz = data } } );
+}
+
+void bcode_t::updatesz( const size_t & pos, const size_t & value )
+{
+	if( pos >= m_bcode.size() ) return;
+	m_bcode[ pos ].data.sz = value;
 }
 
 const std::vector< op_t > & bcode_t::bcode() const { return m_bcode; }
