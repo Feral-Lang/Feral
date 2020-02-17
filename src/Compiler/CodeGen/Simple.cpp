@@ -18,6 +18,7 @@ bool stmt_simple_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	else if( m_val->type == TOK_STR ) bc.adds( m_val->pos, OP_LOAD, ODT_STR, m_val->data );
 	else if( m_val->type == TOK_IDEN ) bc.adds( m_val->pos, OP_LOAD, ODT_IDEN, m_val->data );
 	else if( m_val->type == TOK_TRUE || m_val->type == TOK_FALSE ) bc.addb( m_val->pos, OP_LOAD, m_val->type == TOK_TRUE );
+	else if( m_val->type == TOK_NIL ) bc.add( m_val->pos, OP_LOAD );
 
 	return true;
 }

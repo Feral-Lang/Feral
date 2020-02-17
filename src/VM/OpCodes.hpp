@@ -23,6 +23,7 @@ enum OpCodes
 	OP_ULOAD,	// unload (pop) from stack
 
 	OP_JMP,		// unconditional jump to index
+	OP_JMPN,	// jump to index if top element on stack is nil (won't pop otherwise)
 	OP_JMPT,	// jump to index if top element on stack is true
 	OP_JMPF,	// jump to index if top element on stack is false
 	OP_JMPTNU,	// jump to index if top element on stack is true - but don't unload it
@@ -33,7 +34,7 @@ enum OpCodes
 	OP_BLKA,	// add count scopes
 	OP_BLKR,	// rem count scopes
 
-	OP_FNCL,	// call a function
+	OP_FNCL,	// call a function (bool operand - uses args or not)
 	OP_ATTR,	// get attribute from an object
 
 	OP_BLKT,	// block till
@@ -128,7 +129,7 @@ enum OpDataType
 	ODT_BOOL,
 	ODT_SZ,
 
-	ODT_NONE,
+	ODT_NIL,
 
 	_ODT_LAST,
 };

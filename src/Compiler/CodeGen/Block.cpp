@@ -18,6 +18,5 @@ bool stmt_block_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	}
 
 	bc.addsz( idx(), OP_BLKR, 1 );
-
 	return true;
 }

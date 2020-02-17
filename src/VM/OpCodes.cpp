@@ -19,6 +19,7 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"UNLOAD",	// unload (pop) from stack
 
 	"JMP",		// unconditional jump to index
+	"JMP_NIL",	// jump to index if top element on stack is nil (won't pop otherwise)
 	"JMP_TRUE",	// jump to index if top element on stack is true
 	"JMP_FALSE",	// jump to index if top element on stack is false
 	"JMP_TRUE_NU",	// jump to index if top element on stack is true - but don't unload it
@@ -106,7 +107,7 @@ const char * OpDataTypeStrs[ _ODT_LAST ] = {
 	"BOOL",
 	"SZ",
 
-	"NONE",
+	"NIL",
 };
 
 inline char * scpy( const std::string & str )
@@ -124,7 +125,7 @@ bcode_t::~bcode_t()
 
 void bcode_t::add( const size_t & idx, const OpCodes op )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_NONE, { .s = nullptr } } );
+	m_bcode.push_back( op_t{ idx, op, ODT_NIL, { .s = nullptr } } );
 }
 void bcode_t::adds( const size_t & idx, const OpCodes op, const OpDataType dtype, const std::string & data )
 {
