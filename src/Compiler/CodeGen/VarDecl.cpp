@@ -26,6 +26,5 @@ bool stmt_var_decl_base_t::gen_code( bcode_t & bc, const bool f1, const bool f2 
 
 	if( f1 ) bc.addb( idx(), OP_CREATE, m_in );
 	else bc.add( idx(), OP_GCREATE );
-
 	return true;
 }
