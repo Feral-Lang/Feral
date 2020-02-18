@@ -187,6 +187,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t pr
 			std::string str = get_name( src_file, i );
 			// check if string is a keyword
 			int kw_or_iden = classify_str( str );
+			if( str[ 0 ] == '.' ) str.erase( str.begin() );
 			toks.emplace_back( i - str.size(), kw_or_iden, str );
 			continue;
 		}

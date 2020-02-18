@@ -18,7 +18,7 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 
 	if( ph.accept( TOK_COLS ) ) {
 		if( sost->type == TOK_DEFER ) {
-			ph.fail( "statement of type 'defer' requires a block or expression as argument, found semicolon" );
+			ph.fail( "statement of type 'defer' requires a block as argument, found semicolon" );
 			goto fail;
 		}
 		ph.next();
@@ -26,16 +26,23 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	if( sost->type == TOK_CONTINUE || sost->type == TOK_BREAK ) {
-		ph.fail( sost->pos, "statement of type '%s' expects semicolon after the keyword, found: '%s'",
+		ph.fail( "statement of type '%s' expects semicolon after the keyword, found: '%s'",
 			 TokStrs[ sost->type ], TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
 
+	if( sost->type == TOK_DEFER && !ph.accept( TOK_LBRACE ) ) {
+		ph.fail( "statement of type 'defer' expects a block after the keyword, found: '%s'",
+			 TokStrs[ ph.peakt() ] );
+		goto fail;
+	}
+
+	if( sost->type == TOK_RETURN && ph.accept( TOK_LBRACE ) ) {
+		ph.fail( "'return' statement expects a semicolon or expression after the keyword, not a block" );
+		goto fail;
+	}
+
 	if( ph.accept( TOK_LBRACE ) ) {
-		if( sost->type == TOK_RETURN ) {
-			ph.fail( sost->pos, "'return' statement expects a semicolon or expression after the keyword, not a block" );
-			goto fail;
-		}
 		if( parse_block( ph, operand ) != E_OK ) goto fail;
 		goto done;
 	}

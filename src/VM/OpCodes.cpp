@@ -25,6 +25,7 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"JMP_TRUE_NU",	// jump to index if top element on stack is true - but don't unload it
 	"JMP_FALSE_NU",	// jump to index if top element on stack is false - but don't unload it
 
+	"BODY_TILL",	// jump to index which is where the body (of a function) ends + 1
 	"MK_FUNC",	// create a function object
 
 	"BLK_ADD",	// add count scopes
@@ -37,6 +38,9 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"ARG_TILL",	// args till
 
 	"RETURN",	// return data
+	"CONTINUE",
+	"BREAK",
+	"DEFER",	// can take expression or block - bool - true takes expr, false takes block
 
 	// operators
 	"BINARY",
@@ -104,8 +108,10 @@ const char * OpDataTypeStrs[ _ODT_LAST ] = {
 	"FLT",
 	"STR",
 	"IDEN",
-	"BOOL",
+
 	"SZ",
+
+	"BOOL",
 
 	"NIL",
 };

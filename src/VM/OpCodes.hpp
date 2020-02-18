@@ -29,6 +29,7 @@ enum OpCodes
 	OP_JMPTNU,	// jump to index if top element on stack is true - but don't unload it
 	OP_JMPFNU,	// jump to index if top element on stack is false - but don't unload it
 
+	OP_BODY_TILL,	// jump to index which is where the body (of a function) ends + 1
 	OP_MKFN,	// create a function object
 
 	OP_BLKA,	// add count scopes
@@ -40,7 +41,10 @@ enum OpCodes
 	OP_BLKT,	// block till
 	OP_ARGT,	// args till
 
-	OP_RET,		// return data
+	OP_RET,		// return - bool - true returns top data, false returns nil
+	OP_CONTINUE,
+	OP_BREAK,
+	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block
 
 	// operators
 	OP_BINARY,
@@ -126,8 +130,10 @@ enum OpDataType
 	ODT_FLT,
 	ODT_STR,
 	ODT_IDEN,
-	ODT_BOOL,
+
 	ODT_SZ,
+
+	ODT_BOOL,
 
 	ODT_NIL,
 
