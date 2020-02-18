@@ -200,10 +200,11 @@ public:
 
 class stmt_fn_call_args_t : public stmt_base_t
 {
-	const std::vector< const stmt_base_t * > m_args, m_assn_args;
+	const std::vector< const stmt_base_t * > m_args;
+	const std::vector< const stmt_fn_assn_arg_t * > m_assn_args;
 public:
 	stmt_fn_call_args_t( const std::vector< const stmt_base_t * > & args,
-			     const std::vector< const stmt_base_t * > & assn_args,
+			     const std::vector< const stmt_fn_assn_arg_t * > & assn_args,
 			     const size_t & idx );
 	~stmt_fn_call_args_t();
 
@@ -212,7 +213,7 @@ public:
 	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
 	const std::vector< const stmt_base_t * > & args() const;
-	const std::vector< const stmt_base_t * > & assn_args() const;
+	const std::vector< const stmt_fn_assn_arg_t * > & assn_args() const;
 };
 
 /*

@@ -281,7 +281,7 @@ const stmt_block_t * stmt_fn_def_t::body() const { return m_body; }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 stmt_fn_call_args_t::stmt_fn_call_args_t( const std::vector< const stmt_base_t * > & args,
-					  const std::vector< const stmt_base_t * > & assn_args,
+					  const std::vector< const stmt_fn_assn_arg_t * > & assn_args,
 					  const size_t & idx )
 	: stmt_base_t( GT_FN_ARGS, idx ), m_args( args ), m_assn_args( assn_args ) {}
 stmt_fn_call_args_t::~stmt_fn_call_args_t()
@@ -303,7 +303,7 @@ void stmt_fn_call_args_t::disp( const bool has_next ) const
 	io::trem();
 }
 const std::vector< const stmt_base_t * > & stmt_fn_call_args_t::args() const { return m_args; }
-const std::vector< const stmt_base_t * > & stmt_fn_call_args_t::assn_args() const { return m_assn_args; }
+const std::vector< const stmt_fn_assn_arg_t * > & stmt_fn_call_args_t::assn_args() const { return m_assn_args; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// SINGLE_EXPR_STMT /////////////////////////////////////////////////////

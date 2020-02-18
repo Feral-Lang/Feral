@@ -12,13 +12,15 @@
 Errors parse_fn_call_args( phelper_t & ph, stmt_base_t * & loc )
 {
 	// assn_args = kw args
-	std::vector< const stmt_base_t * > args, assn_args;
+	std::vector< const stmt_base_t * > args;
+	std::vector< const stmt_fn_assn_arg_t * > assn_args;
 	stmt_base_t * expr = nullptr;
 
 	size_t idx = ph.peak()->pos;
 begin:
 	if( ph.acceptd() && ph.peakt( 1 ) == TOK_ASSN ) {
 		const lex::tok_t * lhs = ph.peak();
+		if( ph.peakt() == TOK_IDEN ) ph.sett( TOK_STR );
 		stmt_base_t * rhs = nullptr;
 		ph.next(); ph.next();
 		if( parse_expr_13( ph, rhs ) != E_OK ) {
