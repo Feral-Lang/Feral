@@ -43,6 +43,9 @@ rparen:
 	goto rparen;
 
 post_args:
+	if( !ph.accept( TOK_LBRACE ) ) {
+		ph.fail( "expected left brace for body of function, found: '%s'", TokStrs[ ph.peakt() ] );
+	}
 	if( parse_block( ph, body ) != E_OK ) {
 		fprintf( stderr, "failed to parse block for function\n" );
 		goto fail;
@@ -59,7 +62,7 @@ fail:
 Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc )
 {
 	std::vector< const stmt_base_t * > args;
-	const lex::tok_t * kw_arg = nullptr, * va_arg = nullptr;
+	const stmt_simple_t * kw_arg = nullptr, * va_arg = nullptr;
 	stmt_base_t * expr = nullptr;
 
 	size_t idx = ph.peak()->pos;
@@ -71,10 +74,14 @@ begin:
 	if( ph.accept( TOK_STR ) ) { // check kw arg
 		if( kw_arg ) {
 			ph.fail( "function can't have multiple keyword args (previous: %s)",
-				 kw_arg->data.c_str() );
+				 kw_arg->val()->data.c_str() );
 			goto fail;
 		}
-		kw_arg = ph.peak();
+		kw_arg = new stmt_simple_t( ph.peak() );
+		ph.next();
+	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_ASSN && ph.peakt( 1 ) != TOK_TDOT ) {
+		ph.sett( TOK_STR );
+		args.push_back( new stmt_simple_t( ph.peak() ) );
 		ph.next();
 	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since STR is checked above, won't be bothered with it anymore
 		if( ph.peakt( 1 ) == TOK_ASSN ) { // it's a default assignment
@@ -86,11 +93,9 @@ begin:
 			}
 			args.push_back( new stmt_fn_assn_arg_t( new stmt_simple_t( lhs ), rhs ) );
 		} else if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
-			va_arg = ph.peak();
+			va_arg = new stmt_simple_t( ph.peak() );
 			ph.next(); ph.next();
 		}
-	} else if( parse_expr_13( ph, expr ) == E_OK ) {
-		args.push_back( expr );
 	} else {
 		ph.fail( "failed to parse function def args" );
 		goto fail;
@@ -101,7 +106,7 @@ begin:
 		goto begin;
 	}
 
-	loc = new stmt_fn_def_args_t( args, new stmt_simple_t( kw_arg ), new stmt_simple_t( va_arg ), idx );
+	loc = new stmt_fn_def_args_t( args, kw_arg, va_arg, idx );
 	return E_OK;
 fail:
 	for( auto & arg : args ) delete arg;

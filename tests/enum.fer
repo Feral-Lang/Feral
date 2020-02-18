@@ -1,4 +1,4 @@
-enum = import( 'std/enum' );
+let enum = import( 'std/enum' );
 
 let EXIT_CODE = enum.new(
 	.OK,
