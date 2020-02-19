@@ -24,7 +24,7 @@ init:
 
 	// both var_decl and expr_cols include semicolon
 	if( ph.accept( TOK_LET ) ) {
-		if( parse_var_decl( ph, init, true ) != E_OK ) goto fail;
+		if( parse_var_decl( ph, init ) != E_OK ) goto fail;
 	} else if( parse_expr_cols( ph, init ) != E_OK ) {
 		goto fail;
 	}

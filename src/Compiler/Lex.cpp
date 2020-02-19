@@ -17,7 +17,6 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"IDEN",
 
 	//Keywords
-	"global",
 	"let",
 	"defer",
 	"fn",
@@ -251,8 +250,7 @@ static std::string get_name( const srcfile_t & src_file, size_t & i )
 
 static int classify_str( const std::string & str )
 {
-	if( str == TokStrs[ TOK_GLOBAL ] ) return TOK_GLOBAL;
-	else if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
+	if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
 	else if( str == TokStrs[ TOK_DEFER ] ) return TOK_DEFER;
 	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
 	else if( str == TokStrs[ TOK_IF ] ) return TOK_IF;

@@ -13,7 +13,6 @@
 
 const char * OpCodeStrs[ _OP_LAST ] = {
 	"CREATE",	// create a new variable
-	"GCREATE",	// create a new global variable
 	"STORE",	// store in a name, from stack
 	"LOAD",		// load from operand, onto stack
 	"UNLOAD",	// unload (pop) from stack

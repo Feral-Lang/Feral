@@ -24,8 +24,7 @@ class vars_t
 class var_src_t
 {
 	std::vector< size_t > m_loops_from;
-	vars_t m_globals;
-	vars_t m_locals;
+	vars_t m_src_vars;
 	// maps function id to vars_t
 	std::unordered_map< size_t, vars_t > m_fn_vars;
 

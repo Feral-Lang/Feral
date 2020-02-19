@@ -28,7 +28,6 @@ enum TokType
 	TOK_IDEN,
 
 	//Keywords
-	TOK_GLOBAL,
 	TOK_LET,
 	TOK_DEFER,
 	TOK_FN,

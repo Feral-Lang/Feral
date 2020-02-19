@@ -35,8 +35,8 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc );
 // make_const if true, changes type of token from IDEN to STR (useful for, say, after TOK_DOTs)
 Errors parse_term( phelper_t & ph, stmt_base_t * & loc, const bool make_const = false );
 
-Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc, const bool local_only = false );
-Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc, const bool is_local );
+Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc );
+Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc );
 
 Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc );
