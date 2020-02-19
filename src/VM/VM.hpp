@@ -27,6 +27,9 @@ inline srcfile_t src_new( const std::string & dir, const std::string & path,
 	return src;
 }
 
+// fn_id = 0 = not in a function
+int exec( srcfile_t & src, bcode_t & bc, const size_t & fn_id = 0 );
+
 }
 
 #endif // VM_VM_HPP

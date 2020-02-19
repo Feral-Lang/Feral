@@ -11,3 +11,14 @@
 #include <cstdlib>
 
 #include "VM.hpp"
+
+namespace vm
+{
+
+int exec( srcfile_t & src, bcode_t & bc, const size_t & fn_id )
+{
+	
+	return E_OK;
+}
+
+}
