@@ -31,20 +31,34 @@ const size_t OPT_1 = 1 << 15;
 namespace args
 {
 
-size_t parse( const int argc, const char ** argv, std::vector< std::string > & args )
+size_t parse( const int argc, const char ** argv,
+	      std::unordered_map< std::string, std::string > & args,
+	      std::vector< std::string > & code_args )
 {
+	bool main_done = false;
 	size_t flags = 0;
-	bool src_found = false;
+	char prev_flag = '\0';
 
 	for( int i = 1; i < argc; ++i ) {
-		if( argv[ i ][ 0 ] != '-' || src_found ) {
-			src_found = true;
-			args.push_back( argv[ i ] );
+		if( main_done ) {
+			code_args.push_back( argv[ i ] );
 			continue;
 		}
 
 		size_t len = strlen( argv[ i ] );
-		for( size_t j = 1; j <= len; ++j ) {
+
+		if( argv[ i ][ 0 ] != '-' ) {
+			if( prev_flag == 'c' ) {
+				args.emplace( "c", argv[ i ] );
+			} else {
+				args.emplace( "__main__", argv[ i ] );
+				main_done = true;
+			}
+			prev_flag = '\0';
+			continue;
+		}
+
+		for( size_t j = 1; j < len; ++j ) {
 			if( argv[ i ][ j ] == 'a' ) flags |= OPT_A;
 			else if( argv[ i ][ j ] == 'b' ) flags |= OPT_B;
 			else if( argv[ i ][ j ] == 'c' ) flags |= OPT_C;
@@ -61,6 +75,8 @@ size_t parse( const int argc, const char ** argv, std::vector< std::string > & a
 			else if( argv[ i ][ j ] == 't' ) flags |= OPT_T;
 			else if( argv[ i ][ j ] == 'v' ) flags |= OPT_V;
 			else if( argv[ i ][ j ] == '1' ) flags |= OPT_1;
+
+			prev_flag = argv[ i ][ j ];
 		}
 	}
 

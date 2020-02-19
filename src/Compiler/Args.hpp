@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 // Option bit masks
 extern const size_t OPT_A;
@@ -34,7 +35,9 @@ extern const size_t OPT_1;
 namespace args
 {
 
-size_t parse( const int argc, const char ** argv, std::vector< std::string > & args );
+size_t parse( const int argc, const char ** argv,
+	      std::unordered_map< std::string, std::string > & args,
+	      std::vector< std::string > & code_args );
 
 }
 

@@ -7,6 +7,7 @@
 	before using or altering the project.
 */
 
+#include <fstream>
 #include <cstdio>
 #include <cstring>
 
@@ -22,8 +23,9 @@
 
 int main( int argc, char ** argv )
 {
-	std::vector< std::string > args;
-	size_t flags = args::parse( argc, ( const char ** )argv, args );
+	std::unordered_map< std::string, std::string > args;
+	std::vector< std::string > code_args;
+	size_t flags = args::parse( argc, ( const char ** )argv, args, code_args );
 
 	if( flags & OPT_V ) {
 		fprintf( stdout, "Feral %d.%d.%d\nBuilt with %s\nOn %s\n", FERAL_VERSION_MAJOR,
@@ -31,18 +33,18 @@ int main( int argc, char ** argv )
 		return E_OK;
 	}
 
-	if( args.size() < 1 ) {
+	if( args.find( "__main__" ) == args.end() ) {
 		fprintf( stderr, "usage: %s [flags] <source file>\n", argv[ 0 ] );
 		return E_FAIL;
 	}
 
-	Errors err = E_OK;
+	int err = E_OK;
 
 	// feral binary absolute location
 	std::string fer_bin = fs::abs_path( argv[ 0 ] );
 
 	std::string src_dir;
-	std::string src_path = fs::abs_path( args[ 0 ], & src_dir );
+	std::string src_path = fs::abs_path( args[ "__main__" ], & src_dir );
 
 	srcfile_t main_src = vm::src_new( src_dir, src_path, true );
 	err = main_src.load_file();
@@ -106,6 +108,34 @@ int main( int argc, char ** argv )
 					 OpDataTypeStrs[ bcode[ i ].dtype ] );
 			}
 		}
+	}
+
+	if( flags & OPT_C ) {
+		if( args.find( "c" ) == args.end() ) {
+			fprintf( stderr, "no file name provided for bytecompile output after -c flag\n" );
+			err = E_FAIL;
+			goto cleanup;
+		}
+		std::ofstream f( args[ "c" ], std::ios::out | std::ios::binary );
+		if( !f.good() ) {
+			fprintf( stderr, "failed to open file %s for writing bytecode\n", args[ "c" ].c_str() );
+			err = E_FAIL;
+			goto cleanup;
+		}
+		if( bc.size() == 0 ) {
+			fprintf( stderr, "nothing to write - file empty\n" );
+			f.close();
+			err = E_FAIL;
+			goto cleanup;
+		}
+		fprintf( stdout, "byte compiling %s -> %s ...\n",
+			 args[ "__main__" ].c_str(), args[ "c" ].c_str() );
+		f.write( ( char * ) ( & bc.bcode()[ 0 ] ), sizeof( op_t ) * bc.size() );
+		f.close();
+	}
+
+	if( !( flags & OPT_D ) ) {
+		err = vm::exec( main_src, bc );
 	}
 cleanup:
 	delete ptree;
