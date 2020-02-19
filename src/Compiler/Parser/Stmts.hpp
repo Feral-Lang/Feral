@@ -123,18 +123,11 @@ public:
 	bool has_in() const;
 };
 
-enum VarDeclType
-{
-	VDT_GLOBAL,
-	VDT_LOCAL,
-};
-
 class stmt_var_decl_t : public stmt_base_t
 {
-	VarDeclType m_dtype;
 	const std::vector< const stmt_var_decl_base_t * > m_decls;
 public:
-	stmt_var_decl_t( const VarDeclType dtype, const std::vector< const stmt_var_decl_base_t * > & decls,
+	stmt_var_decl_t( const std::vector< const stmt_var_decl_base_t * > & decls,
 			 const size_t & idx );
 	~stmt_var_decl_t();
 
@@ -142,7 +135,6 @@ public:
 
 	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
 
-	VarDeclType dtype() const;
 	const std::vector< const stmt_var_decl_base_t * > & decls() const;
 };
 

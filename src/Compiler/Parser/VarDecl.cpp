@@ -9,24 +9,21 @@
 
 #include "Internal.hpp"
 
-Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc, const bool local_only )
+Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc )
 {
 	std::vector< const stmt_var_decl_base_t * > decls;
 	stmt_base_t * decl = nullptr;
-	VarDeclType dtype = VDT_LOCAL;
 
 	size_t idx = ph.peak()->pos;
-	if( !ph.accept( TOK_LET ) && ( local_only || !ph.accept( TOK_GLOBAL ) ) ) {
-		ph.fail( "expected keyword %s here, but found: '%s'",
-			 local_only ? "'let'" : "'global' or 'let'",
+	if( !ph.accept( TOK_LET ) ) {
+		ph.fail( "expected keyword 'let' here, but found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
-	if( ph.peakt() == TOK_GLOBAL ) dtype = VDT_GLOBAL;
 	ph.next();
 
 begin:
-	if( parse_var_decl_base( ph, decl, dtype == VDT_LOCAL ) != E_OK ) {
+	if( parse_var_decl_base( ph, decl ) != E_OK ) {
 		goto fail;
 	}
 	decls.push_back( ( stmt_var_decl_base_t * )decl );
@@ -43,14 +40,14 @@ begin:
 		goto fail;
 	}
 	ph.next();
-	loc = new stmt_var_decl_t( dtype, decls, idx );
+	loc = new stmt_var_decl_t( decls, idx );
 	return E_OK;
 fail:
 	for( auto & decl : decls ) delete decl;
 	return E_PARSE_FAIL;
 }
 
-Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc, const bool is_local )
+Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc )
 {
 	const lex::tok_t * lhs = nullptr;
 	stmt_base_t * in = nullptr, * rhs = nullptr;
@@ -64,11 +61,6 @@ Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc, const bool is_l
 	ph.next();
 
 	if( ph.peakt() == TOK_IN ) {
-		// x in y = ... format is only allowed for 'let' variables (not 'global's)
-		if( !is_local ) {
-			ph.fail( "a variable inside an expression can only be created in 'let' statements" );
-			goto fail;
-		}
 		ph.next();
 		// 01 = parenthesized expression, func call, subscript, dot
 		if( parse_expr_01( ph, in ) != E_OK ) {

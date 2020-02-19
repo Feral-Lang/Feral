@@ -17,7 +17,6 @@
 enum OpCodes
 {
 	OP_CREATE,	// create a new variable - bool operand - if true, it contains 'in' part (x in y = z)
-	OP_GCREATE,	// create a new global variable
 	OP_STORE,	// store in a name, from stack
 	OP_LOAD,	// load from operand, onto stack
 	OP_ULOAD,	// unload (pop) from stack

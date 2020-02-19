@@ -40,7 +40,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.feral",
-				"match": "\\b(global|let|defer|struct|trait|fn|lambda|return|if|elif|else|for|in|while|continue|break)\\b"
+				"match": "\\b(let|defer|struct|trait|fn|lambda|return|if|elif|else|for|in|while|continue|break)\\b"
 			},
 			{
 				"name": "keyword.other",

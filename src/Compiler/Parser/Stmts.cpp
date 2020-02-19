@@ -156,10 +156,9 @@ bool stmt_var_decl_base_t::has_in() const { return m_in != nullptr; }
 /////////////////////////////////////////////////////// VAR_DECL ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-stmt_var_decl_t::stmt_var_decl_t( const VarDeclType dtype,
-				  const std::vector< const stmt_var_decl_base_t * > & decls,
+stmt_var_decl_t::stmt_var_decl_t( const std::vector< const stmt_var_decl_base_t * > & decls,
 				  const size_t & idx )
-	: stmt_base_t( GT_VAR_DECL, idx ), m_dtype( dtype ), m_decls( decls ) {}
+	: stmt_base_t( GT_VAR_DECL, idx ), m_decls( decls ) {}
 
 stmt_var_decl_t::~stmt_var_decl_t()
 { for( auto & decl : m_decls ) delete decl; }
@@ -167,15 +166,13 @@ stmt_var_decl_t::~stmt_var_decl_t()
 void stmt_var_decl_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Var Decl(s) (%s) at: %p\n",
-		   m_dtype == VDT_GLOBAL ? "global" : "local", this );
+	io::print( has_next, "Var Decl(s) at: %p\n", this );
 	for( size_t i = 0; i < m_decls.size(); ++i ) {
 		m_decls[ i ]->disp( i != m_decls.size() - 1 );
 	}
 	io::trem();
 }
 
-VarDeclType stmt_var_decl_t::dtype() const { return m_dtype; }
 const std::vector< const stmt_var_decl_base_t * > & stmt_var_decl_t::decls() const { return m_decls; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -37,7 +37,7 @@ TERM = iden | str | int | flt | atom
 
 VAR_DECL_BASE = L01 '=' L13
 VAR_DECL_LOCAL = 'let' VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
-VAR_DECL = ['global' | 'let'] VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
+VAR_DECL = ['let'] VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
 
 DEF_ARGS = iden '=' L13 # default args
 VA_ARGS = iden '...'
