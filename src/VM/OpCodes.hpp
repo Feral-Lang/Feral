@@ -41,8 +41,8 @@ enum OpCodes
 	OP_ARGT,	// args till
 
 	OP_RET,		// return - bool - true returns top data, false returns nil
-	OP_CONTINUE,
-	OP_BREAK,
+	OP_CONTINUE,	// size_t operand - jump to
+	OP_BREAK,	// size_t operand - jump to
 	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block
 
 	// operators
@@ -168,6 +168,7 @@ public:
 	void addsz( const size_t & idx, const OpCodes op, const std::string & data );
 	void addsz( const size_t & idx, const OpCodes op, const size_t & data );
 
+	OpCodes at( const size_t & pos ) const;
 	void updatesz( const size_t & pos, const size_t & value );
 
 	const std::vector< op_t > & bcode() const;

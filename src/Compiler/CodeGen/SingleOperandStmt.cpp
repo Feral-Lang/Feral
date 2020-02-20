@@ -20,9 +20,11 @@ bool stmt_single_operand_stmt_t::gen_code( bcode_t & bc, const bool f1, const bo
 	if( m_sost->type == TOK_RETURN ) {
 		bc.addb( idx(), OP_RET, m_operand );
 	} else if( m_sost->type == TOK_CONTINUE ) {
-		bc.add( idx(), OP_CONTINUE );
+		// placeholder (updated in For, Foreach, While)
+		bc.addsz( idx(), OP_CONTINUE, 0 );
 	} else if( m_sost->type == TOK_BREAK ) {
-		bc.add( idx(), OP_BREAK );
+		// placeholder (updated in For, Foreach, While)
+		bc.addsz( idx(), OP_BREAK, 0 );
 	} else if( m_sost->type == TOK_DEFER ) {
 		bc.updatesz( blk_till_pos, bc.size() );
 		bc.add( idx(), OP_DEFER );

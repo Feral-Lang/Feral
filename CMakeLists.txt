@@ -103,8 +103,8 @@ install(TARGETS feral-vm
 )
 
 # Feral Compiler
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/Compiler/*.hpp" "src/VM/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/Compiler/*.cpp" "src/VM/*.cpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/Compiler/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/Compiler/*.cpp")
 list(REMOVE_ITEM SRCS "src/Compiler/Main.cpp")
 
 add_library(feral-compiler SHARED ${SRCS} ${INCS})

@@ -37,8 +37,8 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"ARG_TILL",	// args till
 
 	"RETURN",	// return data
-	"CONTINUE",
-	"BREAK",
+	"CONTINUE",	// size_t operand - jump to
+	"BREAK",	// size_t operand - jump to
 	"DEFER",	// can take expression or block - bool - true takes expr, false takes block
 
 	// operators
@@ -147,6 +147,12 @@ void bcode_t::addsz( const size_t & idx, const OpCodes op, const std::string & d
 void bcode_t::addsz( const size_t & idx, const OpCodes op, const size_t & data )
 {
 	m_bcode.push_back( op_t{ idx, op, ODT_SZ, { .sz = data } } );
+}
+
+OpCodes bcode_t::at( const size_t & pos ) const
+{
+	if( pos >= m_bcode.size() ) return _OP_LAST;
+	return m_bcode[ pos ].op;
 }
 
 void bcode_t::updatesz( const size_t & pos, const size_t & value )
