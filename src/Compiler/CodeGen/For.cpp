@@ -24,7 +24,12 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		bc.addsz( m_cond->idx(), OP_JMPF, 0 );
 	}
 
+	size_t body_begin = bc.size();
 	m_body->gen_code( bc );
+	size_t body_end = bc.size();
+
+	size_t continue_jmp_loc = bc.size();
+
 	if( m_incr ) m_incr->gen_code( bc );
 
 	bc.addsz( idx(), OP_JMP, iter_jmp_loc );
@@ -33,6 +38,14 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		bc.updatesz( cond_fail_jmp_from, bc.size() );
 	}
 
+	// pos where break goes
+	size_t break_jmp_loc = bc.size();
 	bc.addsz( idx(), OP_BLKR, 1 );
+
+	// update all continue and break calls
+	for( size_t i = body_begin; i < body_end; ++i ) {
+		if( bc.at( i ) == OP_CONTINUE ) bc.updatesz( i, continue_jmp_loc );
+		if( bc.at( i ) == OP_BREAK ) bc.updatesz( i, break_jmp_loc );
+	}
 	return true;
 }

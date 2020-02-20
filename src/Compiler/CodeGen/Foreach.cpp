@@ -18,7 +18,7 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
 	bc.addb( m_loop_var->pos, OP_CREATE, false );
 
-	// loop expression
+	// loop expression (also, location where continue jumps to)
 	size_t begin_loop = bc.size();
 	m_expr->gen_code( bc );
 
@@ -33,12 +33,22 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	bc.addsz( idx(), OP_JMPN, 0 );
 	bc.add( m_loop_var->pos, OP_STORE );
 
+	size_t body_begin = bc.size();
 	m_body->gen_code( bc );
+	size_t body_end = bc.size();
 
 	bc.addsz( idx(), OP_JMP, begin_loop );
 
 	bc.updatesz( jmp_loop_out_loc, bc.size() );
 
+	// pos where break goes
+	size_t break_jmp_loc = bc.size();
 	bc.addsz( idx(), OP_BLKR, 1 );
+
+	// update all continue and break calls
+	for( size_t i = body_begin; i < body_end; ++i ) {
+		if( bc.at( i ) == OP_CONTINUE ) bc.updatesz( i, begin_loop );
+		if( bc.at( i ) == OP_BREAK ) bc.updatesz( i, break_jmp_loc );
+	}
 	return true;
 }
