@@ -67,8 +67,7 @@ int main( int argc, char ** argv )
 
 	phelper_t ph( main_src, toks );
 	ptree_t * ptree = nullptr;
-
-	bcode_t bc;
+	bcode_t & bc = main_src.bcode();
 
 	err = parser::parse( main_src, toks, ptree, ph );
 	if( err != E_OK ) goto cleanup;
@@ -135,7 +134,10 @@ int main( int argc, char ** argv )
 	}
 
 	if( !( flags & OPT_D ) ) {
-		err = vm::exec( main_src, bc );
+		vm_state_t vm( flags );
+		vm.add_src( & main_src );
+		err = vm::exec( vm );
+		vm.pop_src();
 	}
 cleanup:
 	delete ptree;

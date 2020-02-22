@@ -13,20 +13,23 @@
 static std::vector< size_t > jmp_locs;
 
 // f1 is used to denote top level in a nested expression (false = it is top level)
+// f2 is true when the expression is independent (not part of condition or something)
+// this is required for ULOAD operation
 bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
 	size_t before_jmp_locs_count = jmp_locs.size();
 
 	m_lhs->gen_code( bc, m_lhs->type() == GT_EXPR );
 
-	if( !m_oper ) return true;
+	if( !m_oper ) goto done;
 
 	if( m_oper->type == TOK_AND || m_oper->type == TOK_OR ) {
 		jmp_locs.push_back( bc.size() );
-		// here, 0 is a placeholder
 		if( !f1 ) {
+			// here, 0 is a placeholder
 			bc.addsz( m_oper->pos, m_oper->type == TOK_AND ? OP_JMPF : OP_JMPT, 0 );
 		} else {
+			// here, 0 is a placeholder
 			bc.addsz( m_oper->pos, m_oper->type == TOK_AND ? OP_JMPFNU : OP_JMPTNU, 0 );
 		}
 	}
@@ -42,7 +45,7 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		}
 		size_t jmps_to_rem = jmp_locs.size() - before_jmp_locs_count;
 		for( size_t i = 0; i < jmps_to_rem; ++i ) jmp_locs.pop_back();
-		return true;
+		goto done;
 	}
 
 	// all operators
@@ -100,5 +103,7 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	else if( m_oper->type == TOK_OPER_FN ) bc.addb( m_oper->pos, OP_FNCL, m_rhs );
 	else if( m_oper->type == TOK_OPER_SUBS ) bc.addsz( m_oper->pos, OP_BINARY, OPB_SUBSCR );
 
+done:
+	if( f2 ) bc.add( idx(), OP_ULOAD );
 	return true;
 }

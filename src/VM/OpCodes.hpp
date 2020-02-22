@@ -17,14 +17,14 @@
 enum OpCodes
 {
 	OP_CREATE,	// create a new variable - bool operand - if true, it contains 'in' part (x in y = z)
-	OP_STORE,	// store in a name, from stack
+	OP_STORE,	// store in a name: value from stack
 	OP_LOAD,	// load from operand, onto stack
 	OP_ULOAD,	// unload (pop) from stack
 
 	OP_JMP,		// unconditional jump to index
-	OP_JMPN,	// jump to index if top element on stack is nil (won't pop otherwise)
 	OP_JMPT,	// jump to index if top element on stack is true
 	OP_JMPF,	// jump to index if top element on stack is false
+	OP_JMPN,	// jump to index if top element on stack is nil (won't pop otherwise)
 	OP_JMPTNU,	// jump to index if top element on stack is true - but don't unload it
 	OP_JMPFNU,	// jump to index if top element on stack is false - but don't unload it
 

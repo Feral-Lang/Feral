@@ -14,7 +14,7 @@ bool stmt_block_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	bc.addsz( idx(), OP_BLKA, 1 );
 
 	for( auto & stmt : m_stmts ) {
-		if( !stmt->gen_code( bc ) ) return false;
+		if( !stmt->gen_code( bc, false, stmt->type() == GT_EXPR ) ) return false;
 	}
 
 	bc.addsz( idx(), OP_BLKR, 1 );

@@ -22,6 +22,13 @@ set(CMAKE_MACOSX_RPATH TRUE)
 
 include(CheckCXXCompilerFlag)
 
+find_library(gmp REQUIRED)
+find_library(gmpxx REQUIRED)
+find_package(MPFR REQUIRED)
+if(NOT MPFR_FOUND)
+	error("MPFR library is required but missing")
+endif()
+
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -82,26 +89,6 @@ message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
 
-# Feral VM
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/VM/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/VM/*.cpp")
-
-add_library(feral-vm SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-vm ${CMAKE_DL_LIBS})
-set_target_properties(feral-vm
-    PROPERTIES
-    OUTPUT_NAME feralvm
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
-    INSTALL_RPATH_USE_LINK_PATH TRUE
-)
-install(TARGETS feral-vm
-	LIBRARY
-	  DESTINATION lib/feral
-	  COMPONENT Libraries
-	PUBLIC_HEADER
-	  DESTINATION include/feral
-)
-
 # Feral Compiler
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/Compiler/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/Compiler/*.cpp")
@@ -124,8 +111,29 @@ install(TARGETS feral-compiler
 	  DESTINATION include/feral
 )
 
+# Feral VM
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/VM/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/VM/*.cpp")
+
+add_library(feral-vm SHARED ${SRCS} ${INCS})
+target_link_libraries(feral-vm ${CMAKE_DL_LIBS})
+target_link_libraries(feral-vm mpfr gmp gmpxx)
+set_target_properties(feral-vm
+    PROPERTIES
+    OUTPUT_NAME feralvm
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS feral-vm
+	LIBRARY
+	  DESTINATION lib/feral
+	  COMPONENT Libraries
+	PUBLIC_HEADER
+	  DESTINATION include/feral
+)
+
 add_executable(feral-bin "${PROJECT_SOURCE_DIR}/src/Compiler/Main.cpp")
-target_link_libraries(feral-bin feral-compiler)
+target_link_libraries(feral-bin feral-compiler feral-vm)
 set_target_properties(feral-bin
 	PROPERTIES
 	OUTPUT_NAME feral

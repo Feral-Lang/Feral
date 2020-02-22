@@ -14,6 +14,8 @@
 #include <string>
 
 #include "../Common/Errors.hpp"
+#include "OpCodes.hpp"
+#include "Vars.hpp"
 
 /**
  * \brief Defines the range of columns for a line of source code
@@ -39,6 +41,12 @@ class srcfile_t
 	std::string m_data; // content
 	std::vector< src_col_range_t > m_cols;
 
+	bcode_t m_bcode;
+
+	// used by variable construction mechanism for creating variable of this type
+	std::unordered_map< size_t, vartype_base_t * > m_vartypes;
+	var_srcfile_t m_vars;
+
 	bool m_is_main;
 public:
 	/**
@@ -57,6 +65,12 @@ public:
 	 * \return Errors E_OK on success, anything else on failure
 	 */
 	Errors load_file();
+
+	bcode_t & bcode();
+
+	inline void register_vartype( vartype_base_t * type ) { m_vartypes[ type->type() ] = type; }
+	vartype_base_t * get_vartype( const size_t & type_id );
+	var_srcfile_t & vars();
 
 	/**
 	 * \brief Append content to an instance
@@ -84,6 +98,8 @@ public:
 	 * \return size_t id of instance
 	 */
 	size_t get_id() const;
+
+	const std::string & get_path() const;
 
 	/**
 	 * \brief Check if the source is main src

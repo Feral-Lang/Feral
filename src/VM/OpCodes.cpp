@@ -13,14 +13,14 @@
 
 const char * OpCodeStrs[ _OP_LAST ] = {
 	"CREATE",	// create a new variable
-	"STORE",	// store in a name, from stack
+	"STORE",	// store in a name: value from stack
 	"LOAD",		// load from operand, onto stack
 	"UNLOAD",	// unload (pop) from stack
 
 	"JMP",		// unconditional jump to index
-	"JMP_NIL",	// jump to index if top element on stack is nil (won't pop otherwise)
 	"JMP_TRUE",	// jump to index if top element on stack is true
 	"JMP_FALSE",	// jump to index if top element on stack is false
+	"JMP_NIL",	// jump to index if top element on stack is nil (won't pop otherwise)
 	"JMP_TRUE_NU",	// jump to index if top element on stack is true - but don't unload it
 	"JMP_FALSE_NU",	// jump to index if top element on stack is false - but don't unload it
 
@@ -67,7 +67,7 @@ const char * OpBinaryStrs[ _OPB_LAST ] = {
 	"~",
 	"^",
 
-	"&="
+	"&=",
 	"|=",
 	"~=",
 	"^=",

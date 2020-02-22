@@ -1,6 +1,8 @@
-# Editor files #
+# Editor/Compiler files #
 ################
 .vscode/
+.clangd/
+compile_commands.json
 *.swp
 
 # TeX intermediate files #

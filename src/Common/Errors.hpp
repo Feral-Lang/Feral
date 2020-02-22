@@ -25,6 +25,8 @@ enum Errors
 
 	E_CODEGEN_FAIL,
 
+	E_EXEC_FAIL,
+
 	E_FAIL,
 };
 
