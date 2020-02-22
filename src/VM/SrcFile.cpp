@@ -51,12 +51,23 @@ Errors srcfile_t::load_file()
 	return E_OK;
 }
 
+bcode_t & srcfile_t::bcode() { return m_bcode; }
+
+vartype_base_t * srcfile_t::get_vartype( const size_t & type_id )
+{
+	if( m_vartypes.find( type_id ) == m_vartypes.end() ) return nullptr;
+	return m_vartypes[ type_id ];
+}
+
+var_srcfile_t & srcfile_t::vars() { return m_vars; }
+
 void srcfile_t::add_data( const std::string & data ) { m_data += data; }
 void srcfile_t::add_cols( const std::vector< src_col_range_t > & cols )
 { m_cols.insert( m_cols.end(), cols.begin(), cols.end() ); }
 
 const std::string & srcfile_t::get_data() const { return m_data; }
 size_t srcfile_t::get_id() const { return m_id; }
+const std::string & srcfile_t::get_path() const { return m_path; }
 bool srcfile_t::is_main() const { return m_is_main; }
 
 void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
