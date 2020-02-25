@@ -71,6 +71,13 @@ public:
 	~vartype_str_t();
 };
 
+class vartype_fn_t : public vartype_base_t
+{
+public:
+	vartype_fn_t( const size_t & idx );
+	~vartype_fn_t();
+};
+
 class vartype_type_t : public vartype_base_t
 {
 	std::vector< std::string > m_fields_pos;

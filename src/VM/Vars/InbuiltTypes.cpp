@@ -56,6 +56,10 @@ vartype_str_t::vartype_str_t( const size_t & idx )
 	: vartype_base_t( VT_STR, idx ) {}
 vartype_str_t::~vartype_str_t() {}
 
+vartype_fn_t::vartype_fn_t( const size_t & idx )
+	: vartype_base_t( VT_FUNC, idx ) {}
+vartype_fn_t::~vartype_fn_t() {}
+
 vartype_type_t::vartype_type_t( const std::vector< std::string > & fields_pos,
 				std::unordered_map< std::string, var_base_t * > & attrs,
 				const size_t & idx )

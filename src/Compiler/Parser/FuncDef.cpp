@@ -84,6 +84,8 @@ begin:
 		args.push_back( new stmt_simple_t( ph.peak() ) );
 		ph.next();
 	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since STR is checked above, won't be bothered with it anymore
+		// but we still have to make IDEN data type to STR
+		if( ph.accept( TOK_IDEN ) ) ph.sett( TOK_STR );
 		if( ph.peakt( 1 ) == TOK_ASSN ) { // it's a default assignment
 			const lex::tok_t * lhs = ph.peak();
 			stmt_base_t * rhs = nullptr;

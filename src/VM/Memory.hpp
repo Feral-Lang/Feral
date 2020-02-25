@@ -40,22 +40,23 @@ class mem_mgr_t
 public:
 	mem_mgr_t();
 	~mem_mgr_t();
+	static mem_mgr_t & instance();
 	void * alloc( size_t sz );
 	void free( void * ptr, size_t sz );
 };
 
 namespace mem
 {
-extern mem_mgr_t _memory;
+size_t nearest_mult8( size_t sz );
 
 inline void * alloc( size_t sz )
 {
-	return _memory.alloc( sz );
+	return mem_mgr_t::instance().alloc( sz );
 }
 
 inline void free( void * ptr, size_t sz )
 {
-	return _memory.free( ptr, sz );
+	return mem_mgr_t::instance().free( ptr, sz );
 }
 }
 

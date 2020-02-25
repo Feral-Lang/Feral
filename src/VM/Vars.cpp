@@ -8,6 +8,7 @@
 */
 
 #include "Vars.hpp"
+#include "Memory.hpp"
 
 vars_t::vars_t() {}
 vars_t::~vars_t()
@@ -36,20 +37,31 @@ void vars_t::rem( const std::string & name, const bool dec_ref )
 	m_vars.erase( name );
 }
 
+void * vars_t::operator new( size_t sz )
+{
+	return mem::alloc( sz );
+}
+void vars_t::operator delete( void * ptr, size_t sz )
+{
+	mem::free( ptr, sz );
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_stack_t::var_stack_t()
-	: m_top( 0 )
+	: m_size( 0 ) {}
+var_stack_t::~var_stack_t()
 {
-	m_stack.push_back( {} );
+	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
+		delete * layer;
+	}
 }
-var_stack_t::~var_stack_t() {}
 
 bool var_stack_t::exists( const std::string & name, const bool all_scopes )
 {
 	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
-		if( layer->exists( name ) ) {
+		if( ( * layer )->exists( name ) ) {
 			return true;
 		}
 		if( !all_scopes ) break;
@@ -60,8 +72,8 @@ bool var_stack_t::exists( const std::string & name, const bool all_scopes )
 var_base_t * var_stack_t::get( const std::string & name )
 {
 	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
-		if( layer->exists( name ) ) {
-			return layer->get( name );
+		if( ( * layer )->exists( name ) ) {
+			return ( * layer )->get( name );
 		}
 	}
 	return nullptr;
@@ -70,26 +82,23 @@ var_base_t * var_stack_t::get( const std::string & name )
 void var_stack_t::inc_top( const size_t & count )
 {
 	for( size_t i = 0; i < count; ++i ) {
-		if( m_top + 1 < m_stack.size() - 1 ) {
-			m_stack.push_back( {} );
-		}
-		++m_top;
+		if( m_stack.size() == m_size ) m_stack.push_back( new vars_t() );
+		++m_size;
 	}
 }
 void var_stack_t::dec_top( const size_t & count )
 {
-	if( m_top == 0 ) return;
-	for( size_t i = 0; i < count && m_top > 0; ++i ) {
-		while( m_top < m_stack.size() - 1 ) {
-			m_stack.pop_back();
-		}
-		--m_top;
+	if( m_size == 0 ) return;
+	for( size_t i = 0; i < count && m_size > 0; ++i ) {
+		delete m_stack.back();
+		m_stack.pop_back();
+		--m_size;
 	}
 }
 
 void var_stack_t::add( const std::string & name, var_base_t * val, const bool inc_ref )
 {
-	m_stack.back().add( name, val, inc_ref );
+	m_stack.back()->add( name, val, inc_ref );
 }
 // adds variables to next value of top
 void var_stack_t::add_no_inc()
@@ -99,8 +108,8 @@ void var_stack_t::add_no_inc()
 void var_stack_t::rem( const std::string & name, const bool dec_ref )
 {
 	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
-		if( layer->exists( name ) ) {
-			layer->rem( name, dec_ref );
+		if( ( * layer )->exists( name ) ) {
+			( * layer )->rem( name, dec_ref );
 			return;
 		}
 	}
@@ -117,15 +126,12 @@ bool var_srcfile_t::exists( const std::string & name, const bool in_fn, const bo
 	bool res = false;
 	if( in_fn ) {
 		res = m_fn_vars[ m_curr_fn_stack.back() ].exists( name, all_scopes );
-		if( !res && all_scopes ) res = m_src_vars.exists( name );
+		if( !res && all_scopes ) res = m_src_vars.exists( name, all_scopes );
 		return res;
 	} else {
-		res = m_src_vars.exists( name );
+		res = m_src_vars.exists( name, all_scopes );
 	}
 	return res;
-
-	return m_fn_vars[ m_curr_fn_stack.back() ].exists( name, all_scopes ) ||
-	       ( !in_fn && m_src_vars.exists( name ) );
 }
 
 var_base_t * var_srcfile_t::get( const std::string & name )
@@ -133,6 +139,18 @@ var_base_t * var_srcfile_t::get( const std::string & name )
 	var_base_t * res = m_fn_vars[ m_curr_fn_stack.back() ].get( name );
 	if( !res ) res = m_src_vars.get( name );
 	return res;
+}
+
+void var_srcfile_t::blk_add( const size_t & count, const bool in_fn )
+{
+	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].inc_top( count );
+	else m_src_vars.inc_top( count );
+}
+
+void var_srcfile_t::blk_rem( const size_t & count, const bool in_fn )
+{
+	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].dec_top( count );
+	else m_src_vars.dec_top( count );
 }
 
 void var_srcfile_t::add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref )

@@ -52,6 +52,10 @@ private:
 	std::unordered_map< size_t, vartype_base_t * > m_vartypes;
 };
 
+struct func_call_data_t
+{
+};
+
 namespace vm
 {
 

@@ -10,9 +10,12 @@
 #ifndef VM_VARS_BASE_HPP
 #define VM_VARS_BASE_HPP
 
+#include <cassert>
+#include <vector>
 #include <string>
-
+#include <unordered_map>
 #include <gmpxx.h>
+
 #include "../../../third_party/mpfrxx.hpp"
 
 enum VarTypes
@@ -23,6 +26,8 @@ enum VarTypes
 	VT_INT,
 	VT_FLT,
 	VT_STR,
+
+	VT_FUNC,
 
 	// also called struct
 	// all the custom types are created from VT_TYPE as base
@@ -50,10 +55,13 @@ public:
 	inline size_t idx() const { return m_idx; }
 
 	inline void iref() { ++m_ref; }
-	inline size_t dref() { if( m_ref > 0 ) --m_ref; return m_ref; }
+	inline size_t dref() { assert( m_ref > 0 ); --m_ref; return m_ref; }
 	inline size_t ref() const { return m_ref; }
 
 	inline bool is_type() const { return m_is_type; }
+
+	static void * operator new( size_t sz );
+	static void operator delete( void * ptr, size_t sz );
 };
 
 inline void var_iref( var_base_t * & var )
@@ -128,5 +136,52 @@ public:
 	void set( var_base_t * from );
 };
 #define STR( x ) static_cast< var_str_t * >( x )
+
+struct fn_body_span_t
+{
+	size_t begin;
+	size_t end;
+};
+
+struct vm_state_t;
+struct func_call_data_t;
+typedef var_base_t * ( * nativefnptr_t )( vm_state_t & vm, func_call_data_t & fcd );
+
+union fn_body_t
+{
+	nativefnptr_t native;
+	fn_body_span_t feral;
+};
+
+class var_fn_t : public var_base_t
+{
+	size_t m_fn_id;
+	std::string m_kw_arg;
+	std::string m_var_arg;
+	std::vector< std::string > m_args_order;
+	std::unordered_map< std::string, var_base_t * > m_args;
+	fn_body_t m_body;
+	bool m_is_native;
+public:
+	var_fn_t( const std::string & kw_arg, const std::string & var_arg,
+		  const std::vector< std::string > & args_order,
+		  const std::unordered_map< std::string, var_base_t * > & args,
+		  const fn_body_t & body, const bool is_native, const size_t & idx );
+
+	~var_fn_t();
+
+	var_base_t * copy( const size_t & idx );
+
+	size_t & fn_id();
+	std::string & kw_arg();
+	std::string & var_arg();
+	std::vector< std::string > & args_order();
+	std::unordered_map< std::string, var_base_t * > & args();
+	fn_body_t & body();
+	bool is_native();
+
+	void set( var_base_t * from );
+};
+#define FN( x ) static_cast< var_fn_t * >( x )
 
 #endif // VM_VARS_BASE_HPP
