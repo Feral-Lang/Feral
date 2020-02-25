@@ -21,10 +21,15 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 	const auto & bc = src->bcode().bcode();
 	size_t bc_sz = bc.size();
 
+	bool in_fn = fn_id != 0;
+
 	vars.push_fn_id( fn_id );
+
+	std::vector< fn_body_span_t > bodies;
 
 	for( size_t i = 0; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
+		//fprintf( stdout, "ID: %zu %*s\n", i, 12, OpCodeStrs[ op.op ] );
 		switch( op.op ) {
 		case OP_LOAD: {
 			if( op.dtype != ODT_IDEN ) {
@@ -66,19 +71,9 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 					goto create_fail;
 				}
 				vartype_type_t * vt_in = static_cast< vartype_type_t * >( in );
-				// TODO: remove this after scope fix
-				if( vt_in->attr_exists( name ) ) {
-					src->fail( op.idx, "attribute with name '%s' already exists in type", name.c_str() );
-					goto create_fail;
-				}
 				vt_in->add_attr( name, val );
 			} else {
-				if( vars.exists( name, false, false ) ) {
-					src->fail( op.idx, "variable '%s' already exists in current scope", name.c_str() );
-					src->fail( vars.get( name )->idx(), "previously declared here" );
-					goto create_fail;
-				}
-				vars.add( name, val->copy( op.idx ), fn_id != 0, false );
+				vars.add( name, val->copy( op.idx ), in_fn, false );
 			}
 			var_dref( in );
 			var_dref( val );
@@ -106,11 +101,11 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 			break;
 		}
 		case OP_BLKA: {
-			vars.blk_add( op.data.sz );
+			vars.blk_add( op.data.sz, in_fn );
 			break;
 		}
 		case OP_BLKR: {
-			vars.blk_rem( op.data.sz );
+			vars.blk_rem( op.data.sz, in_fn );
 			break;
 		}
 		case OP_JMP: {
@@ -144,6 +139,44 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 				vms->pop_back();
 				i = op.data.sz - 1;
 			}
+			break;
+		}
+		case OP_BODY_TILL: {
+			bodies.push_back( { i + 1, op.data.sz } );
+			i = op.data.sz - 1;
+			break;
+		}
+		case OP_MKFN: {
+			std::string kw_arg;
+			std::string var_arg;
+			std::vector< std::string > args_order;
+			std::unordered_map< std::string, var_base_t * > args;
+			if( op.data.s[ 0 ] == '1' ) {
+				kw_arg = STR( vms->back() )->get();
+				vms->pop_back();
+			}
+			if( op.data.s[ 1 ] == '1' ) {
+				var_arg = STR( vms->back() )->get();
+				vms->pop_back();
+			}
+
+			size_t arg_sz = strlen( op.data.s ) - 2;
+			for( size_t i = 2; i < arg_sz; ++i ) {
+				std::string name = STR( vms->back() )->get();
+				vms->pop_back();
+				var_base_t * val = nullptr;
+				if( op.data.s[ i ] == '1' ) {
+					val = vms->back();
+					vms->pop_back( false );
+				}
+				args_order.push_back( name );
+				args[ name ] = val;
+			}
+
+			fn_body_span_t body = bodies.back();
+			bodies.pop_back();
+
+			vms->push_back( new var_fn_t( kw_arg, var_arg, args_order, args, { .feral = body }, false, op.idx ), false );
 			break;
 		}
 		}

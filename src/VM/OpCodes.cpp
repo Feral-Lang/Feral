@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include "OpCodes.hpp"
+#include "Memory.hpp"
 
 const char * OpCodeStrs[ _OP_LAST ] = {
 	"CREATE",	// create a new variable
@@ -117,14 +118,16 @@ const char * OpDataTypeStrs[ _ODT_LAST ] = {
 
 inline char * scpy( const std::string & str )
 {
-	char * res = new char[ str.size() + 1 ];
+	char * res = ( char * )mem::alloc( str.size() + 1 );
 	return strcpy( res, str.c_str() );
 }
 
 bcode_t::~bcode_t()
 {
 	for( auto & op : m_bcode ) {
-		if( op.dtype != ODT_SZ && op.dtype != ODT_BOOL ) delete[] op.data.s;
+		if( op.dtype != ODT_SZ && op.dtype != ODT_BOOL && op.dtype != ODT_NIL ) {
+			mem::free( op.data.s, mem::nearest_mult8( strlen( op.data.s ) + 1 ) );
+		}
 	}
 }
 
