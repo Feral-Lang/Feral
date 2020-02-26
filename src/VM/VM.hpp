@@ -44,12 +44,12 @@ struct vm_state_t
 	void add_src( srcfile_t * src );
 	void pop_src();
 
-	inline void register_vartype( vartype_base_t * type ) { m_vartypes[ type->type() ] = type; }
-	vartype_base_t * get_vartype( const size_t & type_id );
+	inline void add_struct( var_struct_t * st, const bool iref ) { if( iref ) st->iref(); m_structs[ st->id() ] = st; }
+	var_struct_t * get_struct( const size_t & id );
 
 private:
 	// all global variable types
-	std::unordered_map< size_t, vartype_base_t * > m_vartypes;
+	std::unordered_map< size_t, var_struct_t * > m_structs;
 };
 
 struct func_call_data_t

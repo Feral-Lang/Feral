@@ -100,7 +100,10 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 
 	else if( m_oper->type == TOK_DOT ) bc.add( m_oper->pos, OP_ATTR );
 
-	else if( m_oper->type == TOK_OPER_FN ) bc.addb( m_oper->pos, OP_FNCL, m_rhs );
+	else if( m_oper->type == TOK_OPER_FN ) {
+		bc.adds( m_oper->pos, OP_FNCL, ODT_STR, m_rhs ? fn_call_args.back() : "" );
+		if( m_rhs ) fn_call_args.pop_back();
+	}
 	else if( m_oper->type == TOK_OPER_SUBS ) bc.addsz( m_oper->pos, OP_BINARY, OPB_SUBSCR );
 
 done:

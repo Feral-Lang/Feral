@@ -22,8 +22,8 @@ bool stmt_fn_def_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		if( !m_args->gen_code( bc ) ) return false;
 	}
 
-	bc.adds( idx(), OP_MKFN, ODT_STR, fn_args.back() );
-	fn_args.pop_back();
+	bc.adds( idx(), OP_MKFN, ODT_STR, m_args ? fn_args.back() : "00" );
+	if( m_args ) fn_args.pop_back();
 	return true;
 }
 

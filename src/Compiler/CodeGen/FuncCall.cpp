@@ -9,8 +9,12 @@
 
 #include "Internal.hpp"
 
+std::vector< std::string > fn_call_args;
+
 bool stmt_fn_call_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
+	fn_call_args.emplace_back();
+
 	for( auto assn_arg = m_assn_args.rbegin(); assn_arg != m_assn_args.rend(); ++assn_arg ) {
 		( * assn_arg )->gen_code( bc );
 	}
@@ -18,8 +22,8 @@ bool stmt_fn_call_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 )
 		( * arg )->gen_code( bc );
 	}
 
-	bc.addsz( idx(), OP_LOAD, m_assn_args.size() );
-	bc.addsz( idx(), OP_LOAD, m_args.size() );
+	fn_call_args.back() += std::string( m_args.size(), '0' );
+	fn_call_args.back() += std::string( m_assn_args.size(), '1' );
 	return true;
 }
 
