@@ -507,9 +507,6 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 		goto done;
 	}
 
-	if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) == TOK_LPAREN ) {
-		ph.sett( TOK_STR ); // change IDEN -> STR for func calls
-	}
 	if( parse_term( ph, lhs ) != E_OK ) {
 		goto fail;
 	}

@@ -37,10 +37,7 @@ enum OpCodes
 	OP_FNCL,	// call a function (bool operand - uses args or not)
 	OP_ATTR,	// get attribute from an object
 
-	OP_BLKT,	// block till
-	OP_ARGT,	// args till
-
-	OP_RET,		// return - bool - true returns top data, false returns nil
+	OP_RET,		// return - bool - false pushes nil on top of stack
 	OP_CONTINUE,	// size_t operand - jump to
 	OP_BREAK,	// size_t operand - jump to
 	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block

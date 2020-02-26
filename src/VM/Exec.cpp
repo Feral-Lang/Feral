@@ -62,16 +62,21 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 			}
 			var_base_t * val = vms->pop_back( false );
 			if( in ) {
-				if( !in->is_type() ) {
-					src->fail( op.idx, "addition of attributes is possible only in type variables" );
+				var_struct_t * vs = nullptr;
+				if( in->type() != VT_STRUCT ) {
+					src->fail( op.idx, "attributes can only be added to types" );
 					goto create_fail;
 				}
-				if( in->type() < VT_TYPE ) {
-					src->fail( op.idx, "addition of attributes is possible only for custom types (not inbuilt ones)" );
+				vs = static_cast< var_struct_t * >( in );
+				if( vs->id() < _VT_LAST && val->type() != VT_FUNC ) {
+					src->fail( op.idx, "only functions can be added to builtin types" );
 					goto create_fail;
 				}
-				vartype_type_t * vt_in = static_cast< vartype_type_t * >( in );
-				vt_in->add_attr( name, val );
+				if( !vs->add_attr( name, val, true ) ) {
+					src->fail( op.idx, "attribute/function: %s already exists in the type: %zu",
+						   name.c_str(), vs->id() );
+					goto create_fail;
+				}
 			} else {
 				vars.add( name, val->copy( op.idx ), in_fn, false );
 			}
@@ -166,8 +171,7 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 				vms->pop_back();
 				var_base_t * val = nullptr;
 				if( op.data.s[ i ] == '1' ) {
-					val = vms->back();
-					vms->pop_back( false );
+					val = vms->pop_back( false );
 				}
 				args_order.push_back( name );
 				args[ name ] = val;
@@ -178,6 +182,53 @@ int exec( vm_state_t & vm, const size_t & fn_id )
 
 			vms->push_back( new var_fn_t( kw_arg, var_arg, args_order, args, { .feral = body }, false, op.idx ), false );
 			break;
+		}
+		case OP_FNCL: {
+			size_t len = strlen( op.data.s );
+			for( size_t i = 0; i < len; ++i ) {
+				const std::string arg = STR( vms->back() )->get();
+				vms->pop_back();
+				var_base_t * val = nullptr;
+				if( op.data.s[ i ] == '1' ) {
+					val = vms->pop_back( false );
+				}
+			}
+			if( vms->back()->type() != VT_FUNC ) {
+				src->fail( op.idx, "this variable is not a function" );
+				goto fail;
+			}
+			var_fn_t * fn = FN( vms->pop_back( false ) );
+			var_dref( fn );
+			break;
+		}
+		case OP_ATTR: {
+			const std::string attr = STR( vms->back() )->get();
+			vms->pop_back();
+			var_base_t * in_base = vms->pop_back( false );
+			var_base_t * val = nullptr;
+			var_struct_t * in = nullptr;
+			// get struct of builtin types
+			if( in_base->type() != VT_STRUCT ) {
+				in = vm.get_struct( in_base->type() );
+				if( in == nullptr ) {
+					src->fail( op.idx, "could not find struct for type: %zu", in_base->type() );
+					goto attr_fail;
+				}
+			} else { // get directly from struct
+				in = STRUCT( in_base );
+			}
+			val = in->get_attr( attr );
+			if( val == nullptr ) {
+				src->fail( op.idx, "struct %zu does not contain attribute: %s",
+						in_base->type(), attr.c_str() );
+				goto attr_fail;
+			}
+			vms->push_back( val );
+			var_dref( in_base );
+			break;
+		attr_fail:
+			var_dref( in_base );
+			goto fail;
 		}
 		}
 	}

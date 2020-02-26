@@ -43,8 +43,6 @@ class srcfile_t
 
 	bcode_t m_bcode;
 
-	// used by variable construction mechanism for creating variable of this type
-	std::unordered_map< size_t, vartype_base_t * > m_vartypes;
 	var_srcfile_t m_vars;
 
 	bool m_is_main;
@@ -68,8 +66,6 @@ public:
 
 	bcode_t & bcode();
 
-	inline void register_vartype( vartype_base_t * type ) { m_vartypes[ type->type() ] = type; }
-	vartype_base_t * get_vartype( const size_t & type_id );
 	var_srcfile_t & vars();
 
 	/**

@@ -14,4 +14,6 @@
 #include "../../VM/OpCodes.hpp"
 #include "../Parser/Stmts.hpp"
 
+extern std::vector< std::string > fn_call_args;
+
 #endif // COMPILER_CODE_GEN_INTERNAL_HPP

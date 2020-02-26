@@ -34,10 +34,7 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"FUNC_CALL",	// call a function
 	"ATTRIBUTE",	// get attribute from an object
 
-	"BLK_TILL",	// block till
-	"ARG_TILL",	// args till
-
-	"RETURN",	// return data
+	"RETURN",	// return - bool - false pushes nil on top of stack
 	"CONTINUE",	// size_t operand - jump to
 	"BREAK",	// size_t operand - jump to
 	"DEFER",	// can take expression or block - bool - true takes expr, false takes block

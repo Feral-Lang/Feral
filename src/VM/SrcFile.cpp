@@ -53,12 +53,6 @@ Errors srcfile_t::load_file()
 
 bcode_t & srcfile_t::bcode() { return m_bcode; }
 
-vartype_base_t * srcfile_t::get_vartype( const size_t & type_id )
-{
-	if( m_vartypes.find( type_id ) == m_vartypes.end() ) return nullptr;
-	return m_vartypes[ type_id ];
-}
-
 var_srcfile_t & srcfile_t::vars() { return m_vars; }
 
 void srcfile_t::add_data( const std::string & data ) { m_data += data; }
