@@ -50,7 +50,10 @@ void vars_t::operator delete( void * ptr, size_t sz )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_stack_t::var_stack_t()
-	: m_size( 0 ) {}
+	: m_size( 1 )
+{
+	m_stack.push_back( new vars_t() );
+}
 var_stack_t::~var_stack_t()
 {
 	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
@@ -100,11 +103,6 @@ void var_stack_t::add( const std::string & name, var_base_t * val, const bool in
 {
 	m_stack.back()->add( name, val, inc_ref );
 }
-// adds variables to next value of top
-void var_stack_t::add_no_inc()
-{
-	m_stack.push_back( {} );
-}
 void var_stack_t::rem( const std::string & name, const bool dec_ref )
 {
 	for( auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer ) {
@@ -118,14 +116,14 @@ void var_stack_t::rem( const std::string & name, const bool dec_ref )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_srcfile_t::var_srcfile_t() {}
-var_srcfile_t::~var_srcfile_t() {}
+srcfile_vars_t::srcfile_vars_t() {}
+srcfile_vars_t::~srcfile_vars_t() {}
 
-bool var_srcfile_t::exists( const std::string & name, const bool in_fn, const bool all_scopes )
+bool srcfile_vars_t::exists( const std::string & name, const bool in_fn, const bool all_scopes )
 {
 	bool res = false;
-	if( in_fn ) {
-		res = m_fn_vars[ m_curr_fn_stack.back() ].exists( name, all_scopes );
+	if( in_fn && m_curr_fn_stack.size() > 0 ) {
+		res = m_fn_vars[ m_curr_fn_stack.back() ]->exists( name, all_scopes );
 		if( !res && all_scopes ) res = m_src_vars.exists( name, all_scopes );
 		return res;
 	} else {
@@ -134,33 +132,47 @@ bool var_srcfile_t::exists( const std::string & name, const bool in_fn, const bo
 	return res;
 }
 
-var_base_t * var_srcfile_t::get( const std::string & name )
+var_base_t * srcfile_vars_t::get( const std::string & name )
 {
-	var_base_t * res = m_fn_vars[ m_curr_fn_stack.back() ].get( name );
+	var_base_t * res = nullptr;
+	if( m_curr_fn_stack.size() > 0 ) res = m_fn_vars[ m_curr_fn_stack.back() ]->get( name );
 	if( !res ) res = m_src_vars.get( name );
 	return res;
 }
 
-void var_srcfile_t::blk_add( const size_t & count, const bool in_fn )
+void srcfile_vars_t::blk_add( const size_t & count, const bool in_fn )
 {
-	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].inc_top( count );
+	if( in_fn && m_curr_fn_stack.size() > 0 ) m_fn_vars[ m_curr_fn_stack.back() ]->inc_top( count );
 	else m_src_vars.inc_top( count );
 }
 
-void var_srcfile_t::blk_rem( const size_t & count, const bool in_fn )
+void srcfile_vars_t::blk_rem( const size_t & count, const bool in_fn )
 {
-	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].dec_top( count );
+	if( in_fn && m_curr_fn_stack.size() > 0 ) m_fn_vars[ m_curr_fn_stack.back() ]->dec_top( count );
 	else m_src_vars.dec_top( count );
 }
 
-void var_srcfile_t::add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref )
+void srcfile_vars_t::push_fn_id( const size_t & id )
 {
-	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].add( name, val, inc_ref );
+	m_curr_fn_stack.push_back( id );
+	m_fn_vars[ id ] = new var_stack_t;
+}
+void srcfile_vars_t::pop_fn_id()
+{
+	assert( m_curr_fn_stack.size() > 0 );
+	delete m_fn_vars[ m_curr_fn_stack.back() ];
+	m_fn_vars.erase( m_curr_fn_stack.back() );
+	m_curr_fn_stack.pop_back();
+}
+
+void srcfile_vars_t::add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref )
+{
+	if( in_fn && m_curr_fn_stack.size() > 0 ) m_fn_vars[ m_curr_fn_stack.back() ]->add( name, val, inc_ref );
 	else m_src_vars.add( name, val, inc_ref );
 }
 
-void var_srcfile_t::rem( const std::string & name, const bool in_fn, const bool dec_ref )
+void srcfile_vars_t::rem( const std::string & name, const bool in_fn, const bool dec_ref )
 {
-	if( in_fn ) m_fn_vars[ m_curr_fn_stack.back() ].rem( name, dec_ref );
+	if( in_fn && m_curr_fn_stack.size() > 0 ) m_fn_vars[ m_curr_fn_stack.back() ]->rem( name, dec_ref );
 	else m_src_vars.rem( name, dec_ref );
 }

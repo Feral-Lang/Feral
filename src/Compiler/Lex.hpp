@@ -94,6 +94,8 @@ enum TokType
 
 	// Dummy
 	TOK_OPER_FN,
+	TOK_OPER_MEM_FN,
+	TOK_OPER_MEM_FN_ATTR,
 	TOK_OPER_SUBS,
 
 	// Varargs

@@ -14,7 +14,8 @@ namespace gen
 
 bool generate( const ptree_t * ptree, bcode_t & bc )
 {
-	return ptree->gen_code( bc );
+	// second arg = true to remove top level BLK_ADD & BLK_REM bytecode (made by BLOCK statement)
+	return ptree->gen_code( bc, true );
 }
 
 }

@@ -89,6 +89,9 @@ message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
 
+# Includes
+file(COPY "${CMAKE_SOURCE_DIR}/include" DESTINATION "${CMAKE_INSTALL_PREFIX}/")
+
 # Feral Compiler
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/Compiler/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/Compiler/*.cpp")
@@ -145,3 +148,23 @@ install(TARGETS feral-bin
 	  DESTINATION bin
 	  COMPONENT Binaries
 )
+
+# Libraries
+file(GLOB_RECURSE mods RELATIVE "${PROJECT_SOURCE_DIR}" "library/*.cpp")
+foreach(m ${mods})
+	get_filename_component(mod ${m} NAME_WE)
+	get_filename_component(moddir ${m} DIRECTORY)
+	string(SUBSTRING ${moddir} 7 -1 moddir)
+	add_library(${mod} SHARED "${m}")
+	target_link_libraries(${mod} feral-vm)
+	set_target_properties(${mod}
+	    PROPERTIES
+	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
+	    INSTALL_RPATH_USE_LINK_PATH TRUE
+	)
+	install(TARGETS ${mod}
+		LIBRARY
+		  DESTINATION lib/feral/${moddir}
+		  COMPONENT Libraries
+	)
+endforeach()

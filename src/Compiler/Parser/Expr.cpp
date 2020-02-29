@@ -490,6 +490,7 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 {
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
 	const lex::tok_t * oper = nullptr;
+	bool is_mem_fn = false;
 
 	size_t idx = ph.peak()->pos;
 
@@ -515,7 +516,8 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 	       ph.accept( TOK_DOT ) ) {
 		idx = ph.peak()->pos;
 		if( ph.accept( TOK_LPAREN ) ) {
-			ph.sett( TOK_OPER_FN );
+			ph.sett( is_mem_fn ? TOK_OPER_MEM_FN : TOK_OPER_FN );
+			is_mem_fn = false;
 			oper = ph.peak();
 			ph.next();
 			if( !ph.accept( TOK_RPAREN ) && parse_fn_call_args( ph, rhs ) != E_OK ) {
@@ -541,6 +543,13 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 		} else if( ph.accept( TOK_DOT ) ) {
 			oper = ph.peak();
 			ph.next();
+			// member function
+			if( ph.acceptd() && ph.peakt( 1 ) == TOK_LPAREN ) {
+				ph.prev();
+				ph.sett( TOK_OPER_MEM_FN_ATTR );
+				ph.next();
+				is_mem_fn = true;
+			}
 			if( parse_term( ph, rhs, true ) != E_OK ) {
 				goto fail;
 			}
@@ -564,7 +573,7 @@ Errors parse_term( phelper_t & ph, stmt_base_t * & loc, const bool make_const )
 		if( make_const && ph.peakt() == TOK_IDEN ) ph.sett( TOK_STR );
 		loc = new stmt_simple_t( ph.peak() );
 		ph.next();
-	} else if( ph.accept( TOK_FN ) ) {
+	} else if( !make_const && ph.accept( TOK_FN ) ) { // TODO: make proper fix to prevent something like: fn() {} = 10;
 		if( parse_fn_decl( ph, loc ) != E_OK ) goto fail;
 	} else {
 		ph.fail( "invalid or extraneous token type '%s' received in expression", TokStrs[ ph.peakt() ] );

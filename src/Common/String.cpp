@@ -34,4 +34,18 @@ std::vector< std::string > split( const std::string & data, const char delim, co
 	return vec;
 }
 
+std::string stringify( const std::vector< std::string > & vec )
+{
+	std::string res = "[";
+	for( auto & e : vec ) {
+		res += e + ", ";
+	}
+	if( vec.size() > 0 ) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "]";
+	return res;
+}
+
 }

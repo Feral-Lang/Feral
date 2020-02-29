@@ -15,7 +15,6 @@
 
 #include "../Common/Errors.hpp"
 #include "OpCodes.hpp"
-#include "Vars.hpp"
 
 /**
  * \brief Defines the range of columns for a line of source code
@@ -43,8 +42,6 @@ class srcfile_t
 
 	bcode_t m_bcode;
 
-	var_srcfile_t m_vars;
-
 	bool m_is_main;
 public:
 	/**
@@ -65,8 +62,6 @@ public:
 	Errors load_file();
 
 	bcode_t & bcode();
-
-	var_srcfile_t & vars();
 
 	/**
 	 * \brief Append content to an instance
