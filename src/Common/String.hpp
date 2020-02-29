@@ -13,10 +13,14 @@
 #include <vector>
 #include <string>
 
+#define _STRINGIZE(x) #x
+#define STRINGIFY(x) _STRINGIZE(x)
+
 namespace str
 {
 
 std::vector< std::string > split( const std::string & data, const char delim, const bool keep_delim = false );
+std::string stringify( const std::vector< std::string > & vec );
 
 }
 

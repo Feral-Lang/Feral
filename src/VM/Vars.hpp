@@ -53,21 +53,19 @@ public:
 	void dec_top( const size_t & count );
 
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
-	// adds variables to next value of top
-	void add_no_inc();
 	void rem( const std::string & name, const bool dec_ref );
 };
 
 /* vars for each source file */
-class var_srcfile_t
+class srcfile_vars_t
 {
 	var_stack_t m_src_vars;
 	std::vector< size_t > m_curr_fn_stack;
 	// maps function id to vars_t
-	std::unordered_map< size_t, var_stack_t > m_fn_vars;
+	std::unordered_map< size_t, var_stack_t * > m_fn_vars;
 public:
-	var_srcfile_t();
-	~var_srcfile_t();
+	srcfile_vars_t();
+	~srcfile_vars_t();
 
 	bool exists( const std::string & name, const bool in_fn, const bool all_scopes );
 
@@ -76,8 +74,8 @@ public:
 	void blk_add( const size_t & count, const bool in_fn );
 	void blk_rem( const size_t & count, const bool in_fn );
 
-	inline void push_fn_id( const size_t & id ) { m_curr_fn_stack.push_back( id ); }
-	inline void pop_fn_id() { assert( m_curr_fn_stack.size() > 0 ); m_curr_fn_stack.pop_back(); }
+	void push_fn_id( const size_t & id );
+	void pop_fn_id();
 
 	void add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref );
 	void rem( const std::string & name, const bool in_fn, const bool dec_ref );

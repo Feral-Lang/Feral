@@ -53,8 +53,6 @@ Errors srcfile_t::load_file()
 
 bcode_t & srcfile_t::bcode() { return m_bcode; }
 
-var_srcfile_t & srcfile_t::vars() { return m_vars; }
-
 void srcfile_t::add_data( const std::string & data ) { m_data += data; }
 void srcfile_t::add_cols( const std::vector< src_col_range_t > & cols )
 { m_cols.insert( m_cols.end(), cols.begin(), cols.end() ); }

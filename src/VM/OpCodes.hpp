@@ -34,8 +34,9 @@ enum OpCodes
 	OP_BLKA,	// add count scopes
 	OP_BLKR,	// rem count scopes
 
-	OP_FNCL,	// call a function (bool operand - uses args or not)
-	OP_ATTR,	// get attribute from an object
+	OP_FNCL,	// call a function (string arg - argument format)
+	OP_MEM_FNCL,	// call a member function (string arg - argument format)
+	OP_ATTR,	// get attribute from an object (operand is attribute name)
 
 	OP_RET,		// return - bool - false pushes nil on top of stack
 	OP_CONTINUE,	// size_t operand - jump to

@@ -32,7 +32,8 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"BLK_REM",	// rem count scopes
 
 	"FUNC_CALL",	// call a function
-	"ATTRIBUTE",	// get attribute from an object
+	"M_FUNC_CALL",	// call a member function (string arg - argument format)
+	"ATTRIBUTE",	// get attribute from an object (string arg - argument format)
 
 	"RETURN",	// return - bool - false pushes nil on top of stack
 	"CONTINUE",	// size_t operand - jump to

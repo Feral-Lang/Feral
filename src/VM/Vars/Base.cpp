@@ -7,7 +7,10 @@
 	before using or altering the project.
 */
 
+#include <algorithm>
+
 #include "../Memory.hpp"
+#include "../Vars.hpp"
 #include "../VM.hpp"
 
 #include "Base.hpp"
@@ -83,53 +86,112 @@ void var_base_t::operator delete( void * ptr, size_t sz )
 	mem::free( ptr, sz );
 }
 
-var_fn_t::var_fn_t( const std::string & kw_arg, const std::string & var_arg,
-		    const std::vector< std::string > & args_order,
-		    const std::unordered_map< std::string, var_base_t * > & args,
+var_fn_t::var_fn_t( const size_t & src_id, const std::string & kw_arg,
+		    const std::string & var_arg, const std::vector< std::string > & args,
+		    const std::vector< fn_assn_arg_t > & def_args,
 		    const fn_body_t & body, const bool is_native, const size_t & idx )
-	: var_base_t( VT_FUNC, idx, 1 ), m_fn_id( fn_id() ), m_kw_arg( kw_arg ),
-	  m_var_arg( var_arg ), m_args_order( args_order ), m_args( args ), m_body( body ),
+	: var_base_t( VT_FUNC, idx, 1 ), m_fn_id( fn_id() ), m_src_id( src_id ), m_kw_arg( kw_arg ),
+	  m_var_arg( var_arg ), m_args( args ), m_def_args( def_args ), m_body( body ),
 	  m_is_native( is_native ) {}
-
+var_fn_t::var_fn_t( const size_t & src_id, const std::vector< std::string > & args,
+		    const fn_body_t & body, const size_t & idx )
+	: var_base_t( VT_FUNC, idx, 1 ), m_fn_id( fn_id() ), m_src_id( src_id ),
+	  m_args( args ), m_body( body ), m_is_native( true ) {}
 var_fn_t::~var_fn_t()
 {
-	for( auto & arg : m_args ) var_dref( arg.second );
+	for( auto & arg : m_def_args ) var_dref( arg.val );
 }
 
 var_base_t * var_fn_t::copy( const size_t & idx )
 {
-	for( auto & arg : m_args ) var_iref( arg.second );
-	return new var_fn_t( m_kw_arg, m_var_arg, m_args_order, m_args, m_body, m_is_native, idx );
+	for( auto & arg : m_def_args ) var_iref( arg.val );
+	return new var_fn_t( m_src_id, m_kw_arg, m_var_arg, m_args, m_def_args, m_body, m_is_native, idx );
 }
 
-size_t & var_fn_t::fn_id() { return m_fn_id; }
+size_t var_fn_t::fn_id() { return m_fn_id; }
+size_t var_fn_t::src_id() { return m_src_id; }
 std::string & var_fn_t::kw_arg() { return m_kw_arg; }
 std::string & var_fn_t::var_arg() { return m_var_arg; }
-std::vector< std::string > & var_fn_t::args_order() { return m_args_order; }
-std::unordered_map< std::string, var_base_t * > & var_fn_t::args() { return m_args; }
+std::vector< std::string > & var_fn_t::args() { return m_args; }
+std::vector< fn_assn_arg_t > & var_fn_t::def_args() { return m_def_args; }
 fn_body_t & var_fn_t::body() { return m_body; }
 bool var_fn_t::is_native() { return m_is_native; }
+
+bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
+		     const std::vector< fn_assn_arg_t > & assn_args,
+		     const size_t & idx )
+{
+	if( m_is_native ) {
+		var_base_t * res = m_body.native( vm, { idx, args, assn_args } );
+		if( res == nullptr ) return false;
+		vm.vm_stack->push_back( res );
+		return true;
+	}
+	// take care of 'self' (always - data or nullptr)
+	srcfile_t * src = vm.src_stack.back()->src();
+	srcfile_vars_t * vars = vm.src_stack.back()->vars();
+	vm_stack_t * vms = vm.vm_stack;
+	return true;
+}
 
 void var_fn_t::set( var_base_t * from )
 {
 	var_fn_t * fn = FN( from );
-	for( auto & arg : m_args ) var_dref( arg.second );
+	for( auto & arg : m_def_args ) var_dref( arg.val );
 
-	for( auto & arg : fn->m_args ) var_iref( arg.second );
+	for( auto & arg : fn->m_def_args ) var_dref( arg.val );
 
 	// no need to change fn id
+	m_src_id = fn->m_src_id;
 	m_kw_arg = fn->m_kw_arg;
 	m_var_arg = fn->m_var_arg;
-	m_args_order = fn->m_args_order;
 	m_args = fn->m_args;
+	m_def_args = fn->m_def_args;
 	m_body = fn->m_body;
 	m_is_native = fn->m_is_native;
 }
 
+var_module_t::var_module_t( srcfile_t * src, srcfile_vars_t * vars, const size_t & idx )
+	: var_base_t( VT_MOD, idx, 1 ), m_src( src ), m_vars( vars ), m_copied( false ) {}
+var_module_t::~var_module_t()
+{
+	if( !m_copied ) {
+		delete m_vars;
+		delete m_src;
+	}
+}
+
+var_base_t * var_module_t::copy( const size_t & idx )
+{
+	m_copied = true;
+	return new var_module_t( m_src, m_vars, idx );
+}
+
+srcfile_t * var_module_t::src() { return m_src; }
+srcfile_vars_t * var_module_t::vars() { return m_vars; }
+bool var_module_t::copied() { return m_copied; }
+
+void var_module_t::set( var_base_t * from )
+{
+	var_module_t * f = MOD( from );
+	if( !m_copied ) delete m_vars;
+	m_src = f->m_src;
+	m_vars = f->m_vars;
+	f->m_copied = true;
+}
+
 var_struct_t::var_struct_t( const size_t & id, const size_t & idx )
-	: var_base_t( VT_STRUCT, idx, 1 ), m_id( id ) {}
+	: var_base_t( VT_STRUCT, idx, 1 ), m_id( id )
+{
+	if( m_id != VT_ALL ) m_inherits.insert( m_inherits.begin(), VT_ALL );
+	if( m_id != VT_ALL && m_id != VT_STRUCT ) m_inherits.insert( m_inherits.begin(), VT_STRUCT );
+}
 var_struct_t::var_struct_t( const size_t & idx )
-	: var_base_t( VT_STRUCT, idx, 1 ), m_id( struct_id() ) {}
+	: var_base_t( VT_STRUCT, idx, 1 ), m_id( struct_id() )
+{
+	if( m_id != VT_ALL ) m_inherits.insert( m_inherits.begin(), VT_ALL );
+	if( m_id != VT_ALL && m_id != VT_STRUCT ) m_inherits.insert( m_inherits.begin(), VT_STRUCT );
+}
 var_struct_t::~var_struct_t()
 {
 	for( auto & attr : m_attrs ) var_dref( attr.second );
@@ -146,8 +208,13 @@ var_base_t * var_struct_t::copy( const size_t & idx )
 }
 
 size_t var_struct_t::id() { return m_id; }
-bool var_struct_t::inherits( const size_t & id ) { return m_inherits.find( id ) != m_inherits.end(); }
-void var_struct_t::inherit( const size_t & id ) { m_inherits.insert( id ); }
+bool var_struct_t::inherits( const size_t & id ) { return std::find( m_inherits.begin(), m_inherits.end(), id ) != m_inherits.end(); }
+void var_struct_t::inherit( const size_t & id )
+{
+	if( std::find( m_inherits.begin(), m_inherits.end(), id ) == m_inherits.end() ) {
+		m_inherits.insert( m_inherits.begin(), id );
+	}
+}
 bool var_struct_t::add_attr( const std::string & name, var_base_t * val, const bool iref )
 {
 	if( m_attrs.find( name ) != m_attrs.end() ) return false;
@@ -155,6 +222,7 @@ bool var_struct_t::add_attr( const std::string & name, var_base_t * val, const b
 	m_attrs[ name ] = val;
 	return true;
 }
+
 var_base_t * var_struct_t::get_attr( const std::string & name )
 {
 	if( m_attrs.find( name ) == m_attrs.end() ) return nullptr;
@@ -164,6 +232,9 @@ bool var_struct_t::has_attr( const std::string & name )
 {
 	return m_attrs.find( name ) != m_attrs.end();
 }
+
+const std::vector< size_t > & var_struct_t::inherit_chain() const { return m_inherits; }
+const std::unordered_map< std::string, var_base_t * > & var_struct_t::attrs() const { return m_attrs; }
 
 void var_struct_t::set( var_base_t * from )
 {
@@ -179,10 +250,13 @@ void var_struct_t::set( var_base_t * from )
 
 void init_builtin_types( vm_state_t & vm )
 {
-	vm.add_struct( new var_struct_t( VT_NIL,  0 ), false );
-	vm.add_struct( new var_struct_t( VT_BOOL, 0 ), false );
-	vm.add_struct( new var_struct_t( VT_INT,  0 ), false );
-	vm.add_struct( new var_struct_t( VT_FLT,  0 ), false );
-	vm.add_struct( new var_struct_t( VT_STR,  0 ), false );
-	vm.add_struct( new var_struct_t( VT_FUNC, 0 ), false );
+	vm.sadd( new var_struct_t( VT_ALL,  0 ) );
+	vm.sadd( new var_struct_t( VT_NIL,  0 ) );
+	vm.sadd( new var_struct_t( VT_BOOL, 0 ) );
+	vm.sadd( new var_struct_t( VT_INT,  0 ) );
+	vm.sadd( new var_struct_t( VT_FLT,  0 ) );
+	vm.sadd( new var_struct_t( VT_STR,  0 ) );
+	vm.sadd( new var_struct_t( VT_FUNC, 0 ) );
+	vm.sadd( new var_struct_t( VT_MOD,  0 ) );
+	vm.sadd( new var_struct_t( VT_STRUCT,  0 ) );
 }

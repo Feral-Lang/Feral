@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include <cassert>
+
 #include "Internal.hpp"
 
 // used for AND and OR operations - all locations from where to jump
@@ -34,7 +36,8 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		}
 	}
 
-	if( m_rhs ) {
+	// dot is handled in the all operators section
+	if( m_rhs && m_oper->type != TOK_DOT ) {
 		m_rhs->gen_code( bc, m_rhs->type() == GT_EXPR );
 	}
 
@@ -98,10 +101,13 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	else if( m_oper->type == TOK_GE ) bc.addsz( m_oper->pos, OP_COMP, OPC_GE );
 	else if( m_oper->type == TOK_NE ) bc.addsz( m_oper->pos, OP_COMP, OPC_NE );
 
-	else if( m_oper->type == TOK_DOT ) bc.add( m_oper->pos, OP_ATTR );
+	else if( m_oper->type == TOK_DOT ) {
+		assert( m_rhs->type() == GT_SIMPLE );
+		bc.adds( m_oper->pos, OP_ATTR, ODT_STR, static_cast< const stmt_simple_t * >( m_rhs )->val()->data );
+	}
 
-	else if( m_oper->type == TOK_OPER_FN ) {
-		bc.adds( m_oper->pos, OP_FNCL, ODT_STR, m_rhs ? fn_call_args.back() : "" );
+	else if( m_oper->type == TOK_OPER_FN || m_oper->type == TOK_OPER_MEM_FN ) {
+		bc.adds( m_oper->pos, m_oper->type == TOK_OPER_FN ? OP_FNCL : OP_MEM_FNCL, ODT_STR, m_rhs ? fn_call_args.back() : "" );
 		if( m_rhs ) fn_call_args.pop_back();
 	}
 	else if( m_oper->type == TOK_OPER_SUBS ) bc.addsz( m_oper->pos, OP_BINARY, OPB_SUBSCR );

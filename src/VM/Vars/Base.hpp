@@ -13,14 +13,16 @@
 #include <cassert>
 #include <vector>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
 #include <gmpxx.h>
 
 #include "../../../third_party/mpfrxx.hpp"
+#include "../SrcFile.hpp"
 
 enum VarTypes
 {
+	VT_ALL,
+
 	VT_NIL,
 
 	VT_BOOL,
@@ -30,9 +32,11 @@ enum VarTypes
 
 	VT_FUNC,
 
+	VT_MOD,
+
+	// all custom types have typeid >= VT_STRUCT
 	VT_STRUCT,
 
-	// all custom types have typeid >= _VT_LAST
 	_VT_LAST,
 };
 
@@ -133,15 +137,26 @@ public:
 };
 #define STR( x ) static_cast< var_str_t * >( x )
 
+struct fn_assn_arg_t
+{
+	std::string name;
+	var_base_t * val;
+};
+
 struct fn_body_span_t
 {
 	size_t begin;
 	size_t end;
 };
 
+struct fn_data_t
+{
+	size_t idx;
+	std::vector< var_base_t * > args;
+	std::vector< fn_assn_arg_t > assn_args;
+};
 struct vm_state_t;
-struct func_call_data_t;
-typedef var_base_t * ( * nativefnptr_t )( vm_state_t & vm, func_call_data_t & fcd );
+typedef var_base_t * ( * nativefnptr_t )( vm_state_t & vm, const fn_data_t & fd );
 
 union fn_body_t
 {
@@ -152,39 +167,68 @@ union fn_body_t
 class var_fn_t : public var_base_t
 {
 	size_t m_fn_id;
+	size_t m_src_id;
 	std::string m_kw_arg;
 	std::string m_var_arg;
-	std::vector< std::string > m_args_order;
-	std::unordered_map< std::string, var_base_t * > m_args;
+	std::vector< std::string > m_args;
+	std::vector< fn_assn_arg_t > m_def_args;
 	fn_body_t m_body;
 	bool m_is_native;
 public:
-	var_fn_t( const std::string & kw_arg, const std::string & var_arg,
-		  const std::vector< std::string > & args_order,
-		  const std::unordered_map< std::string, var_base_t * > & args,
+	var_fn_t( const size_t & src_id, const std::string & kw_arg,
+		  const std::string & var_arg, const std::vector< std::string > & args,
+		  const std::vector< fn_assn_arg_t > & def_args,
 		  const fn_body_t & body, const bool is_native, const size_t & idx );
+	var_fn_t( const size_t & src_id, const std::vector< std::string > & args,
+		  const fn_body_t & body, const size_t & idx );
 
 	~var_fn_t();
 
 	var_base_t * copy( const size_t & idx );
 
-	size_t & fn_id();
+	size_t fn_id();
+	size_t src_id();
 	std::string & kw_arg();
 	std::string & var_arg();
-	std::vector< std::string > & args_order();
-	std::unordered_map< std::string, var_base_t * > & args();
+	std::vector< std::string > & args();
+	std::vector< fn_assn_arg_t > & def_args();
 	fn_body_t & body();
 	bool is_native();
+
+	bool call( vm_state_t & vm, const std::vector< var_base_t * > & args,
+		   const std::vector< fn_assn_arg_t > & assn_args,
+		   const size_t & idx );
 
 	void set( var_base_t * from );
 };
 #define FN( x ) static_cast< var_fn_t * >( x )
 
+class srcfile_vars_t;
+class var_module_t : public var_base_t
+{
+	srcfile_t * m_src;
+	srcfile_vars_t * m_vars;
+	bool m_copied;
+public:
+	var_module_t( srcfile_t * src, srcfile_vars_t * vars, const size_t & idx );
+	~var_module_t();
+
+	var_base_t * copy( const size_t & idx );
+
+	srcfile_t * src();
+	srcfile_vars_t * vars();
+	bool copied();
+
+	void set( var_base_t * from );
+};
+#define MOD( x ) static_cast< var_module_t * >( x )
+
 /* only used as base class for structures (not instantiated by itself) */
 class var_struct_t : public var_base_t
 {
 	size_t m_id;
-	std::unordered_set< size_t > m_inherits;
+	std::vector< size_t > m_inherits;
+	// TODO: should this be an unordered_map???
 	std::unordered_map< std::string, var_base_t * > m_attrs;
 public:
 	var_struct_t( const size_t & id, const size_t & idx );
@@ -199,6 +243,8 @@ public:
 	bool add_attr( const std::string & name, var_base_t * val, const bool iref );
 	var_base_t * get_attr( const std::string & name );
 	bool has_attr( const std::string & name );
+	const std::vector< size_t > & inherit_chain() const;
+	const std::unordered_map< std::string, var_base_t * > & attrs() const;
 
 	void set( var_base_t * from );
 };

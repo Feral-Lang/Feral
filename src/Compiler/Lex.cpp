@@ -83,6 +83,8 @@ const char * TokStrs[ _TOK_LAST ] = {
 
 	// Dummy
 	"()",
+	".()",
+	".x()",
 	"[]",
 
 	// Varargs
