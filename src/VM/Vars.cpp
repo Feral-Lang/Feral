@@ -142,8 +142,18 @@ var_base_t * srcfile_vars_t::get( const std::string & name )
 
 void srcfile_vars_t::blk_add( const size_t & count, const bool in_fn )
 {
-	if( in_fn && m_curr_fn_stack.size() > 0 ) m_fn_vars[ m_curr_fn_stack.back() ]->inc_top( count );
-	else m_src_vars.inc_top( count );
+	if( in_fn && m_curr_fn_stack.size() > 0 ) {
+		m_fn_vars[ m_curr_fn_stack.back() ]->inc_top( count );
+		for( auto & s : m_stash ) {
+			m_fn_vars[ m_curr_fn_stack.back() ]->add( s.first, s.second, true );
+		}
+	} else {
+		m_src_vars.inc_top( count );
+		for( auto & s : m_stash ) {
+			m_src_vars.add( s.first, s.second, true );
+		}
+	}
+	m_stash.clear();
 }
 
 void srcfile_vars_t::blk_rem( const size_t & count, const bool in_fn )
@@ -163,6 +173,16 @@ void srcfile_vars_t::pop_fn_id()
 	delete m_fn_vars[ m_curr_fn_stack.back() ];
 	m_fn_vars.erase( m_curr_fn_stack.back() );
 	m_curr_fn_stack.pop_back();
+}
+
+void srcfile_vars_t::stash( const std::string & name, var_base_t * val )
+{
+	m_stash[ name ] = val;
+}
+
+void srcfile_vars_t::unstash()
+{
+	m_stash.clear();
 }
 
 void srcfile_vars_t::add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref )

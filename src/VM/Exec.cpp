@@ -14,7 +14,7 @@ namespace vm
 {
 
 // declared in VM.hpp
-int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
+int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bool push_fn )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
 	srcfile_vars_t * vars = vm.src_stack.back()->vars();
@@ -24,7 +24,7 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 
 	bool in_fn = fn_id != 0;
 
-	if( in_fn ) vars->push_fn_id( fn_id );
+	if( in_fn && push_fn ) vars->push_fn_id( fn_id );
 	vm.add_in_fn( in_fn );
 
 	std::vector< fn_body_span_t > bodies;
@@ -67,23 +67,17 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 			}
 			var_base_t * val = vms->pop_back( false );
 			if( in ) {
-				var_struct_t * vs = nullptr;
-				if( in->type() != VT_STRUCT ) {
-					src->fail( op.idx, "attributes can only be added to types" );
-					goto create_fail;
-				}
-				vs = static_cast< var_struct_t * >( in );
-				if( vs->id() < VT_STRUCT && val->type() != VT_FUNC ) {
+				if( in->type() < VT_CUSTOM_START && val->type() != VT_FUNC ) {
 					src->fail( op.idx, "only functions can be added to builtin types" );
 					goto create_fail;
 				}
-				if( !vs->add_attr( name, val, true ) ) {
+				if( !in->add_attr( name, val, true ) ) {
 					src->fail( op.idx, "attribute/function: %s already exists in the type: %zu",
-						   name.c_str(), vs->id() );
+						   name.c_str(), in->type() );
 					goto create_fail;
 				}
 			} else {
-				vars->add( name, val->copy( op.idx ), in_fn, false );
+				vars->add( name, val->base_copy( op.idx ), in_fn, false );
 			}
 			var_dref( in );
 			var_dref( val );
@@ -104,7 +98,7 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 				var_dref( var );
 				goto fail;
 			}
-			var->set( val );
+			var->base_set( val );
 			vms->push_back( var );
 			var_dref( val );
 			var_dref( var );
@@ -172,21 +166,21 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 
 			size_t arg_sz = strlen( op.data.s ) - 2;
 			for( size_t i = 2; i < arg_sz; ++i ) {
+				const size_t idx = vms->back()->idx();
 				std::string name = STR( vms->back() )->get();
 				vms->pop_back();
 				var_base_t * val = nullptr;
 				if( op.data.s[ i ] == '1' ) {
 					val = vms->pop_back( false );
-					def_args.push_back( { name, val } );
-				} else {
-					args.push_back( name );
+					def_args.push_back( { idx, name, val } );
 				}
+				args.push_back( name );
 			}
 
 			fn_body_span_t body = bodies.back();
 			bodies.pop_back();
 
-			vms->push_back( new var_fn_t( vm.src_stack.size() - 1, kw_arg, var_arg,
+			vms->push_back( new var_fn_t( src->get_path(), kw_arg, var_arg,
 						      args, def_args, { .feral = body }, false,
 						      op.idx ),
 					false );
@@ -202,81 +196,92 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 				if( op.data.s[ i ] == '0' ) {
 					args.push_back( vms->pop_back( false ) );
 				} else {
+					const size_t idx = vms->back()->idx();
 					const std::string name = STR( vms->back() )->get();
 					vms->pop_back();
 					var_base_t * val = vms->pop_back( false );
-					assn_args.push_back( { name, val } );
+					assn_args.push_back( { idx, name, val } );
 				}
 			}
 			var_base_t * in_base = nullptr;
+			var_base_t * fn_base = nullptr;
 			var_fn_t * fn = nullptr;
 			if( mem_call ) {
 				const std::string attr = STR( vms->back() )->get();
 				vms->pop_back();
 				in_base = vms->pop_back( false );
-				var_base_t * val = nullptr;
 				if( in_base->type() == VT_MOD ) {
 					var_module_t * mod = MOD( in_base );
-					val = mod->vars()->get( attr );
+					fn_base = mod->vars()->get( attr );
+				} else {
+					fn_base = in_base->get_attr( attr );
 				}
-				if( in_base->type() == VT_STRUCT ) {
-					var_struct_t * in = STRUCT( in_base );
-					val = in->get_attr( attr );
-				}
-				if( val == nullptr ) {
-					var_struct_t * in = nullptr;
-					// get struct of type
-					in = vm.sget( in_base );
-					if( in == nullptr ) {
-						src->fail( op.idx, "could not find struct for type: %zu", in_base->type() );
-						goto fncall_fail;
-					}
-					val = in->get_attr( attr );
-				}
-				if( val == nullptr ) {
+				if( fn_base == nullptr ) {
 					src->fail( op.idx, "struct %zu does not contain attribute: '%s'",
 						   in_base->type(), attr.c_str() );
 					goto fncall_fail;
 				}
-				if( val->type() != VT_FUNC ) {
-					src->fail( op.idx, "this attribute is not a function" );
-					goto fncall_fail;
-				}
-				fn = FN( val );
 			} else {
-				if( vms->back()->type() != VT_FUNC ) {
-					src->fail( op.idx, "this variable is not a function" );
-					goto fncall_fail;
-				}
-				fn = FN( vms->pop_back( false ) );
+				fn_base = vms->pop_back( false );
 			}
-			if( args.size() < fn->args().size() ) {
-				src->fail( op.idx, "the function expects %zu arguments, provided: %zu",
-					   fn->args().size(), args.size() );
+			if( fn_base->type() != VT_FUNC && fn_base->type() < VT_CUSTOM_START ) {
+				src->fail( op.idx, "this object is neither a function, nor a struct" );
 				goto fncall_fail;
 			}
-			if( args.size() > fn->args().size() + fn->def_args().size() ) {
-				if( fn->var_arg().size() == 0 ) {
-					src->fail( op.idx, "the function expects [%zu, %zu] arguments, provided: %zu",
-						   fn->args().size(), fn->args().size() + fn->def_args().size(),
-						   args.size() );
+			if( fn_base->type() == VT_FUNC ) {
+				fn = FN( fn_base );
+				if( args.size() < fn->args().size() - fn->def_args().size() ) {
+					src->fail( op.idx, "the function expects at least %zu arguments, provided: %zu",
+						fn->args().size() - fn->def_args().size(), args.size() );
 					goto fncall_fail;
 				}
-			}
-			args.insert( args.begin(), in_base );
-			if( !fn->call( vm, args, assn_args, op.idx ) ) {
-				src->fail( op.idx, "the function call failed, look up for error",
-					   fn->args().size(), args.size() );
-				goto fncall_fail;
+				if( args.size() > fn->args().size() ) {
+					if( fn->var_arg().size() == 0 ) {
+						src->fail( op.idx, "the function expects %zu arguments, provided: %zu",
+							fn->args().size(), fn->args().size() + fn->def_args().size(),
+							args.size() );
+						goto fncall_fail;
+					}
+				}
+				args.insert( args.begin(), in_base );
+				if( !fn->call( vm, args, assn_args, op.idx ) ) {
+					src->fail( op.idx, "the function call failed, look up for error",
+						fn->args().size(), args.size() );
+					goto fncall_fail;
+				}
+			} else if( fn_base->type() >= VT_CUSTOM_START ) {
+				var_base_t * cp = fn_base->base_copy( op.idx );
+				if( args.size() > 0 ) {
+					src->fail( op.idx, "must provide positional arguments (form: a = b) for structure instantiation" );
+					var_dref( cp );
+					goto fncall_fail;
+				}
+				for( auto & arg : assn_args ) {
+					var_base_t * val = cp->get_attr( arg.name );
+					if( val == nullptr ) {
+						src->fail( arg.idx, "positional parameter '%s' does not exist in structure",
+							   arg.name.c_str() );
+						var_dref( cp );
+						goto fncall_fail;
+					}
+					if( arg.val->type() != val->type() ) {
+						src->fail( arg.val->idx(), "type of positional parameter '%s' must match one in structure",
+							   arg.name.c_str() );
+						var_dref( cp );
+						goto fncall_fail;
+					}
+					val->base_set( arg.val );
+				}
+				vms->push_back( cp, false );
 			}
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
-			if( !mem_call ) var_dref( fn );
+			if( !mem_call ) var_dref( fn_base );
 			break;
 		fncall_fail:
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
-			if( !mem_call ) var_dref( fn );
+			if( !mem_call ) var_dref( fn_base );
 			goto fail;
 		}
 		case OP_ATTR: {
@@ -286,20 +291,8 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 			if( in_base->type() == VT_MOD ) {
 				var_module_t * mod = MOD( in_base );
 				val = mod->vars()->get( attr );
-			}
-			if( in_base->type() == VT_STRUCT ) {
-				var_struct_t * in = STRUCT( in_base );
-				val = in->get_attr( attr );
-			}
-			if( val == nullptr ) {
-				var_struct_t * in = nullptr;
-				// get struct of type
-				in = vm.sget( in_base );
-				if( in == nullptr ) {
-					src->fail( op.idx, "could not find struct for type: %zu", in_base->type() );
-					goto attr_fail;
-				}
-				val = in->get_attr( attr );
+			} else {
+				val = in_base->get_attr( attr );
 			}
 			if( val == nullptr ) {
 				src->fail( op.idx, "struct %zu does not contain attribute: '%s'",
@@ -324,11 +317,11 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id )
 
 done:
 	vm.rem_in_fn();
-	if( in_fn ) vars->pop_fn_id();
+	if( in_fn && push_fn ) vars->pop_fn_id();
 	return E_OK;
 fail:
 	vm.rem_in_fn();
-	if( in_fn ) vars->pop_fn_id();
+	if( in_fn && push_fn ) vars->pop_fn_id();
 	return E_EXEC_FAIL;
 }
 

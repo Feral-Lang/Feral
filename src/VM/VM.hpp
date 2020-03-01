@@ -48,13 +48,12 @@ struct vm_state_t
 	void add_src( srcfile_t * src, const size_t & idx );
 	void pop_src();
 
-	void sadd( var_struct_t * sd, const bool iref = false );
-	var_struct_t * sget( var_base_t * of );
-	var_base_t * sattr( var_base_t * of, const std::string & name );
-	void saddattr( const size_t & id, const std::string & name, var_base_t * attr, const bool iref = false );
-
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
+
+	// bt = builtin type; at = attribute
+	void btadd( const VarTypes & type, std::unordered_map< std::string, var_base_t * > * data );
+	void btatadd( const VarTypes & type, const std::string & name, var_base_t * val, const bool iref = false );
 
 	inline void add_in_fn( const bool in_fn ) { m_in_fn.push_back( in_fn ); }
 	inline void rem_in_fn() { m_in_fn.pop_back(); }
@@ -73,8 +72,9 @@ struct vm_state_t
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
-	// all types
-	std::unordered_map< size_t, var_struct_t * > m_types;
+	// base var type attributes/functions
+	// for injecting attributes/functions from native libraries to builtin types
+	std::unordered_map< size_t, std::unordered_map< std::string, var_base_t * > * > m_builtin_types;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
 	// if execution is in function
@@ -107,7 +107,7 @@ inline srcfile_t * src_new( const std::string & dir, const std::string & path,
 }
 
 // fn_id = 0 = not in a function
-int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id = 0 );
+int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id = 0, const bool push_fn = true );
 
 }
 

@@ -24,7 +24,7 @@ var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd,
 	}
 
 	if( type == ODT_INT ) return new var_int_t( mpz_class( opd.s ), idx );
-	else if( type == ODT_FLT ) return new var_flt_t( opd.s, idx );
+	else if( type == ODT_FLT ) return new var_flt_t( mpfr::mpreal( opd.s ), idx );
 	else if( type == ODT_STR ) return new var_str_t( opd.s, idx );
 
 	return nullptr;
