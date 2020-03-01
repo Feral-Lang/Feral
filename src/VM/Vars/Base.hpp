@@ -273,6 +273,17 @@ public:
 };
 #define MOD( x ) static_cast< var_module_t * >( x )
 
+std::unordered_map< std::string, var_base_t * > * var_all_base();
+std::unordered_map< std::string, var_base_t * > * var_nil_base();
+std::unordered_map< std::string, var_base_t * > * var_bool_base();
+std::unordered_map< std::string, var_base_t * > * var_int_base();
+std::unordered_map< std::string, var_base_t * > * var_flt_base();
+std::unordered_map< std::string, var_base_t * > * var_str_base();
+std::unordered_map< std::string, var_base_t * > * var_vec_base();
+std::unordered_map< std::string, var_base_t * > * var_map_base();
+std::unordered_map< std::string, var_base_t * > * var_fn_base();
+std::unordered_map< std::string, var_base_t * > * var_mod_base();
+
 void init_builtin_types( vm_state_t & vm );
 
 #endif // VM_VARS_BASE_HPP

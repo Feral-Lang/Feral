@@ -1,0 +1,55 @@
+/*
+	Copyright (c) 2020, Electrux
+	All rights reserved.
+	Using the BSD 3-Clause license for the project,
+	main LICENSE file resides in project's root directory.
+	Please read that file and understand the license terms
+	before using or altering the project.
+*/
+
+#include "Base.hpp"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////// SOME EXTRAS ///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::unordered_map< std::string, var_base_t * > * var_vec_base()
+{
+	static std::unordered_map< std::string, var_base_t * > v;
+	return & v;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////// VAR_VEC //////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var_vec_t::var_vec_t( const std::vector< var_base_t * > & val, const size_t & idx )
+	: var_base_t( VT_VEC, idx, 1 ), m_val( val )
+{
+	fuse( VT_VEC, var_vec_base() );
+}
+var_vec_t::~var_vec_t()
+{
+	for( auto & v : m_val ) var_dref( v );
+}
+
+var_base_t * var_vec_t::copy( const size_t & idx )
+{
+	std::vector< var_base_t * > new_vec;
+	for( auto & v : m_val ) {
+		new_vec.push_back( v->base_copy( idx ) );
+	}
+	return new var_vec_t( new_vec, idx );
+}
+std::vector< var_base_t * > & var_vec_t::get() { return m_val; }
+void var_vec_t::set( var_base_t * from )
+{
+	for( auto & v : m_val ) {
+		var_dref( v );
+	}
+	m_val.clear();
+	for( auto & v : VEC( from )->m_val ) {
+		var_iref( v );
+	}
+	m_val = VEC( from )->m_val;
+}
