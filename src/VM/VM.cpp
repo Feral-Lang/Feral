@@ -29,7 +29,11 @@ vm_state_t::vm_state_t( const size_t & flags )
 vm_state_t::~vm_state_t()
 {
 	delete vm_stack;
-	for( auto & t : m_types ) var_dref( t.second );
+	for( auto & bt : m_builtin_types ) {
+		for( auto & t : * bt.second ) {
+			var_dref( t.second );
+		}
+	}
 	for( auto & g : m_globals ) var_dref( g.second );
 	for( auto & src : all_srcs ) var_dref( src.second );
 	var_dref( nil );
@@ -49,51 +53,6 @@ void vm_state_t::add_src( srcfile_t * src, const size_t & idx )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-void vm_state_t::sadd( var_struct_t * sd, const bool iref )
-{
-	if( m_types.find( sd->id() ) != m_types.end() ) return;
-	if( iref ) var_iref( sd );
-	m_types[ sd->id() ] = sd;
-}
-
-var_struct_t * vm_state_t::sget( var_base_t * of )
-{
-	if( of->type() < VT_STRUCT ) {
-		if( m_types.find( of->type() ) == m_types.end() ) return nullptr;
-		return m_types[ of->type() ];
-	}
-	return STRUCT( of );
-}
-
-var_base_t * vm_state_t::sattr( var_base_t * of, const std::string & name )
-{
-	var_struct_t * st = nullptr;
-	if( of->type() < VT_STRUCT ) {
-		st = m_types[ of->type() ];
-	} else {
-		st = STRUCT( of );
-	}
-	var_base_t * attr = st->get_attr( name );
-	if( attr ) return attr;
-
-	const std::vector< size_t > & inherits = st->inherit_chain();
-	for( auto & inh : inherits ) {
-		attr = m_types[ inh ]->get_attr( name );
-		if( attr ) return attr;
-	}
-
-	return attr;
-}
-
-void vm_state_t::saddattr( const size_t & id, const std::string & name, var_base_t * attr, const bool iref )
-{
-	if( m_types.find( id ) == m_types.end() ) {
-		if( !iref ) var_dref( attr );
-		return;
-	}
-	m_types[ id ]->add_attr( name, attr, iref );
-}
-
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )
 {
 	if( m_globals.find( name ) != m_globals.end() ) return;
@@ -105,6 +64,25 @@ var_base_t * vm_state_t::gget( const std::string & name )
 {
 	if( m_globals.find( name ) == m_globals.end() ) return nullptr;
 	return m_globals[ name ];
+}
+
+void vm_state_t::btadd( const VarTypes & type, std::unordered_map< std::string, var_base_t * > * data )
+{
+	if( m_builtin_types.find( type ) != m_builtin_types.end() ) return;
+	m_builtin_types[ type ] = data;
+}
+
+void vm_state_t::btatadd( const VarTypes & type, const std::string & name, var_base_t * val, const bool iref )
+{
+	if( m_builtin_types.find( type ) == m_builtin_types.end() ) {
+		if( iref ) var_dref( val );
+		return;
+	}
+	if( ( * m_builtin_types[ type ] ).find( name ) != ( * m_builtin_types[ type ] ).end() ) {
+		var_dref( ( * m_builtin_types[ type ] )[ name ] );
+	}
+	if( iref ) var_iref( val );
+	( * m_builtin_types[ type ] )[ name ] = val;
 }
 
 bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext )

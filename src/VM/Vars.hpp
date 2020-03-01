@@ -61,6 +61,7 @@ class srcfile_vars_t
 {
 	var_stack_t m_src_vars;
 	std::vector< size_t > m_curr_fn_stack;
+	std::unordered_map< std::string, var_base_t * > m_stash;
 	// maps function id to vars_t
 	std::unordered_map< size_t, var_stack_t * > m_fn_vars;
 public:
@@ -76,6 +77,9 @@ public:
 
 	void push_fn_id( const size_t & id );
 	void pop_fn_id();
+
+	void stash( const std::string & name, var_base_t * val );
+	void unstash();
 
 	void add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref );
 	void rem( const std::string & name, const bool in_fn, const bool dec_ref );

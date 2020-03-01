@@ -13,6 +13,7 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
 #include <gmpxx.h>
 
@@ -29,13 +30,14 @@ enum VarTypes
 	VT_INT,
 	VT_FLT,
 	VT_STR,
+	VT_VEC,
+	VT_MAP,
 
 	VT_FUNC,
 
 	VT_MOD,
 
-	// all custom types have typeid >= VT_STRUCT
-	VT_STRUCT,
+	VT_CUSTOM_START,
 
 	_VT_LAST,
 };
@@ -45,12 +47,24 @@ class var_base_t
 	size_t m_type;
 	size_t m_idx;
 	size_t m_ref;
+
+	std::unordered_set< size_t > m_fused;
+	// TODO: should this be an unordered_map???
+	std::unordered_map< std::string, var_base_t * > m_attrs;
+
+	var_base_t( const size_t & idx );
 public:
+	var_base_t( const size_t & idx, const size_t & ref );
 	var_base_t( const size_t & type, const size_t & idx, const size_t & ref );
 	virtual ~var_base_t();
 
-	virtual var_base_t * copy( const size_t & idx ) = 0;
-	virtual void set( var_base_t * from ) = 0;
+	var_base_t * base_copy( const size_t & idx );
+	// base_set() calls set() at last for custom data assignment (besides inherits & attrs)
+	void base_set( var_base_t * from );
+
+	// must always be overridden
+	virtual var_base_t * copy( const size_t & idx );
+	virtual void set( var_base_t * from );
 
 	inline size_t type() const { return m_type; }
 
@@ -59,6 +73,15 @@ public:
 	inline void iref() { ++m_ref; }
 	inline size_t dref() { assert( m_ref > 0 ); --m_ref; return m_ref; }
 	inline size_t ref() const { return m_ref; }
+
+	void fuse( var_base_t * what );
+	void fuse( const size_t & id, std::unordered_map< std::string, var_base_t * > * with );
+	bool fused( const size_t & id );
+	bool add_attr( const std::string & name, var_base_t * val, const bool iref );
+	var_base_t * get_attr( const std::string & name );
+	bool has_attr( const std::string & name );
+	const std::unordered_set< size_t > & fuse_chain() const;
+	const std::unordered_map< std::string, var_base_t * > & attrs() const;
 
 	static void * operator new( size_t sz );
 	static void operator delete( void * ptr, size_t sz );
@@ -137,8 +160,35 @@ public:
 };
 #define STR( x ) static_cast< var_str_t * >( x )
 
+class var_vec_t : public var_base_t
+{
+	std::vector< var_base_t * > m_val;
+public:
+	var_vec_t( const std::vector< var_base_t * > & val, const size_t & idx );
+	~var_vec_t();
+
+	var_base_t * copy( const size_t & idx );
+	std::vector< var_base_t * > & get();
+	void set( var_base_t * from );
+};
+#define VEC( x ) static_cast< var_vec_t * >( x )
+
+class var_map_t : public var_base_t
+{
+	std::unordered_map< std::string, var_base_t * > m_val;
+public:
+	var_map_t( const std::unordered_map< std::string, var_base_t * > & val, const size_t & idx );
+	~var_map_t();
+
+	var_base_t * copy( const size_t & idx );
+	std::unordered_map< std::string, var_base_t * > & get();
+	void set( var_base_t * from );
+};
+#define MAP( x ) static_cast< var_map_t * >( x )
+
 struct fn_assn_arg_t
 {
+	size_t idx;
 	std::string name;
 	var_base_t * val;
 };
@@ -167,7 +217,7 @@ union fn_body_t
 class var_fn_t : public var_base_t
 {
 	size_t m_fn_id;
-	size_t m_src_id;
+	std::string m_src_name;
 	std::string m_kw_arg;
 	std::string m_var_arg;
 	std::vector< std::string > m_args;
@@ -175,19 +225,19 @@ class var_fn_t : public var_base_t
 	fn_body_t m_body;
 	bool m_is_native;
 public:
-	var_fn_t( const size_t & src_id, const std::string & kw_arg,
+	var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		  const std::string & var_arg, const std::vector< std::string > & args,
 		  const std::vector< fn_assn_arg_t > & def_args,
 		  const fn_body_t & body, const bool is_native, const size_t & idx );
-	var_fn_t( const size_t & src_id, const std::vector< std::string > & args,
+	var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
 		  const fn_body_t & body, const size_t & idx );
 
 	~var_fn_t();
 
 	var_base_t * copy( const size_t & idx );
 
-	size_t fn_id();
-	size_t src_id();
+	size_t fn_id() const;
+	std::string & src_name();
 	std::string & kw_arg();
 	std::string & var_arg();
 	std::vector< std::string > & args();
@@ -222,33 +272,6 @@ public:
 	void set( var_base_t * from );
 };
 #define MOD( x ) static_cast< var_module_t * >( x )
-
-/* only used as base class for structures (not instantiated by itself) */
-class var_struct_t : public var_base_t
-{
-	size_t m_id;
-	std::vector< size_t > m_inherits;
-	// TODO: should this be an unordered_map???
-	std::unordered_map< std::string, var_base_t * > m_attrs;
-public:
-	var_struct_t( const size_t & id, const size_t & idx );
-	var_struct_t( const size_t & idx );
-	~var_struct_t();
-
-	var_base_t * copy( const size_t & idx );
-
-	size_t id();
-	bool inherits( const size_t & id );
-	void inherit( const size_t & id );
-	bool add_attr( const std::string & name, var_base_t * val, const bool iref );
-	var_base_t * get_attr( const std::string & name );
-	bool has_attr( const std::string & name );
-	const std::vector< size_t > & inherit_chain() const;
-	const std::unordered_map< std::string, var_base_t * > & attrs() const;
-
-	void set( var_base_t * from );
-};
-#define STRUCT( x ) static_cast< var_struct_t * >( x )
 
 void init_builtin_types( vm_state_t & vm );
 
