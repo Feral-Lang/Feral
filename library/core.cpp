@@ -124,6 +124,12 @@ var_base_t * mod_to_str( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( str, fd.idx );
 }
 
+var_base_t * fuse_custom( vm_state_t & vm, const fn_data_t & fd )
+{
+	fd.args[ 0 ]->fuse( fd.args[ 1 ] );
+	return vm.nil;
+}
+
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
@@ -176,6 +182,8 @@ REGISTER_MODULE( core )
 	vm.btatadd( VT_VEC,  "str", new var_fn_t( src_name, { "" }, { .native = vec_to_str },  0 ) );
 	vm.btatadd( VT_MAP,  "str", new var_fn_t( src_name, { "" }, { .native = map_to_str },  0 ) );
 	vm.btatadd( VT_MOD,  "str", new var_fn_t( src_name, { "" }, { .native = mod_to_str },  0 ) );
+
+	vm.btatadd( VT_CUSTOM_START, "fuse", new var_fn_t( src_name, { "" }, { .native = fuse_custom }, 0 ) );
 
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0 ) );

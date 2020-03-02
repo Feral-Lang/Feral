@@ -229,13 +229,14 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 				goto fncall_fail;
 			}
 			if( fn_base->type() == VT_FUNC ) {
+				args.insert( args.begin(), in_base );
 				fn = FN( fn_base );
-				if( args.size() < fn->args().size() - fn->def_args().size() ) {
+				if( args.size() - 1 < fn->args().size() - fn->def_args().size() ) {
 					src->fail( op.idx, "the function expects at least %zu arguments, provided: %zu",
 						fn->args().size() - fn->def_args().size(), args.size() );
 					goto fncall_fail;
 				}
-				if( args.size() > fn->args().size() ) {
+				if( args.size() - 1 > fn->args().size() ) {
 					if( fn->var_arg().size() == 0 ) {
 						src->fail( op.idx, "the function expects %zu arguments, provided: %zu",
 							fn->args().size(), fn->args().size() + fn->def_args().size(),
@@ -243,7 +244,6 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 						goto fncall_fail;
 					}
 				}
-				args.insert( args.begin(), in_base );
 				if( !fn->call( vm, args, assn_args, op.idx ) ) {
 					src->fail( op.idx, "the function call failed, look up for error",
 						fn->args().size(), args.size() );
