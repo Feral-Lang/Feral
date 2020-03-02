@@ -18,13 +18,19 @@
 
 static size_t type_id()
 {
-	static size_t tid = VT_CUSTOM_START;
+	static size_t tid = VT_CUSTOM_START + 1;
 	return tid++;
 }
 
 // base instance for all other classes
 // similar to python's object class
 std::unordered_map< std::string, var_base_t * > * var_all_base()
+{
+	static std::unordered_map< std::string, var_base_t * > v;
+	return & v;
+}
+
+std::unordered_map< std::string, var_base_t * > * var_custom_base()
 {
 	static std::unordered_map< std::string, var_base_t * > v;
 	return & v;
@@ -38,16 +44,19 @@ var_base_t::var_base_t( const size_t & idx )
 	: m_type( VT_ALL ), m_idx( idx ), m_ref( 1 )
 {
 	fuse( VT_ALL, var_all_base() );
+	if( m_type >= VT_CUSTOM_START ) fuse( VT_CUSTOM_START, var_custom_base() );
 }
 var_base_t::var_base_t( const size_t & idx, const size_t & ref )
 	: m_type( type_id() ), m_idx( idx ), m_ref( ref )
 {
 	fuse( VT_ALL, var_all_base() );
+	if( m_type >= VT_CUSTOM_START ) fuse( VT_CUSTOM_START, var_custom_base() );
 }
 var_base_t::var_base_t( const size_t & type, const size_t & idx, const size_t & ref )
 	: m_type( type ), m_idx( idx ), m_ref( ref )
 {
 	fuse( VT_ALL, var_all_base() );
+	if( m_type >= VT_CUSTOM_START ) fuse( VT_CUSTOM_START, var_custom_base() );
 }
 var_base_t::~var_base_t()
 {
@@ -181,4 +190,5 @@ void init_builtin_types( vm_state_t & vm )
 	vm.btadd( VT_MAP,  var_map_base() );
 	vm.btadd( VT_FUNC, var_fn_base() );
 	vm.btadd( VT_MOD,  var_mod_base() );
+	vm.btadd( VT_CUSTOM_START, var_custom_base() );
 }

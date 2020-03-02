@@ -288,6 +288,7 @@ std::unordered_map< std::string, var_base_t * > * var_vec_base();
 std::unordered_map< std::string, var_base_t * > * var_map_base();
 std::unordered_map< std::string, var_base_t * > * var_fn_base();
 std::unordered_map< std::string, var_base_t * > * var_mod_base();
+std::unordered_map< std::string, var_base_t * > * var_custom_base();
 
 void init_builtin_types( vm_state_t & vm );
 
