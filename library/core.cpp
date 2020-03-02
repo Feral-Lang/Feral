@@ -23,16 +23,8 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 	std::string str = "struct " + std::to_string( st->type() ) + " {";
 	for( auto & attr : st->attrs() ) {
 		if( attr.first == "str" ) continue;
-		var_base_t * str_fn = attr.second->get_attr( "str" );
-		if( str_fn == nullptr || str_fn->type() != VT_FUNC ) {
-			src->fail( attr.second->idx(), "type of this variable does not implement a 'str' function to print" );
-			return nullptr;
-		}
-		if( !FN( str_fn )->call( vm, { attr.second }, {}, fd.idx ) ) {
-			src->fail( attr.second->idx(), "failed to call 'str' function (make sure the argument count is correct)" );
-			return nullptr;
-		}
-		var_base_t * res = vm.vm_stack->back();
+		var_base_t * res = attr.second->call_fn_result( vm, "str", {}, fd.idx );
+		if( !res ) return nullptr;
 		if( res->type() != VT_STR ) {
 			src->fail( attr.second->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
 			vm.vm_stack->pop_back();
@@ -82,16 +74,8 @@ var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_vec_t * vec = VEC( fd.args[ 0 ] );
 	std::string str = "[";
 	for( auto & e : vec->get() ) {
-		var_base_t * str_fn = e->get_attr( "str" );
-		if( str_fn == nullptr || str_fn->type() != VT_FUNC ) {
-			src->fail( e->idx(), "type of this variable does not implement a 'str' function to print" );
-			return nullptr;
-		}
-		if( !FN( str_fn )->call( vm, { e }, {}, fd.idx ) ) {
-			src->fail( e->idx(), "failed to call 'str' function (make sure the argument count is correct)" );
-			return nullptr;
-		}
-		var_base_t * res = vm.vm_stack->back();
+		var_base_t * res = e->call_fn_result( vm, "str", {}, fd.idx );
+		if( !res ) return nullptr;
 		if( res->type() != VT_STR ) {
 			src->fail( e->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
 			vm.vm_stack->pop_back();
@@ -115,16 +99,8 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 	std::string str = "{";
 	for( auto & e : map->get() ) {
 		if( e.first == "str" ) continue;
-		var_base_t * str_fn = e.second->get_attr( "str" );
-		if( str_fn == nullptr || str_fn->type() != VT_FUNC ) {
-			src->fail( e.second->idx(), "type of this variable does not implement a 'str' function to print" );
-			return nullptr;
-		}
-		if( !FN( str_fn )->call( vm, { e.second }, {}, fd.idx ) ) {
-			src->fail( e.second->idx(), "failed to call 'str' function (make sure the argument count is correct)" );
-			return nullptr;
-		}
-		var_base_t * res = vm.vm_stack->back();
+		var_base_t * res = e.second->call_fn_result( vm, "str", {}, fd.idx );
+		if( !res ) return nullptr;
 		if( res->type() != VT_STR ) {
 			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
 			vm.vm_stack->pop_back();

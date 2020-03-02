@@ -20,6 +20,7 @@ static size_t fn_id()
 	static size_t fnid = 1;
 	return fnid++;
 }
+
 std::unordered_map< std::string, var_base_t * > * var_fn_base()
 {
 	static std::unordered_map< std::string, var_base_t * > v;

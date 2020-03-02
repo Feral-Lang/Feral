@@ -42,6 +42,8 @@ enum VarTypes
 	_VT_LAST,
 };
 
+struct vm_state_t;
+
 class var_base_t
 {
 	size_t m_type;
@@ -82,6 +84,9 @@ public:
 	bool has_attr( const std::string & name );
 	const std::unordered_set< size_t > & fuse_chain() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
+
+	var_base_t * call_fn_result( vm_state_t & vm, const std::string & fn_name,
+				     std::vector< var_base_t * > args, const size_t & idx );
 
 	static void * operator new( size_t sz );
 	static void operator delete( void * ptr, size_t sz );
@@ -205,7 +210,7 @@ struct fn_data_t
 	std::vector< var_base_t * > args;
 	std::vector< fn_assn_arg_t > assn_args;
 };
-struct vm_state_t;
+
 typedef var_base_t * ( * nativefnptr_t )( vm_state_t & vm, const fn_data_t & fd );
 
 union fn_body_t
