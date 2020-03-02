@@ -14,16 +14,8 @@ var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 	srcfile_t * src = vm.src_stack.back()->src();
 	for( size_t i = 1; i < fd.args.size(); ++i ) {
 		auto & arg = fd.args[ i ];
-		var_base_t * str_fn = arg->get_attr( "str" );
-		if( str_fn == nullptr || str_fn->type() != VT_FUNC ) {
-			src->fail( arg->idx(), "type of this variable does not implement a 'str' function to print" );
-			return nullptr;
-		}
-		if( !FN( str_fn )->call( vm, { arg }, {}, fd.idx ) ) {
-			src->fail( arg->idx(), "failed to call 'str' function (make sure the argument count is correct)" );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->back();
+		var_base_t * str = arg->call_fn_result( vm, "str", {}, fd.idx );
+		if( !str ) return nullptr;
 		if( str->type() != VT_STR ) {
 			src->fail( arg->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
 			vm.vm_stack->pop_back();

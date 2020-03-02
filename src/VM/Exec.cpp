@@ -250,12 +250,11 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 					goto fncall_fail;
 				}
 			} else if( fn_base->type() >= VT_CUSTOM_START ) {
-				var_base_t * cp = fn_base->base_copy( op.idx );
 				if( args.size() > 0 ) {
 					src->fail( op.idx, "must provide positional arguments (form: a = b) for structure instantiation" );
-					var_dref( cp );
 					goto fncall_fail;
 				}
+				var_base_t * cp = fn_base->base_copy( op.idx );
 				for( auto & arg : assn_args ) {
 					var_base_t * val = cp->get_attr( arg.name );
 					if( val == nullptr ) {

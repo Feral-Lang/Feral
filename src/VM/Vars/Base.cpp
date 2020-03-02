@@ -99,8 +99,7 @@ void var_base_t::fuse( var_base_t * what )
 		if( m_attrs.find( a.first ) != m_attrs.end() ) {
 			var_dref( m_attrs[ a.first ] );
 		}
-		var_iref( a.second );
-		m_attrs[ a.first ] = a.second;
+		m_attrs[ a.first ] = a.second->base_copy( a.second->idx() );
 	}
 }
 void var_base_t::fuse( const size_t & id, std::unordered_map< std::string, var_base_t * > * with )
@@ -139,6 +138,27 @@ bool var_base_t::has_attr( const std::string & name )
 
 const std::unordered_set< size_t > & var_base_t::fuse_chain() const { return m_fused; }
 const std::unordered_map< std::string, var_base_t * > & var_base_t::attrs() const { return m_attrs; }
+
+var_base_t * var_base_t::call_fn_result( vm_state_t & vm, const std::string & fn_name,
+					 std::vector< var_base_t * > args, const size_t & idx )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	var_base_t * func = get_attr( fn_name );
+	if( func == nullptr || func->type() != VT_FUNC ) {
+		src->fail( idx, "type of this variable does not implement a '%s' function",
+			   fn_name.c_str() );
+		return nullptr;
+	}
+
+	args.insert( args.begin(), this );
+	if( !FN( func )->call( vm, args, {}, idx ) ) {
+		src->fail( idx, "failed to call '%s' function (make sure the argument count is correct)",
+			   fn_name.c_str() );
+		return nullptr;
+	}
+	var_base_t * data = vm.vm_stack->back();
+	return data;
+}
 
 void * var_base_t::operator new( size_t sz )
 {
