@@ -18,13 +18,13 @@ vm_stack_t::~vm_stack_t()
 	}
 }
 
-void vm_stack_t::push_back( var_base_t * val, const bool iref )
+void vm_stack_t::push( var_base_t * val, const bool iref )
 {
 	if( iref ) var_iref( val );
 	m_vec.push_back( val );
 }
 
-var_base_t * vm_stack_t::pop_back( const bool dref )
+var_base_t * vm_stack_t::pop( const bool dref )
 {
 	if( m_vec.size() == 0 ) return nullptr;
 	var_base_t * back = nullptr;

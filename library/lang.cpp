@@ -11,18 +11,21 @@
 
 var_base_t * create_struct( vm_state_t & vm, const fn_data_t & fd )
 {
-	var_base_t * st = new var_base_t( fd.idx, 0 );
+	const size_t src_id = vm.src_stack.back()->src_id();
+	std::vector< std::string > attr_order;
+	std::unordered_map< std::string, var_base_t * > attrs;
 	for( size_t i = 0; i < fd.assn_args.size(); ++i ) {
 		auto & arg = fd.assn_args[ i ];
-		st->add_attr( arg.name, arg.val->base_copy( fd.idx ), false );
+		attr_order.push_back( arg.name );
+		attrs[ arg.name ] = arg.val->copy( src_id, fd.idx );
 	}
-	return st;
+	return make< var_struct_def_t >( attr_order, attrs, src_id, fd.idx );
 }
 
 REGISTER_MODULE( lang )
 {
-	var_module_t * src = vm.src_stack.back();
-	const std::string & src_name = src->src()->get_path();
-	src->vars()->add( "struct", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_struct }, true, 0 ), vm.in_fn(), false );
+	var_src_t * src = vm.src_stack.back();
+	const std::string & src_name = src->src()->path();
+	src->vars()->add( "struct", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_struct }, true, 0, 0 ), false );
 	return true;
 }

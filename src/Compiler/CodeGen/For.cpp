@@ -21,7 +21,7 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	size_t cond_fail_jmp_from = bc.size();
 	if( m_cond ) {
 		// placeholder location
-		bc.addsz( m_cond->idx(), OP_JMPF, 0 );
+		bc.addsz( m_cond->idx(), OP_JMPFPOP, 0 );
 	}
 
 	size_t body_begin = bc.size();

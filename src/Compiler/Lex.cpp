@@ -132,7 +132,7 @@ namespace lex
 
 Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t prefix_idx )
 {
-	const std::string src = src_file.get_data().substr( prefix_idx );
+	const std::string src = src_file.data().substr( prefix_idx );
 	if( src.empty() ) return E_OK;
 
 	Errors err = E_OK;
@@ -237,7 +237,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t pr
 
 static std::string get_name( const srcfile_t & src_file, size_t & i )
 {
-	const std::string & src = src_file.get_data();
+	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	std::string buf;
 	buf.push_back( src[ i++ ] );
@@ -274,7 +274,7 @@ static int classify_str( const std::string & str )
 
 static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_type )
 {
-	const std::string & src = src_file.get_data();
+	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	std::string buf;
 	int first_digit_at = i;
@@ -334,7 +334,7 @@ static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_ty
 
 static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string & buf )
 {
-	const std::string & src = src_file.get_data();
+	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	buf.clear();
 	const char quote_type = CURR( src );
@@ -358,7 +358,7 @@ static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string
 
 static int get_operator( const srcfile_t & src_file, size_t & i )
 {
-	const std::string & src = src_file.get_data();
+	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	int op_type = -1;
 	switch( CURR( src ) ) {

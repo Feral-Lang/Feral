@@ -12,6 +12,7 @@
 namespace consts
 {
 
+// TODO: optimize this
 var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & idx )
 {
 	if( type == ODT_BOOL ) {
@@ -23,9 +24,9 @@ var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd,
 		return vm.nil;
 	}
 
-	if( type == ODT_INT ) return new var_int_t( mpz_class( opd.s ), idx );
-	else if( type == ODT_FLT ) return new var_flt_t( mpfr::mpreal( opd.s ), idx );
-	else if( type == ODT_STR ) return new var_str_t( opd.s, idx );
+	if( type == ODT_INT ) return new var_int_t( mpz_class( opd.s ), vm.src_stack.back()->src_id(), idx );
+	else if( type == ODT_FLT ) return new var_flt_t( mpfr::mpreal( opd.s ), vm.src_stack.back()->src_id(), idx );
+	else if( type == ODT_STR ) return new var_str_t( opd.s, vm.src_stack.back()->src_id(), idx );
 
 	return nullptr;
 }

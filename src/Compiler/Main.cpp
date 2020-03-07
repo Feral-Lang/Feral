@@ -60,6 +60,8 @@ int main( int argc, char ** argv )
 		}
 		exec_err = vm::exec( vm, main_src->bcode() );
 		vm.pop_src();
+	} else {
+		if( main_src ) delete main_src;
 	}
 	return exec_err;
 }

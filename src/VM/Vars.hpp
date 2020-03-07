@@ -16,12 +16,12 @@
 
 #include "Vars/Base.hpp"
 
-class vars_t
+class vars_frame_t
 {
 	std::unordered_map< std::string, var_base_t * > m_vars;
 public:
-	vars_t();
-	~vars_t();
+	vars_frame_t();
+	~vars_frame_t();
 
 	inline bool exists( const std::string & name ) { return m_vars.find( name ) != m_vars.end(); }
 	var_base_t * get( const std::string & name );
@@ -33,56 +33,65 @@ public:
 	static void operator delete( void * ptr, size_t sz );
 };
 
-class var_stack_t
+class vars_stack_t
 {
 	std::vector< size_t > m_loops_from;
-	// each vars_t is a stack frame
+	// each vars_frame_t is a stack frame
 	// it is a pointer to remove the issue of recreation of object when vector increases size
 	// since recreation will cause the object to be deleted (and destructor be called) and invalidate
 	// the variable pointers (since destructor contains var_dref() calls)
-	std::vector< vars_t * > m_stack;
-	size_t m_size;
+	std::vector< vars_frame_t * > m_stack;
+	size_t m_top;
 public:
-	var_stack_t();
-	~var_stack_t();
+	vars_stack_t();
+	~vars_stack_t();
 
-	bool exists( const std::string & name, const bool all_scopes );
+	// checks if a variable exists in CURRENT scope ONLY
+	bool exists( const std::string & name );
 	var_base_t * get( const std::string & name );
 
 	void inc_top( const size_t & count );
 	void dec_top( const size_t & count );
 
+	void mark_loop();
+
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );
 };
 
-/* vars for each source file */
-class srcfile_vars_t
+/*
+ * vars for each source file
+ * stash exists to add variables to a function BEFORE the block of function starts
+ * this is useful for declaring function variables inside the function without extra scope
+ *
+ * 0 cannot be a function id as it specifies source level scope and hence is created in constructor
+ */
+class vars_t
 {
-	var_stack_t m_src_vars;
-	std::vector< size_t > m_curr_fn_stack;
+	std::vector< size_t > m_fn_stack;
 	std::unordered_map< std::string, var_base_t * > m_stash;
-	// maps function id to vars_t
-	std::unordered_map< size_t, var_stack_t * > m_fn_vars;
+	// maps function id to vars_frame_t
+	std::unordered_map< size_t, vars_stack_t * > m_fn_vars;
 public:
-	srcfile_vars_t();
-	~srcfile_vars_t();
+	vars_t();
+	~vars_t();
 
-	bool exists( const std::string & name, const bool in_fn, const bool all_scopes );
+	// checks if a variable exists in CURRENT scope ONLY
+	bool exists( const std::string & name );
 
 	var_base_t * get( const std::string & name );
 
-	void blk_add( const size_t & count, const bool in_fn );
-	void blk_rem( const size_t & count, const bool in_fn );
+	void blk_add( const size_t & count );
+	void blk_rem( const size_t & count );
 
-	void push_fn_id( const size_t & id );
-	void pop_fn_id();
+	void push_fn( const size_t & id );
+	void pop_fn();
 
 	void stash( const std::string & name, var_base_t * val );
 	void unstash();
 
-	void add( const std::string & name, var_base_t * val, const bool in_fn, const bool inc_ref );
-	void rem( const std::string & name, const bool in_fn, const bool dec_ref );
+	void add( const std::string & name, var_base_t * val, const bool inc_ref );
+	void rem( const std::string & name, const bool dec_ref );
 };
 
 #endif // VM_VARS_HPP

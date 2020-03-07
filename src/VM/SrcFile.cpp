@@ -11,8 +11,14 @@
 
 #include "SrcFile.hpp"
 
-srcfile_t::srcfile_t( const size_t id, const std::string & dir, const std::string & path, const bool is_main )
-	: m_id( id ), m_dir( dir ), m_path( path ), m_is_main( false ) {}
+static size_t src_id()
+{
+	static size_t sid = 0;
+	return sid++;
+}
+
+srcfile_t::srcfile_t( const std::string & dir, const std::string & path, const bool is_main )
+	: m_id( src_id() ), m_dir( dir ), m_path( path ), m_is_main( is_main ) {}
 
 Errors srcfile_t::load_file()
 {
@@ -27,7 +33,7 @@ Errors srcfile_t::load_file()
 		return E_FILE_IO;
 	}
 
-	size_t prefix_idx = get_data().size();
+	size_t prefix_idx = m_data.size();
 	std::string code;
 	std::vector< src_col_range_t > cols;
 	size_t begin, end;
@@ -55,11 +61,13 @@ bcode_t & srcfile_t::bcode() { return m_bcode; }
 
 void srcfile_t::add_data( const std::string & data ) { m_data += data; }
 void srcfile_t::add_cols( const std::vector< src_col_range_t > & cols )
-{ m_cols.insert( m_cols.end(), cols.begin(), cols.end() ); }
+{
+	m_cols.insert( m_cols.end(), cols.begin(), cols.end() );
+}
 
-const std::string & srcfile_t::get_data() const { return m_data; }
-size_t srcfile_t::get_id() const { return m_id; }
-const std::string & srcfile_t::get_path() const { return m_path; }
+const std::string & srcfile_t::data() const { return m_data; }
+size_t srcfile_t::id() const { return m_id; }
+const std::string & srcfile_t::path() const { return m_path; }
 bool srcfile_t::is_main() const { return m_is_main; }
 
 void srcfile_t::fail( const size_t idx, const char * msg, ... ) const

@@ -17,14 +17,9 @@
 
 static size_t fn_id()
 {
+	// func id 0 = no func (global scope)
 	static size_t fnid = 1;
 	return fnid++;
-}
-
-std::unordered_map< std::string, var_base_t * > * var_fn_base()
-{
-	static std::unordered_map< std::string, var_base_t * > v;
-	return & v;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,29 +29,28 @@ std::unordered_map< std::string, var_base_t * > * var_fn_base()
 var_fn_t::var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		    const std::string & var_arg, const std::vector< std::string > & args,
 		    const std::vector< fn_assn_arg_t > & def_args,
-		    const fn_body_t & body, const bool is_native, const size_t & idx )
-	: var_base_t( VT_FUNC, idx, 1 ), m_fn_id( fn_id() ), m_src_name( src_name ), m_kw_arg( kw_arg ),
+		    const fn_body_t & body, const bool is_native,
+		    const size_t & src_id, const size_t & idx )
+	: var_base_t( VT_FUNC, src_id, idx ), m_fn_id( fn_id() ), m_src_name( src_name ), m_kw_arg( kw_arg ),
 	  m_var_arg( var_arg ), m_args( args ), m_def_args( def_args ), m_body( body ),
 	  m_is_native( is_native )
 {
-	fuse( VT_FUNC, var_fn_base() );
 }
 var_fn_t::var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
-		    const fn_body_t & body, const size_t & idx )
-	: var_base_t( VT_FUNC, idx, 1 ), m_fn_id( fn_id() ), m_src_name( src_name ),
+		    const fn_body_t & body, const size_t & src_id, const size_t & idx )
+	: var_base_t( VT_FUNC, src_id, idx ), m_fn_id( fn_id() ), m_src_name( src_name ),
 	  m_args( args ), m_body( body ), m_is_native( true )
 {
-	fuse( VT_FUNC, var_fn_base() );
 }
 var_fn_t::~var_fn_t()
 {
 	for( auto & arg : m_def_args ) var_dref( arg.val );
 }
 
-var_base_t * var_fn_t::copy( const size_t & idx )
+var_base_t * var_fn_t::copy( const size_t & src_id, const size_t & idx )
 {
 	for( auto & arg : m_def_args ) var_iref( arg.val );
-	return new var_fn_t( m_src_name, m_kw_arg, m_var_arg, m_args, m_def_args, m_body, m_is_native, idx );
+	return new var_fn_t( m_src_name, m_kw_arg, m_var_arg, m_args, m_def_args, m_body, m_is_native, src_id, idx );
 }
 
 size_t var_fn_t::fn_id() const { return m_fn_id; }
@@ -70,12 +64,12 @@ bool var_fn_t::is_native() { return m_is_native; }
 
 bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		     const std::vector< fn_assn_arg_t > & assn_args,
-		     const size_t & idx )
+		     const size_t & src_id, const size_t & idx )
 {
 	if( m_is_native ) {
-		var_base_t * res = m_body.native( vm, { idx, args, assn_args } );
+		var_base_t * res = m_body.native( vm, { src_id, idx, args, assn_args } );
 		if( res == nullptr ) return false;
-		vm.vm_stack->push_back( res );
+		vm.vm_stack->push( res );
 		return true;
 	}
 	// take care of 'self' (always - data or nullptr)

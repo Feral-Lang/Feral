@@ -9,19 +9,19 @@
 
 #include "../src/VM/VM.hpp"
 
-var_base_t * create_vector( vm_state_t & vm, const fn_data_t & fd )
-{
-	std::vector< var_base_t * > vec_val;
-	for( size_t i = 1; i < fd.args.size(); ++i ) {
-		vec_val.push_back( fd.args[ i ]->base_copy( fd.idx ) );
-	}
-	return make< var_vec_t >( vec_val, fd.idx );
-}
+// var_base_t * create_vector( vm_state_t & vm, const fn_data_t & fd )
+// {
+// 	std::vector< var_base_t * > vec_val;
+// 	for( size_t i = 1; i < fd.args.size(); ++i ) {
+// 		vec_val.push_back( fd.args[ i ]->base_copy( fd.idx ) );
+// 	}
+// 	return make< var_vec_t >( vec_val, fd.idx );
+// }
 
 REGISTER_MODULE( vec )
 {
-	var_module_t * src = vm.src_stack.back();
-	const std::string & src_name = src->src()->get_path();
-	src->vars()->add( "new", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_vector }, true, 0 ), vm.in_fn(), false );
+	var_src_t * src = vm.src_stack.back();
+	// const std::string & src_name = src->src()->get_path();
+	// src->vars()->add( "new", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_vector }, true, 0 ), vm.in_fn(), false );
 	return true;
 }

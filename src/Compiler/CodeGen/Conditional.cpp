@@ -17,7 +17,7 @@ bool stmt_conditional_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) 
 		if( m_conds[ i ].condition ) {
 			m_conds[ i ].condition->gen_code( bc );
 			false_jmp_pos = bc.size();
-			bc.addsz( m_conds[ i ].idx, OP_JMPF, 0 );
+			bc.addsz( m_conds[ i ].idx, OP_JMPFPOP, 0 );
 		}
 
 		m_conds[ i ].body->gen_code( bc );

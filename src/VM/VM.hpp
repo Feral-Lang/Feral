@@ -18,9 +18,9 @@
 #include "Vars.hpp"
 #include "VMStack.hpp"
 
-typedef std::vector< var_module_t * > src_stack_t;
+typedef std::vector< var_src_t * > src_stack_t;
 
-typedef std::unordered_map< std::string, var_module_t * > all_srcs_t;
+typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
 typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
 
@@ -48,12 +48,11 @@ struct vm_state_t
 	void add_src( srcfile_t * src, const size_t & idx );
 	void pop_src();
 
+	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
+	var_fn_t * get_typefn( const size_t & type, const std::string & name );
+
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
-
-	// bt = builtin type; at = attribute
-	void btadd( const VarTypes & type, std::unordered_map< std::string, var_base_t * > * data );
-	void btatadd( const VarTypes & type, const std::string & name, var_base_t * val, const bool iref = false );
 
 	inline void add_in_fn( const bool in_fn ) { m_in_fn.push_back( in_fn ); }
 	inline void rem_in_fn() { m_in_fn.pop_back(); }
@@ -72,12 +71,11 @@ struct vm_state_t
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
-	// base var type attributes/functions
-	// for injecting attributes/functions from native libraries to builtin types
-	std::unordered_map< size_t, std::unordered_map< std::string, var_base_t * > * > m_builtin_types;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
-	// if execution is in function
+	// functions for any and all types
+	std::unordered_map< size_t, vars_frame_t * > m_typefns;
+	// if execution is in a feral function or not
 	std::vector< bool > m_in_fn;
 };
 
@@ -97,14 +95,6 @@ const char * fmod_ext();
 
 namespace vm
 {
-
-inline srcfile_t * src_new( const std::string & dir, const std::string & path,
-			    const bool is_main_src = false )
-{
-	static size_t id = 0;
-	auto src = new srcfile_t( id++, dir, path, is_main_src );
-	return src;
-}
 
 // fn_id = 0 = not in a function
 int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id = 0, const bool push_fn = true );

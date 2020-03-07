@@ -25,7 +25,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	std::string src_dir;
 	std::string src_path = fs::abs_path( src_file, & src_dir );
 
-	srcfile_t * src = vm::src_new( src_dir, src_path, is_main_src );
+	srcfile_t * src = new srcfile_t( src_dir, src_path, is_main_src );
 
 	// lexical analysis
 	lex::toks_t toks;
@@ -41,7 +41,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	if( err != E_OK ) goto fail;
 
 	// show tokens
-	if( flags & OPT_T ) {
+	if( flags & OPT_T && ( flags & OPT_R || is_main_src )  ) {
 		fprintf( stdout, "Tokens (%zu):\n", toks.size() );
 		for( size_t i = 0; i < toks.size(); ++i ) {
 			auto & tok = toks[ i ];
@@ -54,7 +54,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	if( err != E_OK ) goto fail;
 
 	// show tree
-	if( flags & OPT_P ) {
+	if( flags & OPT_P && ( flags & OPT_R || is_main_src )  ) {
 		fprintf( stdout, "Parse Tree:\n" );
 		for( auto it = ptree->stmts().begin(); it != ptree->stmts().end(); ++it ) {
 			( * it )->disp( it != ptree->stmts().end() - 1 );
@@ -65,24 +65,16 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	if( err != E_OK ) goto fail;
 
 	// show bytecode
-	if( flags & OPT_B ) {
+	if( flags & OPT_B && ( flags & OPT_R || is_main_src ) ) {
 		fprintf( stdout, "Byte Code (%zu):\n", bc.size() );
-		const std::vector< op_t > & bcode = bc.bcode();
+		const std::vector< op_t > & bcode = bc.get();
 		int id_padding = std::to_string( bcode.size() ).size();
 		for( size_t i = 0; i < bcode.size(); ++i ) {
 			fprintf( stdout, "ID: %-*zu  %*s ", id_padding, i, 12, OpCodeStrs[ bcode[ i ].op ] );
 			if( bcode[ i ].dtype == ODT_BOOL ) {
 				fprintf( stdout, "[%s]\t[BOOL]\n", bcode[ i ].data.b ? "yes" : "no" );
 			} else if( bcode[ i ].dtype == ODT_SZ ) {
-				if( bcode[ i ].op == OP_BINARY ) {
-					fprintf( stdout, "[%s]\t[SZ]\n", OpBinaryStrs[ bcode[ i ].data.sz ] );
-				} else if( bcode[ i ].op == OP_UNARY ) {
-					fprintf( stdout, "[%s]\t[SZ]\n", OpUnaryStrs[ bcode[ i ].data.sz ] );
-				} else if( bcode[ i ].op == OP_COMP ) {
-					fprintf( stdout, "[%s]\t[SZ]\n", OpCompStrs[ bcode[ i ].data.sz ] );
-				} else {
-					fprintf( stdout, "[%zu]\t[SZ]\n", bcode[ i ].data.sz );
-				}
+				fprintf( stdout, "[%zu]\t[SZ]\n", bcode[ i ].data.sz );
 			} else {
 				fprintf( stdout, "[%s]\t[%s]\n", bcode[ i ].data.s,
 					 OpDataTypeStrs[ bcode[ i ].dtype ] );
@@ -106,7 +98,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 		}
 		fprintf( stdout, "byte compiling %s -> %s ...\n",
 			 src_file.c_str(), comp_file.c_str() );
-		f.write( ( char * ) ( & bc.bcode()[ 0 ] ), sizeof( op_t ) * bc.size() );
+		f.write( ( char * ) ( & bc.get()[ 0 ] ), sizeof( op_t ) * bc.size() );
 		f.close();
 	}
 	delete ptree;
