@@ -37,15 +37,14 @@ enum VarTypes
 
 	VT_STRUCT_DEF,
 
+	// all types from this inherit var_attr_based_t
 	VT_SRC,
-	VT_STRUCT,
 
-	// after this, custom type ids begin
-
+	// from this, struct type ids begin
 	_VT_LAST,
 };
 
-// custom types inherit var_attr_based_t... NOT var_base_t
+// custom types inherit var_attr_based_t, NOT var_base_t
 class var_base_t
 {
 protected:
@@ -252,11 +251,14 @@ class var_struct_def_t : public var_base_t
 {
 	std::vector< std::string > m_attr_order;
 	std::unordered_map< std::string, var_base_t * > m_attrs;
-public:
-	var_struct_def_t( const std::vector< std::string > & attr_order,
+	// type id of struct which will be used as m_type for struct objects
+	size_t m_id;
+
+	var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
-	var_struct_def_t( const size_t & type_id, const std::vector< std::string > & attr_order,
+public:
+	var_struct_def_t( const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
 	~var_struct_def_t();
@@ -265,10 +267,13 @@ public:
 	void set( var_base_t * from );
 
 	// returns var_struct_t
-	var_base_t * init();
+	var_base_t * init( srcfile_t * src, const std::vector< var_base_t * > & args,
+			   const std::vector< fn_assn_arg_t > & assn_args,
+			   const size_t & src_id, const size_t & idx );
 
 	const std::vector< std::string > & attr_order() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
+	size_t id() const;
 };
 #define STRUCT_DEF( x ) static_cast< var_struct_def_t * >( x )
 
@@ -326,5 +331,7 @@ public:
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
 };
 #define STRUCT( x ) static_cast< var_struct_t * >( x )
+
+void init_typenames( vm_state_t & vm );
 
 #endif // VM_VARS_BASE_HPP

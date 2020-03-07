@@ -26,3 +26,17 @@ void var_base_t::operator delete( void * ptr, size_t sz )
 {
 	mem::free( ptr, sz );
 }
+
+void init_typenames( vm_state_t & vm )
+{
+	vm.set_typename( VT_NIL, "nil" );
+	vm.set_typename( VT_BOOL, "bool" );
+	vm.set_typename( VT_INT, "int" );
+	vm.set_typename( VT_FLT, "float" );
+	vm.set_typename( VT_STR, "string" );
+	vm.set_typename( VT_VEC, "vector" );
+	vm.set_typename( VT_MAP, "map" );
+	vm.set_typename( VT_FUNC, "function" );
+	vm.set_typename( VT_STRUCT_DEF, "struct_def" );
+	vm.set_typename( VT_SRC, "module" );
+}

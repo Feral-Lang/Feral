@@ -23,6 +23,8 @@ public:
 	vars_frame_t();
 	~vars_frame_t();
 
+	inline const std::unordered_map< std::string, var_base_t * > & all() const { return m_vars; }
+
 	inline bool exists( const std::string & name ) { return m_vars.find( name ) != m_vars.end(); }
 	var_base_t * get( const std::string & name );
 

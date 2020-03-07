@@ -21,6 +21,7 @@ vm_state_t::vm_state_t( const size_t & flags )
 	  fals( new var_bool_t( false, 0, 0 ) ), nil( new var_nil_t( 0, 0 ) ),
 	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() )
 {
+	init_typenames( * this );
 	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
 	mod_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
 }
@@ -59,6 +60,18 @@ var_fn_t * vm_state_t::get_typefn( const size_t & type, const std::string & name
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) return nullptr;
 	return FN( m_typefns[ type ]->get( name ) );
+}
+
+void vm_state_t::set_typename( const size_t & type, const std::string & name )
+{
+	m_typenames[ type ] = name;
+}
+std::string vm_state_t::type_name( const size_t & type )
+{
+	if( m_typenames.find( type ) != m_typenames.end() ) {
+		return m_typenames[ type ];
+	}
+	return "struct<" + std::to_string( type ) + ">";
 }
 
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )

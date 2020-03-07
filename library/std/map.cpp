@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "../src/VM/VM.hpp"
+#include "../../src/VM/VM.hpp"
 
 // var_base_t * create_map( vm_state_t & vm, const fn_data_t & fd )
 // {

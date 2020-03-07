@@ -73,12 +73,12 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 				goto create_done;
 			}
 			// for creation with 'in' parameter
-			// if it's a function, add that to SRC or vm.typefuncs
+			// if it's a function, add that to vm.typefuncs
 			if( val->type() == VT_FUNC ) {
 				vm.add_typefn( in->type(), name, val, true );
 			} else { // else add to attribute if type >= _VT_LAST
 				if( in->type() < _VT_LAST ) {
-					src_file->fail( op.idx, "only functions can be added to builtin types" );
+					src_file->fail( op.idx, "attributes can be added only to structure objects" );
 					goto create_fail;
 				}
 				ATTR_BASED( in )->attr_set( name, val, true );
@@ -96,9 +96,9 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 			var_base_t * var = vms->pop( false );
 			var_base_t * val = vms->pop( false );
 			if( var->type() != val->type() ) {
-				src_file->fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %zu, rhs: %zu"
-					   "; to redeclare a variable using another type, use the 'let' statement",
-					   var->type(), val->type() );
+				src_file->fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
+						"; to redeclare a variable using another type, use the 'let' statement",
+						vm.type_name( var->type() ).c_str(), vm.type_name( val->type() ).c_str() );
 				var_dref( val );
 				var_dref( var );
 				goto fail;
@@ -226,14 +226,23 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 				src_file->fail( op.idx, "no attribute/variable found for function call" );
 				goto fncall_fail;
 			}
-			if( fn_base->type() != VT_FUNC ) {
-				src_file->fail( fn_base->idx(), "variable is not a function" );
+			if( fn_base->type() != VT_FUNC && fn_base->type() != VT_STRUCT_DEF ) {
+				src_file->fail( op.idx, "this is not a function or struct definition" );
 				goto fncall_fail;
 			}
-			args.insert( args.begin(), in_base );
-			if( !FN( fn_base )->call( vm, args, assn_args, src_id, op.idx ) ) {
-				src_file->fail( op.idx, "function call failed, look at error above" );
-				goto fncall_fail;
+			if( fn_base->type() == VT_FUNC ) {
+				args.insert( args.begin(), in_base );
+				if( !FN( fn_base )->call( vm, args, assn_args, src_id, op.idx ) ) {
+					src_file->fail( op.idx, "function call failed, look at error above" );
+					goto fncall_fail;
+				}
+			} else if( fn_base->type() == VT_STRUCT_DEF ) { // VT_STRUCT_DEF
+				var_base_t * res = STRUCT_DEF( fn_base )->init( src_file, args, assn_args, src_id, op.idx );
+				if( !res ) {
+					src_file->fail( op.idx, "object creation failed, look at error above" );
+					goto fncall_fail;
+				}
+				vms->push( res, false );
 			}
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
@@ -254,8 +263,8 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 			}
 			if( !val ) val = vm.get_typefn( in_base->type(), attr );
 			if( val == nullptr ) {
-				src_file->fail( op.idx, "type %zu does not contain attribute: '%s'",
-						in_base->type(), attr.c_str() );
+				src_file->fail( op.idx, "type %s does not contain attribute: '%s'",
+						vm.type_name( in_base->type() ).c_str(), attr.c_str() );
 				goto attr_fail;
 			}
 			var_dref( in_base );

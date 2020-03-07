@@ -36,6 +36,7 @@ var_base_t * var_struct_t::copy( const size_t & src_id, const size_t & idx )
 void var_struct_t::set( var_base_t * from )
 {
 	var_struct_t * st = STRUCT( from );
+	m_type = st->m_type;
 	for( auto & attr : m_attrs ) {
 		var_dref( attr.second );
 	}

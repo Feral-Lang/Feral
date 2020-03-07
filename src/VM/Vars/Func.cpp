@@ -67,6 +67,12 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		     const size_t & src_id, const size_t & idx )
 {
 	if( m_is_native ) {
+		// - 1 for self
+		if( args.size() - 1 < m_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
+			vm.src_stack.back()->src()->fail( idx, "argument count required: %zu, received: %zu",
+							  m_args.size(), args.size() - 1 );
+			return false;
+		}
 		var_base_t * res = m_body.native( vm, { src_id, idx, args, assn_args } );
 		if( res == nullptr ) return false;
 		vm.vm_stack->push( res );

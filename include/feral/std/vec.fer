@@ -1,1 +1,1 @@
-mload( 'vec' );
+mload( 'std/vec' );

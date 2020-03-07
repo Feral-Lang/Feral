@@ -51,6 +51,9 @@ struct vm_state_t
 	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
 	var_fn_t * get_typefn( const size_t & type, const std::string & name );
 
+	void set_typename( const size_t & type, const std::string & name );
+	std::string type_name( const size_t & type );
+
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
 
@@ -75,6 +78,8 @@ private:
 	std::unordered_map< std::string, var_base_t * > m_globals;
 	// functions for any and all types
 	std::unordered_map< size_t, vars_frame_t * > m_typefns;
+	// names of types (optional)
+	std::unordered_map< size_t, std::string > m_typenames;
 	// if execution is in a feral function or not
 	std::vector< bool > m_in_fn;
 };
