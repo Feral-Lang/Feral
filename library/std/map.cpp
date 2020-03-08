@@ -38,7 +38,7 @@
 // 		map_val[ STR( str )->get() ] = fd.args[ ++i ]->base_copy( fd.idx );
 // 		vm.vm_stack->pop_back();
 // 	}
-// 	return make< var_map_t >( map_val, fd.idx );
+// 	return make< var_map_t >( map_val );
 // }
 
 REGISTER_MODULE( map )

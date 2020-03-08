@@ -42,6 +42,6 @@ REGISTER_MODULE( io )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
-	src->vars()->add( "println", new var_fn_t( src_name, "", ".", {}, {}, { .native = println }, true, 0, 0 ), false );
+	src->add_nativefn( "println", println, {}, true );
 	return true;
 }

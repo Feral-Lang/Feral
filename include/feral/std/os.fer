@@ -1,0 +1,3 @@
+mload( 'std/os' );
+
+let name = os_get_name();

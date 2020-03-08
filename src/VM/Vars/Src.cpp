@@ -58,6 +58,13 @@ var_base_t * var_src_t::attr_get( const std::string & name )
 	return m_vars->get( name );
 }
 
+void var_src_t::add_nativefn( const std::string & name, nativefnptr_t body,
+			      const std::vector< std::string > & args,
+			      const bool is_va )
+{
+	m_vars->add( name, new var_fn_t( m_src->path(), "", is_va ? "." : "", args, {}, { .native = body }, true, m_src->id(), 0 ), false );
+}
+
 srcfile_t * var_src_t::src() { return m_src; }
 vars_t * var_src_t::vars() { return m_vars; }
 bool var_src_t::copied() { return m_copied; }

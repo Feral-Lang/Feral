@@ -19,13 +19,13 @@ var_base_t * create_struct( vm_state_t & vm, const fn_data_t & fd )
 		attr_order.push_back( arg.name );
 		attrs[ arg.name ] = arg.val->copy( src_id, fd.idx );
 	}
-	return make< var_struct_def_t >( attr_order, attrs, src_id, fd.idx );
+	return make< var_struct_def_t >( attr_order, attrs );
 }
 
 REGISTER_MODULE( lang )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
-	src->vars()->add( "struct", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_struct }, true, 0, 0 ), false );
+	src->add_nativefn( "struct", create_struct );
 	return true;
 }

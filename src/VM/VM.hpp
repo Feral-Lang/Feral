@@ -90,7 +90,8 @@ typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
 
 template< typename T, typename ... Args > T * make( Args... args )
 {
-	T * res = new T( args... );
+	// 0, 0 for src_id and idx
+	T * res = new T( args..., 0, 0 );
 	res->dref();
 	return res;
 }

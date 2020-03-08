@@ -15,7 +15,7 @@
 // 	for( size_t i = 1; i < fd.args.size(); ++i ) {
 // 		vec_val.push_back( fd.args[ i ]->base_copy( fd.idx ) );
 // 	}
-// 	return make< var_vec_t >( vec_val, fd.idx );
+// 	return make< var_vec_t >( vec_val );
 // }
 
 REGISTER_MODULE( vec )

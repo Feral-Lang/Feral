@@ -223,11 +223,13 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 				fn_base = vms->pop( false );
 			}
 			if( !fn_base ) {
-				src_file->fail( op.idx, "no attribute/variable found for function call" );
+				src_file->fail( op.idx, "this function does not exist" );
+				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( fn_base->type() != VT_FUNC && fn_base->type() != VT_STRUCT_DEF ) {
 				src_file->fail( op.idx, "this is not a function or struct definition" );
+				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( fn_base->type() == VT_FUNC ) {

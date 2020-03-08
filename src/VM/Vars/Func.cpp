@@ -75,6 +75,11 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		}
 		var_base_t * res = m_body.native( vm, { src_id, idx, args, assn_args } );
 		if( res == nullptr ) return false;
+		// if it's a new variable (created with make<>() function)
+		// set src_id and idx
+		if( res->ref() == 0 ) {
+			res->set_src_id_idx( src_id, idx );
+		}
 		vm.vm_stack->push( res );
 		return true;
 	}

@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "core/int.hpp"
+
 #include "../src/VM/VM.hpp"
 
 var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
@@ -18,29 +20,29 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_base_t * data = fd.args[ 0 ];
 	char res[ 1024 ];
 	sprintf( res, "type: %s at %p", vm.type_name( data->type() ).c_str(), data );
-	return make< var_str_t >( res, fd.src_id, fd.idx );
+	return make< var_str_t >( res );
 }
 
 var_base_t * nil_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_str_t >( "(nil)", fd.src_id, fd.idx );
+	return make< var_str_t >( "(nil)" );
 }
 
 var_base_t * bool_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_str_t >( BOOL( fd.args[ 0 ] )->get() ? "true" : "false", fd.src_id, fd.idx );
+	return make< var_str_t >( BOOL( fd.args[ 0 ] )->get() ? "true" : "false" );
 }
 
 var_base_t * int_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_str_t >( INT( fd.args[ 0 ] )->get().get_str(), fd.src_id, fd.idx );
+	return make< var_str_t >( INT( fd.args[ 0 ] )->get().get_str() );
 }
 
 var_base_t * flt_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	std::ostringstream oss;
 	oss << std::setprecision( 21 ) << FLT( fd.args[ 0 ] )->get();
-	return make< var_str_t >( oss.str(), fd.src_id, fd.idx );
+	return make< var_str_t >( oss.str() );
 }
 
 var_base_t * str_to_str( vm_state_t & vm, const fn_data_t & fd )
@@ -114,5 +116,15 @@ REGISTER_MODULE( core )
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0, 0 ) );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
+
+	// core type functions
+	vm.add_typefn( VT_INT, "+", new var_fn_t( src_name, { "" }, { .native = int_add }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "-", new var_fn_t( src_name, { "" }, { .native = int_sub }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "*", new var_fn_t( src_name, { "" }, { .native = int_mul }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "/", new var_fn_t( src_name, { "" }, { .native = int_div }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "%", new var_fn_t( src_name, { "" }, { .native = int_mod }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "u-", new var_fn_t( src_name, {}, { .native = int_usub }, 0, 0 ), false );
+
 	return true;
 }

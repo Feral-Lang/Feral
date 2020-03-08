@@ -61,6 +61,8 @@ public:
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
 	virtual void set( var_base_t * from ) = 0;
 
+	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
+
 	inline size_t type() const { return m_type; }
 
 	inline size_t src_id() const { return m_src_id; }
@@ -305,6 +307,10 @@ public:
 	bool attr_exists( const std::string & name ) const;
 	void attr_set( const std::string & name, var_base_t * val, const bool iref );
 	var_base_t * attr_get( const std::string & name );
+
+	void add_nativefn( const std::string & name, nativefnptr_t body,
+			   const std::vector< std::string > & args = {},
+			   const bool is_va = false );
 
 	srcfile_t * src();
 	vars_t * vars();
