@@ -35,10 +35,7 @@ bool stmt_fn_def_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) 
 
 	for( auto arg = m_args.rbegin(); arg != m_args.rend(); ++arg ) {
 		if( !( * arg )->gen_code( bc ) ) return false;
-	}
-
-	for( auto & arg : m_args ) {
-		arg_info += arg->type() == GT_FN_ASSN_ARG ? "1" : "0";
+		arg_info += "x";
 	}
 
 	if( m_vaarg ) {

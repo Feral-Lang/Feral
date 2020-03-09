@@ -41,10 +41,44 @@
 // 	return make< var_map_t >( map_val );
 // }
 
+var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	var_map_t * map = MAP( fd.args[ 0 ] );
+	std::string res = "{";
+	for( auto & e : map->get() ) {
+		var_fn_t * str_fn = vm.get_typefn( e.second->type(), "str" );
+		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
+		if( !str_fn ) {
+			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
+			return nullptr;
+		}
+		if( !FN( str_fn )->call( vm, { e.second }, {}, src->id(), fd.idx ) ) {
+			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
+			return nullptr;
+		}
+		var_base_t * str = vm.vm_stack->pop( false );
+		if( str->type() != VT_STR ) {
+			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+			var_dref( str );
+			return nullptr;
+		}
+		res += e.first + ": " + STR( str )->get() + ", ";
+		var_dref( str );
+	}
+	if( map->get().size() > 0 ) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "}";
+	return make< var_str_t >( res );
+}
+
 REGISTER_MODULE( map )
 {
 	var_src_t * src = vm.src_stack.back();
-	// const std::string & src_name = src->src()->get_path();
+	const std::string & src_name = src->src()->path();
 	// src->vars()->add( "new", new var_fn_t( src_name, "", ".", {}, {}, { .native = create_map }, true, 0 ), vm.in_fn(), false );
+	vm.add_typefn( VT_MAP, "str", new var_fn_t( src_name, {}, { .native = map_to_str },  0, 0 ), false );
 	return true;
 }

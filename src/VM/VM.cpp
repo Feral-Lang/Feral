@@ -38,13 +38,20 @@ vm_state_t::~vm_state_t()
 	delete dlib;
 }
 
-void vm_state_t::add_src( srcfile_t * src, const size_t & idx )
+void vm_state_t::push_src( srcfile_t * src, const size_t & idx )
 {
 	if( all_srcs.find( src->path() ) == all_srcs.end() ) {
 		all_srcs[ src->path() ] = new var_src_t( src, new vars_t(), src->id(), idx );
 	}
 	var_iref( all_srcs[ src->path() ] );
 	src_stack.push_back( all_srcs[ src->path() ] );
+}
+
+void vm_state_t::push_src( const std::string & src_path )
+{
+	assert( all_srcs.find( src_path ) != all_srcs.end() );
+	var_iref( all_srcs[ src_path ] );
+	src_stack.push_back( all_srcs[ src_path ] );
 }
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
@@ -153,8 +160,8 @@ int vm_state_t::load_fmod( const std::string & mod_file )
 		return err;
 	}
 
-	add_src( src, 0 );
-	int res = vm::exec( * this, src->bcode() );
+	push_src( src, 0 );
+	int res = vm::exec( * this );
 	pop_src();
 	return res;
 }

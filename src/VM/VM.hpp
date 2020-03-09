@@ -45,7 +45,8 @@ struct vm_state_t
 	vm_state_t( const size_t & flags );
 	~vm_state_t();
 
-	void add_src( srcfile_t * src, const size_t & idx );
+	void push_src( srcfile_t * src, const size_t & idx );
+	void push_src( const std::string & src_path );
 	void pop_src();
 
 	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
@@ -56,10 +57,6 @@ struct vm_state_t
 
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
-
-	inline void add_in_fn( const bool in_fn ) { m_in_fn.push_back( in_fn ); }
-	inline void rem_in_fn() { m_in_fn.pop_back(); }
-	inline bool in_fn() const { return m_in_fn.size() > 0 ? m_in_fn.back() : false; }
 
 	// modules & imports
 	// nmod = native module
@@ -80,8 +77,6 @@ private:
 	std::unordered_map< size_t, vars_frame_t * > m_typefns;
 	// names of types (optional)
 	std::unordered_map< size_t, std::string > m_typenames;
-	// if execution is in a feral function or not
-	std::vector< bool > m_in_fn;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
@@ -102,8 +97,8 @@ const char * fmod_ext();
 namespace vm
 {
 
-// fn_id = 0 = not in a function
-int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id = 0, const bool push_fn = true );
+// end = 0 = till size of bcode
+int exec( vm_state_t & vm, const size_t & begin = 0, const size_t & end = 0 );
 
 }
 

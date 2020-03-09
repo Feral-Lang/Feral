@@ -70,7 +70,7 @@ public:
  */
 class vars_t
 {
-	std::vector< size_t > m_fn_stack;
+	size_t m_fn_stack;
 	std::unordered_map< std::string, var_base_t * > m_stash;
 	// maps function id to vars_frame_t
 	std::unordered_map< size_t, vars_stack_t * > m_fn_vars;
@@ -86,7 +86,7 @@ public:
 	void blk_add( const size_t & count );
 	void blk_rem( const size_t & count );
 
-	void push_fn( const size_t & id );
+	void push_fn();
 	void pop_fn();
 
 	void stash( const std::string & name, var_base_t * val );

@@ -76,7 +76,7 @@ public:
 	static void operator delete( void * ptr, size_t sz );
 };
 
-template< typename T > inline void var_iref( T * & var )
+template< typename T > inline void var_iref( T * var )
 {
 	if( var == nullptr ) return;
 	var->iref();
@@ -213,18 +213,15 @@ union fn_body_t
 
 class var_fn_t : public var_base_t
 {
-	size_t m_fn_id;
 	std::string m_src_name;
 	std::string m_kw_arg;
 	std::string m_var_arg;
 	std::vector< std::string > m_args;
-	std::vector< fn_assn_arg_t > m_def_args;
 	fn_body_t m_body;
 	bool m_is_native;
 public:
 	var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		  const std::string & var_arg, const std::vector< std::string > & args,
-		  const std::vector< fn_assn_arg_t > & def_args,
 		  const fn_body_t & body, const bool is_native, const size_t & src_id, const size_t & idx );
 	var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
 		  const fn_body_t & body, const size_t & src_id, const size_t & idx );
@@ -234,12 +231,10 @@ public:
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	size_t fn_id() const;
 	std::string & src_name();
 	std::string & kw_arg();
 	std::string & var_arg();
 	std::vector< std::string > & args();
-	std::vector< fn_assn_arg_t > & def_args();
 	fn_body_t & body();
 	bool is_native();
 

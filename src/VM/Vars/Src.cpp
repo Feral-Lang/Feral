@@ -62,7 +62,7 @@ void var_src_t::add_nativefn( const std::string & name, nativefnptr_t body,
 			      const std::vector< std::string > & args,
 			      const bool is_va )
 {
-	m_vars->add( name, new var_fn_t( m_src->path(), "", is_va ? "." : "", args, {}, { .native = body }, true, m_src->id(), 0 ), false );
+	m_vars->add( name, new var_fn_t( m_src->path(), "", is_va ? "." : "", args, { .native = body }, true, m_src->id(), 0 ), false );
 }
 
 srcfile_t * var_src_t::src() { return m_src; }

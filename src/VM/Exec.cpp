@@ -14,24 +14,21 @@ namespace vm
 {
 
 // declared in VM.hpp
-int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bool push_fn )
+int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 {
 	var_src_t * src = vm.src_stack.back();
 	vars_t * vars = src->vars();
 	srcfile_t * src_file = src->src();
 	size_t src_id = src_file->id();
 	vm_stack_t * vms = vm.vm_stack;
-	const auto & bc = bcode.get();
-	size_t bc_sz = bc.size();
-
-	bool in_fn = fn_id != 0;
-
-	if( in_fn && push_fn ) vars->push_fn( fn_id );
-	vm.add_in_fn( in_fn );
+	const auto & bc = src_file->bcode().get();
+	size_t bc_sz = end == 0 ? bc.size() : end;
 
 	std::vector< fn_body_span_t > bodies;
 
-	for( size_t i = 0; i < bc_sz; ++i ) {
+	vars->push_fn();
+
+	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
 		// fprintf( stdout, "ID: %zu %*s\n", i, 12, OpCodeStrs[ op.op ] );
 		switch( op.op ) {
@@ -75,7 +72,11 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 			// for creation with 'in' parameter
 			// if it's a function, add that to vm.typefuncs
 			if( val->type() == VT_FUNC ) {
-				vm.add_typefn( in->type(), name, val, true );
+				if( in->type() == VT_STRUCT_DEF ) {
+					vm.add_typefn( STRUCT_DEF( in )->id(), name, val, true );
+				} else {
+					vm.add_typefn( in->type(), name, val, true );
+				}
 			} else { // else add to attribute if type >= _VT_LAST
 				if( in->type() < _VT_LAST ) {
 					src_file->fail( op.idx, "attributes can be added only to structure objects" );
@@ -158,7 +159,6 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 			std::string kw_arg;
 			std::string var_arg;
 			std::vector< std::string > args;
-			std::vector< fn_assn_arg_t > def_args;
 			if( op.data.s[ 0 ] == '1' ) {
 				kw_arg = STR( vms->back() )->get();
 				vms->pop();
@@ -168,16 +168,12 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 				vms->pop();
 			}
 
-			size_t arg_sz = strlen( op.data.s ) - 2;
+			size_t arg_sz = strlen( op.data.s );
 			for( size_t i = 2; i < arg_sz; ++i ) {
 				const size_t idx = vms->back()->idx();
 				std::string name = STR( vms->back() )->get();
 				vms->pop();
 				var_base_t * val = nullptr;
-				if( op.data.s[ i ] == '1' ) {
-					val = vms->pop( false );
-					def_args.push_back( { idx, name, val } );
-				}
 				args.push_back( name );
 			}
 
@@ -185,7 +181,7 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 			bodies.pop_back();
 
 			vms->push( new var_fn_t( src_file->path(), kw_arg, var_arg,
-						 args, def_args, { .feral = body }, false,
+						 args, { .feral = body }, false,
 						 src_id, op.idx ),
 				   false );
 			break;
@@ -286,12 +282,10 @@ int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id, const bo
 	}
 
 done:
-	vm.rem_in_fn();
-	if( in_fn && push_fn ) vars->pop_fn();
+	vars->pop_fn();
 	return E_OK;
 fail:
-	vm.rem_in_fn();
-	if( in_fn && push_fn ) vars->pop_fn();
+	vars->pop_fn();
 	return E_EXEC_FAIL;
 }
 

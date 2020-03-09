@@ -110,25 +110,24 @@ void vars_stack_t::rem( const std::string & name, const bool dec_ref )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-vars_t::vars_t() : m_fn_stack( { 0 } )
+vars_t::vars_t() : m_fn_stack( -1 )
 {
-	m_fn_vars[ 0 ] = new vars_stack_t;
 }
 vars_t::~vars_t()
 {
-	assert( m_fn_stack.size() == 1 );
+	assert( m_fn_stack == 0 );
 	delete m_fn_vars[ 0 ];
 }
 
 bool vars_t::exists( const std::string & name )
 {
-	return m_fn_vars[ m_fn_stack.back() ]->exists( name );
+	return m_fn_vars[ m_fn_stack ]->exists( name );
 }
 
 var_base_t * vars_t::get( const std::string & name )
 {
-	var_base_t * res = m_fn_vars[ m_fn_stack.back() ]->get( name );
-	if( res == nullptr && m_fn_stack.back() != 0 ) {
+	var_base_t * res = m_fn_vars[ m_fn_stack ]->get( name );
+	if( res == nullptr && m_fn_stack != 0 ) {
 		res = m_fn_vars[ 0 ]->get( name );
 	}
 	return res;
@@ -136,29 +135,29 @@ var_base_t * vars_t::get( const std::string & name )
 
 void vars_t::blk_add( const size_t & count )
 {
-	m_fn_vars[ m_fn_stack.back() ]->inc_top( count );
+	m_fn_vars[ m_fn_stack ]->inc_top( count );
 	for( auto & s : m_stash ) {
-		m_fn_vars[ m_fn_stack.back() ]->add( s.first, s.second, true );
+		m_fn_vars[ m_fn_stack ]->add( s.first, s.second, true );
 	}
 	m_stash.clear();
 }
 
 void vars_t::blk_rem( const size_t & count )
 {
-	m_fn_vars[ m_fn_stack.back() ]->dec_top( count );
+	m_fn_vars[ m_fn_stack ]->dec_top( count );
 }
 
-void vars_t::push_fn( const size_t & id )
+void vars_t::push_fn()
 {
-	m_fn_stack.push_back( id );
-	m_fn_vars[ id ] = new vars_stack_t;
+	++m_fn_stack;
+	m_fn_vars[ m_fn_stack ] = new vars_stack_t;
 }
 void vars_t::pop_fn()
 {
-	assert( m_fn_stack.size() > 0 );
-	delete m_fn_vars[ m_fn_stack.back() ];
-	m_fn_vars.erase( m_fn_stack.back() );
-	m_fn_stack.pop_back();
+	if( m_fn_stack == 0 ) return;
+	delete m_fn_vars[ m_fn_stack ];
+	m_fn_vars.erase( m_fn_stack );
+	--m_fn_stack;
 }
 
 void vars_t::stash( const std::string & name, var_base_t * val )
@@ -173,10 +172,10 @@ void vars_t::unstash()
 
 void vars_t::add( const std::string & name, var_base_t * val, const bool inc_ref )
 {
-	m_fn_vars[ m_fn_stack.back() ]->add( name, val, inc_ref );
+	m_fn_vars[ m_fn_stack ]->add( name, val, inc_ref );
 }
 
 void vars_t::rem( const std::string & name, const bool dec_ref )
 {
-	m_fn_vars[ m_fn_stack.back() ]->rem( name, dec_ref );
+	m_fn_vars[ m_fn_stack ]->rem( name, dec_ref );
 }

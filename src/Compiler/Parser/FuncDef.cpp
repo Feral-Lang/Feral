@@ -79,22 +79,14 @@ begin:
 		}
 		kw_arg = new stmt_simple_t( ph.peak() );
 		ph.next();
-	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_ASSN && ph.peakt( 1 ) != TOK_TDOT ) {
+	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_TDOT ) {
 		ph.sett( TOK_STR );
 		args.push_back( new stmt_simple_t( ph.peak() ) );
 		ph.next();
-	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since STR is checked above, won't be bothered with it anymore
+	} else if( ph.acceptd() && ph.peakt( 1 ) == TOK_TDOT ) { // since STR is checked above, won't be bothered with it anymore
 		// but we still have to make IDEN data type to STR
 		if( ph.accept( TOK_IDEN ) ) ph.sett( TOK_STR );
-		if( ph.peakt( 1 ) == TOK_ASSN ) { // it's a default assignment
-			const lex::tok_t * lhs = ph.peak();
-			stmt_base_t * rhs = nullptr;
-			ph.next(); ph.next();
-			if( parse_expr_13( ph, rhs ) != E_OK ) {
-				goto fail;
-			}
-			args.push_back( new stmt_fn_assn_arg_t( new stmt_simple_t( lhs ), rhs ) );
-		} else if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
+		if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
 			va_arg = new stmt_simple_t( ph.peak() );
 			ph.next(); ph.next();
 		}
