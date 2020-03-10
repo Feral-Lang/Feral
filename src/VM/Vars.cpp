@@ -93,6 +93,29 @@ void vars_stack_t::dec_top( const size_t & count )
 	}
 }
 
+void vars_stack_t::push_loop()
+{
+	m_loops_from.push_back( m_top + 1 );
+	inc_top( 1 );
+}
+
+void vars_stack_t::pop_loop()
+{
+	assert( m_loops_from.size() > 0 );
+	if( m_top >= m_loops_from.back() ) {
+		dec_top( m_top - m_loops_from.back() + 1 );
+	}
+	m_loops_from.pop_back();
+}
+
+void vars_stack_t::loop_continue()
+{
+	assert( m_loops_from.size() > 0 );
+	if( m_top > m_loops_from.back() ) {
+		dec_top( m_top - m_loops_from.back() );
+	}
+}
+
 void vars_stack_t::add( const std::string & name, var_base_t * val, const bool inc_ref )
 {
 	m_stack.back()->add( name, val, inc_ref );

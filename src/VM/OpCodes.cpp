@@ -39,6 +39,10 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"CONTINUE",	// size_t operand - jump to
 	"BREAK",	// size_t operand - jump to
 	"DEFER",	// can take expression or block - bool - true takes expr, false takes block
+
+	// for loops
+	"PUSH_LOOP",	// marks a loop's beginning for variable stack
+	"POP_LOOP",	// marks a loop's ending for variable stack
 };
 
 const char * OpDataTypeStrs[ _ODT_LAST ] = {

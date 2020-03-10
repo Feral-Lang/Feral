@@ -43,6 +43,10 @@ enum OpCodes
 	OP_BREAK,	// size_t operand - jump to
 	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block
 
+	// for loops
+	OP_PUSH_LOOP,	// marks a loop's beginning for variable stack
+	OP_POP_LOOP,	// marks a loop's ending for variable stack
+
 	_OP_LAST,
 };
 

@@ -7,48 +7,10 @@
 	before using or altering the project.
 */
 
-#include <iomanip>
-#include <sstream>
-
+#include "core/to_str.hpp"
 #include "core/int.hpp"
 
 #include "../src/VM/VM.hpp"
-
-var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	srcfile_t * src = vm.src_stack.back()->src();
-	var_base_t * data = fd.args[ 0 ];
-	char res[ 1024 ];
-	sprintf( res, "type: %s at %p", vm.type_name( data->type() ).c_str(), data );
-	return make< var_str_t >( res );
-}
-
-var_base_t * nil_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( "(nil)" );
-}
-
-var_base_t * bool_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( BOOL( fd.args[ 0 ] )->get() ? "true" : "false" );
-}
-
-var_base_t * int_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( INT( fd.args[ 0 ] )->get().get_str() );
-}
-
-var_base_t * flt_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	std::ostringstream oss;
-	oss << std::setprecision( 21 ) << FLT( fd.args[ 0 ] )->get();
-	return make< var_str_t >( oss.str() );
-}
-
-var_base_t * str_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return fd.args[ 0 ];
-}
 
 var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -98,7 +60,27 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 	}
 	return vm.all_srcs[ file ];
 }
+/*
+var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_base_t * lhs_base = fd.args[ 1 ];
+	var_base_t * rhs_base = fd.args.size() > 2 ? fd.args[ 2 ] : nullptr;
+	var_base_t * step_base = fd.args.size() > 3 ? fd.args[ 3 ] : nullptr;
 
+	size_t final_type = VT_INT;
+
+	if( lhs_base->type() == VT_FLT ) final_type = VT_FLT;
+	if( rhs_base && rhs_base->type() == VT_FLT ) final_type = VT_FLT;
+	if( step_base && step_base->type() == VT_FLT ) final_type = VT_FLT;
+
+	if( final_type == VT_INT ) {
+		mpz_class begin = fd.args.size() > 2 ? INT( lhs_base )->get() : 0;
+		mpz_class end = rhs_base ? INT( rhs_base )->get() : INT( lhs_base )->get();
+		mpz_class step = step_base ? INT( step_base )->get() : 1;
+		return make< var_int_iterable_t >( begin, end, step );
+	}
+}
+*/
 REGISTER_MODULE( core )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
@@ -110,12 +92,15 @@ REGISTER_MODULE( core )
 	vm.add_typefn( VT_INT,	"str", new var_fn_t( src_name, {}, { .native = int_to_str },  0, 0 ), false );
 	vm.add_typefn( VT_FLT,	"str", new var_fn_t( src_name, {}, { .native = flt_to_str },  0, 0 ), false );
 	vm.add_typefn( VT_STR,	"str", new var_fn_t( src_name, {}, { .native = str_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_VEC,  "str", new var_fn_t( src_name, {}, { .native = vec_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_MAP,  "str", new var_fn_t( src_name, {}, { .native = map_to_str },  0, 0 ), false );
 
 	vm.add_typefn( VT_STRUCT_DEF, "set_typename", new var_fn_t( src_name, { "" }, { .native = struct_def_set_typename },  0, 0 ), false );
 
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0, 0 ) );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
+	// vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, { .native = range }, true, 0, 0 ) );
 
 	// core type functions
 	vm.add_typefn( VT_INT, "+", new var_fn_t( src_name, { "" }, { .native = int_add }, 0, 0 ), false );
@@ -124,7 +109,24 @@ REGISTER_MODULE( core )
 	vm.add_typefn( VT_INT, "/", new var_fn_t( src_name, { "" }, { .native = int_div }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "%", new var_fn_t( src_name, { "" }, { .native = int_mod }, 0, 0 ), false );
 
+	vm.add_typefn( VT_INT, "+=", new var_fn_t( src_name, { "" }, { .native = int_addassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "-=", new var_fn_t( src_name, { "" }, { .native = int_subassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "*=", new var_fn_t( src_name, { "" }, { .native = int_mulassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "/=", new var_fn_t( src_name, { "" }, { .native = int_divassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "%=", new var_fn_t( src_name, { "" }, { .native = int_modassn }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "**", new var_fn_t( src_name, { "" }, { .native = int_pow },  0, 0 ), false );
+	vm.add_typefn( VT_INT, "++x", new var_fn_t( src_name, {}, { .native = int_preinc },  0, 0 ), false );
+	vm.add_typefn( VT_INT, "x++", new var_fn_t( src_name, {}, { .native = int_postinc }, 0, 0 ), false );
+
 	vm.add_typefn( VT_INT, "u-", new var_fn_t( src_name, {}, { .native = int_usub }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "<",  new var_fn_t( src_name, { "" }, { .native = int_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, ">",  new var_fn_t( src_name, { "" }, { .native = int_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "<=", new var_fn_t( src_name, { "" }, { .native = int_le }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, ">=", new var_fn_t( src_name, { "" }, { .native = int_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "==", new var_fn_t( src_name, { "" }, { .native = int_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "!=", new var_fn_t( src_name, { "" }, { .native = int_ne }, 0, 0 ), false );
 
 	return true;
 }

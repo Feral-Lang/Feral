@@ -11,44 +11,40 @@
 
 bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
-	bc.addsz( idx(), OP_BLKA, 1 );
+	bc.add( idx(), OP_PUSH_LOOP );
 
-	// create m_loop_var as nil
-	bc.add( idx(), OP_LOAD );
+	// create the m_loop_var by calling the iter() magic function
+	m_expr->gen_code( bc );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
 	bc.addb( m_loop_var->pos, OP_CREATE, false );
 
-	// loop expression (also, location where continue jumps to)
-	size_t begin_loop = bc.size();
-	m_expr->gen_code( bc );
-
-	// magic function
-	bc.adds( idx(), OP_LOAD, ODT_STR, "iter" );
-	bc.add( idx(), OP_ATTR );
-	bc.addb( idx(), OP_FNCL, false );
-
-	// store in m_loop_var
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
-	size_t jmp_loop_out_loc = bc.size();
-	bc.addsz( idx(), OP_JMPN, 0 );
-	bc.add( m_loop_var->pos, OP_STORE );
-
+	// now comes the body of the loop
 	size_t body_begin = bc.size();
 	m_body->gen_code( bc );
 	size_t body_end = bc.size();
 
-	bc.addsz( idx(), OP_JMP, begin_loop );
-
-	bc.updatesz( jmp_loop_out_loc, bc.size() );
+	size_t continue_jmp_pos = bc.size();
+	// next element please; if next returns nil, exit loop
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
+	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
+	// will be set later
+	size_t jmp_loop_out_loc = bc.size();
+	bc.addsz( m_loop_var->pos, OP_JMPN, 0 );
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
+	bc.add( m_loop_var->pos, OP_STORE );
+	bc.addsz( idx(), OP_JMP, body_begin );
 
 	// pos where break goes
 	size_t break_jmp_loc = bc.size();
-	bc.addsz( idx(), OP_BLKR, 1 );
+	bc.add( idx(), OP_POP_LOOP );
+
+	bc.updatesz( jmp_loop_out_loc, break_jmp_loc );
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {
-		if( bc.at( i ) == OP_CONTINUE ) bc.updatesz( i, begin_loop );
-		if( bc.at( i ) == OP_BREAK ) bc.updatesz( i, break_jmp_loc );
+		if( bc.at( i ) == OP_CONTINUE && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, continue_jmp_pos );
+		if( bc.at( i ) == OP_BREAK && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, break_jmp_loc );
 	}
 	return true;
 }

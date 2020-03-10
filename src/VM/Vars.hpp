@@ -55,7 +55,10 @@ public:
 	void inc_top( const size_t & count );
 	void dec_top( const size_t & count );
 
-	void mark_loop();
+	void push_loop();
+	// 'break' also uses this
+	void pop_loop();
+	void loop_continue();
 
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );
@@ -91,6 +94,10 @@ public:
 
 	void stash( const std::string & name, var_base_t * val );
 	void unstash();
+
+	inline void push_loop() { m_fn_vars[ m_fn_stack ]->push_loop(); }
+	inline void pop_loop() { m_fn_vars[ m_fn_stack ]->pop_loop(); }
+	inline void loop_continue() { m_fn_vars[ m_fn_stack ]->loop_continue(); }
 
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );

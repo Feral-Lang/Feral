@@ -278,6 +278,28 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			goto done;
 		}
+		case OP_PUSH_LOOP: {
+			vars->push_loop();
+			break;
+		}
+		case OP_POP_LOOP: {
+			vars->pop_loop();
+			break;
+		}
+		case OP_CONTINUE: {
+			vars->loop_continue();
+			i = op.data.sz - 1;
+			break;
+		}
+		case OP_BREAK: {
+			// jumps to pop_loop instruction
+			i = op.data.sz - 1;
+			break;
+		}
+		// NOOP
+		case _OP_LAST: {
+			break;
+		}
 		}
 	}
 
