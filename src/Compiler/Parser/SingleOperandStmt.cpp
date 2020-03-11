@@ -47,7 +47,7 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 		goto done;
 	}
 
-	if( parse_expr_14( ph, operand ) != E_OK ) {
+	if( parse_expr_15( ph, operand ) != E_OK ) {
 		goto fail;
 	}
 

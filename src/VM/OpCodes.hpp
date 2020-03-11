@@ -22,11 +22,11 @@ enum OpCodes
 	OP_ULOAD,	// unload (pop) from stack
 
 	OP_JMP,		// unconditional jump to index
-	OP_JMPT,	// jump to index if top element on stack is true
-	OP_JMPF,	// jump to index if top element on stack is false
+	OP_JMPT,	// jump to index if top element on stack is true - will not unload if true
+	OP_JMPF,	// jump to index if top element on stack is false - will not unload if false
+	OP_JMPTPOP,	// jump to index if top element on stack is true - will pop unconditionally
+	OP_JMPFPOP,	// jump to index if top element on stack is false - will pop unconditionally
 	OP_JMPN,	// jump to index if top element on stack is nil (won't pop otherwise)
-	OP_JMPTNU,	// jump to index if top element on stack is true - but don't unload it
-	OP_JMPFNU,	// jump to index if top element on stack is false - but don't unload it
 
 	OP_BODY_TILL,	// jump to index which is where the body (of a function) ends + 1
 	OP_MKFN,	// create a function object
@@ -43,83 +43,14 @@ enum OpCodes
 	OP_BREAK,	// size_t operand - jump to
 	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block
 
-	// operators
-	OP_BINARY,
-	OP_UNARY,
-	OP_COMP, // comparison
+	// for loops
+	OP_PUSH_LOOP,	// marks a loop's beginning for variable stack
+	OP_POP_LOOP,	// marks a loop's ending for variable stack
 
 	_OP_LAST,
 };
 
 extern const char * OpCodeStrs[ _OP_LAST ];
-
-enum OpBinary
-{
-	OPB_ADD,
-	OPB_SUB,
-	OPB_MUL,
-	OPB_DIV,
-	OPB_MOD,
-
-	OPB_ADD_ASSN,
-	OPB_SUB_ASSN,
-	OPB_MUL_ASSN,
-	OPB_DIV_ASSN,
-	OPB_MOD_ASSN,
-
-	OPB_POW,
-
-	OPB_BAND,
-	OPB_BOR,
-	OPB_BNOT,
-	OPB_BXOR,
-
-	OPB_BAND_ASSN,
-	OPB_BOR_ASSN,
-	OPB_BNOT_ASSN,
-	OPB_BXOR_ASSN,
-
-	OPB_LSHIFT,
-	OPB_RSHIFT,
-
-	OPB_LSHIFT_ASSN,
-	OPB_RSHIFT_ASSN,
-
-	OPB_SUBSCR,
-
-	_OPB_LAST,
-};
-
-extern const char * OpBinaryStrs[ _OPB_LAST ];
-
-enum OpUnary {
-	OPU_XINC,
-	OPU_INCX,
-	OPU_XDEC,
-	OPU_DECX,
-
-	OPU_NOT,
-
-	OPU_ADD,
-	OPU_SUB,
-
-	_OPU_LAST,
-};
-
-extern const char * OpUnaryStrs[ _OPU_LAST ];
-
-enum OpComp {
-	OPC_EQ,
-	OPC_LT,
-	OPC_GT,
-	OPC_LE,
-	OPC_GE,
-	OPC_NE,
-
-	_OPC_LAST,
-};
-
-extern const char * OpCompStrs[ _OPC_LAST ];
 
 enum OpDataType
 {
@@ -169,7 +100,7 @@ public:
 	OpCodes at( const size_t & pos ) const;
 	void updatesz( const size_t & pos, const size_t & value );
 
-	const std::vector< op_t > & bcode() const;
+	const std::vector< op_t > & get() const;
 	size_t size() const;
 };
 

@@ -10,36 +10,25 @@
 #include "Base.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////// SOME EXTRAS ///////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-std::unordered_map< std::string, var_base_t * > * var_map_base()
-{
-	static std::unordered_map< std::string, var_base_t * > v;
-	return & v;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////// VAR_MAP //////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_map_t::var_map_t( const std::unordered_map< std::string, var_base_t * > & val, const size_t & idx )
-	: var_base_t( VT_MAP, idx, 1 ), m_val( val )
+var_map_t::var_map_t( const std::unordered_map< std::string, var_base_t * > & val, const size_t & src_id, const size_t & idx )
+	: var_base_t( VT_MAP, src_id, idx ), m_val( val )
 {
-	fuse( VT_MAP, var_map_base() );
 }
 var_map_t::~var_map_t()
 {
 	for( auto & v : m_val ) var_dref( v.second );
 }
 
-var_base_t * var_map_t::copy( const size_t & idx )
+var_base_t * var_map_t::copy( const size_t & src_id, const size_t & idx )
 {
 	std::unordered_map< std::string, var_base_t * > new_map;
 	for( auto & v : m_val ) {
-		new_map[ v.first ] =  v.second->base_copy( idx );
+		new_map[ v.first ] =  v.second->copy( src_id, idx );
 	}
-	return new var_map_t( new_map, idx );
+	return new var_map_t( new_map, src_id, idx );
 }
 std::unordered_map< std::string, var_base_t * > & var_map_t::get() { return m_val; }
 void var_map_t::set( var_base_t * from )

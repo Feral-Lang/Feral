@@ -1,0 +1,12 @@
+let io = import( 'std/io' );
+
+for i in range( 0, 10 ) {
+	if i == 1 { continue; }
+	if i == 5 { break; }
+
+	for j in range( 0, 10 ) {
+		if j == 1 { continue; }
+		if j == 5 { break; }
+		io.println( i, j );
+	}
+}

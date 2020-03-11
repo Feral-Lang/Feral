@@ -19,11 +19,11 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"UNLOAD",	// unload (pop) from stack
 
 	"JMP",		// unconditional jump to index
-	"JMP_TRUE",	// jump to index if top element on stack is true
-	"JMP_FALSE",	// jump to index if top element on stack is false
+	"JMP_TRUE",	// jump to index if top element on stack is true - will not unload if true
+	"JMP_FALSE",	// jump to index if top element on stack is false - will not unload if false
+	"JMP_TRUEPOP",	// jump to index if top element on stack is true - will pop unconditionally
+	"JMP_FALSEPOP",	// jump to index if top element on stack is false - will pop unconditionally
 	"JMP_NIL",	// jump to index if top element on stack is nil (won't pop otherwise)
-	"JMP_TRUE_NU",	// jump to index if top element on stack is true - but don't unload it
-	"JMP_FALSE_NU",	// jump to index if top element on stack is false - but don't unload it
 
 	"BODY_TILL",	// jump to index which is where the body (of a function) ends + 1
 	"MK_FUNC",	// create a function object
@@ -40,65 +40,9 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	"BREAK",	// size_t operand - jump to
 	"DEFER",	// can take expression or block - bool - true takes expr, false takes block
 
-	// operators
-	"BINARY",
-	"UNARY",
-	"COMPARISON",
-};
-
-const char * OpBinaryStrs[ _OPB_LAST ] = {
-	"+",
-	"-",
-	"*",
-	"/",
-	"%",
-
-	"+=",
-	"-=",
-	"*=",
-	"/=",
-	"%=",
-
-	"**",
-
-	"&",
-	"|",
-	"~",
-	"^",
-
-	"&=",
-	"|=",
-	"~=",
-	"^=",
-
-	"<<",
-	">>",
-
-	"<<=",
-	">>=",
-
-	"[]",
-};
-
-const char * OpUnaryStrs[ _OPU_LAST ] = {
-	"X++",
-	"++X",
-	"X--",
-	"--X",
-
-	"!",
-
-	"U+",
-	"U-",
-};
-
-const char * OpCompStrs[ _OPC_LAST ] = {
-	"==",
-	"<",
-	">",
-	"<=",
-	">=",
-	"!=",
+	// for loops
+	"PUSH_LOOP",	// marks a loop's beginning for variable stack
+	"POP_LOOP",	// marks a loop's ending for variable stack
 };
 
 const char * OpDataTypeStrs[ _ODT_LAST ] = {
@@ -162,5 +106,5 @@ void bcode_t::updatesz( const size_t & pos, const size_t & value )
 	m_bcode[ pos ].data.sz = value;
 }
 
-const std::vector< op_t > & bcode_t::bcode() const { return m_bcode; }
+const std::vector< op_t > & bcode_t::get() const { return m_bcode; }
 size_t bcode_t::size() const { return m_bcode.size(); }

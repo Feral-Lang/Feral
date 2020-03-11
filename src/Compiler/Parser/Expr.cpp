@@ -28,12 +28,12 @@ fail:
 
 Errors parse_expr( phelper_t & ph, stmt_base_t * & loc )
 {
-	return parse_expr_15( ph, loc );
+	return parse_expr_16( ph, loc );
 }
 
 // Left Associative
 // ,
-Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc )
+Errors parse_expr_16( phelper_t & ph, stmt_base_t * & loc )
 {
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
 	const lex::tok_t * oper = nullptr;
@@ -41,7 +41,7 @@ Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 	size_t commas = 0;
 
-	if( parse_expr_14( ph, rhs ) != E_OK ) {
+	if( parse_expr_15( ph, rhs ) != E_OK ) {
 		goto fail;
 	}
 
@@ -50,7 +50,7 @@ Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc )
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();
-		if( parse_expr_14( ph, lhs ) != E_OK ) {
+		if( parse_expr_15( ph, lhs ) != E_OK ) {
 			goto fail;
 		}
 		rhs = new stmt_expr_t( lhs, oper, rhs, idx );
@@ -66,8 +66,39 @@ fail:
 	if( rhs ) delete rhs;
 	return E_PARSE_FAIL;
 }
+
 // Right Associative
 // =
+Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc )
+{
+	stmt_base_t * lhs = nullptr, * rhs = nullptr;
+	const lex::tok_t * oper = nullptr;
+
+	size_t idx = ph.peak()->pos;
+
+	if( parse_expr_14( ph, rhs ) != E_OK ) {
+		goto fail;
+	}
+
+	while( ph.accept( TOK_ASSN ) ) {
+		idx = ph.peak()->pos;
+		oper = ph.peak();
+		ph.next();
+		if( parse_expr_14( ph, lhs ) != E_OK ) {
+			goto fail;
+		}
+		rhs = new stmt_expr_t( lhs, oper, rhs, idx );
+		lhs = nullptr;
+	}
+	loc = rhs;
+	return E_OK;
+fail:
+	if( lhs ) delete lhs;
+	if( rhs ) delete rhs;
+	return E_PARSE_FAIL;
+}
+
+// Left Associative
 // += -=
 // *= /= %=
 // <<= >>=
@@ -79,24 +110,24 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 
 	size_t idx = ph.peak()->pos;
 
-	if( parse_expr_13( ph, rhs ) != E_OK ) {
+	if( parse_expr_13( ph, lhs ) != E_OK ) {
 		goto fail;
 	}
 
-	while( ph.accept( TOK_ASSN, TOK_ADD_ASSN, TOK_SUB_ASSN ) ||
+	while( ph.accept( TOK_ADD_ASSN, TOK_SUB_ASSN ) ||
 	       ph.accept( TOK_MUL_ASSN, TOK_DIV_ASSN, TOK_MOD_ASSN ) ||
 	       ph.accept( TOK_LSHIFT_ASSN, TOK_RSHIFT_ASSN, TOK_BAND_ASSN ) ||
 	       ph.accept( TOK_BOR_ASSN, TOK_BXOR_ASSN ) ) {
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();
-		if( parse_expr_13( ph, lhs ) != E_OK ) {
+		if( parse_expr_13( ph, rhs ) != E_OK ) {
 			goto fail;
 		}
-		rhs = new stmt_expr_t( lhs, oper, rhs, idx );
-		lhs = nullptr;
+		lhs = new stmt_expr_t( lhs, oper, rhs, idx );
+		rhs = nullptr;
 	}
-	loc = rhs;
+	loc = lhs;
 	return E_OK;
 fail:
 	if( lhs ) delete lhs;
