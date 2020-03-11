@@ -17,6 +17,7 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace =
 
 Errors parse_expr_cols( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr( phelper_t & ph, stmt_base_t * & loc );
+Errors parse_expr_16( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr_13( phelper_t & ph, stmt_base_t * & loc );

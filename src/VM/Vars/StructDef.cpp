@@ -9,9 +9,9 @@
 
 #include "Base.hpp"
 
-static size_t type_id()
+static int type_id()
 {
-	static size_t tid = _VT_LAST;
+	static int tid = _VT_LAST;
 	return tid++;
 }
 
@@ -19,7 +19,7 @@ static size_t type_id()
 /////////////////////////////////////////////////////////// VAR_STRUCT_DEF /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_struct_def_t::var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
+var_struct_def_t::var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
 				    const std::unordered_map< std::string, var_base_t * > & attrs,
 				    const size_t & src_id, const size_t & idx )
 	: var_base_t( VT_STRUCT_DEF, src_id, idx ), m_attr_order( attr_order ), m_attrs( attrs ),

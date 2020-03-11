@@ -15,6 +15,13 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 
 	// create the m_loop_var by calling the iter() magic function
 	m_expr->gen_code( bc );
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "__" + m_loop_var->data );
+	bc.addb( m_loop_var->pos, OP_CREATE, false );
+
+	// let <loop_var> = __<loop_var>.next()
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
+	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
 	bc.addb( m_loop_var->pos, OP_CREATE, false );
 
@@ -25,7 +32,7 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 
 	size_t continue_jmp_pos = bc.size();
 	// next element please; if next returns nil, exit loop
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
+	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
 	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
 	// will be set later
@@ -33,6 +40,7 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	bc.addsz( m_loop_var->pos, OP_JMPN, 0 );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
 	bc.add( m_loop_var->pos, OP_STORE );
+	bc.add( m_loop_var->pos, OP_ULOAD );
 	bc.addsz( idx(), OP_JMP, body_begin );
 
 	// pos where break goes

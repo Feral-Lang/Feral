@@ -8,4 +8,4 @@ let facto = fn( num ) {
 	return fact;
 };
 
-io.println( 'factorial of 5 is: ', facto( 5 ) );
+io.println( 'factorial of 5 is:', facto( 5 ) );

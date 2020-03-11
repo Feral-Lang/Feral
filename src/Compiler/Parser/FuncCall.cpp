@@ -23,11 +23,11 @@ begin:
 		if( ph.peakt() == TOK_IDEN ) ph.sett( TOK_STR );
 		stmt_base_t * rhs = nullptr;
 		ph.next(); ph.next();
-		if( parse_expr_13( ph, rhs ) != E_OK ) {
+		if( parse_expr_15( ph, rhs ) != E_OK ) {
 			goto fail;
 		}
 		assn_args.push_back( new stmt_fn_assn_arg_t( new stmt_simple_t( lhs ), rhs ) );
-	} else if( parse_expr_13( ph, expr ) == E_OK ) {
+	} else if( parse_expr_15( ph, expr ) == E_OK ) {
 		args.push_back( expr );
 	} else {
 		ph.fail( "failed to parse function call args" );

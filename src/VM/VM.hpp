@@ -49,11 +49,13 @@ struct vm_state_t
 	void push_src( const std::string & src_path );
 	void pop_src();
 
-	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
-	var_fn_t * get_typefn( const size_t & type, const std::string & name );
+	int register_new_type();
 
-	void set_typename( const size_t & type, const std::string & name );
-	std::string type_name( const size_t & type );
+	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
+	var_fn_t * get_typefn( const int & type, const std::string & name );
+
+	void set_typename( const int & type, const std::string & name );
+	std::string type_name( const int & type );
 
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
@@ -73,10 +75,12 @@ private:
 	fmod_load_fn_t m_src_load_fn;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
+	// type ids for custom types (negative)
+	int m_custom_types;
 	// functions for any and all types
-	std::unordered_map< size_t, vars_frame_t * > m_typefns;
+	std::unordered_map< int, vars_frame_t * > m_typefns;
 	// names of types (optional)
-	std::unordered_map< size_t, std::string > m_typenames;
+	std::unordered_map< int, std::string > m_typenames;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );

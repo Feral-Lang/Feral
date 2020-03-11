@@ -19,7 +19,7 @@
 vm_state_t::vm_state_t( const size_t & flags )
 	: exec_flags( flags ), tru( new var_bool_t( true, 0, 0 ) ),
 	  fals( new var_bool_t( false, 0, 0 ) ), nil( new var_nil_t( 0, 0 ) ),
-	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() )
+	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() ), m_custom_types( -1 )
 {
 	init_typenames( * this );
 	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
@@ -56,24 +56,26 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref )
+int vm_state_t::register_new_type() { return m_custom_types++; }
+
+void vm_state_t::add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref )
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) {
 		m_typefns[ type ] = new vars_frame_t();
 	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
-var_fn_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
+var_fn_t * vm_state_t::get_typefn( const int & type, const std::string & name )
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) return nullptr;
 	return FN( m_typefns[ type ]->get( name ) );
 }
 
-void vm_state_t::set_typename( const size_t & type, const std::string & name )
+void vm_state_t::set_typename( const int & type, const std::string & name )
 {
 	m_typenames[ type ] = name;
 }
-std::string vm_state_t::type_name( const size_t & type )
+std::string vm_state_t::type_name( const int & type )
 {
 	if( m_typenames.find( type ) != m_typenames.end() ) {
 		return m_typenames[ type ];
@@ -168,7 +170,7 @@ int vm_state_t::load_fmod( const std::string & mod_file )
 
 bool vm_state_t::load_core_mods()
 {
-	std::vector< std::string > mods = { "core" };
+	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
 		if( !load_nmod( mod, 0 ) ) return false;
 	}

@@ -30,7 +30,11 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
-		// fprintf( stdout, "ID: %zu %*s\n", i, 12, OpCodeStrs[ op.op ] );
+		// fprintf( stdout, "ID: %zu %*s: ", i, 12, OpCodeStrs[ op.op ] );
+		// for( auto & e : vms->get() ) {
+		// 	fprintf( stdout, "%s ", vm.type_name( e->type() ).c_str() );
+		// }
+		// fprintf( stdout, "\n" );
 		switch( op.op ) {
 		case OP_LOAD: {
 			if( op.dtype != ODT_IDEN ) {

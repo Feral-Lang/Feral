@@ -69,16 +69,20 @@ x.y
 ||
 ```
 
-## 14 (Right associative)
+## 14 (Left associative)
 ```
-=
 += -=
 *= /= %=
 <<= >>=
 &= |= ^=
 ```
 
-## 15 (Left associative)
+## 15 (Right associative)
+```
+=
+```
+
+## 16 (Left associative)
 ```
 ,
 ```

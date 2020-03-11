@@ -12,7 +12,7 @@
 
 #include "Base.hpp"
 
-var_base_t::var_base_t( const size_t & type, const size_t & src_id, const size_t & idx )
+var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & idx )
 	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 )
 {}
 var_base_t::~var_base_t()

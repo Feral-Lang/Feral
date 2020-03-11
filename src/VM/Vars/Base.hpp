@@ -48,13 +48,13 @@ enum VarTypes
 class var_base_t
 {
 protected:
-	size_t m_type;
+	int m_type;
 private:
 	size_t m_src_id;
 	size_t m_idx;
 	size_t m_ref;
 public:
-	var_base_t( const size_t & type, const size_t & src_id, const size_t & idx );
+	var_base_t( const int & type, const size_t & src_id, const size_t & idx );
 	virtual ~var_base_t();
 
 	// must always be overridden
@@ -63,7 +63,7 @@ public:
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
-	inline size_t type() const { return m_type; }
+	inline int type() const { return m_type; }
 
 	inline size_t src_id() const { return m_src_id; }
 	inline size_t idx() const { return m_idx; }
@@ -249,9 +249,9 @@ class var_struct_def_t : public var_base_t
 	std::vector< std::string > m_attr_order;
 	std::unordered_map< std::string, var_base_t * > m_attrs;
 	// type id of struct which will be used as m_type for struct objects
-	size_t m_id;
+	int m_id;
 
-	var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
+	var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
 public:
@@ -277,7 +277,7 @@ public:
 class var_attr_based_t : public var_base_t
 {
 public:
-	var_attr_based_t( const size_t & type, const size_t & src_id, const size_t & idx );
+	var_attr_based_t( const int & type, const size_t & src_id, const size_t & idx );
 	virtual ~var_attr_based_t();
 
 	virtual bool attr_exists( const std::string & name ) const = 0;
@@ -317,7 +317,7 @@ class var_struct_t : public var_attr_based_t
 {
 	std::unordered_map< std::string, var_base_t * > m_attrs;
 public:
-	var_struct_t( const size_t & type_id, const std::unordered_map< std::string, var_base_t * > & attrs,
+	var_struct_t( const int & type_id, const std::unordered_map< std::string, var_base_t * > & attrs,
 		      const size_t & src_id, const size_t & idx );
 	~var_struct_t();
 

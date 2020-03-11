@@ -60,27 +60,7 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 	}
 	return vm.all_srcs[ file ];
 }
-/*
-var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
-{
-	var_base_t * lhs_base = fd.args[ 1 ];
-	var_base_t * rhs_base = fd.args.size() > 2 ? fd.args[ 2 ] : nullptr;
-	var_base_t * step_base = fd.args.size() > 3 ? fd.args[ 3 ] : nullptr;
 
-	size_t final_type = VT_INT;
-
-	if( lhs_base->type() == VT_FLT ) final_type = VT_FLT;
-	if( rhs_base && rhs_base->type() == VT_FLT ) final_type = VT_FLT;
-	if( step_base && step_base->type() == VT_FLT ) final_type = VT_FLT;
-
-	if( final_type == VT_INT ) {
-		mpz_class begin = fd.args.size() > 2 ? INT( lhs_base )->get() : 0;
-		mpz_class end = rhs_base ? INT( rhs_base )->get() : INT( lhs_base )->get();
-		mpz_class step = step_base ? INT( step_base )->get() : 1;
-		return make< var_int_iterable_t >( begin, end, step );
-	}
-}
-*/
 REGISTER_MODULE( core )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
@@ -100,7 +80,6 @@ REGISTER_MODULE( core )
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0, 0 ) );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
-	// vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, { .native = range }, true, 0, 0 ) );
 
 	// core type functions
 	vm.add_typefn( VT_INT, "+", new var_fn_t( src_name, { "" }, { .native = int_add }, 0, 0 ), false );

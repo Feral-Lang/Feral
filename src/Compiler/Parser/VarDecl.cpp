@@ -75,8 +75,8 @@ Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc )
 	}
 	ph.next();
 
-	// 13 = everything excluding comma and assignments (=, +=, ...)
-	if( parse_expr_13( ph, rhs ) != E_OK ) {
+	// 15 = everything excluding comma
+	if( parse_expr_15( ph, rhs ) != E_OK ) {
 		goto fail;
 	}
 

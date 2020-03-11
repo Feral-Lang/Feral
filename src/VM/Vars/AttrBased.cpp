@@ -9,6 +9,6 @@
 
 #include "Base.hpp"
 
-var_attr_based_t::var_attr_based_t( const size_t & type, const size_t & src_id, const size_t & idx )
+var_attr_based_t::var_attr_based_t( const int & type, const size_t & src_id, const size_t & idx )
 	: var_base_t( type, src_id, idx ) {}
 var_attr_based_t::~var_attr_based_t() {}
