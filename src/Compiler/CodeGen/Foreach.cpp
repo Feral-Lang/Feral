@@ -13,15 +13,15 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 {
 	bc.add( idx(), OP_PUSH_LOOP );
 
-	// create the m_loop_var by calling the iter() magic function
+	// create __<loop_var> from expression
 	m_expr->gen_code( bc );
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "__" + m_loop_var->data );
-	bc.addb( m_loop_var->pos, OP_CREATE, false );
+	bc.adds( m_expr->idx(), OP_LOAD, ODT_STR, "__" + m_loop_var->data );
+	bc.addb( m_expr->idx(), OP_CREATE, false );
 
 	// let <loop_var> = __<loop_var>.next()
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
-	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
+	bc.adds( m_expr->idx(), OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
+	bc.adds( m_expr->idx(), OP_LOAD, ODT_STR, "next" );
+	bc.adds( m_expr->idx(), OP_MEM_FNCL, ODT_STR, "" );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
 	bc.addb( m_loop_var->pos, OP_CREATE, false );
 

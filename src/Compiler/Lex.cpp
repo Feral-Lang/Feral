@@ -81,10 +81,14 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"<<=",
 	">>=",
 
+	// Functions
+	"()", // func
+	".()", // member func
+
 	// Dummy
-	"()",
-	".()",
-	".x()",
+	".x()", // attribute - member func
+
+	// Subscript
 	"[]",
 
 	// Varargs

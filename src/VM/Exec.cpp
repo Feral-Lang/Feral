@@ -43,7 +43,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					src_file->fail( op.idx, "invalid data received as const" );
 					goto fail;
 				}
-				vms->push( res, false );
+				vms->push( res );
 			} else {
 				var_base_t * res = vars->get( op.data.s );
 				if( res == nullptr ) {
@@ -209,8 +209,9 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			var_base_t * in_base = nullptr; // only for mem_call
 			var_base_t * fn_base = nullptr;
+			std::string fn_name;
 			if( mem_call ) {
-				const std::string fn_name = STR( vms->back() )->get();
+				fn_name = STR( vms->back() )->get();
 				vms->pop();
 				in_base = vms->pop( false );
 				if( in_base->type() == VT_SRC ) {
@@ -223,7 +224,9 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				fn_base = vms->pop( false );
 			}
 			if( !fn_base ) {
-				src_file->fail( op.idx, "this function does not exist" );
+				if( mem_call ) src_file->fail( op.idx, "function '%s' does not exist for type: %s",
+							       fn_name.c_str(), vm.type_name( in_base->type() ).c_str() );
+				else src_file->fail( op.idx, "this function does not exist" );
 				var_dref( in_base );
 				goto fncall_fail;
 			}

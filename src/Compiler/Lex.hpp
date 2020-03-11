@@ -92,10 +92,14 @@ enum TokType
 	TOK_LSHIFT_ASSN,
 	TOK_RSHIFT_ASSN,
 
-	// Dummy
+	// Functions
 	TOK_OPER_FN,
 	TOK_OPER_MEM_FN,
+
+	// Dummy
 	TOK_OPER_MEM_FN_ATTR,
+
+	// Subscript
 	TOK_OPER_SUBS,
 
 	// Varargs

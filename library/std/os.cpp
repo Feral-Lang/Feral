@@ -199,7 +199,7 @@ REGISTER_MODULE( os )
 	src->add_nativefn( "sleep", sleep_custom );
 
 	src->add_nativefn( "get_env", get_env, { "" } );
-	src->add_nativefn( "set_env", set_env, { "", "" } );
+	src->add_nativefn( "set_env", set_env, { "", "" }, true );
 
 	src->add_nativefn( "exec", exec_custom, { "" } );
 	src->add_nativefn( "install", install, { "", "" } );

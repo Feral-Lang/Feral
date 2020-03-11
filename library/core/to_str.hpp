@@ -17,7 +17,6 @@
 
 var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
 	var_base_t * data = fd.args[ 0 ];
 	char res[ 1024 ];
 	sprintf( res, "type: %s at %p", vm.type_name( data->type() ).c_str(), data );

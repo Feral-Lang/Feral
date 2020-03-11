@@ -95,6 +95,14 @@ template< typename T, typename ... Args > T * make( Args... args )
 	return res;
 }
 
+template< typename T, typename ... Args > T * make_all( Args... args )
+{
+	// 0, 0 for src_id and idx
+	T * res = new T( args... );
+	res->dref();
+	return res;
+}
+
 const char * nmod_ext();
 const char * fmod_ext();
 

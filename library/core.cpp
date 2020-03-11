@@ -7,8 +7,12 @@
 	before using or altering the project.
 */
 
-#include "core/to_str.hpp"
+#include "core/bool.hpp"
 #include "core/int.hpp"
+#include "core/str.hpp"
+#include "core/vec.hpp"
+
+#include "core/to_str.hpp"
 
 #include "../src/VM/VM.hpp"
 
@@ -82,6 +86,18 @@ REGISTER_MODULE( core )
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
 
 	// core type functions
+
+	// bool
+	vm.add_typefn( VT_BOOL, "<",  new var_fn_t( src_name, { "" }, { .native = bool_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, ">",  new var_fn_t( src_name, { "" }, { .native = bool_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "<=", new var_fn_t( src_name, { "" }, { .native = bool_le }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, ">=", new var_fn_t( src_name, { "" }, { .native = bool_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "==", new var_fn_t( src_name, { "" }, { .native = bool_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "!=", new var_fn_t( src_name, { "" }, { .native = bool_ne }, 0, 0 ), false );
+
+	vm.add_typefn( VT_BOOL, "!", new var_fn_t( src_name, {}, { .native = bool_not }, 0, 0 ), false );
+
+	// int
 	vm.add_typefn( VT_INT, "+", new var_fn_t( src_name, { "" }, { .native = int_add }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "-", new var_fn_t( src_name, { "" }, { .native = int_sub }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "*", new var_fn_t( src_name, { "" }, { .native = int_mul }, 0, 0 ), false );
@@ -94,7 +110,7 @@ REGISTER_MODULE( core )
 	vm.add_typefn( VT_INT, "/=", new var_fn_t( src_name, { "" }, { .native = int_divassn }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "%=", new var_fn_t( src_name, { "" }, { .native = int_modassn }, 0, 0 ), false );
 
-	vm.add_typefn( VT_INT, "**", new var_fn_t( src_name, { "" }, { .native = int_pow },  0, 0 ), false );
+	vm.add_typefn( VT_INT, "**",  new var_fn_t( src_name, { "" }, { .native = int_pow }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "++x", new var_fn_t( src_name, {}, { .native = int_preinc },  0, 0 ), false );
 	vm.add_typefn( VT_INT, "x++", new var_fn_t( src_name, {}, { .native = int_postinc }, 0, 0 ), false );
 
@@ -106,6 +122,23 @@ REGISTER_MODULE( core )
 	vm.add_typefn( VT_INT, ">=", new var_fn_t( src_name, { "" }, { .native = int_ge }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "==", new var_fn_t( src_name, { "" }, { .native = int_eq }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "!=", new var_fn_t( src_name, { "" }, { .native = int_ne }, 0, 0 ), false );
+
+	// string
+	vm.add_typefn( VT_STR, "+", new var_fn_t( src_name, { "" }, { .native = str_add }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "*", new var_fn_t( src_name, { "" }, { .native = str_mul }, 0, 0 ), false );
+
+	vm.add_typefn( VT_STR, "+=", new var_fn_t( src_name, { "" }, { .native = str_addassn }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "*=", new var_fn_t( src_name, { "" }, { .native = str_mulassn }, 0, 0 ), false );
+
+	vm.add_typefn( VT_STR, "<",  new var_fn_t( src_name, { "" }, { .native = str_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, ">",  new var_fn_t( src_name, { "" }, { .native = str_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "<=", new var_fn_t( src_name, { "" }, { .native = str_le }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, ">=", new var_fn_t( src_name, { "" }, { .native = str_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "==", new var_fn_t( src_name, { "" }, { .native = str_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "!=", new var_fn_t( src_name, { "" }, { .native = str_ne }, 0, 0 ), false );
+
+	// other stuff
+	vm.add_typefn( VT_VEC, "[]", new var_fn_t( src_name, { "" }, { .native = vec_subs }, 0, 0 ), false );
 
 	return true;
 }

@@ -76,6 +76,8 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	else if( m_oper->type == TOK_LE ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 	else if( m_oper->type == TOK_GE ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 	else if( m_oper->type == TOK_NE ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
+	// subscript
+	else if( m_oper->type == TOK_OPER_SUBS ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
 	// dot is handled in the all operators section
 	if( m_rhs && m_oper->type != TOK_DOT ) {
@@ -104,10 +106,9 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		if( m_rhs ) fn_call_args.pop_back();
 		goto done;
 	}
-	else if( m_oper->type == TOK_OPER_SUBS ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
-	// skip dummy
-	if( m_oper->type < TOK_OPER_FN || m_oper->type > TOK_OPER_SUBS ) {
+	// skip extras (functions and dummy)
+	if( m_oper->type < TOK_OPER_FN || m_oper->type >= TOK_OPER_SUBS ) {
 		bc.adds( m_oper->pos, OP_MEM_FNCL, ODT_STR, m_rhs ? "0" : "" );
 	}
 done:

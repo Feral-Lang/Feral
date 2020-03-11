@@ -239,7 +239,7 @@ var_base_t * int_lt( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs < rhs );
+	return lhs < rhs ? vm.tru : vm.fals;
 }
 
 var_base_t * int_gt( vm_state_t & vm, const fn_data_t & fd )
@@ -255,7 +255,7 @@ var_base_t * int_gt( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs > rhs );
+	return lhs > rhs ? vm.tru : vm.fals;
 }
 
 var_base_t * int_le( vm_state_t & vm, const fn_data_t & fd )
@@ -271,7 +271,7 @@ var_base_t * int_le( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs <= rhs );
+	return lhs <= rhs ? vm.tru : vm.fals;
 }
 
 var_base_t * int_ge( vm_state_t & vm, const fn_data_t & fd )
@@ -287,7 +287,7 @@ var_base_t * int_ge( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs >= rhs );
+	return lhs >= rhs ? vm.tru : vm.fals;
 }
 
 var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
@@ -303,7 +303,7 @@ var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs == rhs );
+	return lhs == rhs ? vm.tru : vm.fals;
 }
 
 var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
@@ -319,7 +319,7 @@ var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_bool_t >( lhs != rhs );
+	return lhs != rhs ? vm.tru : vm.fals;
 }
 
 #endif // LIBRARY_CORE_INT_HPP

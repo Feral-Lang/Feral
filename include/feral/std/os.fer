@@ -1,3 +1,14 @@
-mload( 'std/os' );
+mload('std/os');
+
+let str = import('std/str');
+let vec = import('std/vec');
+let fs = import('std/fs');
 
 let name = os_get_name();
+
+let exec_exists = fn(exec) {
+	for dir in get_env('PATH').split().each() {
+		if fs.exists(dir + '/' + exec) { return dir + '/' + exec; }
+	}
+	return '';
+};
