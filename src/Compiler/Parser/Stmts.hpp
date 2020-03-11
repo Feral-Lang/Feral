@@ -137,22 +137,6 @@ public:
 	const std::vector< const stmt_var_decl_base_t * > & decls() const;
 };
 
-class stmt_fn_assn_arg_t : public stmt_base_t
-{
-	const stmt_simple_t * m_lhs;
-	const stmt_base_t * m_rhs;
-public:
-	stmt_fn_assn_arg_t( const stmt_simple_t * lhs, const stmt_base_t * rhs );
-	~stmt_fn_assn_arg_t();
-
-	void disp( const bool has_next ) const;
-
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
-
-	const stmt_simple_t * lhs() const;
-	const stmt_base_t * rhs() const;
-};
-
 class stmt_fn_def_args_t : public stmt_base_t
 {
 	const std::vector< const stmt_base_t * > m_args;
@@ -187,6 +171,22 @@ public:
 
 	const stmt_fn_def_args_t * args() const;
 	const stmt_block_t * body() const;
+};
+
+class stmt_fn_assn_arg_t : public stmt_base_t
+{
+	const stmt_simple_t * m_lhs;
+	const stmt_base_t * m_rhs;
+public:
+	stmt_fn_assn_arg_t( const stmt_simple_t * lhs, const stmt_base_t * rhs );
+	~stmt_fn_assn_arg_t();
+
+	void disp( const bool has_next ) const;
+
+	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+
+	const stmt_simple_t * lhs() const;
+	const stmt_base_t * rhs() const;
 };
 
 class stmt_fn_call_args_t : public stmt_base_t

@@ -33,6 +33,7 @@ struct src_col_range_t
  */
 class srcfile_t
 {
+	// set automatically for each source (guaranteed to be unique)
 	size_t m_id;
 	// path and dir are never modified once set
 	std::string m_dir;
@@ -47,12 +48,11 @@ public:
 	/**
 	 * \brief Construct a new srcfile_t object
 	 * 
-	 * \param id id of the instance of srcfile_t
 	 * \param dir Directory of source file
 	 * \param path Full path of source file
 	 * \param is_main Boolean - determins if this source is the main source file (default: false)
 	 */
-	srcfile_t( const size_t id, const std::string & dir, const std::string & path, const bool is_main = false );
+	srcfile_t( const std::string & dir, const std::string & path, const bool is_main = false );
 
 	/**
 	 * \brief Loads the file at m_path
@@ -81,16 +81,16 @@ public:
 	 * 
 	 * \return const std::string& Returns the data object with const qualifier
 	 */
-	const std::string & get_data() const;
+	const std::string & data() const;
 
 	/**
 	 * \brief Return the id of the instance
 	 *
 	 * \return size_t id of instance
 	 */
-	size_t get_id() const;
+	size_t id() const;
 
-	const std::string & get_path() const;
+	const std::string & path() const;
 
 	/**
 	 * \brief Check if the source is main src

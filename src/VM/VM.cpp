@@ -17,11 +17,11 @@
 #include "VM.hpp"
 
 vm_state_t::vm_state_t( const size_t & flags )
-	: exec_flags( flags ), tru( new var_bool_t( true, 0 ) ),
-	  fals( new var_bool_t( false, 0 ) ), nil( new var_nil_t( 0 ) ),
-	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() )
+	: exec_flags( flags ), tru( new var_bool_t( true, 0, 0 ) ),
+	  fals( new var_bool_t( false, 0, 0 ) ), nil( new var_nil_t( 0, 0 ) ),
+	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() ), m_custom_types( -1 )
 {
-	init_builtin_types( * this );
+	init_typenames( * this );
 	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
 	mod_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
 }
@@ -29,11 +29,7 @@ vm_state_t::vm_state_t( const size_t & flags )
 vm_state_t::~vm_state_t()
 {
 	delete vm_stack;
-	for( auto & bt : m_builtin_types ) {
-		for( auto & t : * bt.second ) {
-			var_dref( t.second );
-		}
-	}
+	for( auto & typefn : m_typefns ) delete typefn.second;
 	for( auto & g : m_globals ) var_dref( g.second );
 	for( auto & src : all_srcs ) var_dref( src.second );
 	var_dref( nil );
@@ -42,16 +38,50 @@ vm_state_t::~vm_state_t()
 	delete dlib;
 }
 
-void vm_state_t::add_src( srcfile_t * src, const size_t & idx )
+void vm_state_t::push_src( srcfile_t * src, const size_t & idx )
 {
-	if( all_srcs.find( src->get_path() ) == all_srcs.end() ) {
-		all_srcs[ src->get_path() ] = new var_module_t( src, new srcfile_vars_t(), idx );
+	if( all_srcs.find( src->path() ) == all_srcs.end() ) {
+		all_srcs[ src->path() ] = new var_src_t( src, new vars_t(), src->id(), idx );
 	}
-	var_iref( all_srcs[ src->get_path() ] );
-	src_stack.push_back( all_srcs[ src->get_path() ] );
+	var_iref( all_srcs[ src->path() ] );
+	src_stack.push_back( all_srcs[ src->path() ] );
+}
+
+void vm_state_t::push_src( const std::string & src_path )
+{
+	assert( all_srcs.find( src_path ) != all_srcs.end() );
+	var_iref( all_srcs[ src_path ] );
+	src_stack.push_back( all_srcs[ src_path ] );
 }
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
+
+int vm_state_t::register_new_type() { return m_custom_types++; }
+
+void vm_state_t::add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref )
+{
+	if( m_typefns.find( type ) == m_typefns.end() ) {
+		m_typefns[ type ] = new vars_frame_t();
+	}
+	m_typefns[ type ]->add( name, fn, iref );
+}
+var_fn_t * vm_state_t::get_typefn( const int & type, const std::string & name )
+{
+	if( m_typefns.find( type ) == m_typefns.end() ) return nullptr;
+	return FN( m_typefns[ type ]->get( name ) );
+}
+
+void vm_state_t::set_typename( const int & type, const std::string & name )
+{
+	m_typenames[ type ] = name;
+}
+std::string vm_state_t::type_name( const int & type )
+{
+	if( m_typenames.find( type ) != m_typenames.end() ) {
+		return m_typenames[ type ];
+	}
+	return "struct<" + std::to_string( type ) + ">";
+}
 
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )
 {
@@ -64,25 +94,6 @@ var_base_t * vm_state_t::gget( const std::string & name )
 {
 	if( m_globals.find( name ) == m_globals.end() ) return nullptr;
 	return m_globals[ name ];
-}
-
-void vm_state_t::btadd( const VarTypes & type, std::unordered_map< std::string, var_base_t * > * data )
-{
-	if( m_builtin_types.find( type ) != m_builtin_types.end() ) return;
-	m_builtin_types[ type ] = data;
-}
-
-void vm_state_t::btatadd( const VarTypes & type, const std::string & name, var_base_t * val, const bool iref )
-{
-	if( m_builtin_types.find( type ) == m_builtin_types.end() ) {
-		if( iref ) var_dref( val );
-		return;
-	}
-	if( ( * m_builtin_types[ type ] ).find( name ) != ( * m_builtin_types[ type ] ).end() ) {
-		var_dref( ( * m_builtin_types[ type ] )[ name ] );
-	}
-	if( iref ) var_iref( val );
-	( * m_builtin_types[ type ] )[ name ] = val;
 }
 
 bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext )
@@ -145,21 +156,21 @@ int vm_state_t::load_fmod( const std::string & mod_file )
 	if( all_srcs.find( mod_file ) != all_srcs.end() ) return E_OK;
 
 	Errors err = E_OK;
-	srcfile_t * src = m_src_load_fn( mod_file, exec_flags, true, err );
+	srcfile_t * src = m_src_load_fn( mod_file, exec_flags, false, err );
 	if( err != E_OK ) {
 		if( src ) delete src;
 		return err;
 	}
 
-	add_src( src, 0 );
-	int res = vm::exec( * this, src->bcode() );
+	push_src( src, 0 );
+	int res = vm::exec( * this );
 	pop_src();
 	return res;
 }
 
 bool vm_state_t::load_core_mods()
 {
-	std::vector< std::string > mods = { "core" };
+	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
 		if( !load_nmod( mod, 0 ) ) return false;
 	}

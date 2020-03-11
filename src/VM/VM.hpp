@@ -18,9 +18,9 @@
 #include "Vars.hpp"
 #include "VMStack.hpp"
 
-typedef std::vector< var_module_t * > src_stack_t;
+typedef std::vector< var_src_t * > src_stack_t;
 
-typedef std::unordered_map< std::string, var_module_t * > all_srcs_t;
+typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
 typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
 
@@ -45,19 +45,20 @@ struct vm_state_t
 	vm_state_t( const size_t & flags );
 	~vm_state_t();
 
-	void add_src( srcfile_t * src, const size_t & idx );
+	void push_src( srcfile_t * src, const size_t & idx );
+	void push_src( const std::string & src_path );
 	void pop_src();
+
+	int register_new_type();
+
+	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
+	var_fn_t * get_typefn( const int & type, const std::string & name );
+
+	void set_typename( const int & type, const std::string & name );
+	std::string type_name( const int & type );
 
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
-
-	// bt = builtin type; at = attribute
-	void btadd( const VarTypes & type, std::unordered_map< std::string, var_base_t * > * data );
-	void btatadd( const VarTypes & type, const std::string & name, var_base_t * val, const bool iref = false );
-
-	inline void add_in_fn( const bool in_fn ) { m_in_fn.push_back( in_fn ); }
-	inline void rem_in_fn() { m_in_fn.pop_back(); }
-	inline bool in_fn() const { return m_in_fn.size() > 0 ? m_in_fn.back() : false; }
 
 	// modules & imports
 	// nmod = native module
@@ -72,13 +73,14 @@ struct vm_state_t
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
-	// base var type attributes/functions
-	// for injecting attributes/functions from native libraries to builtin types
-	std::unordered_map< size_t, std::unordered_map< std::string, var_base_t * > * > m_builtin_types;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
-	// if execution is in function
-	std::vector< bool > m_in_fn;
+	// type ids for custom types (negative)
+	int m_custom_types;
+	// functions for any and all types
+	std::unordered_map< int, vars_frame_t * > m_typefns;
+	// names of types (optional)
+	std::unordered_map< int, std::string > m_typenames;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
@@ -87,6 +89,15 @@ typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
 
 template< typename T, typename ... Args > T * make( Args... args )
 {
+	// 0, 0 for src_id and idx
+	T * res = new T( args..., 0, 0 );
+	res->dref();
+	return res;
+}
+
+template< typename T, typename ... Args > T * make_all( Args... args )
+{
+	// 0, 0 for src_id and idx
 	T * res = new T( args... );
 	res->dref();
 	return res;
@@ -98,16 +109,8 @@ const char * fmod_ext();
 namespace vm
 {
 
-inline srcfile_t * src_new( const std::string & dir, const std::string & path,
-			    const bool is_main_src = false )
-{
-	static size_t id = 0;
-	auto src = new srcfile_t( id++, dir, path, is_main_src );
-	return src;
-}
-
-// fn_id = 0 = not in a function
-int exec( vm_state_t & vm, const bcode_t & bcode, const size_t & fn_id = 0, const bool push_fn = true );
+// end = 0 = till size of bcode
+int exec( vm_state_t & vm, const size_t & begin = 0, const size_t & end = 0 );
 
 }
 

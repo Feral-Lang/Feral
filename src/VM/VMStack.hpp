@@ -21,9 +21,9 @@ public:
 	vm_stack_t();
 	~vm_stack_t();
 
-	void push_back( var_base_t * val, const bool iref = true );
+	void push( var_base_t * val, const bool iref = true );
 
-	var_base_t * pop_back( const bool dref = true );
+	var_base_t * pop( const bool dref = true );
 
 	inline var_base_t * & back() { return m_vec.back(); }
 

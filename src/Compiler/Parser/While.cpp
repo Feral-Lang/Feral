@@ -17,7 +17,7 @@ Errors parse_while( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 	ph.next();
 
-	if( parse_expr_14( ph, expr ) != E_OK ) {
+	if( parse_expr_15( ph, expr ) != E_OK ) {
 		goto fail;
 	}
 	if( parse_block( ph, body ) != E_OK ) {

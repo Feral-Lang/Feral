@@ -52,14 +52,16 @@ int main( int argc, char ** argv )
 	if( !( flags & OPT_D ) ) {
 		vm_state_t vm( flags );
 		vm.set_fmod_load_fn( fmod_load );
-		vm.add_src( main_src, 0 );
+		vm.push_src( main_src, 0 );
 		if( !vm.load_core_mods() ) {
 			vm.pop_src();
 			err = E_EXEC_FAIL;
 			return err;
 		}
-		exec_err = vm::exec( vm, main_src->bcode() );
+		exec_err = vm::exec( vm );
 		vm.pop_src();
+	} else {
+		if( main_src ) delete main_src;
 	}
 	return exec_err;
 }

@@ -14,8 +14,9 @@ STATEMENT = VAR_DECL
 EXPR_COLS = EXPR ';'
 EXPR = L15
 
-L15 = L14 [',' L14]*
-L14 = L13 [['=' '+=' '-=' '*='
+L16 = L15 [',' L15]*
+L15 = L14 ['=' L14]*
+L14 = L13 [['+=' '-=' '*='
 	    '/=' '%=' '<<=' '>>='
 	    '&=' '|=' '^='] L13]*
 L13 = L12 ['||' L12]*
@@ -35,28 +36,26 @@ L01 = '(' EXPR ')'
 
 TERM = iden | str | int | flt | atom
 
-VAR_DECL_BASE = L01 '=' L13
-VAR_DECL_LOCAL = 'let' VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
-VAR_DECL = ['let'] VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
+VAR_DECL_BASE = L01 '=' L15
+VAR_DECL = 'let' VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
 
-DEF_ARGS = iden '=' L13 # default args
 VA_ARGS = iden '...'
 KW_ARGS = atom
-KW_ARGS_CALL = iden '=' L13
-FUNC_DECL_ARGS = iden [',' iden]* [',' KW_ARGS]{0,1} [[',' DEF_ARGS]* | [',' VA_ARGS]{0,1}]
-FUNC_CALL_ARGS = [KW_ARGS_CALL | L13]*
+KW_ARGS_CALL = iden '=' L15
+FUNC_DECL_ARGS = iden [',' iden]* [',' KW_ARGS]{0,1} [',' VA_ARGS]{0,1}
+FUNC_CALL_ARGS = [KW_ARGS_CALL | L15]*
 
 FUNC_DEF = 'fn' '(' FUNC_DECL_ARGS ')'
 	BLOCK
 
-CONDITIONAL = 'if' L14 BLOCK ['elif' L14 BLOCK]* ['else' BLOCK]{0,1}
+CONDITIONAL = 'if' L15 BLOCK ['elif' L15 BLOCK]* ['else' BLOCK]{0,1}
 
 FOR = 'for' iden 'in' L01 BLOCK
-	| 'for' [VAR_DECL_LOCAL | EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
+	| 'for' [VAR_DECL | EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
 
-WHILE = 'while' L14 BLOCK
+WHILE = 'while' L15 BLOCK
 
-RETURN = 'return' [L14]{0,1} ';'
+RETURN = 'return' [L15]{0,1} ';'
 CONTINUE = 'continue' ';'
 BREAK = 'break' ';'
-DEFER = 'defer' [BLOCK | L14 ';']
+DEFER = 'defer' BLOCK

@@ -7,126 +7,23 @@
 	before using or altering the project.
 */
 
-#include <iomanip>
-#include <sstream>
+#include "core/bool.hpp"
+#include "core/int.hpp"
+#include "core/str.hpp"
+#include "core/vec.hpp"
+
+#include "core/to_str.hpp"
 
 #include "../src/VM/VM.hpp"
 
-// fmod = feral module
-bool fmod_load( vm_state_t & vm, const std::string & mod, const size_t & idx );
-
-var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
+var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
-	var_base_t * st = fd.args[ 0 ];
-
-	std::string str = "struct " + std::to_string( st->type() ) + " {";
-	for( auto & attr : st->attrs() ) {
-		if( attr.first == "str" ) continue;
-		var_base_t * res = attr.second->call_fn_result( vm, "str", {}, fd.idx );
-		if( !res ) return nullptr;
-		if( res->type() != VT_STR ) {
-			src->fail( attr.second->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
-			vm.vm_stack->pop_back();
-			return nullptr;
-		}
-		str += attr.first + ": " + STR( res )->get() + ", ";
-		vm.vm_stack->pop_back();
+	if( fd.args[ 1 ]->type() != VT_STR ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for typename, found: %s",
+						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		return nullptr;
 	}
-	if( st->attrs().size() > 1 ) {
-		str.pop_back();
-		str.pop_back();
-	}
-	str += "}";
-	return make< var_str_t >( str, fd.idx );
-}
-
-var_base_t * nil_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( "(nil)", fd.idx );
-}
-
-var_base_t * bool_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( BOOL( fd.args[ 0 ] )->get() ? "true" : "false", fd.idx );
-}
-
-var_base_t * int_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_str_t >( INT( fd.args[ 0 ] )->get().get_str(), fd.idx );
-}
-
-var_base_t * flt_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	std::ostringstream oss;
-	oss << std::setprecision( 21 ) << FLT( fd.args[ 0 ] )->get();
-	return make< var_str_t >( oss.str(), fd.idx );
-}
-
-var_base_t * str_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	return fd.args[ 0 ];
-}
-
-var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	srcfile_t * src = vm.src_stack.back()->src();
-	var_vec_t * vec = VEC( fd.args[ 0 ] );
-	std::string str = "[";
-	for( auto & e : vec->get() ) {
-		var_base_t * res = e->call_fn_result( vm, "str", {}, fd.idx );
-		if( !res ) return nullptr;
-		if( res->type() != VT_STR ) {
-			src->fail( e->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
-			vm.vm_stack->pop_back();
-			return nullptr;
-		}
-		str += STR( res )->get() + ", ";
-		vm.vm_stack->pop_back();
-	}
-	if( vec->get().size() > 0 ) {
-		str.pop_back();
-		str.pop_back();
-	}
-	str += "]";
-	return make< var_str_t >( str, fd.idx );
-}
-
-var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	srcfile_t * src = vm.src_stack.back()->src();
-	var_map_t * map = MAP( fd.args[ 0 ] );
-	std::string str = "{";
-	for( auto & e : map->get() ) {
-		if( e.first == "str" ) continue;
-		var_base_t * res = e.second->call_fn_result( vm, "str", {}, fd.idx );
-		if( !res ) return nullptr;
-		if( res->type() != VT_STR ) {
-			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", res->type() );
-			vm.vm_stack->pop_back();
-			return nullptr;
-		}
-		str += e.first + ": " + STR( res )->get() + ", ";
-		vm.vm_stack->pop_back();
-	}
-	if( map->get().size() > 0 ) {
-		str.pop_back();
-		str.pop_back();
-	}
-	str += "}";
-	return make< var_str_t >( str, fd.idx );
-}
-
-var_base_t * mod_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	var_module_t * mod = MOD( fd.args[ 0 ] );
-	std::string str = "module id: " + std::to_string( mod->src()->get_id() ) + " (" + mod->src()->get_path() + ")";
-	return make< var_str_t >( str, fd.idx );
-}
-
-var_base_t * fuse_custom( vm_state_t & vm, const fn_data_t & fd )
-{
-	fd.args[ 0 ]->fuse( fd.args[ 1 ] );
+	vm.set_typename( STRUCT_DEF( fd.args[ 0 ] )->id(), STR( fd.args[ 1 ] )->get() );
 	return vm.nil;
 }
 
@@ -159,7 +56,7 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 		src->fail( file_var->idx(), "could not find module file: '%s'", file.c_str() );
 		return nullptr;
 	}
-	// load_fmod() also adds the src to all_srcs map (add_src() function)
+	// load_fmod() also adds the src to all_srcs map (push_src() function)
 	int err = vm.load_fmod( file );
 	if( err != E_OK ) {
 		src->fail( file_var->idx(), "module import failed, look at error above (exit code: %d)", err );
@@ -170,23 +67,78 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 
 REGISTER_MODULE( core )
 {
-	const std::string & src_name = vm.src_stack.back()->src()->get_path();
+	const std::string & src_name = vm.src_stack.back()->src()->path();
 
-	// fundamental functions for types
-	vm.btatadd( VT_ALL,  "str", new var_fn_t( src_name, { "" }, { .native = all_to_str },  0 ) );
-	vm.btatadd( VT_NIL,  "str", new var_fn_t( src_name, { "" }, { .native = nil_to_str },  0 ) );
-	vm.btatadd( VT_BOOL, "str", new var_fn_t( src_name, { "" }, { .native = bool_to_str }, 0 ) );
-	vm.btatadd( VT_INT,  "str", new var_fn_t( src_name, { "" }, { .native = int_to_str },  0 ) );
-	vm.btatadd( VT_FLT,  "str", new var_fn_t( src_name, { "" }, { .native = flt_to_str },  0 ) );
-	vm.btatadd( VT_STR,  "str", new var_fn_t( src_name, { "" }, { .native = str_to_str },  0 ) );
-	vm.btatadd( VT_VEC,  "str", new var_fn_t( src_name, { "" }, { .native = vec_to_str },  0 ) );
-	vm.btatadd( VT_MAP,  "str", new var_fn_t( src_name, { "" }, { .native = map_to_str },  0 ) );
-	vm.btatadd( VT_MOD,  "str", new var_fn_t( src_name, { "" }, { .native = mod_to_str },  0 ) );
+	// fundamental functions for builtin types
+	vm.add_typefn( VT_ALL,	"str", new var_fn_t( src_name, {}, { .native = all_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_NIL,	"str", new var_fn_t( src_name, {}, { .native = nil_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_BOOL,	"str", new var_fn_t( src_name, {}, { .native = bool_to_str }, 0, 0 ), false );
+	vm.add_typefn( VT_INT,	"str", new var_fn_t( src_name, {}, { .native = int_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_FLT,	"str", new var_fn_t( src_name, {}, { .native = flt_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_STR,	"str", new var_fn_t( src_name, {}, { .native = str_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_VEC,  "str", new var_fn_t( src_name, {}, { .native = vec_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_MAP,  "str", new var_fn_t( src_name, {}, { .native = map_to_str },  0, 0 ), false );
 
-	vm.btatadd( VT_CUSTOM_START, "fuse", new var_fn_t( src_name, { "" }, { .native = fuse_custom }, 0 ) );
+	vm.add_typefn( VT_STRUCT_DEF, "set_typename", new var_fn_t( src_name, { "" }, { .native = struct_def_set_typename },  0, 0 ), false );
 
 	// global required
-	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0 ) );
-	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0 ) );
+	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0, 0 ) );
+	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
+
+	// core type functions
+
+	// bool
+	vm.add_typefn( VT_BOOL, "<",  new var_fn_t( src_name, { "" }, { .native = bool_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, ">",  new var_fn_t( src_name, { "" }, { .native = bool_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "<=", new var_fn_t( src_name, { "" }, { .native = bool_le }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, ">=", new var_fn_t( src_name, { "" }, { .native = bool_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "==", new var_fn_t( src_name, { "" }, { .native = bool_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL, "!=", new var_fn_t( src_name, { "" }, { .native = bool_ne }, 0, 0 ), false );
+
+	vm.add_typefn( VT_BOOL, "!", new var_fn_t( src_name, {}, { .native = bool_not }, 0, 0 ), false );
+
+	// int
+	vm.add_typefn( VT_INT, "+", new var_fn_t( src_name, { "" }, { .native = int_add }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "-", new var_fn_t( src_name, { "" }, { .native = int_sub }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "*", new var_fn_t( src_name, { "" }, { .native = int_mul }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "/", new var_fn_t( src_name, { "" }, { .native = int_div }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "%", new var_fn_t( src_name, { "" }, { .native = int_mod }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "+=", new var_fn_t( src_name, { "" }, { .native = int_addassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "-=", new var_fn_t( src_name, { "" }, { .native = int_subassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "*=", new var_fn_t( src_name, { "" }, { .native = int_mulassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "/=", new var_fn_t( src_name, { "" }, { .native = int_divassn }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "%=", new var_fn_t( src_name, { "" }, { .native = int_modassn }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "**",  new var_fn_t( src_name, { "" }, { .native = int_pow }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "++x", new var_fn_t( src_name, {}, { .native = int_preinc },  0, 0 ), false );
+	vm.add_typefn( VT_INT, "x++", new var_fn_t( src_name, {}, { .native = int_postinc }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "u-", new var_fn_t( src_name, {}, { .native = int_usub }, 0, 0 ), false );
+
+	vm.add_typefn( VT_INT, "<",  new var_fn_t( src_name, { "" }, { .native = int_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, ">",  new var_fn_t( src_name, { "" }, { .native = int_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "<=", new var_fn_t( src_name, { "" }, { .native = int_le }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, ">=", new var_fn_t( src_name, { "" }, { .native = int_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "==", new var_fn_t( src_name, { "" }, { .native = int_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "!=", new var_fn_t( src_name, { "" }, { .native = int_ne }, 0, 0 ), false );
+
+	// string
+	vm.add_typefn( VT_STR, "+", new var_fn_t( src_name, { "" }, { .native = str_add }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "*", new var_fn_t( src_name, { "" }, { .native = str_mul }, 0, 0 ), false );
+
+	vm.add_typefn( VT_STR, "+=", new var_fn_t( src_name, { "" }, { .native = str_addassn }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "*=", new var_fn_t( src_name, { "" }, { .native = str_mulassn }, 0, 0 ), false );
+
+	vm.add_typefn( VT_STR, "<",  new var_fn_t( src_name, { "" }, { .native = str_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, ">",  new var_fn_t( src_name, { "" }, { .native = str_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "<=", new var_fn_t( src_name, { "" }, { .native = str_le }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, ">=", new var_fn_t( src_name, { "" }, { .native = str_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "==", new var_fn_t( src_name, { "" }, { .native = str_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "!=", new var_fn_t( src_name, { "" }, { .native = str_ne }, 0, 0 ), false );
+
+	// other stuff
+	vm.add_typefn( VT_VEC, "[]", new var_fn_t( src_name, { "" }, { .native = vec_subs }, 0, 0 ), false );
+
 	return true;
 }

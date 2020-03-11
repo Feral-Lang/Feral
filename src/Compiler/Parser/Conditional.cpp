@@ -26,7 +26,7 @@ _if_elif:
 	}
 	tok = ph.peak();
 	ph.next();
-	if( parse_expr_14( ph, cond.condition ) != E_OK ) {
+	if( parse_expr_15( ph, cond.condition ) != E_OK ) {
 		goto fail;
 	}
 	goto block;

@@ -11,7 +11,7 @@
 
 bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
-	bc.addsz( idx(), OP_BLKA, 1 );
+	bc.add( idx(), OP_PUSH_LOOP );
 
 	if( m_init ) m_init->gen_code( bc );
 
@@ -21,7 +21,7 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	size_t cond_fail_jmp_from = bc.size();
 	if( m_cond ) {
 		// placeholder location
-		bc.addsz( m_cond->idx(), OP_JMPF, 0 );
+		bc.addsz( m_cond->idx(), OP_JMPFPOP, 0 );
 	}
 
 	size_t body_begin = bc.size();
@@ -40,12 +40,12 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 
 	// pos where break goes
 	size_t break_jmp_loc = bc.size();
-	bc.addsz( idx(), OP_BLKR, 1 );
+	bc.add( idx(), OP_POP_LOOP );
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {
-		if( bc.at( i ) == OP_CONTINUE ) bc.updatesz( i, continue_jmp_loc );
-		if( bc.at( i ) == OP_BREAK ) bc.updatesz( i, break_jmp_loc );
+		if( bc.at( i ) == OP_CONTINUE && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, continue_jmp_loc );
+		if( bc.at( i ) == OP_BREAK && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, break_jmp_loc );
 	}
 	return true;
 }

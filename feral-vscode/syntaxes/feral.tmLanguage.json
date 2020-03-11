@@ -47,7 +47,7 @@
 				"match": "\\b(true|false|nil)\\b"
 			},
 			{
-				"name": "keyword.operator",
+				"name": "markup.bold",
 				"match": "\\b(self)\\b"
 			},
 			{
@@ -114,7 +114,7 @@
 				"match": "[\\s\\.]*\\b([_\\w]+)\\b[\\s]*\\(",
 				"captures": {
 					"1": {
-						"name": "entity.name.function"
+						"name": "variable.language"
 					}
 				}
 			}]
@@ -136,7 +136,7 @@
 				"match": "\\b([_\\w]+)\\b[\\s]*\\=(?!\\=)[\\s]*",
 				"captures": {
 					"1": {
-						"name": "entity.name.class"
+						"name": "support.class"
 					}
 				}
 			}]
