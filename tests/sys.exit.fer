@@ -1,0 +1,3 @@
+let sys = import('std/sys');
+
+sys.exit(0);

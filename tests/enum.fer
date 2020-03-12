@@ -1,9 +1,12 @@
-let enum = import( 'std/enum' );
+let io = import('std/io');
+let lang = import( 'std/lang' );
 
-let EXIT_CODE = enum.new(
+let EXIT_CODE = lang.enum(
 	.OK,
 	.FAIL,
 	.IO_ERR,
 	.LEX_FAIL,
 	.PARSE_FAIL
 );
+
+io.println(EXIT_CODE.PARSE_FAIL);

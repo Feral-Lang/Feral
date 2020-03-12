@@ -252,6 +252,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
 			if( !mem_call ) var_dref( fn_base );
+			if( vm.exit_called ) goto done;
 			break;
 		fncall_fail:
 			for( auto & arg : args ) var_dref( arg );
@@ -312,7 +313,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 
 done:
 	vars->pop_fn();
-	return E_OK;
+	return vm.exit_code;
 fail:
 	vars->pop_fn();
 	return E_EXEC_FAIL;
