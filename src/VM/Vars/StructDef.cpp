@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include "../VM.hpp"
+
 #include "Base.hpp"
 
 static int type_id()
@@ -60,10 +62,11 @@ void var_struct_def_t::set( var_base_t * from )
 	m_attrs = st->m_attrs;
 }
 
-var_base_t * var_struct_def_t::init( srcfile_t * src, const std::vector< var_base_t * > & args,
+var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_base_t * > & args,
 				     const std::vector< fn_assn_arg_t > & assn_args,
 				     const size_t & src_id, const size_t & idx )
 {
+	srcfile_t * src = vm.src_stack.back()->src();
 	for( auto & aa : assn_args ) {
 		if( std::find( m_attr_order.begin(), m_attr_order.end(), aa.name ) == m_attr_order.end() ) {
 			src->fail( aa.idx, "no attribute named '%s' in the structure definition", aa.name.c_str() );
@@ -77,15 +80,38 @@ var_base_t * var_struct_def_t::init( srcfile_t * src, const std::vector< var_bas
 			src->fail( arg->idx(), "provided more arguments than existing in structure definition" );
 			goto fail;
 		}
+		if( m_attrs[ * it ]->type() != arg->type() ) {
+			src->fail( arg->idx(), "expected type: %s, found: %s",
+				   vm.type_name( m_attrs[ * it ]->type() ).c_str(),
+				   vm.type_name( arg->type() ).c_str() );
+			goto fail;
+		}
 		attrs[ * it ] = arg->copy( src_id, idx );
 		++it;
 	}
 
 	for( auto & a_arg : assn_args ) {
+		if( m_attrs.find( a_arg.name ) == m_attrs.end() ) {
+			src->fail( a_arg.idx, "attribute %s does not exist in this strucutre",
+				   a_arg.name.c_str() );
+			goto fail;
+		}
+		if( m_attrs[ a_arg.name ]->type() != a_arg.val->type() ) {
+			src->fail( a_arg.idx, "expected type: %s, found: %s",
+				   vm.type_name( m_attrs[ a_arg.name ]->type() ).c_str(),
+				   vm.type_name( a_arg.val->type() ).c_str() );
+			goto fail;
+		}
 		if( attrs.find( a_arg.name ) != attrs.end() ) {
 			var_dref( attrs[ a_arg.name ] );
 		}
 		attrs[ a_arg.name ] = a_arg.val->copy( src_id, idx );
+	}
+
+	while( it < m_attr_order.end() ) {
+		if( attrs.find( * it ) != attrs.end() ) { ++it; continue; }
+		attrs[ * it ] = m_attrs[ * it ]->copy( src_id, idx );
+		++it;
 	}
 
 	return new var_struct_t( m_id, attrs, src_id, idx );

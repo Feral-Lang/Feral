@@ -264,7 +264,7 @@ public:
 	void set( var_base_t * from );
 
 	// returns var_struct_t
-	var_base_t * init( srcfile_t * src, const std::vector< var_base_t * > & args,
+	var_base_t * init( vm_state_t & vm, const std::vector< var_base_t * > & args,
 			   const std::vector< fn_assn_arg_t > & assn_args,
 			   const size_t & src_id, const size_t & idx );
 
