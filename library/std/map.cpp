@@ -30,7 +30,7 @@
 // 		}
 // 		var_base_t * str = vm.vm_stack->back();
 // 		if( str->type() != VT_STR ) {
-// 			src->fail( key->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+// 			src->fail( key->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
 // 			vm.vm_stack->pop_back();
 // 			return nullptr;
 // 		}

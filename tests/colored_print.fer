@@ -1,0 +1,3 @@
+let io = import('std/io');
+
+io.cprintln('{r}hi {y}there{c}!{0}');

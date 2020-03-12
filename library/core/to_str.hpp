@@ -39,7 +39,7 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 		}
 		var_base_t * str = vm.vm_stack->pop( false );
 		if( str->type() != VT_STR ) {
-			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
 			var_dref( str );
 			return nullptr;
 		}
@@ -99,7 +99,7 @@ var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 		}
 		var_base_t * str = vm.vm_stack->pop( false );
 		if( str->type() != VT_STR ) {
-			src->fail( e->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+			src->fail( e->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
 			var_dref( str );
 			return nullptr;
 		}
@@ -132,7 +132,7 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 		}
 		var_base_t * str = vm.vm_stack->pop( false );
 		if( str->type() != VT_STR ) {
-			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
 			var_dref( str );
 			return nullptr;
 		}
