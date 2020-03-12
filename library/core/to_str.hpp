@@ -17,9 +17,40 @@
 
 var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	var_base_t * data = fd.args[ 0 ];
-	char res[ 1024 ];
-	sprintf( res, "type: %s at %p", vm.type_name( data->type() ).c_str(), data );
+	var_base_t * _data = fd.args[ 0 ];
+	if( _data->type() < _VT_LAST ) {
+		char res[ 1024 ];
+		sprintf( res, "type: %s at %p", vm.type_name( _data->type() ).c_str(), _data );
+		return make< var_str_t >( res );
+	}
+	srcfile_t * src = vm.src_stack.back()->src();
+	var_struct_t * data = STRUCT( _data );
+	std::string res = vm.type_name( data->type() ) + "{";
+	for( auto & e : data->attrs() ) {
+		var_fn_t * str_fn = vm.get_typefn( e.second->type(), "str" );
+		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
+		if( !str_fn ) {
+			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
+			return nullptr;
+		}
+		if( !FN( str_fn )->call( vm, { e.second }, {}, src->id(), fd.idx ) ) {
+			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
+			return nullptr;
+		}
+		var_base_t * str = vm.vm_stack->pop( false );
+		if( str->type() != VT_STR ) {
+			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %zu", str->type() );
+			var_dref( str );
+			return nullptr;
+		}
+		res += e.first + ": " + STR( str )->get() + ", ";
+		var_dref( str );
+	}
+	if( data->attrs().size() > 0 ) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "}";
 	return make< var_str_t >( res );
 }
 

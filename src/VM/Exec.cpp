@@ -242,7 +242,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					goto fncall_fail;
 				}
 			} else if( fn_base->type() == VT_STRUCT_DEF ) { // VT_STRUCT_DEF
-				var_base_t * res = STRUCT_DEF( fn_base )->init( src_file, args, assn_args, src_id, op.idx );
+				var_base_t * res = STRUCT_DEF( fn_base )->init( vm, args, assn_args, src_id, op.idx );
 				if( !res ) {
 					src_file->fail( op.idx, "object creation failed, look at error above" );
 					goto fncall_fail;
