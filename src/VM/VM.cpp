@@ -17,9 +17,10 @@
 #include "VM.hpp"
 
 vm_state_t::vm_state_t( const size_t & flags )
-	: exec_flags( flags ), tru( new var_bool_t( true, 0, 0 ) ),
-	  fals( new var_bool_t( false, 0, 0 ) ), nil( new var_nil_t( 0, 0 ) ),
-	  vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() ), m_custom_types( -1 )
+	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
+	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
+	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() ),
+	  m_custom_types( -1 )
 {
 	init_typenames( * this );
 	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
@@ -56,7 +57,7 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_new_type() { return m_custom_types++; }
+int vm_state_t::register_new_type() { return m_custom_types--; }
 
 void vm_state_t::add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref )
 {
@@ -80,7 +81,7 @@ std::string vm_state_t::type_name( const int & type )
 	if( m_typenames.find( type ) != m_typenames.end() ) {
 		return m_typenames[ type ];
 	}
-	return "struct<" + std::to_string( type ) + ">";
+	return "typeid<" + std::to_string( type ) + ">";
 }
 
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )

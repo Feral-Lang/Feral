@@ -26,6 +26,8 @@ typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const si
 
 struct vm_state_t
 {
+	bool exit_called;
+	size_t exit_code;
 	size_t exec_flags;
 	src_stack_t src_stack;
 	all_srcs_t all_srcs;

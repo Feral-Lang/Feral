@@ -251,11 +251,8 @@ class var_struct_def_t : public var_base_t
 	// type id of struct which will be used as m_type for struct objects
 	int m_id;
 
-	var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
-			  const std::unordered_map< std::string, var_base_t * > & attrs,
-			  const size_t & src_id, const size_t & idx );
 public:
-	var_struct_def_t( const std::vector< std::string > & attr_order,
+	var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
 	~var_struct_def_t();
