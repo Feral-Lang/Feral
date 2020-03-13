@@ -41,7 +41,6 @@ enum OpCodes
 	OP_RET,		// return - bool - false pushes nil on top of stack
 	OP_CONTINUE,	// size_t operand - jump to
 	OP_BREAK,	// size_t operand - jump to
-	OP_DEFER,	// can take expression or block - bool - true takes expr, false takes block
 
 	// for loops
 	OP_PUSH_LOOP,	// marks a loop's beginning for variable stack

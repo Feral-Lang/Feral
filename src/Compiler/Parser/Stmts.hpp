@@ -213,7 +213,6 @@ enum SingleOperandStmtType
 	SOST_RETURN,
 	SOST_CONTINUE,
 	SOST_BREAK,
-	SOST_DEFER,
 };
 */
 class stmt_single_operand_stmt_t : public stmt_base_t

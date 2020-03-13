@@ -28,7 +28,7 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 		stmt_base_t * stmt = nullptr;
 		if( ph.accept( TOK_LET ) ) {
 			if( parse_var_decl( ph, stmt ) != E_OK ) goto fail;
-		} else if( ph.accept( TOK_CONTINUE, TOK_BREAK ) || ph.accept( TOK_RETURN, TOK_DEFER ) ) {
+		} else if( ph.accept( TOK_CONTINUE, TOK_BREAK, TOK_RETURN ) ) {
 			if( parse_single_operand_stmt( ph, stmt ) != E_OK ) goto fail;
 		} else if( ph.accept( TOK_IF ) ) {
 			if( parse_conditional( ph, stmt ) != E_OK ) goto fail;
