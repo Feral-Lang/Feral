@@ -16,13 +16,21 @@
 #include "Vars.hpp"
 #include "VM.hpp"
 
-vm_state_t::vm_state_t( const size_t & flags )
+vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags )
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
-	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ), dlib( new dyn_lib_t() ),
-	  m_custom_types( -1 )
+	  nil( new var_nil_t( 0, 0 ) ), self_binary( self_binary_loc ), vm_stack( new vm_stack_t() ),
+	  dlib( new dyn_lib_t() ), m_custom_types( -1 )
 {
 	init_typenames( * this );
+
+	std::vector< var_base_t * > src_args_vec;
+
+	for( auto & arg : args ) {
+		src_args_vec.push_back( new var_str_t( arg, 0, 0 ) );
+	}
+	src_args = new var_vec_t( src_args_vec, 0, 0 );
+
 	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
 	mod_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
 }
@@ -36,6 +44,7 @@ vm_state_t::~vm_state_t()
 	var_dref( nil );
 	var_dref( fals );
 	var_dref( tru );
+	var_dref( src_args );
 	delete dlib;
 }
 
