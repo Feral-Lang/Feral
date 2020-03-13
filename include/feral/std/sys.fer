@@ -1,1 +1,8 @@
 mload('std/sys');
+
+# contains the location of the interpreter (as executed on the command line)
+# in terms of C++, the argv[0] string
+let self_binary = self_binary_loc();
+
+# the arguments passed to feral - after the main source file
+let args = src_args();

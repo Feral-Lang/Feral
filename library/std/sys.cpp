@@ -25,10 +25,22 @@ var_base_t * _exit( vm_state_t & vm, const fn_data_t & fd )
 	return vm.nil;
 }
 
+var_base_t * self_binary_loc( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_str_t >( vm.self_binary );
+}
+
+var_base_t * src_args( vm_state_t & vm, const fn_data_t & fd )
+{
+	return vm.src_args;
+}
+
 REGISTER_MODULE( sys )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
 	src->add_nativefn( "exit", _exit, {}, true );
+	src->add_nativefn( "self_binary_loc", self_binary_loc );
+	src->add_nativefn( "src_args", src_args );
 	return true;
 }

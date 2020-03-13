@@ -29,6 +29,7 @@ struct vm_state_t
 	bool exit_called;
 	size_t exit_code;
 	size_t exec_flags;
+
 	src_stack_t src_stack;
 	all_srcs_t all_srcs;
 	vm_stack_t * vm_stack;
@@ -37,6 +38,10 @@ struct vm_state_t
 	var_base_t * tru;
 	var_base_t * fals;
 	var_base_t * nil;
+	var_base_t * args;
+
+	// location where feral binary exists (used by sys.self_binary())
+	std::string self_binary;
 
 	// this is a pointer since it must be explicitly deleted after everything else
 	dyn_lib_t * dlib;
@@ -44,7 +49,9 @@ struct vm_state_t
 	std::vector< std::string > inc_locs;
 	std::vector< std::string > mod_locs;
 
-	vm_state_t( const size_t & flags );
+	var_base_t * src_args;
+
+	vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags );
 	~vm_state_t();
 
 	void push_src( srcfile_t * src, const size_t & idx );

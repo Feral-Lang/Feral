@@ -65,6 +65,12 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 	return vm.all_srcs[ file ];
 }
 
+var_base_t * is_main_src( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	return src->is_main() ? vm.tru : vm.fals;
+}
+
 REGISTER_MODULE( core )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
@@ -84,6 +90,7 @@ REGISTER_MODULE( core )
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, { .native = load_module }, 0, 0 ) );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, { .native = import_file }, 0, 0 ) );
+	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, { .native = is_main_src }, 0, 0 ) );
 
 	// core type functions
 

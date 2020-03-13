@@ -38,7 +38,7 @@ int main( int argc, char ** argv )
 	Errors err = E_OK;
 
 	// feral binary absolute location
-	std::string fer_bin = fs::abs_path( argv[ 0 ] );
+	std::string fer_bin = argv[ 0 ];
 
 	std::string src_file = args[ "__main__" ];
 
@@ -50,7 +50,7 @@ int main( int argc, char ** argv )
 
 	int exec_err = 0;
 	if( !( flags & OPT_D ) ) {
-		vm_state_t vm( flags );
+		vm_state_t vm( fer_bin, code_args, flags );
 		vm.set_fmod_load_fn( fmod_load );
 		vm.push_src( main_src, 0 );
 		if( !vm.load_core_mods() ) {

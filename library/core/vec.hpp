@@ -24,6 +24,7 @@ var_base_t * vec_subs( vm_state_t & vm, const fn_data_t & fd )
 	if( data->get().size() <= sub ) {
 		vm.src_stack.back()->src()->fail( fd.idx, "subscript out of range, max capacity is: %zu, provided: %s",
 						  data->get().size(), sub.get_str().c_str() );
+		return nullptr;
 	}
 	return data->get()[ sub.get_ui() ];
 }
