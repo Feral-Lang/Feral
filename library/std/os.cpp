@@ -196,7 +196,7 @@ REGISTER_MODULE( os )
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
 
-	src->add_nativefn( "sleep", sleep_custom );
+	src->add_nativefn( "sleep", sleep_custom, { "" } );
 
 	src->add_nativefn( "get_env", get_env, { "" } );
 	src->add_nativefn( "set_env", set_env, { "", "" }, true );
