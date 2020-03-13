@@ -17,10 +17,6 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 	ph.next();
 
 	if( ph.accept( TOK_COLS ) ) {
-		if( sost->type == TOK_DEFER ) {
-			ph.fail( "statement of type 'defer' requires a block as argument, found semicolon" );
-			goto fail;
-		}
 		ph.next();
 		goto done;
 	}
@@ -28,12 +24,6 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 	if( sost->type == TOK_CONTINUE || sost->type == TOK_BREAK ) {
 		ph.fail( "statement of type '%s' expects semicolon after the keyword, found: '%s'",
 			 TokStrs[ sost->type ], TokStrs[ ph.peakt() ] );
-		goto fail;
-	}
-
-	if( sost->type == TOK_DEFER && !ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "statement of type 'defer' expects a block after the keyword, found: '%s'",
-			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
 

@@ -18,7 +18,6 @@ const char * TokStrs[ _TOK_LAST ] = {
 
 	//Keywords
 	"let",
-	"defer",
 	"fn",
 	"if",
 	"elif",
@@ -257,7 +256,6 @@ static std::string get_name( const srcfile_t & src_file, size_t & i )
 static int classify_str( const std::string & str )
 {
 	if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
-	else if( str == TokStrs[ TOK_DEFER ] ) return TOK_DEFER;
 	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
 	else if( str == TokStrs[ TOK_IF ] ) return TOK_IF;
 	else if( str == TokStrs[ TOK_ELIF ] ) return TOK_ELIF;

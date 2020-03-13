@@ -12,9 +12,7 @@
 bool stmt_single_operand_stmt_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
 	size_t blk_till_pos = bc.size();
-	if( m_sost->type == TOK_DEFER ) {
-		bc.addsz( idx(), OP_BODY_TILL, 0 );
-	}
+
 	if( m_operand ) m_operand->gen_code( bc );
 
 	if( m_sost->type == TOK_RETURN ) {
@@ -25,9 +23,6 @@ bool stmt_single_operand_stmt_t::gen_code( bcode_t & bc, const bool f1, const bo
 	} else if( m_sost->type == TOK_BREAK ) {
 		// placeholder (updated in For, Foreach, While)
 		bc.addsz( idx(), OP_BREAK, 0 );
-	} else if( m_sost->type == TOK_DEFER ) {
-		bc.updatesz( blk_till_pos, bc.size() );
-		bc.add( idx(), OP_DEFER );
 	}
 	return true;
 }

@@ -29,7 +29,6 @@ enum TokType
 
 	//Keywords
 	TOK_LET,
-	TOK_DEFER,
 	TOK_FN,
 	TOK_IF,
 	TOK_ELIF,
