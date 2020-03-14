@@ -200,6 +200,7 @@ struct fn_data_t
 	size_t idx;
 	std::vector< var_base_t * > args;
 	std::vector< fn_assn_arg_t > assn_args;
+	std::unordered_map< std::string, size_t > assn_args_loc;
 };
 
 struct vm_state_t;
@@ -244,6 +245,7 @@ public:
 
 	bool call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		   const std::vector< fn_assn_arg_t > & assn_args,
+		   const std::unordered_map< std::string, size_t > & assn_args_loc,
 		   const size_t & src_id, const size_t & idx );
 };
 #define FN( x ) static_cast< var_fn_t * >( x )
