@@ -8,7 +8,6 @@ STATEMENT = VAR_DECL
 	| RETURN
 	| CONTINUE
 	| BREAK
-	| DEFER
 	| EXPR_COLS
 
 EXPR_COLS = EXPR ';'
@@ -58,4 +57,3 @@ WHILE = 'while' L15 BLOCK
 RETURN = 'return' [L15]{0,1} ';'
 CONTINUE = 'continue' ';'
 BREAK = 'break' ';'
-DEFER = 'defer' BLOCK
