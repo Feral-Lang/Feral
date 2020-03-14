@@ -17,23 +17,30 @@
 
 var_fn_t::var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		    const std::string & var_arg, const std::vector< std::string > & args,
-		    const fn_body_t & body, const bool is_native,
-		    const size_t & src_id, const size_t & idx )
+		    const std::unordered_map< std::string, var_base_t * > & assn_args,
+		    const fn_body_t & body, const bool is_native, const size_t & src_id,
+		    const size_t & idx )
 	: var_base_t( VT_FUNC, src_id, idx ), m_src_name( src_name ), m_kw_arg( kw_arg ),
-	  m_var_arg( var_arg ), m_args( args ), m_body( body ), m_is_native( is_native )
+	  m_var_arg( var_arg ), m_args( args ), m_assn_args( assn_args ), m_body( body ),
+	  m_is_native( is_native )
 {}
 var_fn_t::var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
+		    const std::unordered_map< std::string, var_base_t * > & assn_args,
 		    const fn_body_t & body, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_FUNC, src_id, idx ), m_src_name( src_name ),
-	  m_args( args ), m_body( body ), m_is_native( true )
+	: var_base_t( VT_FUNC, src_id, idx ), m_src_name( src_name ), m_args( args ),
+	  m_assn_args( assn_args ), m_body( body ), m_is_native( true )
 {}
 var_fn_t::~var_fn_t()
 {
+	for( auto & aa : m_assn_args ) var_dref( aa.second );
 }
 
 var_base_t * var_fn_t::copy( const size_t & src_id, const size_t & idx )
 {
-	return new var_fn_t( m_src_name, m_kw_arg, m_var_arg, m_args, m_body, m_is_native, src_id, idx );
+	for( auto & aa : m_assn_args ) {
+		var_iref( aa.second );
+	}
+	return new var_fn_t( m_src_name, m_kw_arg, m_var_arg, m_args, m_assn_args, m_body, m_is_native, src_id, idx );
 }
 
 std::string & var_fn_t::src_name() { return m_src_name; }
@@ -48,9 +55,9 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		     const size_t & src_id, const size_t & idx )
 {
 	// - 1 for self
-	if( args.size() - 1 < m_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
-		vm.src_stack.back()->src()->fail( idx, "argument count required: %zu, received: %zu",
-			   m_args.size(), args.size() - 1 );
+	if( args.size() - 1 < m_args.size() - m_assn_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
+		vm.src_stack.back()->src()->fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
+						  m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
 		return false;
 	}
 	if( m_is_native ) {
@@ -70,9 +77,20 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 	if( args[ 0 ] != nullptr ) {
 		vars->stash( "self", args[ 0 ] );
 	}
+	// for default arguments
+	std::unordered_set< std::string > found_args;
 	size_t i = 1;
 	for( auto & a : m_args ) {
+		if( i == args.size() ) break;
 		vars->stash( a, args[ i++ ] );
+		found_args.insert( a );
+	}
+	// add all default arguments which have not been overwritten by args
+	for( auto & aa : m_assn_args ) {
+		if( found_args.find( aa.first ) != found_args.end() ) continue;
+		var_base_t * copy = aa.second->copy( src_id, idx );
+		copy->dref();
+		vars->stash( aa.first, copy );
 	}
 	if( !m_var_arg.empty() ) {
 		std::vector< var_base_t * > vec;
@@ -106,11 +124,16 @@ void var_fn_t::set( var_base_t * from )
 {
 	var_fn_t * fn = FN( from );
 
+	for( auto & aa : m_assn_args ) var_dref( aa.second );
+
+	for( auto & aa : fn->m_assn_args ) var_iref( aa.second );
+
 	// no need to change fn id
 	m_src_name = fn->m_src_name;
 	m_kw_arg = fn->m_kw_arg;
 	m_var_arg = fn->m_var_arg;
 	m_args = fn->m_args;
+	m_assn_args = fn->m_assn_args;
 	m_body = fn->m_body;
 	m_is_native = fn->m_is_native;
 }

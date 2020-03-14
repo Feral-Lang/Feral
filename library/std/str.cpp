@@ -47,9 +47,9 @@ REGISTER_MODULE( str )
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
 
-	vm.add_typefn( VT_STR,   "len", new var_fn_t( src_name, "",  "", {}, { .native = str_size  }, true, 0, 0 ), false );
-	vm.add_typefn( VT_STR, "empty", new var_fn_t( src_name, "",  "", {}, { .native = str_empty }, true, 0, 0 ), false );
-	vm.add_typefn( VT_STR, "split", new var_fn_t( src_name, "", ".", {}, { .native = str_split }, true, 0, 0 ), false );
+	vm.add_typefn( VT_STR,   "len", new var_fn_t( src_name, "",  "", {}, {}, { .native = str_size  }, true, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "empty", new var_fn_t( src_name, "",  "", {}, {}, { .native = str_empty }, true, 0, 0 ), false );
+	vm.add_typefn( VT_STR, "split", new var_fn_t( src_name, "", ".", {}, {}, { .native = str_split }, true, 0, 0 ), false );
 
 	return true;
 }

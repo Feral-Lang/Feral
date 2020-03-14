@@ -163,6 +163,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			std::string kw_arg;
 			std::string var_arg;
 			std::vector< std::string > args;
+			std::unordered_map< std::string, var_base_t * > assn_args;
 			if( op.data.s[ 0 ] == '1' ) {
 				kw_arg = STR( vms->back() )->get();
 				vms->pop();
@@ -174,10 +175,13 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 
 			size_t arg_sz = strlen( op.data.s );
 			for( size_t i = 2; i < arg_sz; ++i ) {
-				const size_t idx = vms->back()->idx();
 				std::string name = STR( vms->back() )->get();
 				vms->pop();
-				var_base_t * val = nullptr;
+				if( op.data.s[ i ] == '1' ) {
+					// name is guaranteed to be unique, thanks to parser
+					assn_args[ name ] = vms->back()->copy( src_id, op.idx );
+					vms->pop();
+				}
 				args.push_back( name );
 			}
 
@@ -185,8 +189,8 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			bodies.pop_back();
 
 			vms->push( new var_fn_t( src_file->path(), kw_arg, var_arg,
-						 args, { .feral = body }, false,
-						 src_id, op.idx ),
+						 args, assn_args, { .feral = body },
+						 false, src_id, op.idx ),
 				   false );
 			break;
 		}

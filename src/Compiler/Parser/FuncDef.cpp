@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include <unordered_map>
+
 #include "Internal.hpp"
 
 Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc )
@@ -64,6 +66,7 @@ Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc )
 	std::vector< const stmt_base_t * > args;
 	const stmt_simple_t * kw_arg = nullptr, * va_arg = nullptr;
 	stmt_base_t * expr = nullptr;
+	std::unordered_map< std::string, size_t > done_assn_args;
 
 	size_t idx = ph.peak()->pos;
 begin:
@@ -79,14 +82,34 @@ begin:
 		}
 		kw_arg = new stmt_simple_t( ph.peak() );
 		ph.next();
-	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_TDOT ) {
+	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_ASSN && ph.peakt( 1 ) != TOK_TDOT ) {
+		if( done_assn_args.size() > 0 ) {
+			ph.fail( "cannot have a simple parameter after default argument" );
+			goto fail;
+		}
 		ph.sett( TOK_STR );
 		args.push_back( new stmt_simple_t( ph.peak() ) );
 		ph.next();
-	} else if( ph.acceptd() && ph.peakt( 1 ) == TOK_TDOT ) { // since STR is checked above, won't be bothered with it anymore
+	} else if( ph.acceptd() && ( ph.peakt( 1 ) == TOK_ASSN || ph.peakt( 1 ) == TOK_TDOT ) ) { // since STR is checked above, won't be bothered with it anymore
 		// but we still have to make IDEN data type to STR
 		if( ph.accept( TOK_IDEN ) ) ph.sett( TOK_STR );
-		if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
+		if( ph.peakt( 1 ) == TOK_ASSN ) {
+			const lex::tok_t * lhs = ph.peak();
+			stmt_base_t * rhs = nullptr;
+			ph.next(); ph.next();
+			if( parse_expr_15( ph, rhs ) != E_OK ) {
+				goto fail;
+			}
+			if( done_assn_args.find( lhs->data ) != done_assn_args.end() ) {
+				ph.fail( lhs->pos, "cannot have more than one assigned argument of same name" );
+				ph.fail( done_assn_args[ lhs->data ], "previouse here" );
+				delete rhs;
+				goto fail;
+			}
+			args.push_back( new stmt_fn_assn_arg_t( new stmt_simple_t( lhs ), rhs ) );
+			done_assn_args[ lhs->data ] = lhs->pos;
+		}
+		else if( ph.peakt( 1 ) == TOK_TDOT ) { // perhaps a variadic
 			va_arg = new stmt_simple_t( ph.peak() );
 			ph.next(); ph.next();
 		}

@@ -101,12 +101,12 @@ REGISTER_MODULE( utils )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
-	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, { .native = range }, true, 0, 0 ) );
+	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, {}, { .native = range }, true, 0, 0 ) );
 
 	// get the type id for int iterable (register_type)
 	int_iterable_typeid = vm.register_new_type();
 
-	vm.add_typefn( int_iterable_typeid, "next", new var_fn_t( src_name, {}, { .native = int_iterable_next }, 0, 0 ), false );
+	vm.add_typefn( int_iterable_typeid, "next", new var_fn_t( src_name, {}, {}, { .native = int_iterable_next }, 0, 0 ), false );
 
 	return true;
 }
