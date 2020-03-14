@@ -10,6 +10,8 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <unistd.h>
+#include <limits.h>
 #include <sys/wait.h>
 
 #include "../../src/VM/VM.hpp"
@@ -191,6 +193,16 @@ var_base_t * os_rm( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( exec_internal( "rm -r " + dest ) );
 }
 
+var_base_t * os_cwd( vm_state_t & vm, const fn_data_t & fd )
+{
+	char cwd[ PATH_MAX ];
+	if( getcwd( cwd, PATH_MAX ) == NULL ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "getcwd() failed - internal error" );
+		return nullptr;
+	}
+	return make< var_str_t >( cwd );
+}
+
 REGISTER_MODULE( os )
 {
 	var_src_t * src = vm.src_stack.back();
@@ -208,6 +220,8 @@ REGISTER_MODULE( os )
 
 	src->add_nativefn( "mkdir", os_mkdir, { "" }, {}, true );
 	src->add_nativefn( "rm", os_rm, { "" }, {}, true );
+
+	src->add_nativefn( "cwd", os_cwd );
 
 	return true;
 }

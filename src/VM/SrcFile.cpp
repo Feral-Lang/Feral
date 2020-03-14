@@ -57,18 +57,11 @@ Errors srcfile_t::load_file()
 	return E_OK;
 }
 
-bcode_t & srcfile_t::bcode() { return m_bcode; }
-
 void srcfile_t::add_data( const std::string & data ) { m_data += data; }
 void srcfile_t::add_cols( const std::vector< src_col_range_t > & cols )
 {
 	m_cols.insert( m_cols.end(), cols.begin(), cols.end() );
 }
-
-const std::string & srcfile_t::data() const { return m_data; }
-size_t srcfile_t::id() const { return m_id; }
-const std::string & srcfile_t::path() const { return m_path; }
-bool srcfile_t::is_main() const { return m_is_main; }
 
 void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
 {
