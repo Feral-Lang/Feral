@@ -1,0 +1,12 @@
+let os = import('std/os');
+let sys = import('std/sys');
+let builder = import('std/builder');
+
+let build = builder.new().make_dll();
+
+build.add_lib('-lferalvm', '-L' + sys.dll_load_loc);
+build.add_lib('-lgmp');
+
+build.add_src('src/term.cpp');
+
+sys.exit(build.build('term', true));

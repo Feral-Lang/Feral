@@ -1,0 +1,12 @@
+let io = import('std/io');
+let os = import('std/os');
+let term = import('term');
+
+# term size
+let ts = term.get_size();
+
+for i in range(1, 10) {
+	io.println('width:', ts.width, 'height:', ts.height);
+	os.sleep(1000);
+	ts.update();
+}

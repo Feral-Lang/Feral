@@ -40,15 +40,13 @@ struct vm_state_t
 	var_base_t * nil;
 	var_base_t * args;
 
-	// location where feral binary exists (used by sys.self_binary())
-	std::string self_binary;
-
 	// this is a pointer since it must be explicitly deleted after everything else
 	dyn_lib_t * dlib;
 
 	std::vector< std::string > inc_locs;
 	std::vector< std::string > mod_locs;
 
+	// arguments for feral source from command line
 	var_base_t * src_args;
 
 	vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags );
@@ -73,10 +71,13 @@ struct vm_state_t
 	// nmod = native module
 	// fmod = feral module
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
-	bool load_nmod( const std::string & mod_str, const size_t & idx );
+	bool load_nmod( const std::string & mod_str, const size_t & idx, const bool update_dll_loc = false );
 	int load_fmod( const std::string & mod_file );
 
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
+
+	inline const std::string & self_binary() const { return m_self_binary; }
+	inline const std::string & dll_load_loc() const { return m_dll_load_loc; }
 
 	bool load_core_mods();
 private:
@@ -90,6 +91,10 @@ private:
 	std::unordered_map< int, vars_frame_t * > m_typefns;
 	// names of types (optional)
 	std::unordered_map< int, std::string > m_typenames;
+	// location where feral binary exists (used by sys.self_binary())
+	std::string m_self_binary;
+	// directory where (core) module is loaded from (used by builder)
+	std::string m_dll_load_loc;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
