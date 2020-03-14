@@ -194,6 +194,7 @@ foreach(m ${mods})
 	target_link_libraries(${mod} feral-vm)
 	set_target_properties(${mod}
 	    PROPERTIES
+	    PREFIX "libferal"
 	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
 	    INSTALL_RPATH_USE_LINK_PATH TRUE
 	)

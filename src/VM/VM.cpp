@@ -13,6 +13,7 @@
 #include "../Common/String.hpp"
 #include "../Common/Env.hpp"
 #include "../Common/FS.hpp"
+
 #include "Vars.hpp"
 #include "VM.hpp"
 
@@ -130,7 +131,7 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
-	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "lib" );
+	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "libferal" );
 	srcfile_t * src = src_stack.back()->src();
 	if( !mod_exists( mod_locs, mod_file, nmod_ext() ) ) {
 		src->fail( idx, "module file: %s not found in locations: %s",
