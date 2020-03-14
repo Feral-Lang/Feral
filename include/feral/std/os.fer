@@ -4,8 +4,15 @@ let str = import('std/str');
 let vec = import('std/vec');
 let fs = import('std/fs');
 
-let name = os_get_name();
+# OS name, current possible values:
+# android
+# linux
+# macos
+# bsd
+let name = os_get_name_native();
 
+# find the given file (exec) in the PATH variables
+# return the entire file path if found, empty string if not
 let exec_exists = fn(exec) {
 	for dir in get_env('PATH').split().each() {
 		if fs.exists(dir + '/' + exec) { return dir + '/' + exec; }
