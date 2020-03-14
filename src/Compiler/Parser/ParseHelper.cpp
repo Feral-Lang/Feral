@@ -78,7 +78,7 @@ void phelper_t::fail( const char * msg, ... ) const
 {
 	va_list args;
 	va_start( args, msg );
-	m_src.fail( peak()->pos, msg, args );
+	m_src.fail( peak()->type == TOK_EOF ? peak( -1 )->pos : peak()->pos, msg, args );
 	va_end( args );
 }
 

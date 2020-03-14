@@ -1,0 +1,17 @@
+mload('term');
+
+let lang = import('std/lang');
+
+let term_size_t = lang.struct(
+	width = term_width_native(),
+	height = term_height_native()
+);
+
+let update in term_size_t = fn() {
+	self.width = term_width_native();
+	self.height = term_height_native();
+};
+
+let get_size = fn() {
+	return term_size_t();
+};

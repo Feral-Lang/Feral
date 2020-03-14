@@ -6,3 +6,5 @@ let self_binary = self_binary_loc_native();
 
 # the arguments passed to feral - after the main source file
 let args = src_args_native();
+
+let dll_load_loc = dll_load_loc_native();
