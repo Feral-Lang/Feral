@@ -33,7 +33,7 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e.second }, {}, src->id(), fd.idx ) ) {
+		if( !FN( str_fn )->call( vm, { e.second }, {}, {}, src->id(), fd.idx ) ) {
 			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
 			return nullptr;
 		}
@@ -93,7 +93,7 @@ var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 			src->fail( e->idx(), "no 'str' function implement for type: '%zu' or global type", e->type() );
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e }, {}, src->id(), fd.idx ) ) {
+		if( !FN( str_fn )->call( vm, { e }, {}, {}, src->id(), fd.idx ) ) {
 			src->fail( e->idx(), "function call 'str' for type: %zu failed", e->type() );
 			return nullptr;
 		}
@@ -126,7 +126,7 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e.second }, {}, src->id(), fd.idx ) ) {
+		if( !FN( str_fn )->call( vm, { e.second }, {}, {}, src->id(), fd.idx ) ) {
 			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
 			return nullptr;
 		}

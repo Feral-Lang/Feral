@@ -52,6 +52,7 @@ bool var_fn_t::is_native() { return m_is_native; }
 
 bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		     const std::vector< fn_assn_arg_t > & assn_args,
+		     const std::unordered_map< std::string, size_t > & assn_args_loc,
 		     const size_t & src_id, const size_t & idx )
 {
 	// - 1 for self
@@ -61,7 +62,7 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		return false;
 	}
 	if( m_is_native ) {
-		var_base_t * res = m_body.native( vm, { src_id, idx, args, assn_args } );
+		var_base_t * res = m_body.native( vm, { src_id, idx, args, assn_args, assn_args_loc } );
 		if( res == nullptr ) return false;
 		// if it's a new variable (created with make<>() function)
 		// set src_id and idx

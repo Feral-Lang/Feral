@@ -20,7 +20,7 @@ var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 			src->fail( arg->idx(), "no 'str' function implement for type: '%zu' or global type", arg->type() );
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { arg }, {}, src->id(), fd.idx ) ) {
+		if( !FN( str_fn )->call( vm, { arg }, {}, {}, src->id(), fd.idx ) ) {
 			src->fail( arg->idx(), "function call 'str' for type: %zu failed", arg->type() );
 			return nullptr;
 		}
@@ -107,7 +107,7 @@ var_base_t * col_println( vm_state_t & vm, const fn_data_t & fd )
 			src->fail( arg->idx(), "no 'str' function implement for type: '%zu' or global type", arg->type() );
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { arg }, {}, src->id(), fd.idx ) ) {
+		if( !FN( str_fn )->call( vm, { arg }, {}, {}, src->id(), fd.idx ) ) {
 			src->fail( arg->idx(), "function call 'str' for type: %zu failed", arg->type() );
 			return nullptr;
 		}

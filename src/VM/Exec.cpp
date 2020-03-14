@@ -200,6 +200,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			bool mem_call = op.op == OP_MEM_FNCL;
 			std::vector< var_base_t * > args;
 			std::vector< fn_assn_arg_t > assn_args;
+			std::unordered_map< std::string, size_t > assn_args_loc;
 			for( size_t i = 0; i < len; ++i ) {
 				if( op.data.s[ i ] == '0' ) {
 					args.push_back( vms->pop( false ) );
@@ -209,6 +210,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					vms->pop();
 					var_base_t * val = vms->pop( false );
 					assn_args.push_back( { idx, name, val } );
+					assn_args_loc[ name ] = assn_args.size() - 1;
 				}
 			}
 			var_base_t * in_base = nullptr; // only for mem_call
@@ -241,7 +243,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			if( fn_base->type() == VT_FUNC ) {
 				args.insert( args.begin(), in_base );
-				if( !FN( fn_base )->call( vm, args, assn_args, src_id, op.idx ) ) {
+				if( !FN( fn_base )->call( vm, args, assn_args, assn_args_loc, src_id, op.idx ) ) {
 					src_file->fail( op.idx, "function call failed, look at error above" );
 					goto fncall_fail;
 				}
