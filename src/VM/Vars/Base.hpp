@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <gmpxx.h>
 
-#include "../../../third_party/mpfrxx.hpp"
+#include "../../Extra/mpfrxx.hpp"
 #include "../SrcFile.hpp"
 
 enum VarTypes

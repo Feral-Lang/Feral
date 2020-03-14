@@ -14,7 +14,7 @@ compile_commands.json
 ###############
 testbin/
 bin/
-lib/
+/lib/
 build/
 dockerbuild/
 buildfiles/
