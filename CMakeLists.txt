@@ -8,7 +8,7 @@ if(CMAKE_VERSION VERSION_LESS "3.1")
 endif()
 
 # add cmake_modules path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/third_party/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/src/Extra/cmake_modules")
 
 set(FERAL_VERSION_MAJOR 0)
 set(FERAL_VERSION_MINOR 0)
@@ -89,17 +89,45 @@ message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
 
-# Includes
+# Feral Includes
 file(COPY "${CMAKE_SOURCE_DIR}/include" DESTINATION "${CMAKE_INSTALL_PREFIX}/")
 
+# Install Extra headers and (cmake) modules
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Extra/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Extra"
+	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.cmake"
+)
+
+# Feral Common
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp")
+
+add_library(feral-common SHARED ${SRCS} ${INCS})
+set_target_properties(feral-common
+    PROPERTIES
+    OUTPUT_NAME feralcomm
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS feral-common
+	LIBRARY
+	  DESTINATION lib/feral
+	  COMPONENT Libraries
+	PUBLIC_HEADER
+	  DESTINATION include/feral
+)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Common/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Common"
+	FILES_MATCHING PATTERN "*.hpp"
+)
+
 # Feral Compiler
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/Compiler/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/Compiler/*.cpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.cpp")
 list(REMOVE_ITEM SRCS "src/Compiler/Main.cpp")
 
 add_library(feral-compiler SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-compiler ${CMAKE_DL_LIBS})
-target_link_libraries(feral-compiler feral-vm)
+target_link_libraries(feral-compiler ${CMAKE_DL_LIBS} feral-common feral-vm)
 set_target_properties(feral-compiler
     PROPERTIES
     OUTPUT_NAME feralcomp
@@ -113,14 +141,17 @@ install(TARGETS feral-compiler
 	PUBLIC_HEADER
 	  DESTINATION include/feral
 )
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Compiler/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Compiler"
+	FILES_MATCHING PATTERN "*.hpp"
+)
 
 # Feral VM
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp" "src/VM/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp" "src/VM/*.cpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.cpp")
 
 add_library(feral-vm SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-vm ${CMAKE_DL_LIBS})
-target_link_libraries(feral-vm mpfr gmp gmpxx)
+target_link_libraries(feral-vm ${CMAKE_DL_LIBS} feral-common mpfr gmp gmpxx)
 set_target_properties(feral-vm
     PROPERTIES
     OUTPUT_NAME feralvm
@@ -133,6 +164,10 @@ install(TARGETS feral-vm
 	  COMPONENT Libraries
 	PUBLIC_HEADER
 	  DESTINATION include/feral
+)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/VM/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/VM"
+	FILES_MATCHING PATTERN "*.hpp"
 )
 
 add_executable(feral-bin "${PROJECT_SOURCE_DIR}/src/Compiler/Main.cpp")
