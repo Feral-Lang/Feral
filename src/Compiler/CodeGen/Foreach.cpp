@@ -22,6 +22,9 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	bc.adds( m_expr->idx(), OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
 	bc.adds( m_expr->idx(), OP_LOAD, ODT_STR, "next" );
 	bc.adds( m_expr->idx(), OP_MEM_FNCL, ODT_STR, "" );
+	// will be set later
+	size_t jmp_loop_out_loc1 = bc.size();
+	bc.addsz( m_loop_var->pos, OP_JMPN, 0 );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, m_loop_var->data );
 	bc.addb( m_loop_var->pos, OP_CREATE, false );
 
@@ -36,7 +39,7 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
 	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
 	// will be set later
-	size_t jmp_loop_out_loc = bc.size();
+	size_t jmp_loop_out_loc2 = bc.size();
 	bc.addsz( m_loop_var->pos, OP_JMPN, 0 );
 	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
 	bc.add( m_loop_var->pos, OP_STORE );
@@ -47,7 +50,8 @@ bool stmt_foreach_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) cons
 	size_t break_jmp_loc = bc.size();
 	bc.add( idx(), OP_POP_LOOP );
 
-	bc.updatesz( jmp_loop_out_loc, break_jmp_loc );
+	bc.updatesz( jmp_loop_out_loc1, break_jmp_loc );
+	bc.updatesz( jmp_loop_out_loc2, break_jmp_loc );
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {
