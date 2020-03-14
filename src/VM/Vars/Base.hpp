@@ -217,13 +217,17 @@ class var_fn_t : public var_base_t
 	std::string m_kw_arg;
 	std::string m_var_arg;
 	std::vector< std::string > m_args;
+	std::unordered_map< std::string, var_base_t * > m_assn_args;
 	fn_body_t m_body;
 	bool m_is_native;
 public:
 	var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		  const std::string & var_arg, const std::vector< std::string > & args,
-		  const fn_body_t & body, const bool is_native, const size_t & src_id, const size_t & idx );
+		  const std::unordered_map< std::string, var_base_t * > & assn_args,
+		  const fn_body_t & body, const bool is_native, const size_t & src_id,
+		  const size_t & idx );
 	var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
+		  const std::unordered_map< std::string, var_base_t * > & assn_args,
 		  const fn_body_t & body, const size_t & src_id, const size_t & idx );
 
 	~var_fn_t();
@@ -302,6 +306,7 @@ public:
 
 	void add_nativefn( const std::string & name, nativefnptr_t body,
 			   const std::vector< std::string > & args = {},
+			   const std::unordered_map< std::string, var_base_t * > & def_args = {},
 			   const bool is_va = false );
 
 	srcfile_t * src();

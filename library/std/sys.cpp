@@ -39,7 +39,7 @@ REGISTER_MODULE( sys )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
-	src->add_nativefn( "exit", _exit, {}, true );
+	src->add_nativefn( "exit", _exit, {}, {}, true );
 	src->add_nativefn( "self_binary_loc_native", self_binary_loc );
 	src->add_nativefn( "src_args_native", src_args );
 	return true;
