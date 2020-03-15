@@ -1,12 +1,12 @@
-let io = import( 'std/io' );
-let lang = import( 'std/lang' );
+let io = import('std/io');
+let lang = import('std/lang');
 
-let node_t = lang.struct( d = 0, next = nil );
-let list_t = lang.struct( head = nil );
+let node_t = lang.struct(d = 0, next = nil);
+let list_t = lang.struct(head = nil);
 
-let add in list_t = fn( data ) {
+let add in list_t = fn(data) {
 	if self.head == nil {
-		self.head = node_t( d = data );
+		self.head = node_t(d = data);
 		return
 	}
 	let iter = self.head;

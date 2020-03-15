@@ -1,5 +1,5 @@
 let io = import('std/io');
-let lang = import( 'std/lang' );
+let lang = import('std/lang');
 
 let EXIT_CODE = lang.enum(
 	.OK,
