@@ -10,3 +10,5 @@ let args = src_args_native();
 let inc_load_loc = inc_load_loc_native();
 let dll_load_loc = dll_load_loc_native();
 let dll_core_load_loc = dll_core_load_loc_native();
+
+let feral_home_dir = feral_home_dir_native();

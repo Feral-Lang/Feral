@@ -50,6 +50,11 @@ var_base_t * dll_core_load_loc( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( vm.dll_core_load_loc() );
 }
 
+var_base_t * feral_home_dir( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_str_t >( vm.feral_home_dir() );
+}
+
 REGISTER_MODULE( sys )
 {
 	var_src_t * src = vm.src_stack.back();
@@ -60,5 +65,6 @@ REGISTER_MODULE( sys )
 	src->add_nativefn( "inc_load_loc_native", inc_load_loc );
 	src->add_nativefn( "dll_load_loc_native", dll_load_loc );
 	src->add_nativefn( "dll_core_load_loc_native", dll_core_load_loc );
+	src->add_nativefn( "feral_home_dir_native", feral_home_dir );
 	return true;
 }
