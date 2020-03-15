@@ -8,6 +8,6 @@ let build = builder.new().make_dll();
 build.add_src('src/term.cpp');
 
 let res = build.build('term');
-if res != 0 || sys.args.len() == 0 || sys.args[0] != 'install' { sys.exit(res); }
+if res != 0 || !sys.args.find('install') { sys.exit(res); }
 
 sys.exit(build.install(inc_dirs = 'include/*', lib_dirs = 'build/*'));

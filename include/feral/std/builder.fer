@@ -68,7 +68,7 @@ let add_src in builder_t = fn(src) {
 	return self;
 };
 
-let build in builder_t = fn(output_file, dry_run = false) {
+let build in builder_t = fn(output_file, dry_run = sys.args.find('dry')) {
 	let compiler_loc = os.exec_exists(self.compiler);
 	if compiler_loc.empty() {
 		io.cprintln('{p}could not find compiler {r}', self.compiler, ' {p}in {c}$PATH{0}');
@@ -82,14 +82,14 @@ let build in builder_t = fn(output_file, dry_run = false) {
 	let cmd = compiler_loc + self.compiler_opts + self.inc_dirs + self.lib_dirs + self.lib_flags + self.srcs + '-o build/' + out_file;
 	io.cprintln('Building ...');
 	if dry_run {
-		io.cprintln('{w}=> {0}', cmd);
+		io.cprintln('{w}=> {c}', cmd, '{0}');
 		return 0;
 	}
 	io.cprintln('{w}=> {c}build/', out_file, '{0}');
 	return os.exec(cmd);
 };
 
-let install in builder_t = fn(.dirs, dry_run = false) {
+let install in builder_t = fn(.dirs, dry_run = sys.args.find('dry')) {
 	let something_to_install = false;
 	io.cprintln('Installing ...');
 
@@ -109,7 +109,7 @@ let install in builder_t = fn(.dirs, dry_run = false) {
 		if res != 0 { return res; }
 	}
 
-	if something_to_install {
+	if !dry_run && something_to_install {
 		io.cprintln('Installation successful!');
 	} else {
 		io.cprintln('Nothing to install!');
