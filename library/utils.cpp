@@ -89,6 +89,21 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 	return vm.nil;
 }
 
+var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->type() != VT_BOOL ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "expected boolean argument for assertion, found: %s",
+						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		return nullptr;
+	}
+
+	if( !BOOL( fd.args[ 1 ] )->get() ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "assertion failed" );
+		return nullptr;
+	}
+	return vm.nil;
+}
+
 var_base_t * int_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_int_iterable_t * it = INT_ITERABLE( fd.args[ 0 ] );
@@ -102,6 +117,7 @@ REGISTER_MODULE( utils )
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
 	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, {}, { .native = range }, true, 0, 0 ) );
+	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, 0, 0 ) );
 
 	// get the type id for int iterable (register_type)
 	int_iterable_typeid = vm.register_new_type();
