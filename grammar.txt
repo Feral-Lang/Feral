@@ -41,7 +41,8 @@ VAR_DECL = 'let' VAR_DECL_BASE [',' VAR_DECL_BASE]* ';'
 VA_ARGS = iden '...'
 KW_ARGS = atom
 KW_ARGS_CALL = iden '=' L15
-FUNC_DECL_ARGS = iden [',' iden]* [',' KW_ARGS]{0,1} [',' VA_ARGS]{0,1}
+SIMPLE_DECL_ARGS = iden | iden '=' L15
+FUNC_DECL_ARGS = SIMPLE_DECL_ARGS [',' KW_ARGS]{0,1} [',' SIMPLE_DECL_ARGS]* [',' VA_ARGS]{0,1}
 FUNC_CALL_ARGS = [KW_ARGS_CALL | L15]*
 
 FUNC_DEF = 'fn' '(' FUNC_DECL_ARGS ')'
