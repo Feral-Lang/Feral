@@ -17,7 +17,7 @@ let FERAL_INC = FERAL_HOME + '/include';
 let FERAL_LIB = FERAL_HOME + '/lib';
 
 if !fs.exists(FERAL_HOME) {
-	io.cprintln('Feral home {c}', FERAL_HOME, ' {0}does not exist, creating it and subdirectories ...');
+	io.cprintln('Feral home {c}', FERAL_HOME, ' {0}does not exist, creating ...');
 	io.cprintln('{w}=> {c}', FERAL_HOME, ' {0}...');
 	let res = os.mkdir(FERAL_HOME);
 	if res != 0 {

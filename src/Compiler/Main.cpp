@@ -45,11 +45,11 @@ int main( int argc, char ** argv )
 
 	if( src_file.find( ".fer" ) == std::string::npos ) {
 		if( src_file == "init" ) {
-			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/init.fer";
-		} else if( src_file == "build" ) {
-			src_file = "build.fer";
+			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/init" + std::string( fmod_ext() );
+		} else if( src_file == "build" || src_file == "test" ) {
+			src_file = src_file + fmod_ext();
 		} else if( src_file == "install" ) {
-			src_file = "build.fer";
+			src_file = std::string( "build" ) + fmod_ext();
 			code_args.insert( code_args.begin(), "install" );
 		}
 	}
