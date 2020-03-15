@@ -114,15 +114,18 @@ var_base_t * fs_file_readlines( vm_state_t & vm, const fn_data_t & fd )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
 	FILE * const file = FILE( fd.args[ 0 ] )->get();
-	char * line = NULL;
+	char * line_ptr = NULL;
 	size_t len = 0;
 	ssize_t read = 0;
 
 	std::vector< var_base_t * > lines;
-	while( ( read = getline( & line, & len, file ) ) != -1 ) {
+	while( ( read = getline( & line_ptr, & len, file ) ) != -1 ) {
+		std::string line = line_ptr;
+		while( line.back() == '\n' ) line.pop_back();
+		while( line.back() == '\r' ) line.pop_back();
 		lines.push_back( new var_str_t( line, fd.src_id, fd.idx ) );
 	}
-	if( line ) free( line );
+	if( line_ptr ) free( line_ptr );
 	fseek( file, 0, SEEK_SET );
 
 	return make< var_vec_t >( lines );

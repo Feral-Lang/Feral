@@ -9,6 +9,8 @@
 
 #include "../../src/VM/VM.hpp"
 
+const size_t MAX_C_STR_LEN = 1025;
+
 var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
@@ -31,11 +33,30 @@ var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 			return nullptr;
 		}
 		fprintf( stdout, "%s", STR( str )->get().c_str() );
-		if( i < fd.args.size() - 1 ) fprintf( stdout, " " );
 		var_dref( str );
 	}
 	fprintf( stdout, "\n" );
 	return vm.nil;
+}
+
+var_base_t * scan( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	if( fd.args.size() > 1 ) {
+		if( fd.args[ 1 ]->type() != VT_STR ) {
+			src->fail( fd.args[ 1 ]->idx(), "expected string data for input prompt" );
+			return nullptr;
+		}
+		fprintf( stdout, "%s", STR( fd.args[ 1 ] )->get().c_str() );
+	}
+
+	char str[ MAX_C_STR_LEN ];
+	fgets( str, MAX_C_STR_LEN, stdin );
+	std::string res( str );
+	while( res.back() == '\n' ) res.pop_back();
+	while( res.back() == '\r' ) res.pop_back();
+
+	return make< var_str_t >( res );
 }
 
 static std::unordered_map< std::string, const char * > COL = {
@@ -120,7 +141,6 @@ var_base_t * col_println( vm_state_t & vm, const fn_data_t & fd )
 		std::string data = STR( str )->get();
 		apply_colors( data );
 		fprintf( stdout, "%s", data.c_str() );
-		if( i < fd.args.size() - 1 ) fprintf( stdout, " " );
 		var_dref( str );
 	}
 	fprintf( stdout, "\n" );
@@ -132,6 +152,7 @@ REGISTER_MODULE( io )
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
 	src->add_nativefn( "println", println, {}, {}, true );
+	src->add_nativefn( "scan", scan, { "" }, {}, true );
 	src->add_nativefn( "cprintln", col_println, {}, {}, true );
 	return true;
 }
