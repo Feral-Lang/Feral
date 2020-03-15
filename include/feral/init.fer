@@ -1,0 +1,33 @@
+let io = import('std/io');
+let os = import('std/os');
+let fs = import('std/fs');
+let sys = import('std/sys');
+
+let USER_HOME = os.get_env('HOME');
+
+if USER_HOME.empty() {
+	io.cprintln('{c}$HOME not available {0}- {r}cannot continue!{0}');
+	sys.exit(1);
+}
+
+io.cprintln('Initializing Feral for use ...');
+
+let FERAL_HOME = sys.feral_home_dir;
+let FERAL_INC = FERAL_HOME + '/include';
+let FERAL_LIB = FERAL_HOME + '/lib';
+
+if !fs.exists(FERAL_HOME) {
+	io.cprintln('Feral home {c}', FERAL_HOME, ' {0}does not exist, creating it and subdirectories ...');
+	io.cprintln('{w}=> {c}', FERAL_HOME, ' {0}...');
+	let res = os.mkdir(FERAL_HOME);
+	if res != 0 {
+		io.cprintln('{c}$FERAL_HOME could not be created {0}- {r}cannot continue!{0}');
+		sys.exit(1);
+	}
+	io.cprintln('{w}=> {c}', FERAL_INC, ' {0}...');
+	os.mkdir(FERAL_INC);
+	io.cprintln('{w}=> {c}', FERAL_LIB, ' {0}...');
+	os.mkdir(FERAL_LIB);
+}
+
+io.cprintln('Initial setup done. Enjoy!');

@@ -78,6 +78,7 @@ struct vm_state_t
 
 	inline const std::string & self_binary() const { return m_self_binary; }
 	inline const std::string & dll_core_load_loc() const { return m_dll_core_load_loc; }
+	inline const std::string & feral_home_dir() { return m_feral_home_dir; }
 
 	bool load_core_mods();
 private:
@@ -98,6 +99,8 @@ private:
 	std::string m_self_binary;
 	// directory where (core) module is loaded from (used by builder)
 	std::string m_dll_core_load_loc;
+	// directory where feral libraries and config and stuff lives
+	std::string m_feral_home_dir;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );

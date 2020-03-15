@@ -12,6 +12,7 @@
 #include <cstring>
 
 #include "../Common/FS.hpp"
+#include "../Common/String.hpp"
 #include "../VM/VM.hpp"
 
 #include "Config.hpp"
@@ -41,6 +42,17 @@ int main( int argc, char ** argv )
 	std::string fer_bin = argv[ 0 ];
 
 	std::string src_file = args[ "__main__" ];
+
+	if( src_file.find( ".fer" ) == std::string::npos ) {
+		if( src_file == "init" ) {
+			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/init.fer";
+		} else if( src_file == "build" ) {
+			src_file = "build.fer";
+		} else if( src_file == "install" ) {
+			src_file = "build.fer";
+			code_args.emplace_back( "install" );
+		}
+	}
 
 	srcfile_t * main_src = fmod_load( src_file, flags, true, err );
 	if( err != E_OK ) {
