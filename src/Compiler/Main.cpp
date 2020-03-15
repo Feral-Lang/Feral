@@ -50,7 +50,7 @@ int main( int argc, char ** argv )
 			src_file = "build.fer";
 		} else if( src_file == "install" ) {
 			src_file = "build.fer";
-			code_args.emplace_back( "install" );
+			code_args.insert( code_args.begin(), "install" );
 		}
 	}
 
