@@ -146,6 +146,16 @@ var_base_t * os_get_name( vm_state_t & vm, const fn_data_t & fd )
 //////////////////////////////////////////////////////// Extra Functions ///////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var_base_t * os_cwd( vm_state_t & vm, const fn_data_t & fd )
+{
+	char cwd[ PATH_MAX ];
+	if( getcwd( cwd, PATH_MAX ) == NULL ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "getcwd() failed - internal error" );
+		return nullptr;
+	}
+	return make< var_str_t >( cwd );
+}
+
 var_base_t * os_mkdir( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
@@ -193,14 +203,36 @@ var_base_t * os_rm( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( exec_internal( "rm -r " + dest ) );
 }
 
-var_base_t * os_cwd( vm_state_t & vm, const fn_data_t & fd )
+var_base_t * os_copy( vm_state_t & vm, const fn_data_t & fd )
 {
-	char cwd[ PATH_MAX ];
-	if( getcwd( cwd, PATH_MAX ) == NULL ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "getcwd() failed - internal error" );
+	if( fd.args[ 1 ]->type() != VT_STR ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for source, found: %s",
+						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
-	return make< var_str_t >( cwd );
+
+	std::string src = STR( fd.args[ 1 ] )->get();
+	// last element is the destination
+	for( size_t i = 2; i < fd.args.size() - 1; ++i ) {
+		if( fd.args[ i ]->type() != VT_STR ) {
+			vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for destination directory, found: %s",
+							  vm.type_name( fd.args[ i ]->type() ).c_str() );
+			return nullptr;
+		}
+		std::string tmpdest = STR( fd.args[ i ] )->get();
+		if( tmpdest.empty() ) continue;
+		src += " " + tmpdest;
+	}
+
+	if( fd.args[ fd.args.size() - 1 ]->type() != VT_STR ) {
+		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for source, found: %s",
+						  vm.type_name( fd.args[ fd.args.size() - 1 ]->type() ).c_str() );
+		return nullptr;
+	}
+
+	const std::string & dest = STR( fd.args[ fd.args.size() - 1 ] )->get();
+
+	return make< var_int_t >( exec_internal( "cp -r " + src + " " + dest ) );
 }
 
 REGISTER_MODULE( os )
@@ -218,10 +250,12 @@ REGISTER_MODULE( os )
 
 	src->add_nativefn( "os_get_name_native", os_get_name );
 
+	src->add_nativefn( "cwd", os_cwd );
+
 	src->add_nativefn( "mkdir", os_mkdir, { "" }, {}, true );
 	src->add_nativefn( "rm", os_rm, { "" }, {}, true );
 
-	src->add_nativefn( "cwd", os_cwd );
+	src->add_nativefn( "copy", os_copy, { "", "" }, {}, true );
 
 	return true;
 }

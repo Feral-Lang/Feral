@@ -299,9 +299,7 @@ var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
 	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected int or float argument for integer equals operation, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.fals;
 	}
 	return lhs == rhs ? vm.tru : vm.fals;
 }
@@ -315,9 +313,7 @@ var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
 	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected int or float argument for integer not equals operation, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.tru;
 	}
 	return lhs != rhs ? vm.tru : vm.fals;
 }

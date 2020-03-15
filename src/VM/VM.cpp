@@ -32,8 +32,12 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	}
 	src_args = new var_vec_t( src_args_vec, 0, 0 );
 
-	inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
-	mod_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
+	std::string user_home = env::get( "HOME" );
+	m_inc_locs.push_back( user_home + "/.feral/include" );
+	m_dll_locs.push_back( user_home + "/.feral/lib" );
+
+	m_inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
+	m_dll_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
 }
 
 vm_state_t::~vm_state_t()
@@ -127,27 +131,27 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	return false;
 }
 
-bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx, const bool update_dll_loc )
+bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx, const bool set_dll_core_load_loc )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
 	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "libferal" );
 	srcfile_t * src = src_stack.back()->src();
-	if( !mod_exists( mod_locs, mod_file, nmod_ext() ) ) {
+	if( !mod_exists( m_dll_locs, mod_file, nmod_ext() ) ) {
 		src->fail( idx, "module file: %s not found in locations: %s",
-			   ( mod_file + nmod_ext() ).c_str(), str::stringify( mod_locs ).c_str() );
+			   ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
 
-	if( update_dll_loc ) {
-		m_dll_load_loc = mod_file.substr( 0, mod_file.find_last_of( '/' ) );
+	if( set_dll_core_load_loc ) {
+		m_dll_core_load_loc = mod_file.substr( 0, mod_file.find_last_of( '/' ) );
 	}
 
 	if( dlib->fexists( mod_file ) ) return true;
 
 	if( !dlib->load( mod_file ) ) {
 		src->fail( idx, "unable to load module file: %s",
-			   mod_file.c_str(), str::stringify( mod_locs ).c_str() );
+			   mod_file.c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
 	mod_init_fn_t init_fn = ( mod_init_fn_t )dlib->get( mod_file, "init_" + mod );

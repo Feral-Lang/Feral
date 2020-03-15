@@ -11,4 +11,4 @@ for let i = 0; i < mid; ++i {
 	list[ list.size() - i - 1 ] = tmp;
 }
 
-io.println( 'reversed list is', list );
+io.println( 'reversed list is ', list );

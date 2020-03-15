@@ -3,7 +3,7 @@ let lang = import( 'std/lang' );
 
 let type_t = lang.struct( a = 10, b = 20 );
 let func in type_t = fn(x, y, z, .kw, va...) {
-	io.println(self.a, self.b);
+	io.println(self.a, ' ', self.b);
 	io.println('x: ', x);
 	io.println('y: ', y);
 	io.println('z: ', z);
