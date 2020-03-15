@@ -57,9 +57,7 @@ var_base_t * bool_ge( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * bool_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_BOOL ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected boolean argument for logical equals, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.fals;
 	}
 	return BOOL( fd.args[ 0 ] )->get() == BOOL( fd.args[ 1 ] )->get() ? vm.tru : vm.fals;
 }
@@ -67,9 +65,7 @@ var_base_t * bool_eq( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * bool_ne( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_BOOL ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected boolean argument for logical not equals, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.tru;
 	}
 	return BOOL( fd.args[ 0 ] )->get() != BOOL( fd.args[ 1 ] )->get() ? vm.tru : vm.fals;
 }

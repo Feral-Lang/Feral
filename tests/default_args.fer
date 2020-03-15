@@ -1,7 +1,7 @@
 let io = import('std/io');
 
 let x = fn(a, x = 10, y = 20) {
-	io.println(a, x, y);
+	io.println(a, ' ', x, ' ', y);
 };
 
 x(100, 200);

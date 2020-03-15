@@ -35,9 +35,19 @@ var_base_t * src_args( vm_state_t & vm, const fn_data_t & fd )
 	return vm.src_args;
 }
 
+var_base_t * inc_load_loc( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_str_t >( vm.inc_locs().front() );
+}
+
 var_base_t * dll_load_loc( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_str_t >( vm.dll_load_loc() );
+	return make< var_str_t >( vm.dll_locs().front() );
+}
+
+var_base_t * dll_core_load_loc( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_str_t >( vm.dll_core_load_loc() );
 }
 
 REGISTER_MODULE( sys )
@@ -47,6 +57,8 @@ REGISTER_MODULE( sys )
 	src->add_nativefn( "exit", _exit, {}, {}, true );
 	src->add_nativefn( "self_binary_loc_native", self_binary_loc );
 	src->add_nativefn( "src_args_native", src_args );
+	src->add_nativefn( "inc_load_loc_native", inc_load_loc );
 	src->add_nativefn( "dll_load_loc_native", dll_load_loc );
+	src->add_nativefn( "dll_core_load_loc_native", dll_core_load_loc );
 	return true;
 }

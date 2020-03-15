@@ -43,9 +43,6 @@ struct vm_state_t
 	// this is a pointer since it must be explicitly deleted after everything else
 	dyn_lib_t * dlib;
 
-	std::vector< std::string > inc_locs;
-	std::vector< std::string > mod_locs;
-
 	// arguments for feral source from command line
 	var_base_t * src_args;
 
@@ -56,6 +53,21 @@ struct vm_state_t
 	void push_src( const std::string & src_path );
 	void pop_src();
 
+	// modules & imports
+	// nmod = native module
+	// fmod = feral module
+	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
+	bool load_nmod( const std::string & mod_str, const size_t & idx, const bool set_dll_core_load_loc = false );
+	int load_fmod( const std::string & mod_file );
+
+	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
+
+	inline const std::vector< std::string > & inc_locs() const { return m_inc_locs; }
+	inline const std::vector< std::string > & dll_locs() const { return m_dll_locs; }
+
+	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
+	var_base_t * gget( const std::string & name );
+
 	int register_new_type();
 
 	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
@@ -64,25 +76,16 @@ struct vm_state_t
 	void set_typename( const int & type, const std::string & name );
 	std::string type_name( const int & type );
 
-	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
-	var_base_t * gget( const std::string & name );
-
-	// modules & imports
-	// nmod = native module
-	// fmod = feral module
-	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
-	bool load_nmod( const std::string & mod_str, const size_t & idx, const bool update_dll_loc = false );
-	int load_fmod( const std::string & mod_file );
-
-	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
-
 	inline const std::string & self_binary() const { return m_self_binary; }
-	inline const std::string & dll_load_loc() const { return m_dll_load_loc; }
+	inline const std::string & dll_core_load_loc() const { return m_dll_core_load_loc; }
 
 	bool load_core_mods();
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
+	// include and module locations - searches in increasing order of vector elements
+	std::vector< std::string > m_inc_locs;
+	std::vector< std::string > m_dll_locs;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
 	// type ids for custom types (negative)
@@ -94,7 +97,7 @@ private:
 	// location where feral binary exists (used by sys.self_binary())
 	std::string m_self_binary;
 	// directory where (core) module is loaded from (used by builder)
-	std::string m_dll_load_loc;
+	std::string m_dll_core_load_loc;
 };
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm );

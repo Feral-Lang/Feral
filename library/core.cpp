@@ -52,7 +52,7 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string file = STR( file_var )->get();
-	if( !vm.mod_exists( vm.inc_locs, file, ".fer" ) ) {
+	if( !vm.mod_exists( vm.inc_locs(), file, fmod_ext() ) ) {
 		src->fail( file_var->idx(), "could not find module file: '%s'", file.c_str() );
 		return nullptr;
 	}

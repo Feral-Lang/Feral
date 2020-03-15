@@ -121,9 +121,7 @@ var_base_t * str_ge( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for logical equals, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.fals;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
 	std::string & rhs = STR( fd.args[ 1 ] )->get();
@@ -133,9 +131,7 @@ var_base_t * str_eq( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_ne( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for logical not equals, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
-		return nullptr;
+		return vm.tru;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
 	std::string & rhs = STR( fd.args[ 1 ] )->get();

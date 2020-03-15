@@ -1,12 +1,14 @@
 let os = import('std/os');
+let vec = import('std/vec');
 let sys = import('std/sys');
 let builder = import('std/builder');
 
 let build = builder.new().make_dll();
 
-build.add_lib('-lferalvm', '-L' + sys.dll_load_loc);
-build.add_lib('-lgmp').add_lib('-lcurl');
-
+build.add_lib('-lcurl');
 build.add_src('src/curl.cpp');
 
-sys.exit(build.build('curl', true));
+let res = build.build('curl');
+if res != 0 || sys.args.len() == 0 || sys.args[0] != 'install' { sys.exit(res); }
+
+sys.exit(build.install(inc_dirs = 'include/*', lib_dirs = 'build/*'));
