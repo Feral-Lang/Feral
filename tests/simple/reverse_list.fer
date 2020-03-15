@@ -1,7 +1,7 @@
-let io = import( 'std/io' );
-let vec = import( 'std/vec' );
+let io = import('std/io');
+let vec = import('std/vec');
 
-let list = vec.new( 1, 3, 4, 5, 2 );
+let list = vec.new(1, 3, 4, 5, 2);
 
 let mid = list.size() / 2;
 
@@ -11,4 +11,4 @@ for let i = 0; i < mid; ++i {
 	list[ list.size() - i - 1 ] = tmp;
 }
 
-io.println( 'reversed list is ', list );
+io.println('reversed list is ', list);

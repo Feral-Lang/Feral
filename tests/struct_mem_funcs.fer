@@ -1,18 +1,15 @@
-let io = import( 'std/io' );
-let lang = import( 'std/lang' );
+let io = import('std/io');
+let lang = import('std/lang');
 
-let type_t = lang.struct( a = 10, b = 20 );
-let func in type_t = fn(x, y, z, a = 10, b = 20, .kw, va...) {
+let type_t = lang.struct(a = 10, b = 20);
+
+let func in type_t = fn(x, y = 10, .kw, va...) {
 	io.println(self.a, ' ', self.b);
-	io.println('x: ', x);
-	io.println('y: ', y);
-	io.println('z: ', z);
-	io.println('a: ', a);
-	io.println('b: ', b);
-	io.println('keyword args: ', kw);
-	io.println('variadic args: ', va);
+	io.println('x: ', x, ' y: ', y);
+	io.println('keyword args: ', kw, ' var args: ', va);
 };
 
-let test = type_t( a = 100, b = 200 );
-test.func( 1, 2, 3, 4, a = 10, b = 20, c = 30, 5, 6, 7, 8 );
-test.func( 1, 2, 3, 4, a = 10, b = 20, c = 30);
+let test = type_t(a = 100, b = 200);
+
+test.func(1, a = 10, b = 20, c = 30, 2, 3, 4);
+test.func(1, a = 10, b = 20);
