@@ -1,1 +1,1 @@
-mload( 'std/lang' );
+mload('std/lang');

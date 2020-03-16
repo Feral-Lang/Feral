@@ -1,1 +1,1 @@
-mload( 'std/str' );
+mload('std/str');
