@@ -51,6 +51,9 @@ vm_state_t::~vm_state_t()
 	var_dref( fals );
 	var_dref( tru );
 	var_dref( src_args );
+	for( auto & deinit_fn : m_dll_deinit_fns ) {
+		deinit_fn.second();
+	}
 	delete dlib;
 }
 
@@ -72,7 +75,18 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_new_type() { return m_custom_types--; }
+int vm_state_t::register_new_type( const std::string & name )
+{
+	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
+	m_dll_typenames[ name ] = m_custom_types;
+	return m_custom_types--;
+}
+
+int vm_state_t::dll_typeid( const std::string & name )
+{
+	if( m_dll_typenames.find( name ) == m_dll_typenames.end() ) return 0;
+	return m_dll_typenames[ name ];
+}
 
 void vm_state_t::add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref )
 {
@@ -168,6 +182,9 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx, con
 			   mod_file.c_str() );
 		return false;
 	}
+	// set deinit function if available
+	mod_deinit_fn_t deinit_fn = ( mod_deinit_fn_t )dlib->get( mod_file, "deinit_" + mod );
+	if( deinit_fn ) m_dll_deinit_fns[ mod_file ] = deinit_fn;
 	return true;
 }
 

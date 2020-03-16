@@ -18,6 +18,8 @@ var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & 
 var_base_t::~var_base_t()
 {}
 
+void * var_base_t::get_data() { return nullptr; }
+
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
 	srcfile_t * src = vm.src_stack.back()->src();

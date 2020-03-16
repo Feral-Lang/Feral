@@ -10,6 +10,21 @@
 #include "../../src/VM/VM.hpp"
 
 const size_t MAX_C_STR_LEN = 1025;
+extern std::unordered_map< std::string, const char * > COL;
+int apply_colors( std::string & str );
+
+var_base_t * print( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	for( size_t i = 1; i < fd.args.size(); ++i ) {
+		std::string str;
+		if( !fd.args[ i ]->to_str( vm, str, fd.src_id, fd.idx ) ) {
+			return nullptr;
+		}
+		fprintf( stdout, "%s", str.c_str() );
+	}
+	return vm.nil;
+}
 
 var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -45,7 +60,40 @@ var_base_t * scan( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( res );
 }
 
-static std::unordered_map< std::string, const char * > COL = {
+var_base_t * col_println( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	for( size_t i = 1; i < fd.args.size(); ++i ) {
+		std::string str;
+		if( !fd.args[ i ]->to_str( vm, str, fd.src_id, fd.idx ) ) {
+			return nullptr;
+		}
+		apply_colors( str );
+		fprintf( stdout, "%s", str.c_str() );
+	}
+	fprintf( stdout, "\n" );
+	return vm.nil;
+}
+
+var_base_t * flushout( vm_state_t & vm, const fn_data_t & fd )
+{
+	fflush( stdout );
+	return vm.nil;
+}
+
+INIT_MODULE( io )
+{
+	var_src_t * src = vm.src_stack.back();
+	const std::string & src_name = src->src()->path();
+	src->add_nativefn( "print", print, {}, {}, true );
+	src->add_nativefn( "println", println, {}, {}, true );
+	src->add_nativefn( "scan", scan, { "" }, {}, true );
+	src->add_nativefn( "cprintln", col_println, {}, {}, true );
+	src->add_nativefn( "flushout", flushout );
+	return true;
+}
+
+std::unordered_map< std::string, const char * > COL = {
 	{ "0", "\033[0m" },
 
 	{ "r", "\033[0;31m" },
@@ -101,29 +149,4 @@ int apply_colors( std::string & str )
 		}
 	}
 	return chars;
-}
-
-var_base_t * col_println( vm_state_t & vm, const fn_data_t & fd )
-{
-	srcfile_t * src = vm.src_stack.back()->src();
-	for( size_t i = 1; i < fd.args.size(); ++i ) {
-		std::string str;
-		if( !fd.args[ i ]->to_str( vm, str, fd.src_id, fd.idx ) ) {
-			return nullptr;
-		}
-		apply_colors( str );
-		fprintf( stdout, "%s", str.c_str() );
-	}
-	fprintf( stdout, "\n" );
-	return vm.nil;
-}
-
-REGISTER_MODULE( io )
-{
-	var_src_t * src = vm.src_stack.back();
-	const std::string & src_name = src->src()->path();
-	src->add_nativefn( "println", println, {}, {}, true );
-	src->add_nativefn( "scan", scan, { "" }, {}, true );
-	src->add_nativefn( "cprintln", col_println, {}, {}, true );
-	return true;
 }

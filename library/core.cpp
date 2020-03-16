@@ -9,6 +9,7 @@
 
 #include "core/bool.hpp"
 #include "core/int.hpp"
+#include "core/flt.hpp"
 #include "core/str.hpp"
 #include "core/vec.hpp"
 
@@ -79,7 +80,7 @@ var_base_t * is_main_src( vm_state_t & vm, const fn_data_t & fd )
 	return src->is_main() ? vm.tru : vm.fals;
 }
 
-REGISTER_MODULE( core )
+INIT_MODULE( core )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
@@ -138,6 +139,31 @@ REGISTER_MODULE( core )
 	vm.add_typefn( VT_INT, ">=", new var_fn_t( src_name, { "" }, {}, { .native = int_ge }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "==", new var_fn_t( src_name, { "" }, {}, { .native = int_eq }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "!=", new var_fn_t( src_name, { "" }, {}, { .native = int_ne }, 0, 0 ), false );
+
+	// int
+	vm.add_typefn( VT_FLT, "+", new var_fn_t( src_name, { "" }, {}, { .native = flt_add }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "-", new var_fn_t( src_name, { "" }, {}, { .native = flt_sub }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "*", new var_fn_t( src_name, { "" }, {}, { .native = flt_mul }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "/", new var_fn_t( src_name, { "" }, {}, { .native = flt_div }, 0, 0 ), false );
+
+	vm.add_typefn( VT_FLT, "+=", new var_fn_t( src_name, { "" }, {}, { .native = flt_addassn }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "-=", new var_fn_t( src_name, { "" }, {}, { .native = flt_subassn }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "*=", new var_fn_t( src_name, { "" }, {}, { .native = flt_mulassn }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "/=", new var_fn_t( src_name, { "" }, {}, { .native = flt_divassn }, 0, 0 ), false );
+
+	vm.add_typefn( VT_FLT, "++x", new var_fn_t( src_name, {}, {}, { .native = flt_preinc },  0, 0 ), false );
+	vm.add_typefn( VT_FLT, "x++", new var_fn_t( src_name, {}, {}, { .native = flt_postinc }, 0, 0 ), false );
+
+	vm.add_typefn( VT_FLT, "u-", new var_fn_t( src_name, {}, {}, { .native = flt_usub }, 0, 0 ), false );
+
+	vm.add_typefn( VT_FLT, "round", new var_fn_t( src_name, {}, {}, { .native = flt_round }, 0, 0 ), false );
+
+	vm.add_typefn( VT_FLT, "<",  new var_fn_t( src_name, { "" }, {}, { .native = flt_lt }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, ">",  new var_fn_t( src_name, { "" }, {}, { .native = flt_gt }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "<=", new var_fn_t( src_name, { "" }, {}, { .native = flt_le }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, ">=", new var_fn_t( src_name, { "" }, {}, { .native = flt_ge }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "==", new var_fn_t( src_name, { "" }, {}, { .native = flt_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "!=", new var_fn_t( src_name, { "" }, {}, { .native = flt_ne }, 0, 0 ), false );
 
 	// string
 	vm.add_typefn( VT_STR, "+", new var_fn_t( src_name, { "" }, {}, { .native = str_add }, 0, 0 ), false );

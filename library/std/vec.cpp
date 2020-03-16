@@ -197,7 +197,7 @@ var_base_t * vec_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	return res;
 }
 
-REGISTER_MODULE( vec )
+INIT_MODULE( vec )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
@@ -219,7 +219,7 @@ REGISTER_MODULE( vec )
 	vm.add_typefn( VT_VEC,  "each", new var_fn_t( src_name, {}, {}, { .native = vec_each  }, 0, 0 ), false );
 
 	// get the type id for int iterable (register_type)
-	vec_iterable_typeid = vm.register_new_type();
+	vec_iterable_typeid = vm.register_new_type( "var_vec_iterable_t" );
 
 	vm.add_typefn( vec_iterable_typeid, "next", new var_fn_t( src_name, {}, {}, { .native = vec_iterable_next }, 0, 0 ), false );
 

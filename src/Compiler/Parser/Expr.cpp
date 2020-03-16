@@ -536,13 +536,14 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 			goto fail;
 		}
 		ph.next();
-		goto done;
+		goto begin_loop;
 	}
 
 	if( parse_term( ph, lhs ) != E_OK ) {
 		goto fail;
 	}
 
+begin_loop:
 	while( ph.accept( TOK_LPAREN, TOK_LBRACK ) ||
 	       ph.accept( TOK_DOT ) ) {
 		idx = ph.peak()->pos;

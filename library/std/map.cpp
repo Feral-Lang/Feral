@@ -83,7 +83,7 @@ var_base_t * map_find( vm_state_t & vm, const fn_data_t & fd )
 	return map.find( key ) != map.end() ? vm.tru : vm.fals;
 }
 
-REGISTER_MODULE( map )
+INIT_MODULE( map )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();

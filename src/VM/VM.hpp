@@ -24,6 +24,13 @@ typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
 typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
 
+typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
+typedef void ( * mod_deinit_fn_t )();
+#define INIT_MODULE( name )			\
+	extern "C" bool init_##name( vm_state_t & vm )
+#define DEINIT_MODULE( name )			\
+	extern "C" void deinit_##name()
+
 struct vm_state_t
 {
 	bool exit_called;
@@ -68,11 +75,15 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
 	var_base_t * gget( const std::string & name );
 
-	int register_new_type();
+	int register_new_type( const std::string & name );
+	// returns 0 on failure because no dll type can have id >= 0
+	// see vm_state_t() -> m_custom_types for more info
+	int dll_typeid( const std::string & name );
 
 	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
 	var_fn_t * get_typefn( const int & type, const std::string & name );
 
+	// used to convert typeid -> name
 	void set_typename( const int & type, const std::string & name );
 	std::string type_name( const int & type );
 
@@ -101,11 +112,11 @@ private:
 	std::string m_dll_core_load_loc;
 	// directory where feral libraries and config and stuff lives
 	std::string m_feral_home_dir;
+	// dll type name to id mapping
+	std::unordered_map< std::string, int > m_dll_typenames;
+	// all functions to call before unloading dlls
+	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 };
-
-typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
-#define REGISTER_MODULE( name )				\
-	extern "C" bool init_##name( vm_state_t & vm )
 
 template< typename T, typename ... Args > T * make( Args... args )
 {
