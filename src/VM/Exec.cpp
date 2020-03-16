@@ -70,7 +70,12 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			var_base_t * val = vms->pop( false );
 			if( !in ) {
-				vars->add( name, val->copy( src_id, op.idx ), false );
+				// only copy if reference count > 1 (no point in copying unique values)
+				if( val->ref() == 1 ) {
+					vars->add( name, val, true );
+				} else {
+					vars->add( name, val->copy( src_id, op.idx ), false );
+				}
 				goto create_done;
 			}
 			// for creation with 'in' parameter
@@ -86,7 +91,12 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					src_file->fail( op.idx, "attributes can be added only to structure objects" );
 					goto create_fail;
 				}
-				ATTR_BASED( in )->attr_set( name, val, true );
+				// only copy if reference count > 1 (no point in copying unique values)
+				if( val->ref() == 1 ) {
+					ATTR_BASED( in )->attr_set( name, val, true );
+				} else {
+					ATTR_BASED( in )->attr_set( name, val->copy( src_id, op.idx ), false );
+				}
 			}
 		create_done:
 			var_dref( in );

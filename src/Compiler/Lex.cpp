@@ -155,7 +155,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t pr
 		if( isspace( src[ i ] ) ) { ++i; continue; }
 
 		// TODO: handle comment line tanglements with comment block cases
-		if( CURR( src ) == '*' && NEXT( src ) == '/' ) {
+		if( !comment_line && CURR( src ) == '*' && NEXT( src ) == '/' ) {
 			if( !comment_block ) {
 				SRC_FAIL( "encountered multi line comment terminator '*/' "
 					  "in non commented block" );

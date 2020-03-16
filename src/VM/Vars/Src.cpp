@@ -15,13 +15,13 @@
 ////////////////////////////////////////////////////////////// VAR_MOD /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_src_t::var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx )
-	: var_attr_based_t( VT_SRC, src_id, idx ), m_src( src ), m_vars( vars ), m_copied( false )
+var_src_t::var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner )
+	: var_attr_based_t( VT_SRC, src_id, idx ), m_src( src ), m_vars( vars ), m_owner( owner )
 {
 }
 var_src_t::~var_src_t()
 {
-	if( !m_copied ) {
+	if( m_owner ) {
 		if( m_vars ) delete m_vars;
 		if( m_src ) delete m_src;
 	}
@@ -29,18 +29,16 @@ var_src_t::~var_src_t()
 
 var_base_t * var_src_t::copy( const size_t & src_id, const size_t & idx )
 {
-	var_src_t * mod = new var_src_t( m_src, m_vars, src_id, idx );
-	mod->m_copied = true;
-	return mod;
+	return new var_src_t( m_src, m_vars, src_id, idx, false );
 }
 
 void var_src_t::set( var_base_t * from )
 {
 	var_src_t * f = SRC( from );
-	if( !m_copied ) delete m_vars;
+	if( m_owner ) delete m_vars;
 	m_src = f->m_src;
 	m_vars = f->m_vars;
-	f->m_copied = true;
+	f->m_owner = false;
 }
 
 bool var_src_t::attr_exists( const std::string & name ) const
@@ -68,4 +66,3 @@ void var_src_t::add_nativefn( const std::string & name, nativefnptr_t body,
 
 srcfile_t * var_src_t::src() { return m_src; }
 vars_t * var_src_t::vars() { return m_vars; }
-bool var_src_t::copied() { return m_copied; }

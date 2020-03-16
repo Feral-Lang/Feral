@@ -54,16 +54,14 @@ var_file_t::~var_file_t()
 
 var_base_t * var_file_t::copy( const size_t & src_id, const size_t & idx )
 {
-	m_owner = false;
-	return new var_file_t( m_file, src_id, idx, true );
+	return new var_file_t( m_file, src_id, idx, false );
 }
 
 void var_file_t::set( var_base_t * from )
 {
 	if( m_owner ) fclose( m_file );
-	m_owner = true;
+	m_owner = false;
 	m_file = FILE( from )->get();
-	FILE( from )->m_owner = false;
 }
 
 FILE * const var_file_t::get() { return m_file; }
