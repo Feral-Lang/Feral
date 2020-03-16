@@ -296,9 +296,9 @@ class var_src_t : public var_attr_based_t
 {
 	srcfile_t * m_src;
 	vars_t * m_vars;
-	bool m_copied;
+	bool m_owner;
 public:
-	var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx );
+	var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner = true );
 	~var_src_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
@@ -315,7 +315,6 @@ public:
 
 	srcfile_t * src();
 	vars_t * vars();
-	bool copied();
 };
 #define SRC( x ) static_cast< var_src_t * >( x )
 
