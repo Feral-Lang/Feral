@@ -62,7 +62,7 @@ fail:
 	return nullptr;
 }
 
-REGISTER_MODULE( lang )
+INIT_MODULE( lang )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();

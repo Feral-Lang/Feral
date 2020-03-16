@@ -37,6 +37,8 @@ public:
 	var_file_t( FILE * const file, const size_t & src_id, const size_t & idx, const bool owner = true );
 	~var_file_t();
 
+	void * get_data();
+
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
@@ -51,6 +53,8 @@ var_file_t::~var_file_t()
 {
 	if( m_owner ) fclose( m_file );
 }
+
+void * var_file_t::get_data() { return m_file; }
 
 var_base_t * var_file_t::copy( const size_t & src_id, const size_t & idx )
 {
@@ -95,10 +99,6 @@ var_base_t * fs_open( vm_state_t & vm, const fn_data_t & fd )
 	}
 	const std::string & file_name = STR( fd.args[ 1 ] )->get();
 	const std::string & mode = STR( fd.args[ 2 ] )->get();
-	if( access( file_name.c_str(), F_OK ) == -1 ) {
-		src->fail( fd.idx, "file '%s' is inaccessible", file_name.c_str() );
-		return nullptr;
-	}
 	FILE * file = fopen( file_name.c_str(), mode.c_str() );
 	if( !file ) {
 		src->fail( fd.idx, "failed to open file '%s' in mode: %s",
@@ -129,13 +129,13 @@ var_base_t * fs_file_readlines( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_vec_t >( lines );
 }
 
-REGISTER_MODULE( fs )
+INIT_MODULE( fs )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();
 
 	// get the type id for file type (register_type)
-	file_typeid = vm.register_new_type();
+	file_typeid = vm.register_new_type( "var_file_t" );
 
 	src->add_nativefn( "exists", fs_exists, { "" } );
 

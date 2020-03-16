@@ -235,7 +235,7 @@ var_base_t * os_copy( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( exec_internal( "cp -r " + src + " " + dest ) );
 }
 
-REGISTER_MODULE( os )
+INIT_MODULE( os )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();

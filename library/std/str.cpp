@@ -158,7 +158,7 @@ var_base_t * str_split( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_vec_t >( res_vec );
 }
 
-REGISTER_MODULE( str )
+INIT_MODULE( str )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();

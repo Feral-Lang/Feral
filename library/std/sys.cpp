@@ -55,7 +55,7 @@ var_base_t * feral_home_dir( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( vm.feral_home_dir() );
 }
 
-REGISTER_MODULE( sys )
+INIT_MODULE( sys )
 {
 	var_src_t * src = vm.src_stack.back();
 	const std::string & src_name = src->src()->path();

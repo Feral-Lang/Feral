@@ -112,7 +112,7 @@ var_base_t * int_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( res );
 }
 
-REGISTER_MODULE( utils )
+INIT_MODULE( utils )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
@@ -120,7 +120,7 @@ REGISTER_MODULE( utils )
 	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, 0, 0 ) );
 
 	// get the type id for int iterable (register_type)
-	int_iterable_typeid = vm.register_new_type();
+	int_iterable_typeid = vm.register_new_type( "var_int_iterable_t" );
 
 	vm.add_typefn( int_iterable_typeid, "next", new var_fn_t( src_name, {}, {}, { .native = int_iterable_next }, 0, 0 ), false );
 

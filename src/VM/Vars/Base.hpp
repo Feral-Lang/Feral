@@ -62,6 +62,10 @@ public:
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
 	virtual void set( var_base_t * from ) = 0;
 
+	// overridden by the type that needs it (mainly custom types like var_file_t)
+	// returns nullptr by default
+	virtual void * get_data();
+
 	bool to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx );
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
