@@ -16,6 +16,14 @@
 
 #include "../src/VM/VM.hpp"
 
+var_base_t * all_copy( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_base_t * copy = fd.args[ 0 ]->copy( fd.src_id, fd.idx );
+	// decreased because system internally will increment it again
+	copy->dref();
+	return copy;
+}
+
 var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
@@ -76,6 +84,7 @@ REGISTER_MODULE( core )
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
 	// fundamental functions for builtin types
+	vm.add_typefn( VT_ALL, "copy", new var_fn_t( src_name, {}, {}, { .native = all_copy   },  0, 0 ), false );
 	vm.add_typefn( VT_ALL,	"str", new var_fn_t( src_name, {}, {}, { .native = all_to_str },  0, 0 ), false );
 	vm.add_typefn( VT_NIL,	"str", new var_fn_t( src_name, {}, {}, { .native = nil_to_str },  0, 0 ), false );
 	vm.add_typefn( VT_BOOL,	"str", new var_fn_t( src_name, {}, {}, { .native = bool_to_str }, 0, 0 ), false );

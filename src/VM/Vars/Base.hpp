@@ -44,6 +44,7 @@ enum VarTypes
 	_VT_LAST,
 };
 
+struct vm_state_t;
 // custom types inherit var_attr_based_t, NOT var_base_t
 class var_base_t
 {
@@ -60,6 +61,8 @@ public:
 	// must always be overridden
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
 	virtual void set( var_base_t * from ) = 0;
+
+	bool to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx );
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
@@ -203,7 +206,6 @@ struct fn_data_t
 	std::unordered_map< std::string, size_t > assn_args_loc;
 };
 
-struct vm_state_t;
 typedef var_base_t * ( * nativefnptr_t )( vm_state_t & vm, const fn_data_t & fd );
 
 union fn_body_t

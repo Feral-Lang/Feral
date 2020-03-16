@@ -15,25 +15,11 @@ var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
 	for( size_t i = 1; i < fd.args.size(); ++i ) {
-		auto & arg = fd.args[ i ];
-		var_fn_t * str_fn = vm.get_typefn( arg->type(), "str" );
-		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
-		if( !str_fn ) {
-			src->fail( arg->idx(), "no 'str' function implement for type: '%zu' or global type", arg->type() );
+		std::string str;
+		if( !fd.args[ i ]->to_str( vm, str, fd.src_id, fd.idx ) ) {
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { arg }, {}, {}, src->id(), fd.idx ) ) {
-			src->fail( arg->idx(), "function call 'str' for type: %zu failed", arg->type() );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->pop( false );
-		if( str->type() != VT_STR ) {
-			src->fail( arg->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
-			var_dref( str );
-			return nullptr;
-		}
-		fprintf( stdout, "%s", STR( str )->get().c_str() );
-		var_dref( str );
+		fprintf( stdout, "%s", str.c_str() );
 	}
 	fprintf( stdout, "\n" );
 	return vm.nil;
@@ -121,27 +107,12 @@ var_base_t * col_println( vm_state_t & vm, const fn_data_t & fd )
 {
 	srcfile_t * src = vm.src_stack.back()->src();
 	for( size_t i = 1; i < fd.args.size(); ++i ) {
-		auto & arg = fd.args[ i ];
-		var_fn_t * str_fn = vm.get_typefn( arg->type(), "str" );
-		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
-		if( !str_fn ) {
-			src->fail( arg->idx(), "no 'str' function implement for type: '%zu' or global type", arg->type() );
+		std::string str;
+		if( !fd.args[ i ]->to_str( vm, str, fd.src_id, fd.idx ) ) {
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { arg }, {}, {}, src->id(), fd.idx ) ) {
-			src->fail( arg->idx(), "function call 'str' for type: %zu failed", arg->type() );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->pop( false );
-		if( str->type() != VT_STR ) {
-			src->fail( arg->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
-			var_dref( str );
-			return nullptr;
-		}
-		std::string data = STR( str )->get();
-		apply_colors( data );
-		fprintf( stdout, "%s", data.c_str() );
-		var_dref( str );
+		apply_colors( str );
+		fprintf( stdout, "%s", str.c_str() );
 	}
 	fprintf( stdout, "\n" );
 	return vm.nil;
