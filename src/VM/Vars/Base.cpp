@@ -18,6 +18,30 @@ var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & 
 var_base_t::~var_base_t()
 {}
 
+bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
+{
+	srcfile_t * src = vm.src_stack.back()->src();
+	var_fn_t * str_fn = vm.get_typefn( this->type(), "str" );
+	if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
+	if( !str_fn ) {
+		src->fail( this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
+		return false;
+	}
+	if( !FN( str_fn )->call( vm, { this }, {}, {}, src_id, idx ) ) {
+		src->fail( this->idx(), "function call 'str' for type: %zu failed", this->type() );
+		return false;
+	}
+	var_base_t * str = vm.vm_stack->pop( false );
+	if( str->type() != VT_STR ) {
+		src->fail( this->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
+		var_dref( str );
+		return false;
+	}
+	data = STR( str )->get();
+	var_dref( str );
+	return true;
+}
+
 void * var_base_t::operator new( size_t sz )
 {
 	return mem::alloc( sz );

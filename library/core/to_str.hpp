@@ -27,24 +27,11 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_struct_t * data = STRUCT( _data );
 	std::string res = vm.type_name( data->type() ) + "{";
 	for( auto & e : data->attrs() ) {
-		var_fn_t * str_fn = vm.get_typefn( e.second->type(), "str" );
-		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
-		if( !str_fn ) {
-			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
+		std::string str;
+		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e.second }, {}, {}, src->id(), fd.idx ) ) {
-			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->pop( false );
-		if( str->type() != VT_STR ) {
-			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
-			var_dref( str );
-			return nullptr;
-		}
-		res += e.first + ": " + STR( str )->get() + ", ";
-		var_dref( str );
+		res += e.first + ": " + str + ", ";
 	}
 	if( data->attrs().size() > 0 ) {
 		res.pop_back();
@@ -87,24 +74,11 @@ var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_vec_t * vec = VEC( fd.args[ 0 ] );
 	std::string res = "[";
 	for( auto & e : vec->get() ) {
-		var_fn_t * str_fn = vm.get_typefn( e->type(), "str" );
-		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
-		if( !str_fn ) {
-			src->fail( e->idx(), "no 'str' function implement for type: '%zu' or global type", e->type() );
+		std::string str;
+		if( !e->to_str( vm, str, fd.src_id, fd.idx ) ) {
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e }, {}, {}, src->id(), fd.idx ) ) {
-			src->fail( e->idx(), "function call 'str' for type: %zu failed", e->type() );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->pop( false );
-		if( str->type() != VT_STR ) {
-			src->fail( e->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
-			var_dref( str );
-			return nullptr;
-		}
-		res += STR( str )->get() + ", ";
-		var_dref( str );
+		res += str + ", ";
 	}
 	if( vec->get().size() > 0 ) {
 		res.pop_back();
@@ -120,24 +94,11 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_map_t * map = MAP( fd.args[ 0 ] );
 	std::string res = "{";
 	for( auto & e : map->get() ) {
-		var_fn_t * str_fn = vm.get_typefn( e.second->type(), "str" );
-		if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
-		if( !str_fn ) {
-			src->fail( e.second->idx(), "no 'str' function implement for type: '%zu' or global type", e.second->type() );
+		std::string str;
+		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
 			return nullptr;
 		}
-		if( !FN( str_fn )->call( vm, { e.second }, {}, {}, src->id(), fd.idx ) ) {
-			src->fail( e.second->idx(), "function call 'str' for type: %zu failed", e.second->type() );
-			return nullptr;
-		}
-		var_base_t * str = vm.vm_stack->pop( false );
-		if( str->type() != VT_STR ) {
-			src->fail( e.second->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
-			var_dref( str );
-			return nullptr;
-		}
-		res += e.first + ": " + STR( str )->get() + ", ";
-		var_dref( str );
+		res += e.first + ": " + str + ", ";
 	}
 	if( map->get().size() > 0 ) {
 		res.pop_back();
