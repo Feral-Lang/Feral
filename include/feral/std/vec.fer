@@ -1,4 +1,4 @@
-mload( 'std/vec' );
+mload('std/vec');
 
 # block to delete the (useless) vector object
 {

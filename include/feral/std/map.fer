@@ -1,1 +1,1 @@
-mload( 'std/map' );
+mload('std/map');

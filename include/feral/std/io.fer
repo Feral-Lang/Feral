@@ -1,1 +1,1 @@
-mload( 'std/io' );
+mload('std/io');

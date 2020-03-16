@@ -1,4 +1,4 @@
-mload( 'std/fs' );
+mload('std/fs');
 
 let open = fn(file, mode = 'r') {
 	return open_native(file, mode);
