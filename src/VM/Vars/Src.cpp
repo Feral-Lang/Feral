@@ -64,5 +64,11 @@ void var_src_t::add_nativefn( const std::string & name, nativefnptr_t body,
 	m_vars->add( name, new var_fn_t( m_src->path(), "", is_va ? "." : "", args, def_args, { .native = body }, true, m_src->id(), 0 ), false );
 }
 
+void var_src_t::add_nativevar( const std::string & name, var_base_t * val, const bool iref, const bool module_level )
+{
+	if( module_level ) m_vars->addm( name, val, iref );
+	else m_vars->add( name, val, iref );
+}
+
 srcfile_t * var_src_t::src() { return m_src; }
 vars_t * var_src_t::vars() { return m_vars; }

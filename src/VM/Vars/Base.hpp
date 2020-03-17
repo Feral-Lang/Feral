@@ -26,6 +26,8 @@ enum VarTypes
 
 	VT_NIL,
 
+	VT_TYPEID,
+
 	VT_BOOL,
 	VT_INT,
 	VT_FLT,
@@ -107,6 +109,19 @@ public:
 	void set( var_base_t * from );
 };
 #define NIL( x ) static_cast< var_nil_t * >( x )
+
+class var_typeid_t : public var_base_t
+{
+	int m_val;
+public:
+	var_typeid_t( const int & val, const size_t & src_id, const size_t & idx );
+
+	var_base_t * copy( const size_t & src_id, const size_t & idx );
+	void set( var_base_t * from );
+
+	int & get();
+};
+#define TYPEID( x ) static_cast< var_typeid_t * >( x )
 
 class var_bool_t : public var_base_t
 {
@@ -316,6 +331,8 @@ public:
 			   const std::vector< std::string > & args = {},
 			   const std::unordered_map< std::string, var_base_t * > & def_args = {},
 			   const bool is_va = false );
+
+	void add_nativevar( const std::string & name, var_base_t * val, const bool iref = true, const bool module_level = false );
 
 	srcfile_t * src();
 	vars_t * vars();

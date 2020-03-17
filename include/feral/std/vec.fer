@@ -1,16 +1,9 @@
 mload('std/vec');
 
-# block to delete the (useless) vector object
-{
-# need this to insert function in the type
-let vec = new();
-
 # stores in the type - NOT object
-let find in vec = fn(obj) {
+let find in vec_t = fn(obj) {
 	for data in self.each() {
 		if data == obj { return true; }
 	}
 	return false;
 };
-
-}

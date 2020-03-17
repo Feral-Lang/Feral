@@ -56,6 +56,7 @@ void var_base_t::operator delete( void * ptr, size_t sz )
 void init_typenames( vm_state_t & vm )
 {
 	vm.set_typename( VT_NIL, "nil" );
+	vm.set_typename( VT_TYPEID, "typeid" );
 	vm.set_typename( VT_BOOL, "bool" );
 	vm.set_typename( VT_INT, "int" );
 	vm.set_typename( VT_FLT, "float" );
@@ -65,4 +66,16 @@ void init_typenames( vm_state_t & vm )
 	vm.set_typename( VT_FUNC, "function" );
 	vm.set_typename( VT_STRUCT_DEF, "struct_def" );
 	vm.set_typename( VT_SRC, "module" );
+
+	vm.gadd( "nil_t", make< var_typeid_t >( VT_NIL ) );
+	vm.gadd( "typeid_t", make< var_typeid_t >( VT_TYPEID ) );
+	vm.gadd( "bool_t", make< var_typeid_t >( VT_BOOL ) );
+	vm.gadd( "int_t", make< var_typeid_t >( VT_INT ) );
+	vm.gadd( "flt_t", make< var_typeid_t >( VT_FLT ) );
+	vm.gadd( "str_t", make< var_typeid_t >( VT_STR ) );
+	vm.gadd( "vec_t", make< var_typeid_t >( VT_VEC ) );
+	vm.gadd( "map_t", make< var_typeid_t >( VT_MAP ) );
+	vm.gadd( "func_t", make< var_typeid_t >( VT_FUNC ) );
+	vm.gadd( "struct_def_t", make< var_typeid_t >( VT_STRUCT_DEF ) );
+	vm.gadd( "src_t", make< var_typeid_t >( VT_SRC ) );
 }
