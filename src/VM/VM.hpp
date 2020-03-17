@@ -72,10 +72,10 @@ struct vm_state_t
 	inline const std::vector< std::string > & inc_locs() const { return m_inc_locs; }
 	inline const std::vector< std::string > & dll_locs() const { return m_dll_locs; }
 
-	void gadd( const std::string & name, var_base_t * val, const bool iref = false );
+	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	int register_new_type( const std::string & name );
+	int register_new_type( const std::string & name, const std::string & typeid_name );
 	// returns 0 on failure because no dll type can have id >= 0
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );

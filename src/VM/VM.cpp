@@ -75,10 +75,18 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_new_type( const std::string & name )
+int vm_state_t::register_new_type( const std::string & name, const std::string & typeid_name )
 {
 	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
 	m_dll_typenames[ name ] = m_custom_types;
+	// only add to source if it's not main source, else add to globals
+	// for example, utils, core will be added to globals
+	if( src_stack.size() > 1 ) {
+		src_stack.back()->add_nativevar( typeid_name, make< var_typeid_t >( m_custom_types ), true, true );
+	} else {
+		assert( m_globals.find( typeid_name ) == m_globals.end() );
+		m_globals[ typeid_name ] = new var_typeid_t( m_custom_types, 0, 0 );
+	}
 	return m_custom_types--;
 }
 

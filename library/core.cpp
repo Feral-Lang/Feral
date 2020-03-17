@@ -85,22 +85,23 @@ INIT_MODULE( core )
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
 	// fundamental functions for builtin types
-	vm.add_typefn( VT_ALL, "copy", new var_fn_t( src_name, {}, {}, { .native = all_copy   },  0, 0 ), false );
-	vm.add_typefn( VT_ALL,	"str", new var_fn_t( src_name, {}, {}, { .native = all_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_NIL,	"str", new var_fn_t( src_name, {}, {}, { .native = nil_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_BOOL,	"str", new var_fn_t( src_name, {}, {}, { .native = bool_to_str }, 0, 0 ), false );
-	vm.add_typefn( VT_INT,	"str", new var_fn_t( src_name, {}, {}, { .native = int_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_FLT,	"str", new var_fn_t( src_name, {}, {}, { .native = flt_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_STR,	"str", new var_fn_t( src_name, {}, {}, { .native = str_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_VEC,  "str", new var_fn_t( src_name, {}, {}, { .native = vec_to_str },  0, 0 ), false );
-	vm.add_typefn( VT_MAP,  "str", new var_fn_t( src_name, {}, {}, { .native = map_to_str },  0, 0 ), false );
+	vm.add_typefn( VT_ALL,	 "copy", new var_fn_t( src_name, {}, {}, { .native = all_copy      }, 0, 0 ), false );
+	vm.add_typefn( VT_ALL,	  "str", new var_fn_t( src_name, {}, {}, { .native = all_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_NIL,	  "str", new var_fn_t( src_name, {}, {}, { .native = nil_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_TYPEID, "str", new var_fn_t( src_name, {}, {}, { .native = typeid_to_str }, 0, 0 ), false );
+	vm.add_typefn( VT_BOOL,	  "str", new var_fn_t( src_name, {}, {}, { .native = bool_to_str   }, 0, 0 ), false );
+	vm.add_typefn( VT_INT,	  "str", new var_fn_t( src_name, {}, {}, { .native = int_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT,	  "str", new var_fn_t( src_name, {}, {}, { .native = flt_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_STR,	  "str", new var_fn_t( src_name, {}, {}, { .native = str_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_VEC,	  "str", new var_fn_t( src_name, {}, {}, { .native = vec_to_str    }, 0, 0 ), false );
+	vm.add_typefn( VT_MAP,	  "str", new var_fn_t( src_name, {}, {}, { .native = map_to_str    }, 0, 0 ), false );
 
 	vm.add_typefn( VT_STRUCT_DEF, "set_typename", new var_fn_t( src_name, { "" }, {}, { .native = struct_def_set_typename },  0, 0 ), false );
 
 	// global required
-	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, 0, 0 ) );
-	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file }, 0, 0 ) );
-	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, {}, { .native = is_main_src }, 0, 0 ) );
+	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, 0, 0 ), false );
+	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file }, 0, 0 ), false );
+	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, {}, { .native = is_main_src }, 0, 0 ), false );
 
 	// core type functions
 

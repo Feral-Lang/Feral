@@ -135,6 +135,7 @@ void vars_stack_t::rem( const std::string & name, const bool dec_ref )
 
 vars_t::vars_t() : m_fn_stack( -1 )
 {
+	m_fn_vars[ 0 ] = new vars_stack_t;
 }
 vars_t::~vars_t()
 {
@@ -173,6 +174,7 @@ void vars_t::blk_rem( const size_t & count )
 void vars_t::push_fn()
 {
 	++m_fn_stack;
+	if( m_fn_stack == 0 ) return;
 	m_fn_vars[ m_fn_stack ] = new vars_stack_t;
 }
 void vars_t::pop_fn()
@@ -196,6 +198,11 @@ void vars_t::unstash()
 void vars_t::add( const std::string & name, var_base_t * val, const bool inc_ref )
 {
 	m_fn_vars[ m_fn_stack ]->add( name, val, inc_ref );
+}
+
+void vars_t::addm( const std::string & name, var_base_t * val, const bool inc_ref )
+{
+	m_fn_vars[ 0 ]->add( name, val, inc_ref );
 }
 
 void vars_t::rem( const std::string & name, const bool dec_ref )

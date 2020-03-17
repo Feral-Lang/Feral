@@ -100,6 +100,8 @@ public:
 	inline void loop_continue() { m_fn_vars[ m_fn_stack ]->loop_continue(); }
 
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
+	// add variable to module level unconditionally (for vm.register_new_type())
+	void addm( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );
 };
 

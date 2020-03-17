@@ -51,6 +51,11 @@ var_base_t * bool_to_str( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( BOOL( fd.args[ 0 ] )->get() ? "true" : "false" );
 }
 
+var_base_t * typeid_to_str( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_str_t >( "typeid<" + std::to_string( TYPEID( fd.args[ 0 ] )->get() ) + ">" );
+}
+
 var_base_t * int_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_str_t >( INT( fd.args[ 0 ] )->get().get_str() );

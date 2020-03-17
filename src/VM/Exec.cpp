@@ -83,6 +83,8 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			if( val->type() == VT_FUNC ) {
 				if( in->type() == VT_STRUCT_DEF ) {
 					vm.add_typefn( STRUCT_DEF( in )->id(), name, val, true );
+				} else if( in->type() == VT_TYPEID ) {
+					vm.add_typefn( TYPEID( in )->get(), name, val, true );
 				} else {
 					vm.add_typefn( in->type(), name, val, true );
 				}

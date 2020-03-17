@@ -135,7 +135,7 @@ INIT_MODULE( fs )
 	const std::string & src_name = src->src()->path();
 
 	// get the type id for file type (register_type)
-	file_typeid = vm.register_new_type( "var_file_t" );
+	file_typeid = vm.register_new_type( "var_file_t", "file_t" );
 
 	src->add_nativefn( "exists", fs_exists, { "" } );
 
