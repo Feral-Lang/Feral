@@ -31,27 +31,33 @@ int main( int argc, char ** argv )
 		return E_OK;
 	}
 
-	if( args.find( "__main__" ) == args.end() ) {
-		fprintf( stderr, "usage: %s [flags] <source file>\n", argv[ 0 ] );
-		return E_FAIL;
-	}
-
 	Errors err = E_OK;
 
 	// feral binary absolute location
 	std::string fer_bin = argv[ 0 ];
 
 	std::string src_file = args[ "__main__" ];
+	std::string long_opt = args[ "__long_opt__" ];
 
-	if( src_file.find( ".fer" ) == std::string::npos ) {
-		if( src_file == "init" ) {
-			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/init" + std::string( fmod_ext() );
-		} else if( src_file == "build" || src_file == "test" ) {
-			src_file = src_file + fmod_ext();
-		} else if( src_file == "install" ) {
-			src_file = std::string( "build" ) + fmod_ext();
-			code_args.insert( code_args.begin(), "install" );
+	if( long_opt == "--init" ) {
+		src_file = "init";
+		if( fs::exists( src_file + fmod_ext() ) ) {
+			src_file += fmod_ext();
+		} else {
+			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/" + src_file + fmod_ext();
 		}
+	} else if( long_opt == "--install" || long_opt == "--build" ) {
+		src_file = std::string( "build" ) + fmod_ext();
+		if( long_opt == "--install" ) code_args.insert( code_args.begin(), "install" );
+	}
+
+	if( src_file.empty() ) {
+		fprintf( stderr, "usage: %s [flags] <source file>\n", argv[ 0 ] );
+		return E_FAIL;
+	}
+
+	if( src_file.find( fmod_ext() ) == std::string::npos ) {
+		src_file += fmod_ext();
 	}
 
 	srcfile_t * main_src = fmod_load( src_file, flags, true, err );
