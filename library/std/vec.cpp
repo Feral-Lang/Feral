@@ -197,6 +197,32 @@ var_base_t * vec_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	return res;
 }
 
+var_base_t * vec_slice( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src_file = vm.src_stack.back()->src();
+	if( fd.args[ 1 ]->type() != VT_INT ) {
+		src_file->fail( fd.idx, "expected starting index to be of type 'int' for vec.slice(), found: %s",
+				vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		return nullptr;
+	}
+	if( fd.args[ 2 ]->type() != VT_INT ) {
+		src_file->fail( fd.idx, "expected ending index to be of type 'int' for vec.slice(), found: %s",
+				vm.type_name( fd.args[ 2 ]->type() ).c_str() );
+		return nullptr;
+	}
+
+	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
+	size_t start = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t end = INT( fd.args[ 2 ] )->get().get_ui();
+
+	std::vector< var_base_t * > newvec;
+	for( size_t i = start; i < end; ++i ) {
+		var_iref( vec[ i ] );
+		newvec.push_back( vec[ i ] );
+	}
+	return make< var_vec_t >( newvec );
+}
+
 INIT_MODULE( vec )
 {
 	var_src_t * src = vm.src_stack.back();
@@ -217,6 +243,8 @@ INIT_MODULE( vec )
 	vm.add_typefn( VT_VEC,    "at", new var_fn_t( src_name, "",  "", { "" }, {}, { .native = vec_at }, true, 0, 0 ), false );
 	vm.add_typefn( VT_VEC,    "[]", new var_fn_t( src_name, "",  "", { "" }, {}, { .native = vec_at }, true, 0, 0 ), false );
 	vm.add_typefn( VT_VEC,  "each", new var_fn_t( src_name, {}, {}, { .native = vec_each  }, 0, 0 ), false );
+
+	vm.add_typefn( VT_VEC, "slice_native", new var_fn_t( src_name, "",  "", { "", "" }, {}, { .native = vec_slice }, true, 0, 0 ), false );
 
 	// get the type id for int iterable (register_type)
 	vec_iterable_typeid = vm.register_new_type( "var_vec_iterable_t", "vec_iterable_t" );
