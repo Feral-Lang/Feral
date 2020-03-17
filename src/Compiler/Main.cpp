@@ -37,18 +37,16 @@ int main( int argc, char ** argv )
 	std::string fer_bin = argv[ 0 ];
 
 	std::string src_file = args[ "__main__" ];
-	std::string long_opt = args[ "__long_opt__" ];
 
-	if( long_opt == "--init" ) {
-		src_file = "init";
+	if( src_file == "init" ) {
 		if( fs::exists( src_file + fmod_ext() ) ) {
 			src_file += fmod_ext();
 		} else {
 			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/" + src_file + fmod_ext();
 		}
-	} else if( long_opt == "--install" || long_opt == "--build" ) {
+	} else if( src_file == "install" || src_file == "build" ) {
+		if( src_file == "install" ) code_args.insert( code_args.begin(), "install" );
 		src_file = std::string( "build" ) + fmod_ext();
-		if( long_opt == "--install" ) code_args.insert( code_args.begin(), "install" );
 	}
 
 	if( src_file.empty() ) {
