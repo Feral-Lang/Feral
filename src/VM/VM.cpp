@@ -148,8 +148,16 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 			mod.erase( mod.begin() );
 			std::string home = env::get( "HOME" );
 			mod.insert( mod.begin(), home.begin(), home.end() );
+		} else if( mod.front() == '.' ) {
+			// cannot have a module exists query with '.' outside all srcs
+			assert( src_stack.size() > 0 );
+			mod.erase( mod.begin() );
+			mod = src_stack.back()->src()->dir() + mod;
 		}
-		return fs::exists( mod );
+		if( fs::exists( mod + ext ) ) {
+			mod = fs::abs_path( mod + ext );
+			return true;
+		}
 	}
 	return false;
 }

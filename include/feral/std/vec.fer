@@ -7,3 +7,8 @@ let find in vec_t = fn(obj) {
 	}
 	return false;
 };
+
+let slice in vec_t = fn(start, end = -1) {
+	if end == -1 { end = self.len(); }
+	return self.slice_native(start, end);
+};
