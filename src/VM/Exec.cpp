@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include <cstring>
+
 #include "Consts.hpp"
 #include "Vars.hpp"
 

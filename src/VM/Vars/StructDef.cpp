@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include <algorithm>
+
 #include "../VM.hpp"
 
 #include "Base.hpp"
