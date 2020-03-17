@@ -7,6 +7,13 @@ if(CMAKE_VERSION VERSION_LESS "3.1")
 	add_compile_options(-std=c++11)
 endif()
 
+if(DEFINED ENV{PREFIX_DIR} AND NOT "$ENV{PREFIX_DIR}" STREQUAL "")
+	set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
+endif()
+add_definitions(-DBUILD_PREFIX_DIR=${CMAKE_INSTALL_PREFIX})
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/feral")
+message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
+
 # add cmake_modules path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/src/Extra/cmake_modules")
 
@@ -22,11 +29,11 @@ set(CMAKE_MACOSX_RPATH TRUE)
 
 include(CheckCXXCompilerFlag)
 
-find_library(gmp REQUIRED)
-find_library(gmpxx REQUIRED)
+find_library(GMP_LIBRARY gmp REQUIRED)
+find_library(GMPXX_LIBRARY gmpxx REQUIRED)
 find_package(MPFR REQUIRED)
 if(NOT MPFR_FOUND)
-	error("MPFR library is required but missing")
+	message(FATAL_ERROR "MPFR library is required but missing")
 endif()
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -45,11 +52,6 @@ endif()
 # For libGMP on macOS and BSD
 if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	include_directories(/usr/local/include)
-	link_directories(/usr/local/lib)
-endif()
-
-if(WIN32)
-	error("Project not supported on Windows yet")
 endif()
 
 find_program(CCACHE_PROGRAM ccache)
@@ -61,28 +63,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	add_definitions(-D_WITH_GETLINE)
 endif()
 
-if(DEFINED ENV{DEBUG})
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	add_definitions(-DDEBUG_MODE)
 	message("-- Running in debug mode")
-else()
-	if(NOT DEFINED ENV{SKIP_LTO})
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-	endif()
 endif()
 
 check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
 if(COMPILER_SUPPORTS_MARCH_NATIVE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif()
-
-if(DEFINED ENV{PREFIX_DIR} AND NOT "$ENV{PREFIX_DIR}" STREQUAL "")
-	set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
-else()
-	set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
-endif()
-add_definitions(-DBUILD_PREFIX_DIR=${CMAKE_INSTALL_PREFIX})
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/feral")
-message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 # Finally! The sources!!!!!
 
@@ -121,37 +110,12 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Common/"
 	FILES_MATCHING PATTERN "*.hpp"
 )
 
-# Feral Compiler
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.cpp")
-list(REMOVE_ITEM SRCS "src/Compiler/Main.cpp")
-
-add_library(feral-compiler SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-compiler ${CMAKE_DL_LIBS} feral-common feral-vm)
-set_target_properties(feral-compiler
-    PROPERTIES
-    OUTPUT_NAME feralcomp
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
-    INSTALL_RPATH_USE_LINK_PATH TRUE
-)
-install(TARGETS feral-compiler
-	LIBRARY
-	  DESTINATION lib/feral
-	  COMPONENT Libraries
-	PUBLIC_HEADER
-	  DESTINATION include/feral
-)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Compiler/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Compiler"
-	FILES_MATCHING PATTERN "*.hpp"
-)
-
 # Feral VM
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.cpp")
 
 add_library(feral-vm SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-vm ${CMAKE_DL_LIBS} feral-common mpfr gmp gmpxx)
+target_link_libraries(feral-vm feral-common ${CMAKE_DL_LIBS} ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 set_target_properties(feral-vm
     PROPERTIES
     OUTPUT_NAME feralvm
@@ -170,6 +134,32 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/VM/"
 	FILES_MATCHING PATTERN "*.hpp"
 )
 
+# Feral Compiler
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.cpp")
+list(REMOVE_ITEM SRCS "src/Compiler/Main.cpp")
+
+add_library(feral-compiler SHARED ${SRCS} ${INCS})
+target_link_libraries(feral-compiler feral-common feral-vm)
+set_target_properties(feral-compiler
+    PROPERTIES
+    OUTPUT_NAME feralcomp
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS feral-compiler
+	LIBRARY
+	  DESTINATION lib/feral
+	  COMPONENT Libraries
+	PUBLIC_HEADER
+	  DESTINATION include/feral
+)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Compiler/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Compiler"
+	FILES_MATCHING PATTERN "*.hpp"
+)
+
+# Feral Binary
 add_executable(feral-bin "${PROJECT_SOURCE_DIR}/src/Compiler/Main.cpp")
 target_link_libraries(feral-bin feral-compiler feral-vm)
 set_target_properties(feral-bin
