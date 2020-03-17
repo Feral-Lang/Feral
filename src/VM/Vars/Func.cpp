@@ -47,6 +47,7 @@ std::string & var_fn_t::src_name() { return m_src_name; }
 std::string & var_fn_t::kw_arg() { return m_kw_arg; }
 std::string & var_fn_t::var_arg() { return m_var_arg; }
 std::vector< std::string > & var_fn_t::args() { return m_args; }
+std::unordered_map< std::string, var_base_t * > & var_fn_t::assn_args() { return m_assn_args; }
 fn_body_t & var_fn_t::body() { return m_body; }
 bool var_fn_t::is_native() { return m_is_native; }
 
