@@ -261,6 +261,7 @@ public:
 	std::string & kw_arg();
 	std::string & var_arg();
 	std::vector< std::string > & args();
+	std::unordered_map< std::string, var_base_t * > & assn_args();
 	fn_body_t & body();
 	bool is_native();
 
