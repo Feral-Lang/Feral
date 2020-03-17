@@ -47,6 +47,11 @@ size_t parse( const int argc, const char ** argv,
 
 		size_t len = strlen( argv[ i ] );
 
+		if( len > 2 && argv[ i ][ 0 ] == '-' && argv[ i ][ 1 ] == '-' ) {
+			args.emplace( "__long_opt__", argv[ i ] );
+			continue;
+		}
+
 		if( argv[ i ][ 0 ] != '-' ) {
 			if( prev_flag == 'c' ) {
 				args.emplace( "c", argv[ i ] );
