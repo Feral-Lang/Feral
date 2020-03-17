@@ -29,6 +29,7 @@ src/Compiler/Config.hpp
 tmp*
 tests/*.json
 /*.fer
+*.zip
 
 # Build file on BSD #
 #####################
