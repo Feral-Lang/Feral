@@ -7,6 +7,7 @@
 	before using or altering the project.
 */
 
+#include "core/nil.hpp"
 #include "core/bool.hpp"
 #include "core/int.hpp"
 #include "core/flt.hpp"
@@ -104,6 +105,10 @@ INIT_MODULE( core )
 	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, {}, { .native = is_main_src }, 0, 0 ), false );
 
 	// core type functions
+
+	// nil
+	vm.add_typefn( VT_NIL, "==", new var_fn_t( src_name, { "" }, {}, { .native = nil_eq }, 0, 0 ), false );
+	vm.add_typefn( VT_NIL, "!=", new var_fn_t( src_name, { "" }, {}, { .native = nil_ne }, 0, 0 ), false );
 
 	// bool
 	vm.add_typefn( VT_BOOL, "<",  new var_fn_t( src_name, { "" }, {}, { .native = bool_lt }, 0, 0 ), false );
