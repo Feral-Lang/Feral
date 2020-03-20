@@ -13,8 +13,6 @@
 #include <vector>
 #include <string>
 
-#include "Errors.hpp"
-
 #define MAX_PATH_CHARS 4096
 
 namespace fs

@@ -41,7 +41,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	if( err != E_OK ) goto fail;
 
 	// show tokens
-	if( flags & OPT_T && ( flags & OPT_R || is_main_src )  ) {
+	if( flags & OPT_T && ( flags & OPT_R || is_main_src ) ) {
 		fprintf( stdout, "Tokens (%zu):\n", toks.size() );
 		for( size_t i = 0; i < toks.size(); ++i ) {
 			auto & tok = toks[ i ];
@@ -54,7 +54,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	if( err != E_OK ) goto fail;
 
 	// show tree
-	if( flags & OPT_P && ( flags & OPT_R || is_main_src )  ) {
+	if( flags & OPT_P && ( flags & OPT_R || is_main_src ) ) {
 		fprintf( stdout, "Parse Tree:\n" );
 		for( auto it = ptree->stmts().begin(); it != ptree->stmts().end(); ++it ) {
 			( * it )->disp( it != ptree->stmts().end() - 1 );
