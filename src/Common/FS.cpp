@@ -13,7 +13,6 @@
 #include <string>
 #include <unistd.h>
 
-#include "String.hpp"
 #include "Env.hpp"
 #include "FS.hpp"
 
