@@ -34,8 +34,8 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 
 	m_feral_home_dir = env::get("HOME") + "/.feral";
 
-	m_inc_locs.push_back( m_feral_home_dir + "/include" );
-	m_dll_locs.push_back( m_feral_home_dir + "/lib" );
+	m_inc_locs.emplace_back( m_feral_home_dir + "/include" );
+	m_dll_locs.emplace_back( m_feral_home_dir + "/lib" );
 
 	m_inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
 	m_dll_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );

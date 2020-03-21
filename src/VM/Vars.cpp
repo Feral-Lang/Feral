@@ -139,7 +139,7 @@ vars_t::vars_t() : m_fn_stack( -1 )
 }
 vars_t::~vars_t()
 {
-	assert( m_fn_stack == 0 );
+	assert( m_fn_stack == 0 || m_fn_stack == -1 );
 	delete m_fn_vars[ 0 ];
 }
 
