@@ -186,7 +186,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t pr
 
 		// strings
 		if( ( CURR( src ) == '.' && ( isalpha( NEXT( src ) ) || NEXT( src ) == '_' ) && !isalnum( PREV( src ) ) && PREV( src ) != '_' &&
-		      PREV( src ) != ')' && PREV( src ) != ']' ) ||
+		      PREV( src ) != ')' && PREV( src ) != ']' && PREV( src ) != '\'' && PREV( src ) != '"' ) ||
 		    isalpha( CURR( src ) ) || CURR( src ) == '_' ) {
 			std::string str = get_name( src_file, i );
 			// check if string is a keyword
