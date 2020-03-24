@@ -1,0 +1,87 @@
+let io = import('std/io');
+let os = import('std/os');
+let vec = import('std/vec');
+let str = import('std/str');
+let sys = import('std/sys');
+
+# TODO: optimize this out using (hash)map
+let jmp_fwd = fn(v, i) {
+	let depth = 0;
+	while i < v.len() {
+		if v[i] == '[' { ++depth; }
+		if v[i] == ']' { --depth; }
+		if depth == 0 { break; }
+		++i;
+	}
+	return i < v.len();
+};
+
+let jmp_bwd = fn(v, i) {
+	let depth = 0;
+	while i >= 0 {
+		if v[i] == ']' { --depth; }
+		if v[i] == '[' { ++depth; }
+		if depth == 0 { break; }
+		--i;
+	}
+	return i >= 0;
+};
+
+let content = io.scaneof('Enter BrainFuck string to interpret:\n');
+let len = content.len();
+
+# initialize data array to single element
+# (growing till DATA_UPPER_LIMIT over time)
+let DATA_UPPER_LIMIT = 100000;
+let data = vec.new(0);
+let data_ptr = 0;
+
+for let i = 0; i < len; ++i {
+	#io.println(i, '\t', content[i], '\t', data);
+	if content[i] == '>' {
+		if data_ptr >= DATA_UPPER_LIMIT {
+			io.println('went above upper limit of data pointer (',
+				   data.len(), ') at character position: ', i);
+			sys.exit(1);
+		}
+		++data_ptr;
+		if data_ptr >= data.len() {
+			data.push(0);
+		}
+	} elif content[i] == '<' {
+		if data_ptr <= 0 {
+			io.println('went below lower limit of data pointer (',
+				   0, ') at character position: ', i);
+			sys.exit(1);
+		}
+		--data_ptr;
+	} elif content[i] == '+' {
+		++data[data_ptr];
+	} elif content[i] == '-' {
+		--data[data_ptr];
+	} elif content[i] == '.' {
+		if data[data_ptr] == 0 {
+			io.print('(nil)');
+		} else {
+			io.print(data[data_ptr].i_to_c());
+		}
+	} elif content[i] == ',' {
+		data[data_ptr] = io.scan().c_to_i();
+	} elif content[i] == '[' {
+		if data[data_ptr] != 0 { continue; }
+		let i_tmp = i;
+		if !jmp_fwd(content, i) {
+			io.println(`failed to find equivalent jump to ']' from position: `,
+				   i_tmp);
+			sys.exit(1);
+		}
+	} elif content[i] == ']' {
+		if data[data_ptr] == 0 { continue; }
+		let i_tmp = i;
+		if !jmp_bwd(content, i) {
+			io.println(`failed to find equivalent jump to '[' from position: `,
+				   i_tmp);
+			sys.exit(1);
+		}
+	}
+}

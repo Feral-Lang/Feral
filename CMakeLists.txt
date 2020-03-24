@@ -14,6 +14,11 @@ add_definitions(-DBUILD_PREFIX_DIR=${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/feral")
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
+if(DEFINED ENV{MEM_PROFILE})
+	message("-- Memory Pool profiling is true")
+	add_definitions(-DMEM_PROFILE)
+endif()
+
 # add cmake_modules path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/src/Extra/cmake_modules")
 
