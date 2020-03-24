@@ -223,6 +223,7 @@ int vm_state_t::load_fmod( const std::string & mod_file )
 
 bool vm_state_t::load_core_mods()
 {
+	// TODO: perhaps embed these in feral binary to remove the requirement of installation location
 	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
 		if( !load_nmod( mod, 0, mod == "core" ) ) return false;

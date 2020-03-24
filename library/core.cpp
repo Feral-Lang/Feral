@@ -136,6 +136,8 @@ INIT_MODULE( core )
 	vm.add_typefn( VT_INT, "**",  new var_fn_t( src_name, { "" }, {}, { .native = int_pow }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "++x", new var_fn_t( src_name, {}, {}, { .native = int_preinc },  0, 0 ), false );
 	vm.add_typefn( VT_INT, "x++", new var_fn_t( src_name, {}, {}, { .native = int_postinc }, 0, 0 ), false );
+	vm.add_typefn( VT_INT, "--x", new var_fn_t( src_name, {}, {}, { .native = int_predec },  0, 0 ), false );
+	vm.add_typefn( VT_INT, "x--", new var_fn_t( src_name, {}, {}, { .native = int_postdec }, 0, 0 ), false );
 
 	vm.add_typefn( VT_INT, "u-", new var_fn_t( src_name, {}, {}, { .native = int_usub }, 0, 0 ), false );
 
@@ -146,7 +148,7 @@ INIT_MODULE( core )
 	vm.add_typefn( VT_INT, "==", new var_fn_t( src_name, { "" }, {}, { .native = int_eq }, 0, 0 ), false );
 	vm.add_typefn( VT_INT, "!=", new var_fn_t( src_name, { "" }, {}, { .native = int_ne }, 0, 0 ), false );
 
-	// int
+	// flt
 	vm.add_typefn( VT_FLT, "+", new var_fn_t( src_name, { "" }, {}, { .native = flt_add }, 0, 0 ), false );
 	vm.add_typefn( VT_FLT, "-", new var_fn_t( src_name, { "" }, {}, { .native = flt_sub }, 0, 0 ), false );
 	vm.add_typefn( VT_FLT, "*", new var_fn_t( src_name, { "" }, {}, { .native = flt_mul }, 0, 0 ), false );
@@ -159,6 +161,8 @@ INIT_MODULE( core )
 
 	vm.add_typefn( VT_FLT, "++x", new var_fn_t( src_name, {}, {}, { .native = flt_preinc },  0, 0 ), false );
 	vm.add_typefn( VT_FLT, "x++", new var_fn_t( src_name, {}, {}, { .native = flt_postinc }, 0, 0 ), false );
+	vm.add_typefn( VT_FLT, "--x", new var_fn_t( src_name, {}, {}, { .native = flt_predec },  0, 0 ), false );
+	vm.add_typefn( VT_FLT, "x--", new var_fn_t( src_name, {}, {}, { .native = flt_postdec }, 0, 0 ), false );
 
 	vm.add_typefn( VT_FLT, "u-", new var_fn_t( src_name, {}, {}, { .native = flt_usub }, 0, 0 ), false );
 

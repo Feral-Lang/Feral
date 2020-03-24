@@ -163,6 +163,20 @@ var_base_t * flt_postinc( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_flt_t >( res );
 }
 
+var_base_t * flt_predec( vm_state_t & vm, const fn_data_t & fd )
+{
+	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
+	--lhs;
+	return fd.args[ 0 ];
+}
+
+var_base_t * flt_postdec( vm_state_t & vm, const fn_data_t & fd )
+{
+	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
+	mpfr::mpreal res = lhs--;
+	return make< var_flt_t >( res );
+}
+
 var_base_t * flt_usub( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_flt_t >( -FLT( fd.args[ 0 ] )->get() );

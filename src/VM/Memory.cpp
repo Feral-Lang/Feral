@@ -84,8 +84,9 @@ size_t nearest_mult8( size_t sz )
 
 #ifdef MEM_PROFILE
 static size_t tot_alloc = 0;
-static size_t tot_alloc_direct = 0;
+static size_t tot_alloc_nopool = 0;
 static size_t tot_alloc_req = 0;
+static size_t tot_manual_alloc = 0;
 #endif
 void mem_mgr_t::alloc_pool()
 {
@@ -112,7 +113,8 @@ mem_mgr_t::~mem_mgr_t()
 		delete[] p.mem;
 	}
 #ifdef MEM_PROFILE
-	fprintf( stdout, "Total allocated: %zu, directly: %zu, requests: %zu\n", tot_alloc, tot_alloc_direct, tot_alloc_req );
+	fprintf( stdout, "Total allocated: %zu bytes, without mempool: %zu, requests: %zu, manually allocated: %zu bytes\n",
+		 tot_alloc, tot_alloc_nopool, tot_alloc_req, tot_manual_alloc );
 #endif
 }
 
@@ -126,7 +128,7 @@ void * mem_mgr_t::alloc( size_t sz )
 {
 	if( sz == 0 ) return nullptr;
 #ifdef MEM_PROFILE
-	tot_alloc_direct += sz;
+	tot_alloc_nopool += sz;
 	++tot_alloc_req;
 #endif
 	sz = mem::nearest_mult8( sz );
@@ -134,6 +136,7 @@ void * mem_mgr_t::alloc( size_t sz )
 	if( sz > POOL_SIZE ) {
 #ifdef MEM_PROFILE
 		fprintf( stdout, "Allocating manually ... %zu\n", sz );
+		tot_manual_alloc += sz;
 #endif
 		return new u8[ sz ];
 	}
