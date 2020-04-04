@@ -12,7 +12,6 @@
 namespace consts
 {
 
-// TODO: optimize this
 var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & idx )
 {
 	if( type == ODT_BOOL ) {
