@@ -605,7 +605,7 @@ Errors parse_term( phelper_t & ph, stmt_base_t * & loc, const bool make_const )
 		if( make_const && ph.peakt() == TOK_IDEN ) ph.sett( TOK_STR );
 		loc = new stmt_simple_t( ph.peak() );
 		ph.next();
-	} else if( !make_const && ph.accept( TOK_FN ) ) { // TODO: make proper fix to prevent something like: fn() {} = 10;
+	} else if( !make_const && ph.accept( TOK_FN ) ) {
 		if( parse_fn_decl( ph, loc ) != E_OK ) goto fail;
 	} else {
 		ph.fail( "invalid or extraneous token type '%s' received in expression", TokStrs[ ph.peakt() ] );
