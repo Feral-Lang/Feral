@@ -63,7 +63,7 @@ Feral's code style is same as this project's C++ code, except the following poin
 1. All opening braces are on the same line as the entity for which they are used, ie., opening braces are never on new lines - unlike the C++ code.
 2. No spaces between parenthesis and arguments for any code construct.
 For example,
-```r
+```py
 let io = import('std/io');
 let func = fn(a) {
 	println(a);
