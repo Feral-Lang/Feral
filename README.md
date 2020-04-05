@@ -9,7 +9,7 @@ For feral, all imports, structures, enums, and functions are variables. This mak
 One can pass and modify all of those around in functions, etc, just like a normal variable.
 
 Do note that Feral is not an object oriented programming language, but does support one primary construct - the `dot` operator.
-```r
+```py
 variable.inside = 10;
 let x = variable.func();
 ```
@@ -19,14 +19,14 @@ This makes the code a bit cleaner and easier to understand. See examples to unde
 
 ## Hello World
 
-```r
+```py
 let io = import('std/io');
 io.println('Hello World');
 ```
 
 ## Hello greeting using a function
 
-```r
+```py
 let io = import('std/io');
 
 let hello_fn = fn(name) {
@@ -37,7 +37,7 @@ hello_fn('Electrux'); # prints 'Hello Electrux`
 ```
 
 ## Simple factorial of 5 using a function
-```r
+```py
 let io = import('std/io');
 
 let facto = fn(num) {
@@ -52,20 +52,20 @@ io.println('factorial of 5 is: ', facto(5));
 ```
 
 ## Creating an empty struct
-```r
+```py
 let lang = import('std/lang');
 let struct_t = lang.struct(); # empty structure type (struct with no fields)
 ```
 
 ## Creating a struct with fields
-```r
+```py
 # fields `a` and `b` of type integers having default values `10`, and `20` respectively
 let lang = import('std/lang');
 
 let struct_t = lang.struct(a = 10, b = 20);
 ```
 To create objects of this structure:
-```r
+```py
 # default values for struct fields
 let struct_obj1 = struct_t(); # a = 10, b = 20
 
