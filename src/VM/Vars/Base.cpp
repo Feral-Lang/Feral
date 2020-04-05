@@ -18,7 +18,7 @@ var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & 
 var_base_t::~var_base_t()
 {}
 
-void * var_base_t::get_data() { return nullptr; }
+void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
