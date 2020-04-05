@@ -203,7 +203,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			bodies.pop_back();
 
 			vms->push( new var_fn_t( src_file->path(), kw_arg, var_arg,
-						 args, assn_args, { .feral = body },
+						 args, assn_args, fn_body_t{ .feral = body },
 						 false, src_id, op.idx ),
 				   false );
 			break;
