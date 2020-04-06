@@ -67,7 +67,7 @@ bcode_t::~bcode_t()
 {
 	for( auto & op : m_bcode ) {
 		if( op.dtype != ODT_SZ && op.dtype != ODT_BOOL && op.dtype != ODT_NIL ) {
-			mem::free( op.data.s, mem::nearest_mult8( strlen( op.data.s ) + 1 ) );
+			mem::free( op.data.s, mem::mult8_roundup( strlen( op.data.s ) + 1 ) );
 		}
 	}
 }

@@ -47,7 +47,7 @@ public:
 
 namespace mem
 {
-size_t nearest_mult8( size_t sz );
+size_t mult8_roundup( size_t sz );
 
 inline void * alloc( size_t sz )
 {

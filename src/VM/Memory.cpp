@@ -11,7 +11,7 @@
 
 namespace mem
 {
-size_t nearest_mult8( size_t sz )
+size_t mult8_roundup( size_t sz )
 {
 	return ( sz > 512 ) ? sz : ( sz + 7 ) & ~7;
 }
@@ -66,7 +66,7 @@ void * mem_mgr_t::alloc( size_t sz )
 	tot_alloc_nopool += sz;
 	++tot_alloc_req;
 #endif
-	sz = mem::nearest_mult8( sz );
+	sz = mem::mult8_roundup( sz );
 
 	if( sz > POOL_SIZE ) {
 #ifdef MEM_PROFILE
