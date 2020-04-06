@@ -111,3 +111,16 @@ Once Feral is installed, you will also probably require the standard libraries f
 Follow same steps as above for the standard library repository as well.
 
 Once installation is done, execute the installed `feral` binary (`PREFIX_DIR/bin/feral`) to use the Feral language.
+
+## Post Installation
+
+After installation is done, you'd probably also like to use the `feral init` command to initialize the `$FERAL_HOME` directory, which currently is `$HOME/.feral`. This directory is where external packages shall be installed.
+
+# Syntax Highlighting Extensions
+
+As of right now, there are Feral language's syntax highlighting extensions available for `Visual Studio Code` and `Vim` editors.
+Installation steps can be found on their repositories.
+
+Visual Studio Code: [Feral-Lang/Feral-VSCode](https://github.com/Feral-Lang/Feral-VSCode)
+
+Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
