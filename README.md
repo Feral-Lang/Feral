@@ -15,6 +15,8 @@ let x = variable.func();
 ```
 This makes the code a bit cleaner and easier to understand. See examples to understand its usage.
 
+There is also a (WIP) book/guide for Feral available here: [https://feral-lang.github.io/Book/](https://feral-lang.github.io/Book/)
+
 # Examples
 
 ## Hello World
