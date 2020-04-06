@@ -84,7 +84,9 @@ endif()
 configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
 
 # Feral Includes
-file(COPY "${CMAKE_SOURCE_DIR}/include" DESTINATION "${CMAKE_INSTALL_PREFIX}/")
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+)
 
 # Install Extra headers and (cmake) modules
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Extra/"
