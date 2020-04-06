@@ -59,3 +59,10 @@ This file contains the roadmap for Feral. As the language grows, more things wil
     - [ ] `fs_file_writeln(data)` - writes data to a file and adds a newline character at the end
     - [ ] `fs_file_is_open()` - returns true if a file is open, false if not
     - [ ] `fs_file_mode()` - returns the (string) mode in which the file was opened
+
+## Other
+
+These are possible ideas, but still in debate.
+
+- [ ] A proper build system - for building external modules/libraries without the need of CMake
+- [ ] A package manager - to install various external modules/libraries from a package index
