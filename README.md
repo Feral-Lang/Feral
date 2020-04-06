@@ -124,3 +124,7 @@ Installation steps can be found on their repositories.
 Visual Studio Code: [Feral-Lang/Feral-VSCode](https://github.com/Feral-Lang/Feral-VSCode)
 
 Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
+
+# Roadmap
+
+Roadmap for Feral is available [here](https://github.com/Feral-Lang/Feral/blob/master/ROADMAP.md).
