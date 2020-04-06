@@ -30,6 +30,7 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 - [ ] Implement more chapters
   - [ ] 7 - Loops
+  - [ ] 8 - "Member" Functions
     - [ ] For
     - [ ] While
     - [ ] Foreach
