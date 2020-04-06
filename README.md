@@ -1,6 +1,6 @@
 # About
 
-Feral is a dyanmically typed, imperative, interpreted language which revolves (to most extent) around the idea of minimalism.
+Feral is a dynamically typed, imperative, interpreted language which revolves (to most extent) around the idea of minimalism.
 
 The primary example being that the language syntax itself does not contain anything related to imports, structure, or enums.
 Instead, there are libraries/functions that allow the user to import modules, and create structures as well as enums.
