@@ -234,7 +234,7 @@ bool vm_state_t::load_core_mods()
 
 const char * nmod_ext()
 {
-#ifdef __linux__
+#if __linux__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
 	return ".so";
 #elif __APPLE__
 	return ".dylib";
