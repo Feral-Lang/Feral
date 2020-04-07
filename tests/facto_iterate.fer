@@ -1,4 +1,4 @@
-let io = import('std/io');
+#let io = import('std/io');
 
 let facto = fn(num) {
 	let fact = 1;
@@ -8,4 +8,5 @@ let facto = fn(num) {
 	return fact;
 };
 
-io.println('factorial of 5 is: ', facto(5));
+#io.println('factorial of 5 is: ', facto(5));
+assert(facto(5) == 120);

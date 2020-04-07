@@ -50,6 +50,8 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 ## Standard Library (Repository: [Feral-Lang/Feral-Std](https://github.com/Feral-Lang/Feral-Std))
 
+- [ ] Runtime
+  - [ ] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
 - [ ] Maps
   - [ ] `var_map_iterator_t` - Iterates through each key value pair in a map (similar to vector's `var_vec_iterator_t`)
 - [ ] OS
