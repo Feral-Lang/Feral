@@ -38,7 +38,7 @@ int main( int argc, char ** argv )
 
 	std::string src_file = args[ "__main__" ];
 
-	if( src_file == "init" ) {
+	if( src_file == "init" || src_file == "testdir" ) {
 		if( fs::exists( src_file + fmod_ext() ) ) {
 			src_file += fmod_ext();
 		} else {
