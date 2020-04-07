@@ -29,13 +29,15 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 ## Book (Repository: [Feral-Lang/Book](https://github.com/Feral-Lang/Book))
 
 - [ ] Implement more chapters
-  - [ ] 7 - Loops
-  - [ ] 8 - "Member" Functions
+  - [ ] 7 - Conditionals
+  - [ ] 8 - Loops
     - [ ] For
     - [ ] While
     - [ ] Foreach
-  - [ ] 8 - Scopes and Variable Assignment vs Copy
-  - [ ] 9 - Standard Library
+  - [ ] 9 - "Member" Functions
+  - [ ] 10 - Modules/Imports
+  - [ ] 11 - Scopes and Variable Assignment vs Copy
+  - [ ] 12 - Standard Library
     - [ ] 1 - IO
     - [ ] 2 - Structures & Enums
     - [ ] 3 - Strings
