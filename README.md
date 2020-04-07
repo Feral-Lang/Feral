@@ -1,5 +1,7 @@
 # About
 
+[![Build Status](https://api.cirrus-ci.com/github/Feral-Lang/Feral.svg?branch=master)](https://cirrus-ci.com/github/Feral-Lang/Feral)
+
 Feral is a dynamically typed, imperative, interpreted language which revolves (to most extent) around the idea of minimalism.
 
 The primary example being that the language syntax itself does not contain anything related to imports, structure, or enums.
