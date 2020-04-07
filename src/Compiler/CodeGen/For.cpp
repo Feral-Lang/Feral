@@ -30,7 +30,10 @@ bool stmt_for_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 
 	size_t continue_jmp_loc = bc.size();
 
-	if( m_incr ) m_incr->gen_code( bc );
+	if( m_incr ) {
+		m_incr->gen_code( bc );
+		bc.add( m_incr->idx(), OP_ULOAD );
+	}
 
 	bc.addsz( idx(), OP_JMP, iter_jmp_loc );
 

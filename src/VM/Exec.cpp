@@ -32,7 +32,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
-		// fprintf( stdout, "ID: %zu %*s: ", i, 12, OpCodeStrs[ op.op ] );
+		// fprintf( stdout, "%s [%zu]: %*s: ", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
 		// for( auto & e : vms->get() ) {
 		// 	fprintf( stdout, "%s ", vm.type_name( e->type() ).c_str() );
 		// }
@@ -251,7 +251,8 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				goto fncall_fail;
 			}
 			if( fn_base->type() != VT_FUNC && fn_base->type() != VT_STRUCT_DEF ) {
-				src_file->fail( op.idx, "this is not a function or struct definition" );
+				src_file->fail( op.idx, "'%s' is not a function or struct definition",
+						vm.type_name( fn_base->type() ).c_str() );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
