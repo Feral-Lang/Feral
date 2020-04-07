@@ -1,0 +1,34 @@
+# executes all '.fer' files in a given directory
+# ensures they all exit with return code zero
+
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let sys = import('std/sys');
+
+if sys.args.empty() {
+	io.println('Usage: ', sys.self_binary, ' ', __SRC_PATH__, ' <directory>');
+	sys.exit(1);
+}
+
+let files = fs.walkdir(sys.args[0], fs.WALK_RECURSE, '(.*)\\.fer');
+let passed = 0, failed = 0;
+
+for file in files.each() {
+	io.cprint('{y}testing script {c}\'', file, '\' {0}... ');
+	io.flushout();
+	let res = os.exec(sys.self_binary + ' ' + file + ' >/dev/null');
+	if res == 0 {
+		io.cprintln('{g}pass{0}');
+		++passed;
+	} else {
+		io.cprintln('{r}fail{0}');
+		++failed;
+	}
+}
+
+io.cprintln('total: {y}', files.len(),
+	    '{0}, passed: {g}', passed,
+	    '{0}, failed: {r}', failed, '{0}');
+sys.exit(failed);

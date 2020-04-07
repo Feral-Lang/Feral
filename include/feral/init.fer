@@ -1,3 +1,6 @@
+# initializes $FERAL_HOME - $HOME/.feral
+# creates 'include' and 'lib' directories in it as well
+
 let io = import('std/io');
 let os = import('std/os');
 let fs = import('std/fs');
