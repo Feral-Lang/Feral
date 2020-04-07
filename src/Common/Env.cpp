@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include <unistd.h>
+#include <cstdlib>
 
 #include "Env.hpp"
 
