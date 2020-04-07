@@ -1,4 +1,4 @@
-let io = import('std/io');
+#let io = import('std/io');
 let lang = import('std/lang');
 
 let EXIT_CODE = lang.enum(
@@ -6,7 +6,10 @@ let EXIT_CODE = lang.enum(
 	.FAIL,
 	.IO_ERR,
 	.LEX_FAIL,
-	.PARSE_FAIL
+	.PARSE_FAIL,
+	.SOME_ERR = 20
 );
 
-io.println(EXIT_CODE.PARSE_FAIL);
+#io.println(EXIT_CODE.PARSE_FAIL);
+assert(EXIT_CODE.PARSE_FAIL == 4);
+assert(EXIT_CODE.SOME_ERR == 20);

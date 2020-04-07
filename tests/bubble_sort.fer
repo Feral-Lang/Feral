@@ -1,4 +1,4 @@
-let io = import('std/io');
+#let io = import('std/io');
 let vec = import('std/vec');
 
 let v = vec.new(4, 2, 5, 3, 1);
@@ -13,4 +13,5 @@ for i in range(0, v.len()) {
 	}
 }
 
-io.println(v);
+#io.println(v);
+assert(v == vec.new(1, 2, 3, 4, 5));
