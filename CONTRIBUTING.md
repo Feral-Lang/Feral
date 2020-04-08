@@ -11,6 +11,20 @@ Therefore, to contribute to this project, please follow the following guidelines
 
 # Code Formatting
 
+## Common
+Any function's arguments, if spanning too long, should be put in a new line instead - right under the previous argument.
+For example, if the code is:
+```cpp
+void func( const char c, std::map< std::string, std::string > & res, int a, const std::vector< int > & b )
+{ ... }
+```
+It's better to write it as:
+```cpp
+void func( const char c, std::map< std::string, std::string > & res,
+	   int a, const std::vector< int > & b )
+{ ... }
+```
+
 ## C++
 The C++ codebase follows the **[Linux Kernel's](https://www.kernel.org/doc/html/v4.10/process/coding-style.html)** code style with some minor changes:
 1. Having a conditional/loop statement with single line block does not require surrounding it with braces and must be on the same line as the conditional/loop statement itself - **as long as neither of those are too long** (about 120 characters).
