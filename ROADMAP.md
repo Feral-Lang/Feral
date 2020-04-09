@@ -2,7 +2,7 @@
 
 This file contains the roadmap for Feral. As the language grows, more things will be added.
 
-**Note**: All tests must be verified for no memory leaks. I personally use Valgrind.
+**Note**: All tests must be verified for no memory leaks (I personally use Valgrind).
 
 ## Core language (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
 
@@ -29,11 +29,11 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 ## Book (Repository: [Feral-Lang/Book](https://github.com/Feral-Lang/Book))
 
 - [ ] Implement more chapters
-  - [ ] 7 - Conditionals
-  - [ ] 8 - Loops
-    - [ ] For
-    - [ ] While
-    - [ ] Foreach
+  - [x] 7 - Conditionals
+  - [x] 8 - Loops
+    - [x] For
+    - [x] While
+    - [x] Foreach
   - [ ] 9 - "Member" Functions
   - [ ] 10 - Modules/Imports
   - [ ] 11 - Scopes and Variable Assignment vs Copy
