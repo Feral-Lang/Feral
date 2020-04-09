@@ -32,8 +32,8 @@ This file contains the roadmap for Feral. As the language grows, more things wil
   - [x] 7 - Conditionals
   - [x] 8 - Loops
     - [x] For
-    - [x] While
     - [x] Foreach
+    - [x] While
   - [ ] 9 - "Member" Functions
   - [ ] 10 - Modules/Imports
   - [ ] 11 - Scopes and Variable Assignment vs Copy
