@@ -17,7 +17,6 @@ let passed = 0, failed = 0;
 
 for file in files.each() {
 	io.cprint('{y}testing script {c}\'', file, '\' {0}... ');
-	io.flushout();
 	let res = os.exec(sys.self_binary + ' ' + file + ' >/dev/null');
 	if res == 0 {
 		io.cprintln('{g}pass{0}');
