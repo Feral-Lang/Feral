@@ -82,7 +82,29 @@ let struct_obj3 = struct_t(b = 30); # a = 10, b = 30
 
 # Installation
 
-## Prerequisites
+## Using the installer
+
+You can install Feral and its standard library using the installer script.
+
+*Note: this script has only been tested on macOS 10.14 Mojave!*
+
+### Prerequisites
+
+* [Git](https://git-scm.com/)
+* [Homebrew](https://brew.sh/)
+
+### Download
+
+Download the script using `wget` or any other HTTP client and execute it:
+
+```sh
+wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/installer.sh
+sh installer.sh
+```
+
+## Building from source
+
+### Prerequisites
 
 To install `Feral`, the following packages are required:
 * CMake (build system - for compiling the project)
@@ -91,7 +113,7 @@ To install `Feral`, the following packages are required:
 
 **Note**: Feral doesn't yet support Windows.
 
-## Procedure
+### Procedure
 
 Once the prerequisites have been met, clone this repository:
 ```
