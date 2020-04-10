@@ -120,7 +120,7 @@ INIT_MODULE( utils )
 	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, 0, 0 ), false );
 
 	// get the type id for int iterable (register_type)
-	int_iterable_typeid = vm.register_new_type( "var_int_iterable_t", "int_iterable_t" );
+	int_iterable_typeid = vm.register_new_type( "var_int_iterable_t", "int_iterable_t", src_id, idx );
 
 	vm.add_typefn( int_iterable_typeid, "next", new var_fn_t( src_name, {}, {}, { .native = int_iterable_next }, 0, 0 ), false );
 

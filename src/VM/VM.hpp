@@ -24,10 +24,10 @@ typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
 typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
 
-typedef bool ( * mod_init_fn_t )( vm_state_t & vm );
+typedef bool ( * mod_init_fn_t )( vm_state_t & vm, const size_t src_id, const size_t & idx );
 typedef void ( * mod_deinit_fn_t )();
 #define INIT_MODULE( name )			\
-	extern "C" bool init_##name( vm_state_t & vm )
+	extern "C" bool init_##name( vm_state_t & vm, const size_t src_id, const size_t & idx )
 #define DEINIT_MODULE( name )			\
 	extern "C" void deinit_##name()
 
@@ -64,7 +64,8 @@ struct vm_state_t
 	// nmod = native module
 	// fmod = feral module
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
-	bool load_nmod( const std::string & mod_str, const size_t & idx, const bool set_dll_core_load_loc = false );
+	bool load_nmod( const std::string & mod_str, const size_t & src_id, const size_t & idx,
+			const bool set_dll_core_load_loc = false );
 	int load_fmod( const std::string & mod_file );
 
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
@@ -75,7 +76,8 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	int register_new_type( const std::string & name, const std::string & typeid_name );
+	int register_new_type( const std::string & name, const std::string & typeid_name,
+			       const size_t & src_id, const size_t & idx );
 	// returns 0 on failure because no dll type can have id >= 0
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );
