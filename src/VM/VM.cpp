@@ -75,14 +75,15 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_new_type( const std::string & name, const std::string & typeid_name )
+int vm_state_t::register_new_type( const std::string & name, const std::string & typeid_name,
+				   const size_t & src_id, const size_t & idx )
 {
 	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
 	m_dll_typenames[ name ] = m_custom_types;
 	// only add to source if it's not main source, else add to globals
 	// for example, utils, core will be added to globals
 	if( src_stack.size() > 1 ) {
-		src_stack.back()->add_nativevar( typeid_name, make< var_typeid_t >( m_custom_types ), true, true );
+		src_stack.back()->add_nativevar( typeid_name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
 	} else {
 		assert( m_globals.find( typeid_name ) == m_globals.end() );
 		m_globals[ typeid_name ] = new var_typeid_t( m_custom_types, 0, 0 );
@@ -162,7 +163,8 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	return false;
 }
 
-bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx, const bool set_dll_core_load_loc )
+bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id, const size_t & idx,
+			    const bool set_dll_core_load_loc )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
@@ -192,7 +194,7 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & idx, con
 		dlib->unload( mod_file );
 		return false;
 	}
-	if( !init_fn( * this ) ) {
+	if( !init_fn( * this, src->id(), idx ) ) {
 		dlib->unload( mod_file );
 		src->fail( idx, "init function in module file: %s didn't return okay",
 			   mod_file.c_str() );
@@ -226,7 +228,7 @@ bool vm_state_t::load_core_mods()
 	// TODO: perhaps embed these in feral binary to remove the requirement of installation location
 	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
-		if( !load_nmod( mod, 0, mod == "core" ) ) return false;
+		if( !load_nmod( mod, 0, 0, mod == "core" ) ) return false;
 	}
 	return true;
 }

@@ -46,7 +46,7 @@ var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string mod = STR( mod_var )->get();
-	if( !vm.load_nmod( STR( mod_var )->get(), fd.idx ) ) {
+	if( !vm.load_nmod( STR( mod_var )->get(), fd.src_id, fd.idx ) ) {
 		src->fail( fd.idx, "module load failed, look at error above" );
 		return nullptr;
 	}
