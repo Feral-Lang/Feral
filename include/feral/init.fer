@@ -18,6 +18,7 @@ io.cprintln('Initializing Feral for use ...');
 let FERAL_HOME = sys.feral_home_dir;
 let FERAL_INC = FERAL_HOME + '/include';
 let FERAL_LIB = FERAL_HOME + '/lib';
+let FERAL_BIN = FERAL_HOME + '/bin';
 
 if !fs.exists(FERAL_HOME) {
 	io.cprintln('Feral home {c}', FERAL_HOME, ' {0}does not exist, creating ...');
@@ -31,6 +32,10 @@ if !fs.exists(FERAL_HOME) {
 	os.mkdir(FERAL_INC);
 	io.cprintln('{w}=> {c}', FERAL_LIB, ' {0}...');
 	os.mkdir(FERAL_LIB);
+	io.cprintln('{w}=> {c}', FERAL_BIN, ' {0}...');
+	os.mkdir(FERAL_BIN);
 }
 
-io.cprintln('Initial setup done. Enjoy!');
+io.cprintln("Initial setup done.\n",
+	    "Add '", FERAL_BIN, "' to your $PATH",
+	    " if you haven't already.\nEnjoy!");
