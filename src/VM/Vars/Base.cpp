@@ -64,6 +64,7 @@ void init_typenames( vm_state_t & vm )
 	vm.set_typename( VT_VEC, "vector" );
 	vm.set_typename( VT_MAP, "map" );
 	vm.set_typename( VT_FUNC, "function" );
+	vm.set_typename( VT_FILE, "file" );
 	vm.set_typename( VT_STRUCT_DEF, "struct_def" );
 	vm.set_typename( VT_SRC, "module" );
 
@@ -76,6 +77,7 @@ void init_typenames( vm_state_t & vm )
 	vm.gadd( "vec_t", make< var_typeid_t >( VT_VEC ) );
 	vm.gadd( "map_t", make< var_typeid_t >( VT_MAP ) );
 	vm.gadd( "func_t", make< var_typeid_t >( VT_FUNC ) );
+	vm.gadd( "file_t", make< var_typeid_t >( VT_FILE ) );
 	vm.gadd( "struct_def_t", make< var_typeid_t >( VT_STRUCT_DEF ) );
 	vm.gadd( "src_t", make< var_typeid_t >( VT_SRC ) );
 }
