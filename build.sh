@@ -1,13 +1,29 @@
 #!/usr/bin/env sh
 echo '[INFO] Feral Installer - (c) Copyright 2020 Maximilian Götz (https://www.maxbits.net/)'
 echo '[INFO] Please make sure that Git, CMake, LibGMP and LibMPFR are installed!'
-echo '[INFO] Installation started. Checking for Git...'
+echo '[INFO] Installation started. Checking for Git, sudo and CMake...'
 
 # Check for Git
 if hash git 2>/dev/null; then
     echo '[INFO] Git found.'
 else
     echo '[FATAL] Git not available! Install it to continue! Aborting...'
+    exit
+fi
+
+# Check for sudo
+if hash sudo 2>/dev/null; then
+    echo '[INFO] sudo found.'
+else
+    echo '[FATAL] sudo not available! Install it to continue! Aborting...'
+    exit
+fi
+
+# Check for CMake
+if hash cmake 2>/dev/null; then
+    echo '[INFO] CMake found.'
+else
+    echo '[FATAL] CMake not available! Install it to continue! Aborting...'
     exit
 fi
 

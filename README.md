@@ -91,7 +91,7 @@ To install `Feral`, the following packages are required:
 
 **Note**: Feral doesn't yet support Windows.
 
-## Automated building
+## Automated Build
 
 You can automatically build Feral and its standard library by downloading and running `build.sh`.
 It requires [Git](https://git-scm.com/) and the packages listed under [Prerequisites](#prerequisites).
@@ -103,7 +103,7 @@ wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/build.sh
 sh build.sh
 ```
 
-## Manual building
+## Manual Build
 
 Once the prerequisites have been met, clone this repository:
 ```
