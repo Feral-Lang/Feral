@@ -4,7 +4,7 @@ task:
     name: Ubuntu 14.04 gcc 4.8.4
     container:
         image: ubuntu:14.04
-    install_script: apt-get update && apt-get install -y git libgmp-dev libmpfr-dev libmpc-dev g++ cmake make
+    install_script: apt-get update && apt-get install -y git libgmp-dev libmpfr-dev libmpc-dev g++ cmake make wget
     compile_script:
         - wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/build.sh && sh build.sh
     tests_script: feral testdir tests
@@ -26,7 +26,7 @@ task:
         image: freebsd-10-4-release-amd64
     env:
         SKIP_LTO: true
-    install_script: pkg install -y git gmp mpfr mpc cmake
+    install_script: pkg install -y git gmp mpfr mpc cmake wget
     compile_script:
         - wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/build.sh && sh build.sh
     tests_script: feral testdir tests

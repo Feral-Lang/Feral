@@ -6,7 +6,7 @@ echo '[INFO] Installation started. Fetching system cores...'
 # Get current working directory
 CWD="$(pwd)"
 
-function exit_handler {
+exit_handler() {
     echo '[INFO] Gracefully exiting.'
     rm -rf ~/.feral-installer
     cd $CWD
@@ -16,7 +16,7 @@ function exit_handler {
 SYSNAME=$(uname)
 
 CORES=1
-if [ "$SYSNAME" == "Linux" ]; then
+if [ "$SYSNAME" = "Linux" ]; then
     CORES=$(nproc)
 else # for BSD and macOS
     CORES=$(sysctl -n hw.ncpu)
@@ -26,7 +26,7 @@ echo "[INFO] Using $CORES cores"
 echo '[INFO] Checking for Git, Sudo and CMake...'
 # No sudo on macOS since /usr/local is not usually root owned (as long as homebrew is installed)
 SUDO="sudo"
-if [ "$SYSNAME" == "Darwin" ] && hash brew 2>/dev/null || [ "$(id -u)" == "0" ]; then
+if [ "$SYSNAME" = "Darwin" ] && hash brew 2>/dev/null || [ "$(id -u)" = "0" ]; then
     SUDO=""
 else
     echo '[INFO] Using sudo.'
@@ -41,7 +41,7 @@ else
 fi
 
 # Check for sudo
-if [ "$sudo" == "sudo" ]; then
+if [ "$sudo" = "sudo" ]; then
     if hash sudo 2>/dev/null; then
         echo '[INFO] sudo found.'
     else
@@ -71,7 +71,7 @@ echo '[INFO] Cloning required repositories...'
 git clone https://github.com/Feral-Lang/Feral.git
 git clone https://github.com/Feral-Lang/Feral-Std.git
 
-function build {
+build() {
     mkdir build && cd build
     cmake ..
     $SUDO make -j$CORES install
