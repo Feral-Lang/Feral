@@ -71,7 +71,7 @@ echo '[INFO] Cloning required repositories...'
 git clone https://github.com/Feral-Lang/Feral.git
 git clone https://github.com/Feral-Lang/Feral-Std.git
 
-build() {
+function build {
     mkdir build && cd build
     cmake ..
     $SUDO make -j$CORES install
