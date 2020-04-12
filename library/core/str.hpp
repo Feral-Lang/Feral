@@ -138,4 +138,18 @@ var_base_t * str_ne( vm_state_t & vm, const fn_data_t & fd )
 	return lhs != rhs ? vm.tru : vm.fals;
 }
 
+var_base_t * str_at( vm_state_t & vm, const fn_data_t & fd )
+{
+	srcfile_t * src_file = vm.src_stack.back()->src();
+	if( fd.args[ 1 ]->type() != VT_INT ) {
+		src_file->fail( fd.idx, "expected argument to be of type integer for string.erase(), found: %s",
+				vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		return nullptr;
+	}
+	std::string & str = STR( fd.args[ 0 ] )->get();
+	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	if( pos >= str.size() ) return vm.nil;
+	return make< var_str_t >( std::string( 1, str[ pos ] ) );
+}
+
 #endif // LIBRARY_CORE_STR_HPP

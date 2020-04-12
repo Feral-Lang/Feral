@@ -1,0 +1,30 @@
+# logical
+assert(1 < 2);
+assert(1 > 0);
+assert(1 <= 1);
+assert(1 >= 1);
+assert(1 == 1);
+assert(1 != 2);
+
+# arithmetic
+assert(5 + 1 == 6);
+assert(5 - 1 == 4);
+assert(5 * 2 == 10);
+assert(5 / 2 == 2);
+assert(5 % 2 == 1);
+
+let a = 10, b = 5;
+assert((a += b) == 15);
+assert((a -= b) == 10);
+assert((a *= b) == 50);
+assert((a /= b) == 10);
+assert((a %= b) == 0);
+
+# others
+assert(4 ** 3 == 64);
+assert(++4 == 5);
+assert(4++ == 4);
+assert(--4 == 3);
+assert(4-- == 4);
+
+assert(-5 != -(-5));
