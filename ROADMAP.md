@@ -7,10 +7,10 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 ## Core language (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
 
 - [ ] Writing test cases for the language, related to:
-  - [ ] Nil
-  - [ ] Integers
-  - [ ] Floating point numbers
-  - [ ] Strings
+  - [x] Nil
+  - [x] Integers
+  - [x] Floating point numbers
+  - [x] Strings
   - [ ] Vectors
   - [ ] Maps
   - [ ] Structures
