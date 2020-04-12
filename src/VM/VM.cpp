@@ -102,7 +102,12 @@ void vm_state_t::add_typefn( const int & type, const std::string & name, var_bas
 	if( m_typefns.find( type ) == m_typefns.end() ) {
 		m_typefns[ type ] = new vars_frame_t();
 	}
-	assert( !m_typefns[ type ]->exists( name ) );
+	if( m_typefns[ type ]->exists( name ) ) {
+		fprintf( stderr, "function '%s' for type '%s' already exists\n", name.c_str(),
+			 type_name( type ).c_str() );
+		assert( false );
+		return;
+	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
 var_fn_t * vm_state_t::get_typefn( const int & type, const std::string & name )

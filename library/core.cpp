@@ -12,7 +12,6 @@
 #include "core/int.hpp"
 #include "core/flt.hpp"
 #include "core/str.hpp"
-#include "core/vec.hpp"
 
 #include "core/to_str.hpp"
 
@@ -191,9 +190,6 @@ INIT_MODULE( core )
 
 	vm.add_typefn( VT_STR, "at", new var_fn_t( src_name, "",  "", { "" }, {}, { .native = str_at }, true, 0, 0 ), false );
 	vm.add_typefn( VT_STR, "[]", new var_fn_t( src_name, "",  "", { "" }, {}, { .native = str_at }, true, 0, 0 ), false );
-
-	// other stuff
-	vm.add_typefn( VT_VEC, "[]", new var_fn_t( src_name, { "" }, {}, { .native = vec_subs }, 0, 0 ), false );
 
 	return true;
 }
