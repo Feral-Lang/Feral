@@ -116,13 +116,13 @@ INIT_MODULE( utils )
 {
 	const std::string & src_name = vm.src_stack.back()->src()->path();
 
-	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, {}, { .native = range }, true, 0, 0 ), false );
-	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, 0, 0 ), false );
+	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, {}, { .native = range }, true, src_id, idx ), false );
+	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, src_id, idx ), false );
 
 	// get the type id for int iterable (register_type)
 	int_iterable_typeid = vm.register_new_type( "int_iterable_t", src_id, idx );
 
-	vm.add_typefn( int_iterable_typeid, "next", new var_fn_t( src_name, {}, {}, { .native = int_iterable_next }, 0, 0 ), false );
+	vm.add_typefn_native( int_iterable_typeid, "next", int_iterable_next, 0, src_id, idx );
 
 	return true;
 }
