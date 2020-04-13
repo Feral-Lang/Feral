@@ -352,8 +352,7 @@ public:
 	void attr_set( const std::string & name, var_base_t * val, const bool iref );
 	var_base_t * attr_get( const std::string & name );
 
-	void add_nativefn( const std::string & name, nativefnptr_t body,
-			   const std::vector< std::string > & args = {},
+	void add_nativefn( const std::string & name, nativefnptr_t body, const size_t & args_count = 0,
 			   const std::unordered_map< std::string, var_base_t * > & def_args = {},
 			   const bool is_va = false );
 
