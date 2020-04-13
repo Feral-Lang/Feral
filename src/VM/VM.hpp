@@ -76,8 +76,9 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	int register_new_type( const std::string & name, const std::string & typeid_name,
-			       const size_t & src_id, const size_t & idx );
+	int register_struct_enum_id();
+
+	int register_new_type( const std::string & name, const size_t & src_id, const size_t & idx );
 	// returns 0 on failure because no dll type can have id >= 0
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );

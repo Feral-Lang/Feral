@@ -75,18 +75,24 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_new_type( const std::string & name, const std::string & typeid_name,
-				   const size_t & src_id, const size_t & idx )
+int vm_state_t::register_struct_enum_id()
+{
+	static int id = _VT_LAST;
+	return id++;
+}
+
+int vm_state_t::register_new_type( const std::string & name, const size_t & src_id, const size_t & idx )
 {
 	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
 	m_dll_typenames[ name ] = m_custom_types;
+	m_typenames[ m_custom_types ] = name;
 	// only add to source if it's not main source, else add to globals
 	// for example, utils, core will be added to globals
 	if( src_stack.size() > 1 ) {
-		src_stack.back()->add_nativevar( typeid_name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
+		src_stack.back()->add_nativevar( name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
 	} else {
-		assert( m_globals.find( typeid_name ) == m_globals.end() );
-		m_globals[ typeid_name ] = new var_typeid_t( m_custom_types, 0, 0 );
+		assert( m_globals.find( name ) == m_globals.end() );
+		m_globals[ name ] = new var_typeid_t( m_custom_types, src_id, idx );
 	}
 	return m_custom_types--;
 }
