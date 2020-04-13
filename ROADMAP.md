@@ -54,10 +54,10 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 - [ ] Runtime
   - [ ] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
-- [ ] Maps
-  - [ ] `var_map_iterator_t` - Iterates through each key value pair in a map (similar to vector's `var_vec_iterator_t`)
-- [ ] OS
-  - [ ] `set_working_directory()` - Changes the program's working directory
+- [x] Maps
+  - [x] `var_map_iterable_t` - Iterates through each key value pair in a map (similar to vector's `var_vec_iterable_t`)
+- [x] OS
+  - [x] `set_working_directory()` - Changes the program's working directory
 - [ ] FS (FileSystem)
   - [ ] For `var_file_t`
     - [ ] `fs_file_write(data)` - writes data to a file
