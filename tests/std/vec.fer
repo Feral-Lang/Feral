@@ -20,3 +20,6 @@ for e in v.each() {
 	v2.push(e);
 }
 assert(v == v2);
+
+let slice = v.slice(1, 3);
+assert(slice == vec.new(2, 5));
