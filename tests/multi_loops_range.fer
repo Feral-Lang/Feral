@@ -1,4 +1,4 @@
-let io = import('std/io');
+let rt = import('std/runtime');
 
 for i in range(0, 10) {
 	if i == 1 { continue; }
@@ -7,6 +7,11 @@ for i in range(0, 10) {
 	for j in range(0, 10) {
 		if j == 1 { continue; }
 		if j == 5 { break; }
-		io.println(i, ' ', j);
+		assert(rt.var_exists('i'));
+		assert(rt.var_exists('j'));
 	}
+	assert(rt.var_exists('i'));
+	assert(!rt.var_exists('j'));
 }
+assert(!rt.var_exists('i'));
+assert(!rt.var_exists('j'));
