@@ -15,9 +15,21 @@ if sys.args.empty() {
 let files = fs.walkdir(sys.args[0], fs.WALK_RECURSE, '(.*)\\.fer');
 let passed = 0, failed = 0;
 
+let valgrind = '';
+if sys.args.find('--valgrind') {
+	valgrind = os.find_exec('valgrind');
+	if valgrind.empty() {
+		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
+		sys.exit(1);
+	}
+	# --log-fd=1 to pour the valgrind output on stdout so that we
+	# don't have to redirect entire stderr to /dev/null
+	valgrind += ' --log-fd=1 ';
+}
+
 for file in files.each() {
 	io.cprint('{y}testing script {c}\'', file, '\' {0}... ');
-	let res = os.exec(sys.self_binary + ' ' + file + ' >/dev/null');
+	let res = os.exec(valgrind + sys.self_binary + ' ' + file + ' >/dev/null');
 	if res == 0 {
 		io.cprintln('{g}pass{0}');
 		++passed;
@@ -27,7 +39,9 @@ for file in files.each() {
 	}
 }
 
-io.cprintln('total: {y}', files.len(),
-	    '{0}, passed: {g}', passed,
-	    '{0}, failed: {r}', failed, '{0}');
-sys.exit(failed);
+if failed > 0 || !sys.args.find('--valgrind') {
+	io.cprintln('total: {y}', files.len(),
+		    '{0}, passed: {g}', passed,
+		    '{0}, failed: {r}', failed, '{0}');
+	sys.exit(failed);
+}
