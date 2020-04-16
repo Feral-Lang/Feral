@@ -58,8 +58,8 @@ else
     exit
 fi
 
-# Trap SIGINT so that if program is ctrl-c'd while being in ~/.feral-installer,
-# we can delete that directory get back to the original directory
+# Trap SIGINT so that if the program is ctrl-c'd while being in ~/.feral-installer,
+# we can delete that directory and get back to the original directory
 trap exit_handler INT
 
 # Create a temporary directory
