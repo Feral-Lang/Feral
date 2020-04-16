@@ -4,7 +4,7 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 **Note**: All tests must be verified for no memory leaks (I personally use Valgrind).
 
-## Core language (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
+## Core & Standard Library Test Cases (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
 
 - [ ] Writing test cases for the language, related to:
   - [x] Nil
@@ -25,6 +25,15 @@ This file contains the roadmap for Feral. As the language grows, more things wil
     - [ ] Break
     - [ ] Functions
     - [ ] Return
+
+Standard Library:
+- [x] IO
+- [x] Vectors
+- [ ] Maps
+- [x] FS
+- [ ] OS
+- [ ] String
+- [x] Sys
 
 ## Book (Repository: [Feral-Lang/Book](https://github.com/Feral-Lang/Book))
 
