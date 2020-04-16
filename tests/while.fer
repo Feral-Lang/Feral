@@ -1,0 +1,11 @@
+let vec = import('std/vec');
+
+let v1 = vec.new(1, 2, 3, 4, 5);
+let v2 = vec.new();
+
+while !v1.empty() {
+	v2.push(v1.back());
+	v1.pop();
+}
+
+assert(v2 == vec.new(5, 4, 3, 2, 1));

@@ -11,27 +11,26 @@ This file contains the roadmap for Feral. As the language grows, more things wil
   - [x] Integers
   - [x] Floating point numbers
   - [x] Strings
-  - [ ] Vectors
-  - [ ] Maps
-  - [ ] Structures
-  - [ ] Modules
-  - [ ] Language Constructs
-    - [ ] Conditionals
-    - [ ] Loops
-      - [ ] For
-      - [ ] Foreach
-      - [ ] While
-    - [ ] Continue
-    - [ ] Break
-    - [ ] Functions
-    - [ ] Return
+  - [x] Modules (`tests/builtin/mod.fer`)
+  - [x] Language Constructs
+    - [x] Conditionals
+    - [x] Loops
+      - [x] For (`tests/multi_loops.fer`)
+      - [x] Foreach (`tests/multi_loops_range.fer`)
+      - [x] While
+    - [x] Continue (`tests/multi_loops*.fer`)
+    - [x] Break (`tests/multi_loops*.fer`)
+    - [x] Functions (`tests/facto_*.fer`)
+    - [x] Return (`tests/facto_*.fer`)
 
 Standard Library:
 - [x] IO
 - [x] Vectors
 - [ ] Maps
 - [x] FS
+- [x] Lang
 - [ ] OS
+- [ ] Runtime
 - [ ] String
 - [x] Sys
 
