@@ -71,30 +71,56 @@ fail:
 // =
 Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc )
 {
+	// used for generating expressions
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
 	const lex::tok_t * oper = nullptr;
+	// used to reverse the order of sequential assignments (a = b = c = d)
+	std::vector< stmt_base_t * > exprs;
+	std::vector< const lex::tok_t * > opers;
+	// used for storing expressions from parse_expr_*()
+	stmt_base_t * tmp_expr= nullptr;
 
 	size_t idx = ph.peak()->pos;
 
-	if( parse_expr_14( ph, rhs ) != E_OK ) {
+	if( parse_expr_14( ph, tmp_expr ) != E_OK ) {
 		goto fail;
 	}
 
+	exprs.push_back( tmp_expr );
+	tmp_expr = nullptr;
+
 	while( ph.accept( TOK_ASSN ) ) {
 		idx = ph.peak()->pos;
-		oper = ph.peak();
+		opers.push_back( ph.peak() );
 		ph.next();
-		if( parse_expr_14( ph, lhs ) != E_OK ) {
+		if( parse_expr_14( ph, tmp_expr ) != E_OK ) {
 			goto fail;
 		}
-		rhs = new stmt_expr_t( lhs, oper, rhs, idx );
-		lhs = nullptr;
+		exprs.push_back( tmp_expr );
+		tmp_expr = nullptr;
 	}
-	loc = rhs;
+	while( exprs.size() > 0 ) {
+		lhs = exprs.back();
+		exprs.pop_back();
+		if( exprs.size() > 0 ) {
+			rhs = exprs.back();
+			exprs.pop_back();
+		}
+		// if there is no operator, no new expression can be made
+		// and since opers.size() == exprs.size() - 1,
+		// and lhs has been taken out at the beginning of loop,
+		// exprs is empty as well so no point in continuing
+		if( opers.size() == 0 ) break;
+		oper = opers.back();
+		opers.pop_back();
+		exprs.push_back( new stmt_expr_t( lhs, oper, rhs, oper->pos ) );
+	}
+	loc = lhs;
 	return E_OK;
 fail:
-	if( lhs ) delete lhs;
-	if( rhs ) delete rhs;
+	for( auto & e : exprs ) {
+		delete e;
+	}
 	return E_PARSE_FAIL;
 }
 
