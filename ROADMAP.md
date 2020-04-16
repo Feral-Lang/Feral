@@ -11,8 +11,6 @@ This file contains the roadmap for Feral. As the language grows, more things wil
   - [x] Integers
   - [x] Floating point numbers
   - [x] Strings
-  - [ ] Vectors
-  - [ ] Maps
   - [ ] Structures
   - [ ] Modules
   - [ ] Language Constructs
