@@ -24,7 +24,6 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 {
 	srcfile_t * src = vm.src_stack.back()->src();
 	var_fn_t * str_fn = vm.get_typefn( this->type(), "str" );
-	if( !str_fn ) str_fn = vm.get_typefn( VT_ALL, "str" );
 	if( !str_fn ) {
 		src->fail( this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
 		return false;
