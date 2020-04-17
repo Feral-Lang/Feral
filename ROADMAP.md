@@ -30,7 +30,8 @@ Standard Library:
 - [x] FS
 - [x] Lang
 - [ ] OS
-- [ ] Runtime
+- [x] Ptr
+- [x] Runtime
 - [ ] String
 - [x] Sys
 
@@ -60,18 +61,19 @@ Standard Library:
 
 ## Standard Library (Repository: [Feral-Lang/Feral-Std](https://github.com/Feral-Lang/Feral-Std))
 
-- [ ] Runtime
-  - [ ] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
-- [x] Maps
-  - [x] `var_map_iterable_t` - Iterates through each key value pair in a map (similar to vector's `var_vec_iterable_t`)
-- [x] OS
-  - [x] `set_working_directory()` - Changes the program's working directory
 - [ ] FS (FileSystem)
   - [ ] For `var_file_t`
     - [ ] `fs_file_write(data)` - writes data to a file
     - [ ] `fs_file_writeln(data)` - writes data to a file and adds a newline character at the end
     - [ ] `fs_file_is_open()` - returns true if a file is open, false if not
     - [ ] `fs_file_mode()` - returns the (string) mode in which the file was opened
+- [x] Maps
+  - [x] `var_map_iterable_t` - Iterates through each key value pair in a map (similar to vector's `var_vec_iterable_t`)
+- [x] OS
+  - [x] `set_working_directory()` - Changes the program's working directory
+- [x] Ptr
+- [ ] Runtime
+  - [ ] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
 
 ## Other
 
