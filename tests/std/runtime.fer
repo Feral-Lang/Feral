@@ -1,0 +1,4 @@
+let rt = import('std/runtime');
+
+assert(!rt.var_exists('a'));
+assert(rt.var_exists('rt'));
