@@ -150,7 +150,7 @@ template< typename T, typename ... Args > T * make_all( Args... args )
 }
 
 const char * nmod_ext();
-const char * fmod_ext();
+const char * fmod_ext( const bool compiled = false );
 
 namespace vm
 {

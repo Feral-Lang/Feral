@@ -53,13 +53,8 @@ size_t parse( const int argc, const char ** argv,
 		}
 
 		if( argv[ i ][ 0 ] != '-' ) {
-			if( prev_flag == 'c' ) {
-				args.emplace( "c", argv[ i ] );
-			} else {
-				args.emplace( "__main__", argv[ i ] );
-				main_done = true;
-			}
-			prev_flag = '\0';
+			args.emplace( "__main__", argv[ i ] );
+			main_done = true;
 			continue;
 		}
 
@@ -84,6 +79,9 @@ size_t parse( const int argc, const char ** argv,
 			prev_flag = argv[ i ][ j ];
 		}
 	}
+
+	// dry run if compiled flag exists (no actual execution of program)
+	if( flags & OPT_C ) flags |= OPT_D;
 
 	return flags;
 }

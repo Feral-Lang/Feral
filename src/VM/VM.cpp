@@ -265,7 +265,8 @@ const char * nmod_ext()
 #endif
 }
 
-const char * fmod_ext()
+const char * fmod_ext( const bool compiled )
 {
+	if( compiled ) return ".cfer";
 	return ".fer";
 }
