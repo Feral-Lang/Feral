@@ -124,7 +124,7 @@ INIT_MODULE( utils )
 	// get the type id for int iterable (register_type)
 	int_iterable_typeid = vm.register_new_type( "int_iterable_t", src_id, idx );
 
-	vm.add_typefn_native( int_iterable_typeid, "next", int_iterable_next, 0, src_id, idx );
+	vm.add_native_typefn( int_iterable_typeid, "next", int_iterable_next, 0, src_id, idx );
 
 	return true;
 }

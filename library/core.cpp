@@ -93,20 +93,20 @@ INIT_MODULE( core )
 	const std::string & src_name = vm.current_source_file()->path();
 
 	// fundamental functions for builtin types
-	vm.add_typefn_native( VT_ALL,	  "==", all_eq,        1, src_id, idx );
-	vm.add_typefn_native( VT_ALL,	  "!=", all_ne,        1, src_id, idx );
-	vm.add_typefn_native( VT_ALL,	"copy", all_copy,      0, src_id, idx );
-	vm.add_typefn_native( VT_ALL,	 "str", all_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_NIL,	 "str", nil_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_TYPEID, "str", typeid_to_str, 0, src_id, idx );
-	vm.add_typefn_native( VT_BOOL,	 "str", bool_to_str,   0, src_id, idx );
-	vm.add_typefn_native( VT_INT,	 "str", int_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_FLT,	 "str", flt_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_STR,	 "str", str_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_VEC,	 "str", vec_to_str,    0, src_id, idx );
-	vm.add_typefn_native( VT_MAP,	 "str", map_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_ALL,	  "==", all_eq,        1, src_id, idx );
+	vm.add_native_typefn( VT_ALL,	  "!=", all_ne,        1, src_id, idx );
+	vm.add_native_typefn( VT_ALL,	"copy", all_copy,      0, src_id, idx );
+	vm.add_native_typefn( VT_ALL,	 "str", all_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_NIL,	 "str", nil_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_TYPEID, "str", typeid_to_str, 0, src_id, idx );
+	vm.add_native_typefn( VT_BOOL,	 "str", bool_to_str,   0, src_id, idx );
+	vm.add_native_typefn( VT_INT,	 "str", int_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_FLT,	 "str", flt_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_STR,	 "str", str_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_VEC,	 "str", vec_to_str,    0, src_id, idx );
+	vm.add_native_typefn( VT_MAP,	 "str", map_to_str,    0, src_id, idx );
 
-	vm.add_typefn_native( VT_STRUCT_DEF, "set_typename", struct_def_set_typename, 1, src_id, idx );
+	vm.add_native_typefn( VT_STRUCT_DEF, "set_typename", struct_def_set_typename, 1, src_id, idx );
 
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
@@ -116,90 +116,90 @@ INIT_MODULE( core )
 	// core type functions
 
 	// nil
-	vm.add_typefn_native( VT_NIL, "==", nil_eq, 1, src_id, idx );
-	vm.add_typefn_native( VT_NIL, "!=", nil_ne, 1, src_id, idx );
+	vm.add_native_typefn( VT_NIL, "==", nil_eq, 1, src_id, idx );
+	vm.add_native_typefn( VT_NIL, "!=", nil_ne, 1, src_id, idx );
 
 	// bool
-	vm.add_typefn_native( VT_BOOL, "<",  bool_lt, 1, src_id, idx );
-	vm.add_typefn_native( VT_BOOL, ">",  bool_gt, 1, src_id, idx );
-	vm.add_typefn_native( VT_BOOL, "<=", bool_le, 1, src_id, idx );
-	vm.add_typefn_native( VT_BOOL, ">=", bool_ge, 1, src_id, idx );
-	vm.add_typefn_native( VT_BOOL, "==", bool_eq, 1, src_id, idx );
-	vm.add_typefn_native( VT_BOOL, "!=", bool_ne, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, "<",  bool_lt, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, ">",  bool_gt, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, "<=", bool_le, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, ">=", bool_ge, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, "==", bool_eq, 1, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, "!=", bool_ne, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_BOOL, "!", bool_not, 0, src_id, idx );
+	vm.add_native_typefn( VT_BOOL, "!", bool_not, 0, src_id, idx );
 
 	// int
-	vm.add_typefn_native( VT_INT, "+", int_add, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "-", int_sub, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "*", int_mul, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "/", int_div, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "%", int_mod, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "+", int_add, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "-", int_sub, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "*", int_mul, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "/", int_div, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "%", int_mod, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_INT, "+=", int_addassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "-=", int_subassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "*=", int_mulassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "/=", int_divassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "%=", int_modassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "+=", int_addassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "-=", int_subassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "*=", int_mulassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "/=", int_divassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "%=", int_modassn, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_INT, "**",  int_pow, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "++x", int_preinc, 0, src_id, idx );
-	vm.add_typefn_native( VT_INT, "x++", int_postinc, 0, src_id, idx );
-	vm.add_typefn_native( VT_INT, "--x", int_predec, 0, src_id, idx );
-	vm.add_typefn_native( VT_INT, "x--", int_postdec, 0, src_id, idx );
+	vm.add_native_typefn( VT_INT, "**",  int_pow, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "++x", int_preinc, 0, src_id, idx );
+	vm.add_native_typefn( VT_INT, "x++", int_postinc, 0, src_id, idx );
+	vm.add_native_typefn( VT_INT, "--x", int_predec, 0, src_id, idx );
+	vm.add_native_typefn( VT_INT, "x--", int_postdec, 0, src_id, idx );
 
-	vm.add_typefn_native( VT_INT, "u-", int_usub, 0, src_id, idx );
+	vm.add_native_typefn( VT_INT, "u-", int_usub, 0, src_id, idx );
 
-	vm.add_typefn_native( VT_INT, "<",  int_lt, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, ">",  int_gt, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "<=", int_le, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, ">=", int_ge, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "==", int_eq, 1, src_id, idx );
-	vm.add_typefn_native( VT_INT, "!=", int_ne, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "<",  int_lt, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, ">",  int_gt, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "<=", int_le, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, ">=", int_ge, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "==", int_eq, 1, src_id, idx );
+	vm.add_native_typefn( VT_INT, "!=", int_ne, 1, src_id, idx );
 
 	// flt
-	vm.add_typefn_native( VT_FLT, "+", flt_add, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "-", flt_sub, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "*", flt_mul, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "/", flt_div, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "+", flt_add, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "-", flt_sub, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "*", flt_mul, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "/", flt_div, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_FLT, "+=", flt_addassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "-=", flt_subassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "*=", flt_mulassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "/=", flt_divassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "+=", flt_addassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "-=", flt_subassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "*=", flt_mulassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "/=", flt_divassn, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_FLT, "++x", flt_preinc, 0, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "x++", flt_postinc, 0, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "--x", flt_predec, 0, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "x--", flt_postdec, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "++x", flt_preinc, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "x++", flt_postinc, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "--x", flt_predec, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "x--", flt_postdec, 0, src_id, idx );
 
-	vm.add_typefn_native( VT_FLT, "u-", flt_usub, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "u-", flt_usub, 0, src_id, idx );
 
-	vm.add_typefn_native( VT_FLT, "round", flt_round, 0, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "round", flt_round, 0, src_id, idx );
 
-	vm.add_typefn_native( VT_FLT, "<",  flt_lt, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, ">",  flt_gt, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "<=", flt_le, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, ">=", flt_ge, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "==", flt_eq, 1, src_id, idx );
-	vm.add_typefn_native( VT_FLT, "!=", flt_ne, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "<",  flt_lt, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, ">",  flt_gt, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "<=", flt_le, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, ">=", flt_ge, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "==", flt_eq, 1, src_id, idx );
+	vm.add_native_typefn( VT_FLT, "!=", flt_ne, 1, src_id, idx );
 
 	// string
-	vm.add_typefn_native( VT_STR, "+", str_add, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "*", str_mul, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "+", str_add, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "*", str_mul, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_STR, "+=", str_addassn, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "*=", str_mulassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "+=", str_addassn, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "*=", str_mulassn, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_STR, "<",  str_lt, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, ">",  str_gt, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "<=", str_le, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, ">=", str_ge, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "==", str_eq, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "!=", str_ne, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "<",  str_lt, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, ">",  str_gt, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "<=", str_le, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, ">=", str_ge, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "==", str_eq, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "!=", str_ne, 1, src_id, idx );
 
-	vm.add_typefn_native( VT_STR, "at", str_at, 1, src_id, idx );
-	vm.add_typefn_native( VT_STR, "[]", str_at, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "at", str_at, 1, src_id, idx );
+	vm.add_native_typefn( VT_STR, "[]", str_at, 1, src_id, idx );
 
 	return true;
 }

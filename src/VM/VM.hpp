@@ -87,7 +87,7 @@ struct vm_state_t
 	int dll_typeid( const std::string & name );
 
 	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
-	inline void add_typefn_native( const int & type, const std::string & name, nativefnptr_t fn,
+	inline void add_native_typefn( const int & type, const std::string & name, nativefnptr_t fn,
 				       const size_t & args_count, const size_t & src_id, const size_t & idx )
 	{
 		add_typefn( type, name, new var_fn_t( src_stack.back()->src()->path(),

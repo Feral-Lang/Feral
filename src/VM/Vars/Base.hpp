@@ -352,10 +352,10 @@ public:
 	void attr_set( const std::string & name, var_base_t * val, const bool iref );
 	var_base_t * attr_get( const std::string & name );
 
-	void add_nativefn( const std::string & name, nativefnptr_t body, const size_t & args_count = 0,
+	void add_native_fn( const std::string & name, nativefnptr_t body, const size_t & args_count = 0,
 			   const bool is_va = false );
 
-	void add_nativevar( const std::string & name, var_base_t * val, const bool iref = true, const bool module_level = false );
+	void add_native_var( const std::string & name, var_base_t * val, const bool iref = true, const bool module_level = false );
 
 	srcfile_t * src();
 	vars_t * vars();

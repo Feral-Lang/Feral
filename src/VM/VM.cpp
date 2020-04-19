@@ -89,7 +89,7 @@ int vm_state_t::register_new_type( const std::string & name, const size_t & src_
 	// only add to source if it's not main source, else add to globals
 	// for example, utils, core will be added to globals
 	if( src_stack.size() > 1 ) {
-		src_stack.back()->add_nativevar( name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
+		src_stack.back()->add_native_var( name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
 	} else {
 		assert( m_globals.find( name ) == m_globals.end() );
 		m_globals[ name ] = new var_typeid_t( m_custom_types, src_id, idx );
