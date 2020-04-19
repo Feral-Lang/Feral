@@ -57,7 +57,7 @@ var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_bas
 				     const std::vector< fn_assn_arg_t > & assn_args,
 				     const size_t & src_id, const size_t & idx )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
+	srcfile_t * src = vm.current_source_file();
 	for( auto & aa : assn_args ) {
 		if( std::find( m_attr_order.begin(), m_attr_order.end(), aa.name ) == m_attr_order.end() ) {
 			src->fail( aa.idx, "no attribute named '%s' in the structure definition", aa.name.c_str() );

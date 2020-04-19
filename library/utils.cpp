@@ -92,13 +92,13 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_BOOL ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected boolean argument for assertion, found: %s",
+		vm.current_source_file()->fail( fd.idx, "expected boolean argument for assertion, found: %s",
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 
 	if( !BOOL( fd.args[ 1 ] )->get() ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "assertion failed" );
+		vm.current_source_file()->fail( fd.idx, "assertion failed" );
 		return nullptr;
 	}
 	return vm.nil;
@@ -114,7 +114,7 @@ var_base_t * int_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 
 INIT_MODULE( utils )
 {
-	const std::string & src_name = vm.src_stack.back()->src()->path();
+	const std::string & src_name = vm.current_source_file()->path();
 
 	vm.gadd( "range", new var_fn_t( src_name, "", ".", { "" }, {}, { .native = range }, true, src_id, idx ), false );
 	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, src_id, idx ), false );

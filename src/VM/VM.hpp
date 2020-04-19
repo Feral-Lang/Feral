@@ -73,6 +73,9 @@ struct vm_state_t
 	inline const std::vector< std::string > & inc_locs() const { return m_inc_locs; }
 	inline const std::vector< std::string > & dll_locs() const { return m_dll_locs; }
 
+	inline var_src_t * current_source() const { return src_stack.back(); }
+	inline srcfile_t * current_source_file() const { return src_stack.back()->src(); }
+
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 

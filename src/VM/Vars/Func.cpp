@@ -58,8 +58,8 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 {
 	// - 1 for self
 	if( args.size() - 1 < m_args.size() - m_assn_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
-		vm.src_stack.back()->src()->fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
-						  m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
+		vm.current_source_file()->fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
+						m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
 		return false;
 	}
 	if( m_is_native ) {
@@ -74,7 +74,7 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 		return true;
 	}
 	vm.push_src( m_src_name );
-	vars_t * vars = vm.src_stack.back()->vars();
+	vars_t * vars = vm.current_source()->vars();
 	// take care of 'self' (always - data or nullptr)
 	if( args[ 0 ] != nullptr ) {
 		vars->stash( "self", args[ 0 ] );
