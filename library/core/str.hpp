@@ -15,8 +15,8 @@
 var_base_t * str_add( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for addition, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for addition, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -27,8 +27,8 @@ var_base_t * str_add( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_mul( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_INT ) {
-		vm.current_source_file()->fail( fd.idx, "expected integer argument for string multiplication, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected integer argument for string multiplication, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -43,8 +43,8 @@ var_base_t * str_mul( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_addassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for addition assignment, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for addition assignment, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	STR( fd.args[ 0 ] )->get() += STR( fd.args[ 1 ] )->get();
@@ -54,8 +54,8 @@ var_base_t * str_addassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_mulassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_INT ) {
-		vm.current_source_file()->fail( fd.idx, "expected integer argument for string multiplication assignment, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected integer argument for string multiplication assignment, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -73,8 +73,8 @@ var_base_t * str_mulassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_lt( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for logical less than, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for logical less than, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -85,8 +85,8 @@ var_base_t * str_lt( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_gt( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for logical greater than, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for logical greater than, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -97,8 +97,8 @@ var_base_t * str_gt( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_le( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for logical less than or equal, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for logical less than or equal, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -109,8 +109,8 @@ var_base_t * str_le( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_ge( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for logical greater than or equal, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for logical greater than or equal, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
@@ -140,10 +140,9 @@ var_base_t * str_ne( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * str_at( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src_file = vm.current_source_file();
 	if( fd.args[ 1 ]->type() != VT_INT ) {
-		src_file->fail( fd.idx, "expected argument to be of type integer for string.erase(), found: %s",
-				vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected argument to be of type integer for string.erase(), found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	std::string & str = STR( fd.args[ 0 ] )->get();

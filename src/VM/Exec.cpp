@@ -42,7 +42,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			if( op.dtype != ODT_IDEN ) {
 				var_base_t * res = consts::get( vm, op.dtype, op.data, op.idx );
 				if( res == nullptr ) {
-					src_file->fail( op.idx, "invalid data received as const" );
+					vm.fail( op.idx, "invalid data received as const" );
 					goto fail;
 				}
 				vms->push( res );
@@ -51,7 +51,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				if( res == nullptr ) {
 					res = vm.gget( op.data.s );
 					if( res == nullptr ) {
-						src_file->fail( op.idx, "variable '%s' does not exist", op.data.s );
+						vm.fail( op.idx, "variable '%s' does not exist", op.data.s );
 						goto fail;
 					}
 				}
@@ -92,7 +92,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				}
 			} else { // else add to attribute if type >= _VT_LAST
 				if( in->type() < _VT_LAST ) {
-					src_file->fail( op.idx, "attributes can be added only to structure objects" );
+					vm.fail( op.idx, "attributes can be added only to structure objects" );
 					goto create_fail;
 				}
 				// only copy if reference count > 1 (no point in copying unique values)
@@ -115,9 +115,9 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			var_base_t * var = vms->pop( false );
 			var_base_t * val = vms->pop( false );
 			if( var->type() != val->type() ) {
-				src_file->fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
-						"; to redeclare a variable using another type, use the 'let' statement",
-						vm.type_name( var->type() ).c_str(), vm.type_name( val->type() ).c_str() );
+				vm.fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
+					 "; to redeclare a variable using another type, use the 'let' statement",
+					 vm.type_name( var->type() ).c_str(), vm.type_name( val->type() ).c_str() );
 				var_dref( val );
 				var_dref( var );
 				goto fail;
@@ -142,7 +142,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		case OP_JMPTPOP: // fallthrough
 		case OP_JMPT: {
 			if( vms->back()->type() != VT_BOOL ) {
-				src_file->fail( op.idx, "expected boolean operand for jump instruction" );
+				vm.fail( op.idx, "expected boolean operand for jump instruction" );
 				goto fail;
 			}
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
@@ -153,7 +153,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		case OP_JMPFPOP: // fallthrough
 		case OP_JMPF: {
 			if( vms->back()->type() != VT_BOOL ) {
-				src_file->fail( op.idx, "expected boolean operand for jump instruction" );
+				vm.fail( op.idx, "expected boolean operand for jump instruction" );
 				goto fail;
 			}
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
@@ -244,28 +244,28 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				fn_base = vms->pop( false );
 			}
 			if( !fn_base ) {
-				if( mem_call ) src_file->fail( op.idx, "function '%s' does not exist for type: %s",
-							       fn_name.c_str(), vm.type_name( in_base->type() ).c_str() );
-				else src_file->fail( op.idx, "this function does not exist" );
+				if( mem_call ) vm.fail( op.idx, "function '%s' does not exist for type: %s",
+							fn_name.c_str(), vm.type_name( in_base->type() ).c_str() );
+				else vm.fail( op.idx, "this function does not exist" );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( fn_base->type() != VT_FUNC && fn_base->type() != VT_STRUCT_DEF ) {
-				src_file->fail( op.idx, "'%s' is not a function or struct definition",
-						vm.type_name( fn_base->type() ).c_str() );
+				vm.fail( op.idx, "'%s' is not a function or struct definition",
+					 vm.type_name( fn_base->type() ).c_str() );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( fn_base->type() == VT_FUNC ) {
 				args.insert( args.begin(), in_base );
 				if( !FN( fn_base )->call( vm, args, assn_args, assn_args_loc, src_id, op.idx ) ) {
-					src_file->fail( op.idx, "function call failed, look at error above" );
+					vm.fail( op.idx, "function call failed, look at error above" );
 					goto fncall_fail;
 				}
 			} else if( fn_base->type() == VT_STRUCT_DEF ) { // VT_STRUCT_DEF
 				var_base_t * res = STRUCT_DEF( fn_base )->init( vm, args, assn_args, src_id, op.idx );
 				if( !res ) {
-					src_file->fail( op.idx, "object creation failed, look at error above" );
+					vm.fail( op.idx, "object creation failed, look at error above" );
 					goto fncall_fail;
 				}
 				vms->push( res, false );
@@ -290,8 +290,8 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			if( !val ) val = vm.get_typefn( in_base->type(), attr );
 			if( val == nullptr ) {
-				src_file->fail( op.idx, "type %s does not contain attribute: '%s'",
-						vm.type_name( in_base->type() ).c_str(), attr.c_str() );
+				vm.fail( op.idx, "type %s does not contain attribute: '%s'",
+					 vm.type_name( in_base->type() ).c_str(), attr.c_str() );
 				goto attr_fail;
 			}
 			var_dref( in_base );

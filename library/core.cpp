@@ -38,8 +38,8 @@ var_base_t * all_copy( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.current_source_file()->fail( fd.idx, "expected string argument for typename, found: %s",
-						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+		vm.fail( fd.idx, "expected string argument for typename, found: %s",
+			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
 	vm.set_typename( STRUCT_DEF( fd.args[ 0 ] )->id(), STR( fd.args[ 1 ] )->get() );
@@ -48,15 +48,14 @@ var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.current_source_file();
 	var_base_t * mod_var = fd.args[ 1 ];
 	if( mod_var->type() != VT_STR ) {
-		src->fail( fd.idx, "expected argument to be of type string, found: %zu", mod_var->type() );
+		vm.fail( fd.idx, "expected argument to be of type string, found: %zu", mod_var->type() );
 		return nullptr;
 	}
 	std::string mod = STR( mod_var )->get();
 	if( !vm.load_nmod( STR( mod_var )->get(), fd.src_id, fd.idx ) ) {
-		src->fail( fd.idx, "module load failed, look at error above" );
+		vm.fail( fd.idx, "module load failed, look at error above" );
 		return nullptr;
 	}
 	return vm.nil;
@@ -64,21 +63,20 @@ var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.current_source_file();
 	var_base_t * file_var = fd.args[ 1 ];
 	if( file_var->type() != VT_STR ) {
-		src->fail( file_var->idx(), "expected argument to be of type string, found: %zu", file_var->type() );
+		vm.fail( file_var->idx(), "expected argument to be of type string, found: %zu", file_var->type() );
 		return nullptr;
 	}
 	std::string file = STR( file_var )->get();
 	if( !vm.mod_exists( vm.inc_locs(), file, fmod_ext() ) ) {
-		src->fail( file_var->idx(), "could not find module file: '%s.fer'", file.c_str() );
+		vm.fail( file_var->idx(), "could not find module file: '%s.fer'", file.c_str() );
 		return nullptr;
 	}
 	// load_fmod() also adds the src to all_srcs map (push_src() function)
 	int err = vm.load_fmod( file );
 	if( err != E_OK ) {
-		src->fail( file_var->idx(), "module import failed, look at error above (exit code: %d)", err );
+		vm.fail( file_var->idx(), "module import failed, look at error above (exit code: %d)", err );
 		return nullptr;
 	}
 	return vm.all_srcs[ file ];

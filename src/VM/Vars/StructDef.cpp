@@ -57,10 +57,9 @@ var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_bas
 				     const std::vector< fn_assn_arg_t > & assn_args,
 				     const size_t & src_id, const size_t & idx )
 {
-	srcfile_t * src = vm.current_source_file();
 	for( auto & aa : assn_args ) {
 		if( std::find( m_attr_order.begin(), m_attr_order.end(), aa.name ) == m_attr_order.end() ) {
-			src->fail( aa.idx, "no attribute named '%s' in the structure definition", aa.name.c_str() );
+			vm.fail( aa.idx, "no attribute named '%s' in the structure definition", aa.name.c_str() );
 			return nullptr;
 		}
 	}
@@ -68,11 +67,11 @@ var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_bas
 	auto it = m_attr_order.begin();
 	for( auto & arg : args ) {
 		if( it == m_attr_order.end() ) {
-			src->fail( arg->idx(), "provided more arguments than existing in structure definition" );
+			vm.fail( arg->idx(), "provided more arguments than existing in structure definition" );
 			goto fail;
 		}
 		if( m_attrs[ * it ]->type() != arg->type() ) {
-			src->fail( arg->idx(), "expected type: %s, found: %s",
+			vm.fail( arg->idx(), "expected type: %s, found: %s",
 				   vm.type_name( m_attrs[ * it ]->type() ).c_str(),
 				   vm.type_name( arg->type() ).c_str() );
 			goto fail;
@@ -83,14 +82,14 @@ var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_bas
 
 	for( auto & a_arg : assn_args ) {
 		if( m_attrs.find( a_arg.name ) == m_attrs.end() ) {
-			src->fail( a_arg.idx, "attribute %s does not exist in this strucutre",
-				   a_arg.name.c_str() );
+			vm.fail( a_arg.idx, "attribute %s does not exist in this strucutre",
+				 a_arg.name.c_str() );
 			goto fail;
 		}
 		if( m_attrs[ a_arg.name ]->type() != a_arg.val->type() ) {
-			src->fail( a_arg.idx, "expected type: %s, found: %s",
-				   vm.type_name( m_attrs[ a_arg.name ]->type() ).c_str(),
-				   vm.type_name( a_arg.val->type() ).c_str() );
+			vm.fail( a_arg.idx, "expected type: %s, found: %s",
+				 vm.type_name( m_attrs[ a_arg.name ]->type() ).c_str(),
+				 vm.type_name( a_arg.val->type() ).c_str() );
 			goto fail;
 		}
 		if( attrs.find( a_arg.name ) != attrs.end() ) {

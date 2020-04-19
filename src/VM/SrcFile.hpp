@@ -123,7 +123,7 @@ public:
 	* \param msg Error message to show
 	* \param ... Format args for error message
 	*/
-	void fail( const size_t idx, const char * msg, ... ) const;
+	void fail( const size_t & idx, const char * msg, ... ) const;
 
 	/**
 	* \brief Print a proper message on code failure
@@ -132,7 +132,7 @@ public:
 	* \param msg Error message to show
 	* \param vargs Format args for error message (va_list style)
 	*/
-	void fail( const size_t idx, const char * msg, va_list vargs ) const;
+	void fail( const size_t & idx, const char * msg, va_list vargs ) const;
 };
 
 #endif // VM_SRC_FILE_HPP
