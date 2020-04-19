@@ -58,7 +58,7 @@ bool var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 {
 	// - 1 for self
 	if( args.size() - 1 < m_args.size() - m_assn_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
-		vm.current_source_file()->fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
+		vm.fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
 						m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
 		return false;
 	}

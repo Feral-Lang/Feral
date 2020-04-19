@@ -48,16 +48,16 @@ public:
 
 	inline bool valid() { return !accept( TOK_INVALID, TOK_EOF ); }
 
-	const lex::tok_t * at( const size_t idx ) const;
+	const lex::tok_t * at( const size_t & idx ) const;
 
 	bool has_next() const;
 
 	size_t idx() const;
-	void set_idx( const size_t idx );
+	void set_idx( const size_t & idx );
 
 	// for srcfile_t
 	void fail( const char * msg, ... ) const;
-	void fail( const size_t idx, const char * msg, ... ) const;
+	void fail( const size_t & idx, const char * msg, ... ) const;
 };
 
 #endif // COMPILER_PARSER_PARSE_HELPER_HPP

@@ -23,7 +23,6 @@ var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 		sprintf( res, "type: %s at %p", vm.type_name( _data->type() ).c_str(), _data );
 		return make< var_str_t >( res );
 	}
-	srcfile_t * src = vm.current_source_file();
 	var_struct_t * data = STRUCT( _data );
 	std::string res = vm.type_name( data->type() ) + "{";
 	for( auto & e : data->attrs() ) {
@@ -75,7 +74,6 @@ var_base_t * str_to_str( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.current_source_file();
 	var_vec_t * vec = VEC( fd.args[ 0 ] );
 	std::string res = "[";
 	for( auto & e : vec->get() ) {
@@ -95,7 +93,6 @@ var_base_t * vec_to_str( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.current_source_file();
 	var_map_t * map = MAP( fd.args[ 0 ] );
 	std::string res = "{";
 	for( auto & e : map->get() ) {

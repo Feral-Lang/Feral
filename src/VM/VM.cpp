@@ -184,10 +184,9 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id, 
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
 	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "libferal" );
-	srcfile_t * src = src_stack.back()->src();
 	if( !mod_exists( m_dll_locs, mod_file, nmod_ext() ) ) {
-		src->fail( idx, "module file: %s not found in locations: %s",
-			   ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
+		fail( idx, "module file: %s not found in locations: %s",
+		      ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
 
@@ -198,21 +197,21 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id, 
 	if( dlib->fexists( mod_file ) ) return true;
 
 	if( !dlib->load( mod_file ) ) {
-		src->fail( idx, "unable to load module file: %s",
-			   mod_file.c_str(), str::stringify( m_dll_locs ).c_str() );
+		fail( idx, "unable to load module file: %s",
+		      mod_file.c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
 	mod_init_fn_t init_fn = ( mod_init_fn_t )dlib->get( mod_file, "init_" + mod );
 	if( init_fn == nullptr ) {
-		src->fail( idx, "module file: %s does not contain init function (%s)",
-			   mod_file.c_str(), ( "init_" + mod ).c_str() );
+		fail( idx, "module file: %s does not contain init function (%s)",
+		      mod_file.c_str(), ( "init_" + mod ).c_str() );
 		dlib->unload( mod_file );
 		return false;
 	}
-	if( !init_fn( * this, src->id(), idx ) ) {
+	if( !init_fn( * this, src_id, idx ) ) {
 		dlib->unload( mod_file );
-		src->fail( idx, "init function in module file: %s didn't return okay",
-			   mod_file.c_str() );
+		fail( idx, "init function in module file: %s didn't return okay",
+		      mod_file.c_str() );
 		return false;
 	}
 	// set deinit function if available
@@ -246,6 +245,14 @@ bool vm_state_t::load_core_mods()
 		if( !load_nmod( mod, 0, 0, mod == "core" ) ) return false;
 	}
 	return true;
+}
+
+void vm_state_t::fail( const size_t & idx, const char * msg, ... ) const
+{
+	va_list vargs;
+	va_start( vargs, msg );
+	current_source_file()->fail( idx, msg, vargs );
+	va_end( vargs );
 }
 
 

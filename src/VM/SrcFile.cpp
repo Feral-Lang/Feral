@@ -63,7 +63,7 @@ void srcfile_t::add_cols( const std::vector< src_col_range_t > & cols )
 	m_cols.insert( m_cols.end(), cols.begin(), cols.end() );
 }
 
-void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
+void srcfile_t::fail( const size_t & idx, const char * msg, ... ) const
 {
 	va_list vargs;
 	va_start( vargs, msg );
@@ -71,7 +71,7 @@ void srcfile_t::fail( const size_t idx, const char * msg, ... ) const
 	va_end( vargs );
 }
 
-void srcfile_t::fail( const size_t idx, const char * msg, va_list vargs ) const
+void srcfile_t::fail( const size_t & idx, const char * msg, va_list vargs ) const
 {
 	size_t line, col_begin, col_end, col;
 	bool found = false;

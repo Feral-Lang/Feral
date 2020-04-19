@@ -62,7 +62,7 @@ void phelper_t::sett( const TokType type )
 	if( m_idx < m_toks.size() ) m_toks[ m_idx ].type = type;
 }
 
-const lex::tok_t * phelper_t::at( const size_t idx ) const
+const lex::tok_t * phelper_t::at( const size_t & idx ) const
 {
 	if( idx >= m_toks.size() ) return & m_invalid;
 	return & m_toks[ idx ];
@@ -72,7 +72,7 @@ bool phelper_t::has_next() const { return m_idx + 1 < m_toks.size(); }
 
 size_t phelper_t::idx() const { return m_idx; }
 
-void phelper_t::set_idx( const size_t idx ) { m_idx = idx; }
+void phelper_t::set_idx( const size_t & idx ) { m_idx = idx; }
 
 void phelper_t::fail( const char * msg, ... ) const
 {
@@ -82,7 +82,7 @@ void phelper_t::fail( const char * msg, ... ) const
 	va_end( args );
 }
 
-void phelper_t::fail( const size_t idx, const char * msg, ... ) const
+void phelper_t::fail( const size_t & idx, const char * msg, ... ) const
 {
 	va_list args;
 	va_start( args, msg );

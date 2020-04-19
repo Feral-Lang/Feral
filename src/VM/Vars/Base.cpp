@@ -22,19 +22,19 @@ void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
-	srcfile_t * src = vm.current_source_file();
 	var_fn_t * str_fn = vm.get_typefn( this->type(), "str" );
 	if( !str_fn ) {
-		src->fail( this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
+		vm.fail( this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
 		return false;
 	}
 	if( !FN( str_fn )->call( vm, { this }, {}, {}, src_id, idx ) ) {
-		src->fail( this->idx(), "function call 'str' for type: %zu failed", this->type() );
+		vm.fail( this->idx(), "function call 'str' for type: %zu failed", this->type() );
 		return false;
 	}
 	var_base_t * str = vm.vm_stack->pop( false );
 	if( str->type() != VT_STR ) {
-		src->fail( this->idx(), "expected string return type from 'str' function, received: %s", vm.type_name( str->type() ).c_str() );
+		vm.fail( this->idx(), "expected string return type from 'str' function, received: %s",
+			 vm.type_name( str->type() ).c_str() );
 		var_dref( str );
 		return false;
 	}
