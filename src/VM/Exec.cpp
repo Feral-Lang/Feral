@@ -18,7 +18,7 @@ namespace vm
 // declared in VM.hpp
 int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 {
-	var_src_t * src = vm.src_stack.back();
+	var_src_t * src = vm.current_source();
 	vars_t * vars = src->vars();
 	srcfile_t * src_file = src->src();
 	size_t src_id = src_file->id();

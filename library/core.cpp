@@ -38,7 +38,7 @@ var_base_t * all_copy( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
-		vm.src_stack.back()->src()->fail( fd.idx, "expected string argument for typename, found: %s",
+		vm.current_source_file()->fail( fd.idx, "expected string argument for typename, found: %s",
 						  vm.type_name( fd.args[ 1 ]->type() ).c_str() );
 		return nullptr;
 	}
@@ -48,7 +48,7 @@ var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
+	srcfile_t * src = vm.current_source_file();
 	var_base_t * mod_var = fd.args[ 1 ];
 	if( mod_var->type() != VT_STR ) {
 		src->fail( fd.idx, "expected argument to be of type string, found: %zu", mod_var->type() );
@@ -64,7 +64,7 @@ var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
+	srcfile_t * src = vm.current_source_file();
 	var_base_t * file_var = fd.args[ 1 ];
 	if( file_var->type() != VT_STR ) {
 		src->fail( file_var->idx(), "expected argument to be of type string, found: %zu", file_var->type() );
@@ -86,13 +86,13 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * is_main_src( vm_state_t & vm, const fn_data_t & fd )
 {
-	srcfile_t * src = vm.src_stack.back()->src();
+	srcfile_t * src = vm.current_source_file();
 	return src->is_main() ? vm.tru : vm.fals;
 }
 
 INIT_MODULE( core )
 {
-	const std::string & src_name = vm.src_stack.back()->src()->path();
+	const std::string & src_name = vm.current_source_file()->path();
 
 	// fundamental functions for builtin types
 	vm.add_typefn_native( VT_ALL,	  "==", all_eq,        1, src_id, idx );
