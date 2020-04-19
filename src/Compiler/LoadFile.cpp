@@ -83,7 +83,10 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	}
 
 	if( flags & OPT_C ) {
-		std::string comp_file = src_file + fmod_ext() + "c";
+		// remove '.fer' from file path
+		static const size_t fmod_ext_len = strlen( fmod_ext() );
+		std::string comp_file = src_file.substr( 0, src_file.size() - fmod_ext_len );
+		comp_file += fmod_ext( true );
 		std::ofstream f( comp_file, std::ios::out | std::ios::binary );
 		if( !f.good() ) {
 			fprintf( stderr, "failed to open file %s for writing bytecode\n", comp_file.c_str() );
