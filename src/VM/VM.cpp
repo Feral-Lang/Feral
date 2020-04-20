@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cstdlib>
+#include <cstdarg>
 
 #include "../Common/String.hpp"
 #include "../Common/Env.hpp"
