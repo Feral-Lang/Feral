@@ -22,7 +22,10 @@ Errors parse_expr_cols( phelper_t & ph, stmt_base_t * & loc )
 	ph.next();
 	return E_OK;
 fail:
-	if( loc ) delete loc;
+	if( loc ) {
+		delete loc;
+		loc = nullptr; // ensures that the caller does not try deleting it too
+	}
 	return E_PARSE_FAIL;
 }
 
