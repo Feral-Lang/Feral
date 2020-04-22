@@ -113,7 +113,7 @@ git clone https://github.com/Feral-Lang/Feral.git
 Inside the repository, create a directory (say `build`), `cd` in it and run the commands for building and installing Feral:
 ```
 cd Feral && mkdir build && cd build
-cmake .. # optionally PREFIX_DIR=<dir> can be set before this
+cmake .. -DCMAKE_BUILD_TYPE=Release # optionally PREFIX_DIR=<dir> can be set before this
 sudo make -j<cpu cores on your system> install
 ```
 
