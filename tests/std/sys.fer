@@ -1,3 +1,6 @@
 let sys = import('std/sys');
 
+assert(!sys.var_exists('a'));
+assert(sys.var_exists('sys'));
+
 sys.exit(0);

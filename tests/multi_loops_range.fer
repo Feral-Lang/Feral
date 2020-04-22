@@ -1,4 +1,4 @@
-let rt = import('std/runtime');
+let sys = import('std/sys');
 
 for i in range(0, 10) {
 	if i == 1 { continue; }
@@ -7,11 +7,11 @@ for i in range(0, 10) {
 	for j in range(0, 10) {
 		if j == 1 { continue; }
 		if j == 5 { break; }
-		assert(rt.var_exists('i'));
-		assert(rt.var_exists('j'));
+		assert(sys.var_exists('i'));
+		assert(sys.var_exists('j'));
 	}
-	assert(rt.var_exists('i'));
-	assert(!rt.var_exists('j'));
+	assert(sys.var_exists('i'));
+	assert(!sys.var_exists('j'));
 }
-assert(!rt.var_exists('i'));
-assert(!rt.var_exists('j'));
+assert(!sys.var_exists('i'));
+assert(!sys.var_exists('j'));
