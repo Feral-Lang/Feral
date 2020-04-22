@@ -114,6 +114,7 @@ void mem_mgr_t::free( void * ptr, size_t sz )
 		fprintf( stdout, "Deleting manually ... %zu\n", sz );
 #endif
 		delete[] ( u8 * )ptr;
+		return;
 	}
 #ifdef MEM_PROFILE
 	fprintf( stdout, "Giving back to pool ... %zu\n", sz );
