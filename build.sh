@@ -73,7 +73,7 @@ git clone https://github.com/Feral-Lang/Feral-Std.git
 
 build() {
     mkdir build && cd build
-    cmake ..
+    cmake .. -DCMAKE_BUILD_TYPE=Release
     $SUDO make -j$CORES install
     cd ..
 }

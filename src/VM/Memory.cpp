@@ -69,8 +69,10 @@ void * mem_mgr_t::alloc( size_t sz )
 	sz = mem::mult8_roundup( sz );
 
 	if( sz > POOL_SIZE ) {
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE)
+#if defined(DEBUG_MODE)
 		fprintf( stdout, "Allocating manually ... %zu\n", sz );
+#endif
 		tot_manual_alloc += sz;
 #endif
 		return new u8[ sz ];
@@ -82,7 +84,7 @@ void * mem_mgr_t::alloc( size_t sz )
 			if( free_space >= sz ) {
 				u8 * loc = p.head;
 				p.head += sz;
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 				fprintf( stdout, "Allocating from pool ... %zu\n", sz );
 #endif
 				return loc;
@@ -92,7 +94,7 @@ void * mem_mgr_t::alloc( size_t sz )
 		auto & p = m_pools.back();
 		u8 * loc = p.head;
 		p.head += sz;
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf( stdout, "Allocating from NEW pool ... %zu\n", sz );
 #endif
 		return loc;
@@ -100,7 +102,7 @@ void * mem_mgr_t::alloc( size_t sz )
 
 	u8 * loc = m_free_chunks[ sz ].front();
 	m_free_chunks[ sz ].pop_front();
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 	fprintf( stdout, "Using previously allocated ... %zu\n", sz );
 #endif
 	return loc;
@@ -110,13 +112,13 @@ void mem_mgr_t::free( void * ptr, size_t sz )
 {
 	if( ptr == nullptr || sz == 0 ) return;
 	if( sz > POOL_SIZE ) {
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf( stdout, "Deleting manually ... %zu\n", sz );
 #endif
 		delete[] ( u8 * )ptr;
 		return;
 	}
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 	fprintf( stdout, "Giving back to pool ... %zu\n", sz );
 #endif
 	m_free_chunks[ sz ].push_front( ( u8 * )ptr );
