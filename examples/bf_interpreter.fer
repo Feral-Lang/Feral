@@ -63,10 +63,10 @@ for let i = 0; i < len; ++i {
 		if data[data_ptr] == 0 {
 			io.print('(nil)');
 		} else {
-			io.print(data[data_ptr].i_to_c());
+			io.print(data[data_ptr].chr());
 		}
 	} elif content[i] == ',' {
-		data[data_ptr] = io.scan().c_to_i();
+		data[data_ptr] = io.scan().byt();
 	} elif content[i] == '[' {
 		if data[data_ptr] != 0 { continue; }
 		let i_tmp = i;
