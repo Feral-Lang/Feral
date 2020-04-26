@@ -4,6 +4,13 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 **Note**: All tests must be verified for no memory leaks (I personally use Valgrind).
 
+## General
+
+- [ ] Move everything related to structs to std/lang
+- [ ] Develop REPL (in Feral)
+  - [ ] Requires getch() or similar (does **not** show on output; reads each char as raw byte)
+    - [ ] Will require a full set of key list (`kb.A`, `kb.B`, `kb.CAPS`, ...)
+
 ## Core & Standard Library Test Cases (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
 
 - [ ] Writing test cases for the language, related to:
@@ -26,7 +33,7 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 Standard Library:
 - [x] IO
 - [x] Vectors
-- [ ] Maps
+- [x] Maps
 - [x] FS
 - [x] Lang
 - [ ] OS
@@ -46,16 +53,16 @@ Standard Library:
   - [ ] 9 - "Member" Functions
   - [ ] 10 - Modules/Imports
   - [ ] 11 - Scopes and Variable Assignment vs Copy
-  - [ ] 12 - Standard Library
-    - [ ] 1 - IO
-    - [ ] 2 - Structures & Enums
-    - [ ] 3 - Strings
-    - [ ] 4 - Vectors
-    - [ ] 5 - Maps
-    - [ ] 6 - FS
-    - [ ] 7 - OS
-    - [ ] 8 - Sys
-    - [ ] 9 - Builder
+  - [x] 12 - Standard Library
+    - [x] 1 - IO
+    - [x] 2 - Structures & Enums
+    - [x] 3 - Strings
+    - [x] 4 - Vectors
+    - [x] 5 - Maps
+    - [x] 6 - FS
+    - [x] 7 - OS
+    - [x] 8 - Sys
+    - [x] 9 - Builder
 - [ ] Review existing chapters
 - [ ] Implement highlighting for Feral code blocks (Highlight.js)
 
