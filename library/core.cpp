@@ -17,6 +17,11 @@
 
 #include "../src/VM/VM.hpp"
 
+var_base_t * all_get_type( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( fd.args[ 0 ]->type() );
+}
+
 var_base_t * all_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	return fd.args[ 0 ]->type() == fd.args[ 1 ]->type() ? vm.tru : vm.fals;
@@ -93,6 +98,7 @@ INIT_MODULE( core )
 	const std::string & src_name = vm.current_source_file()->path();
 
 	// fundamental functions for builtin types
+	vm.add_native_typefn( VT_ALL, "_type_", all_get_type,  0, src_id, idx );
 	vm.add_native_typefn( VT_ALL,	  "==", all_eq,        1, src_id, idx );
 	vm.add_native_typefn( VT_ALL,	  "!=", all_ne,        1, src_id, idx );
 	vm.add_native_typefn( VT_ALL,	"copy", all_copy,      0, src_id, idx );

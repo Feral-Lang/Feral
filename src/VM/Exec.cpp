@@ -32,11 +32,13 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
-		// fprintf( stdout, "%s [%zu]: %*s: ", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
-		// for( auto & e : vms->get() ) {
-		// 	fprintf( stdout, "%s ", vm.type_name( e->type() ).c_str() );
-		// }
-		// fprintf( stdout, "\n" );
+#ifdef DEBUG_MODE
+		fprintf( stdout, "%s [%zu]: %*s: ", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
+		for( auto & e : vms->get() ) {
+			fprintf( stdout, "%s ", vm.type_name( e->type() ).c_str() );
+		}
+		fprintf( stdout, "\n" );
+#endif // DEBUG_MODE
 		switch( op.op ) {
 		case OP_LOAD: {
 			if( op.dtype != ODT_IDEN ) {
