@@ -16,9 +16,9 @@ var_base_t * flt_add( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal res = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -33,9 +33,9 @@ var_base_t * flt_sub( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal res = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -50,9 +50,9 @@ var_base_t * flt_mul( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal res = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -67,9 +67,9 @@ var_base_t * flt_div( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal res = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -88,9 +88,9 @@ var_base_t * flt_div( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * flt_addassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -104,9 +104,9 @@ var_base_t * flt_addassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * flt_subassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -120,9 +120,9 @@ var_base_t * flt_subassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * flt_mulassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -136,9 +136,9 @@ var_base_t * flt_mulassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * flt_divassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -195,9 +195,9 @@ var_base_t * flt_lt( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than operation, found: %s",
@@ -211,9 +211,9 @@ var_base_t * flt_gt( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than operation, found: %s",
@@ -227,9 +227,9 @@ var_base_t * flt_le( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than/equals operation, found: %s",
@@ -243,9 +243,9 @@ var_base_t * flt_ge( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than/equals operation, found: %s",
@@ -259,9 +259,9 @@ var_base_t * flt_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		return vm.fals;
@@ -273,9 +273,9 @@ var_base_t * flt_ne( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr::mpreal & lhs = FLT( fd.args[ 0 ] )->get();
 	mpfr::mpreal rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get().get_str();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		return vm.tru;

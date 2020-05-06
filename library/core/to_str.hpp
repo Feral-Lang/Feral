@@ -18,25 +18,8 @@
 var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_base_t * _data = fd.args[ 0 ];
-	if( _data->type() < _VT_LAST ) {
-		char res[ 1024 ];
-		sprintf( res, "type: %s at %p", vm.type_name( _data->type() ).c_str(), _data );
-		return make< var_str_t >( res );
-	}
-	var_struct_t * data = STRUCT( _data );
-	std::string res = vm.type_name( data->type() ) + "{";
-	for( auto & e : data->attrs() ) {
-		std::string str;
-		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
-			return nullptr;
-		}
-		res += e.first + ": " + str + ", ";
-	}
-	if( data->attrs().size() > 0 ) {
-		res.pop_back();
-		res.pop_back();
-	}
-	res += "}";
+	char res[ 1024 ];
+	sprintf( res, "type: %s at %p", vm.type_name( _data->type() ).c_str(), _data );
 	return make< var_str_t >( res );
 }
 
@@ -103,6 +86,25 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 		res += e.first + ": " + str + ", ";
 	}
 	if( map->get().size() > 0 ) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "}";
+	return make< var_str_t >( res );
+}
+
+var_base_t * struct_to_str( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * data = STRUCT( fd.args[ 0 ] );
+	std::string res = vm.type_name( data->id() ) + "{";
+	for( auto & e : data->attrs() ) {
+		std::string str;
+		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
+			return nullptr;
+		}
+		res += e.first + ": " + str + ", ";
+	}
+	if( data->attrs().size() > 0 ) {
 		res.pop_back();
 		res.pop_back();
 	}

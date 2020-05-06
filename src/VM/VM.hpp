@@ -79,9 +79,7 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	int register_struct_enum_id();
-
-	int register_new_type( const std::string & name, const size_t & src_id, const size_t & idx );
+	void register_type( const size_t & id, const std::string & name, const size_t & src_id, const size_t & idx );
 	// returns 0 on failure because no dll type can have id >= 0
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );
@@ -94,7 +92,7 @@ struct vm_state_t
 						      std::vector< std::string >( args_count, "" ),
 						      {}, { .native = fn }, src_id, idx ), false );
 	}
-	var_fn_t * get_typefn( const size_t & type, const std::string & name );
+	var_base_t * get_typefn( const size_t & type, const std::string & name );
 
 	// used to convert typeid -> name
 	void set_typename( const size_t & type, const std::string & name );
@@ -116,8 +114,6 @@ private:
 	std::vector< std::string > m_dll_locs;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
-	// type ids for custom types (negative)
-	int m_custom_types;
 	// functions for any and all types
 	std::unordered_map< size_t, vars_frame_t * > m_typefns;
 	// names of types (optional)

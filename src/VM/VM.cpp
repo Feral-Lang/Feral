@@ -22,7 +22,7 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
-	  dlib( new dyn_lib_t() ), m_custom_types( -1 ), m_self_binary( self_binary_loc )
+	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc )
 {
 	init_typenames( * this );
 
@@ -76,26 +76,19 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-int vm_state_t::register_struct_enum_id()
-{
-	static int id = _VT_LAST;
-	return id++;
-}
-
-int vm_state_t::register_new_type( const std::string & name, const size_t & src_id, const size_t & idx )
+void vm_state_t::register_type( const size_t & id, const std::string & name, const size_t & src_id, const size_t & idx )
 {
 	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
-	m_dll_typenames[ name ] = m_custom_types;
-	m_typenames[ m_custom_types ] = name;
+	m_dll_typenames[ name ] = id;
+	m_typenames[ id ] = name;
 	// only add to source if it's not main source, else add to globals
 	// for example, utils, core will be added to globals
 	if( src_stack.size() > 1 ) {
-		src_stack.back()->add_native_var( name, make_all< var_typeid_t >( m_custom_types, src_id, idx ), true, true );
+		src_stack.back()->add_native_var( name, make_all< var_typeid_t >( id, src_id, idx ), true, true );
 	} else {
 		assert( m_globals.find( name ) == m_globals.end() );
-		m_globals[ name ] = new var_typeid_t( m_custom_types, src_id, idx );
+		m_globals[ name ] = new var_typeid_t( id, src_id, idx );
 	}
-	return m_custom_types--;
 }
 
 int vm_state_t::dll_typeid( const std::string & name )
@@ -117,12 +110,12 @@ void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_
 	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
-var_fn_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
+var_base_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
 {
 	auto it = m_typefns.find( type );
-	if( it == m_typefns.end() ) return FN( m_typefns[ VT_ALL ]->get( name ) );
+	if( it == m_typefns.end() ) return m_typefns[ VT_ALL ]->get( name );
 	var_base_t * res = it->second->get( name );
-	if( res ) return FN( res );
+	if( res ) return res;
 	return FN( m_typefns[ VT_ALL ]->get( name ) );
 }
 
@@ -139,7 +132,7 @@ std::string vm_state_t::type_name( const size_t & type )
 }
 std::string vm_state_t::type_name( const var_base_t * val )
 {
-	return type_name( val->type() != VT_TYPEID ? val->id() : val->type() );
+	return type_name( !val->istype< var_typeid_t >() ? val->id() : val->type() );
 }
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )
 {

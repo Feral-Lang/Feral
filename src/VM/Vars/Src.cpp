@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_src_t::var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner )
-	: var_base_t( VT_SRC, src_id, idx, false, true ), m_src( src ), m_vars( vars ), m_owner( owner )
+	: var_base_t( type_id< var_src_t >(), src_id, idx, false, true ), m_src( src ), m_vars( vars ), m_owner( owner )
 {}
 var_src_t::~var_src_t()
 {

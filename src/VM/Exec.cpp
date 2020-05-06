@@ -139,7 +139,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		}
 		case OP_JMPTPOP: // fallthrough
 		case OP_JMPT: {
-			assert( vms->back()->type() == VT_BOOL );
+			assert( vms->back()->istype< var_bool_t >() );
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
 			if( res ) i = op.data.sz - 1;
 			if( !res || op.op == OP_JMPTPOP ) vms->pop();
@@ -147,14 +147,14 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		}
 		case OP_JMPFPOP: // fallthrough
 		case OP_JMPF: {
-			assert( vms->back()->type() == VT_BOOL );
+			assert( vms->back()->istype< var_bool_t >() );
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
 			if( !res ) i = op.data.sz - 1;
 			if( res || op.op == OP_JMPFPOP ) vms->pop();
 			break;
 		}
 		case OP_JMPN: {
-			if( vms->back()->type() == VT_NIL ) {
+			if( vms->back()->istype< var_nil_t >() ) {
 				vms->pop();
 				i = op.data.sz - 1;
 			}
@@ -221,13 +221,14 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			var_base_t * in_base = nullptr; // only for mem_call
 			var_base_t * fn_base = nullptr;
+			var_base_t * res = nullptr;
 			std::string fn_name;
 			if( mem_call ) {
 				fn_name = STR( vms->back() )->get();
 				vms->pop();
 				in_base = vms->pop( false );
-				if( in_base->type() == VT_SRC ) {
-					fn_base = SRC( in_base )->attr_get( fn_name );
+				if( in_base->attr_based() ) {
+					fn_base = in_base->attr_get( fn_name );
 				}
 				if( !fn_base ) {
 					fn_base = vm.get_typefn( in_base->type(), fn_name );
@@ -248,18 +249,13 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				var_dref( in_base );
 				goto fncall_fail;
 			}
-			if( fn_base->type() == VT_FUNC ) {
-				args.insert( args.begin(), in_base );
-				if( !FN( fn_base )->call( vm, args, assn_args, assn_args_loc, src_id, op.idx ) ) {
-					vm.fail( op.idx, "function call failed, look at error above" );
-					goto fncall_fail;
-				}
-			} else if( fn_base->type() == VT_STRUCT_DEF ) { // VT_STRUCT_DEF
-				var_base_t * res = STRUCT_DEF( fn_base )->call( vm, args, assn_args, assn_args_loc, src_id, op.idx );
-				if( !res ) {
-					vm.fail( op.idx, "object creation failed, look at error above" );
-					goto fncall_fail;
-				}
+			args.insert( args.begin(), in_base );
+			res = fn_base->call( vm, args, assn_args, assn_args_loc, src_id, op.idx );
+			if( !res ) {
+				vm.fail( op.idx, "'%s' call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				goto fncall_fail;
+			}
+			if( !res->istype< var_nil_t >() ) {
 				vms->push( res, false );
 			}
 			for( auto & arg : args ) var_dref( arg );
