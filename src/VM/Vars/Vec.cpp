@@ -14,9 +14,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_vec_t::var_vec_t( const std::vector< var_base_t * > & val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_VEC, src_id, idx, false, false ), m_val( val )
-{
-}
+	: var_base_t( type_id< var_vec_t >(), src_id, idx, false, false ), m_val( val )
+{}
 var_vec_t::~var_vec_t()
 {
 	for( auto & v : m_val ) var_dref( v );

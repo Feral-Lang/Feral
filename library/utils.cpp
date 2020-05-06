@@ -9,9 +9,6 @@
 
 #include "../src/VM/VM.hpp"
 
-// initialize this in the init_utils function
-static int int_iterable_typeid;
-
 class var_int_iterable_t : public var_base_t
 {
 	mpz_class m_begin, m_end, m_step, m_curr;
@@ -30,7 +27,7 @@ public:
 
 var_int_iterable_t::var_int_iterable_t( const mpz_class & begin, const mpz_class & end, const mpz_class & step,
 					const size_t & src_id, const size_t & idx )
-	: var_base_t( int_iterable_typeid, src_id, idx, false, false ), m_begin( begin ), m_end( end ),
+	: var_base_t( type_id< var_int_iterable_t >(), src_id, idx, false, false ), m_begin( begin ), m_end( end ),
 	  m_step( step ), m_curr( begin ), m_started( false ), m_is_reverse( step < 0 )
 {}
 
@@ -76,13 +73,13 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 	var_base_t * rhs_base = fd.args.size() > 2 ? fd.args[ 2 ] : nullptr;
 	var_base_t * step_base = fd.args.size() > 3 ? fd.args[ 3 ] : nullptr;
 
-	size_t final_type = VT_INT;
+	size_t final_type = type_id< var_int_t >();
 
-	if( lhs_base->type() == VT_FLT ) final_type = VT_FLT;
-	if( rhs_base && rhs_base->type() == VT_FLT ) final_type = VT_FLT;
-	if( step_base && step_base->type() == VT_FLT ) final_type = VT_FLT;
+	if( lhs_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
+	if( rhs_base && rhs_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
+	if( step_base && step_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
 
-	if( final_type == VT_INT ) {
+	if( final_type == type_id< var_int_t >() ) {
 		mpz_class begin = fd.args.size() > 2 ? INT( lhs_base )->get() : 0;
 		mpz_class end = rhs_base ? INT( rhs_base )->get() : INT( lhs_base )->get();
 		mpz_class step = step_base ? INT( step_base )->get() : 1;
@@ -93,7 +90,7 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
 {
-	if( fd.args[ 1 ]->type() != VT_BOOL ) {
+	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
 		vm.fail( fd.idx, "expected boolean argument for assertion, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
@@ -122,9 +119,9 @@ INIT_MODULE( utils )
 	vm.gadd( "assert", new var_fn_t( src_name, "", "", { "" }, {}, { .native = assertion }, true, src_id, idx ), false );
 
 	// get the type id for int iterable (register_type)
-	int_iterable_typeid = vm.register_new_type( "int_iterable_t", src_id, idx );
+	vm.register_type( type_id< var_int_iterable_t >(), "int_iterable_t", src_id, idx );
 
-	vm.add_native_typefn( int_iterable_typeid, "next", int_iterable_next, 0, src_id, idx );
+	vm.add_native_typefn( type_id< var_int_iterable_t >(), "next", int_iterable_next, 0, src_id, idx );
 
 	return true;
 }

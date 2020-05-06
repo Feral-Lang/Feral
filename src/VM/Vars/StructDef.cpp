@@ -17,10 +17,10 @@
 /////////////////////////////////////////////////////////// VAR_STRUCT_DEF /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_struct_def_t::var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
+var_struct_def_t::var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
 				    const std::unordered_map< std::string, var_base_t * > & attrs,
 				    const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_STRUCT_DEF, src_id, idx, true, false ), m_attr_order( attr_order ), m_attrs( attrs ),
+	: var_base_t( type_id< var_struct_def_t >(), src_id, idx, true, false ), m_attr_order( attr_order ), m_attrs( attrs ),
 	  m_id( id ) {}
 
 var_struct_def_t::~var_struct_def_t()
@@ -42,7 +42,6 @@ var_base_t * var_struct_def_t::copy( const size_t & src_id, const size_t & idx )
 void var_struct_def_t::set( var_base_t * from )
 {
 	var_struct_def_t * st = STRUCT_DEF( from );
-	m_id = st->m_id;
 	m_attr_order = st->m_attr_order;
 	for( auto & attr : m_attrs ) {
 		var_dref( attr.second );
@@ -51,6 +50,7 @@ void var_struct_def_t::set( var_base_t * from )
 		var_iref( attr.second );
 	}
 	m_attrs = st->m_attrs;
+	m_id = st->m_id;
 }
 
 var_base_t * var_struct_def_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
@@ -66,7 +66,8 @@ var_base_t * var_struct_def_t::call( vm_state_t & vm, const std::vector< var_bas
 	}
 	std::unordered_map< std::string, var_base_t * > attrs;
 	auto it = m_attr_order.begin();
-	for( auto & arg : args ) {
+	for( auto argit = args.begin() + 1; argit != args.end(); ++argit ) {
+		auto & arg = * argit;
 		if( it == m_attr_order.end() ) {
 			vm.fail( arg->idx(), "provided more arguments than existing in structure definition" );
 			goto fail;

@@ -16,9 +16,9 @@ var_base_t * int_add( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class res = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -33,9 +33,9 @@ var_base_t * int_sub( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class res = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -50,9 +50,9 @@ var_base_t * int_mul( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class res = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -67,9 +67,9 @@ var_base_t * int_div( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class res = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -89,9 +89,9 @@ var_base_t * int_mod( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class res = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -110,9 +110,9 @@ var_base_t * int_mod( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * int_addassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -126,9 +126,9 @@ var_base_t * int_addassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * int_subassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -142,9 +142,9 @@ var_base_t * int_subassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * int_mulassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -158,9 +158,9 @@ var_base_t * int_mulassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * int_divassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -174,9 +174,9 @@ var_base_t * int_divassn( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * int_modassn( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -191,9 +191,9 @@ var_base_t * int_pow( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
@@ -244,9 +244,9 @@ var_base_t * int_lt( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than operation, found: %s",
@@ -260,9 +260,9 @@ var_base_t * int_gt( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than operation, found: %s",
@@ -276,9 +276,9 @@ var_base_t * int_le( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than/equals operation, found: %s",
@@ -292,9 +292,9 @@ var_base_t * int_ge( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than/equals operation, found: %s",
@@ -308,9 +308,9 @@ var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		return vm.fals;
@@ -322,9 +322,9 @@ var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_class lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->type() == VT_INT ) {
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
 		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->type() == VT_FLT ) {
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
 		rhs = mpz_class( mpf_class( FLT( fd.args[ 1 ] )->get().toString() ) );
 	} else {
 		return vm.tru;

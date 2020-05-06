@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_file_t::var_file_t( FILE * const file, const std::string & mode, const size_t & src_id, const size_t & idx, const bool owner )
-	: var_base_t( VT_FILE, src_id, idx, false, false ), m_file( file ), m_mode( mode ), m_owner( owner )
+	: var_base_t( type_id< var_file_t >(), src_id, idx, false, false ), m_file( file ), m_mode( mode ), m_owner( owner )
 {}
 var_file_t::~var_file_t()
 {

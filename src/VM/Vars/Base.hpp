@@ -15,37 +15,18 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
+#include <type_traits>
 #include <gmpxx.h>
 
 #include "../../Extra/mpfrxx.hpp"
 #include "../SrcFile.hpp"
 
-enum VarTypes
-{
-	VT_ALL,
+template< class T > using decay_t = typename std::decay< T >::type;
 
-	VT_NIL,
+// for functions that run on on all types/objects
+static const size_t VT_ALL = 0;
 
-	VT_TYPEID,
-
-	VT_BOOL,
-	VT_INT,
-	VT_FLT,
-	VT_STR,
-	VT_VEC,
-	VT_MAP,
-
-	VT_FUNC,
-
-	VT_FILE,
-
-	VT_STRUCT_DEF,
-	VT_STRUCT,
-
-	VT_SRC,
-
-	_VT_LAST,
-};
+size_t alloc_typeid();
 
 class var_base_t;
 struct fn_assn_arg_t
@@ -58,19 +39,29 @@ struct fn_assn_arg_t
 struct vm_state_t;
 class var_base_t
 {
-protected:
-	int m_type;
-private:
+	size_t m_type;
 	size_t m_src_id;
 	size_t m_idx;
 	size_t m_ref;
 
 	bool m_callable;
 	bool m_attr_based;
+
+	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
+	template< typename ... > static std::size_t family() {
+		static const std::size_t value = alloc_typeid();
+		return value;
+	}
+	template< typename ... T > static inline std::size_t _type() {
+		return family< decay_t< T > ... >();
+	}
+	template< typename ... T > friend size_t type_id();
 public:
-	var_base_t( const int & type, const size_t & src_id, const size_t & idx,
+	var_base_t( const size_t & type, const size_t & src_id, const size_t & idx,
 		    const bool & callable, const bool & attr_based );
 	virtual ~var_base_t();
+
+	template< typename ... T > bool istype() const { return m_type == var_base_t::_type< T ... >(); }
 
 	// must always be overridden
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
@@ -86,7 +77,7 @@ public:
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
-	inline int type() const { return m_type; }
+	inline size_t type() const { return m_type; }
 	// used for denoting things like structs
 	virtual size_t id() const;
 
@@ -112,6 +103,11 @@ public:
 	static void * operator new( size_t sz );
 	static void operator delete( void * ptr, size_t sz );
 };
+
+template< typename ... T > size_t type_id()
+{
+	return var_base_t::_type< T ... >();
+}
 
 template< typename T > inline void var_iref( T * var )
 {
@@ -319,10 +315,10 @@ class var_struct_def_t : public var_base_t
 	std::vector< std::string > m_attr_order;
 	std::unordered_map< std::string, var_base_t * > m_attrs;
 	// type id of struct which will be used as m_type for struct objects
-	int m_id;
+	size_t m_id;
 
 public:
-	var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
+	var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
 	~var_struct_def_t();
@@ -348,7 +344,7 @@ class var_struct_t : public var_base_t
 	size_t m_id;
 public:
 	var_struct_t( const std::unordered_map< std::string, var_base_t * > & attrs,
-		      const int & type_id, const size_t & src_id, const size_t & idx );
+		      const size_t & struct_id, const size_t & src_id, const size_t & idx );
 	~var_struct_t();
 
 	size_t id() const;

@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_map_t::var_map_t( const std::unordered_map< std::string, var_base_t * > & val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_MAP, src_id, idx, false, false ), m_val( val )
+	: var_base_t( type_id< var_map_t >(), src_id, idx, false, false ), m_val( val )
 {
 }
 var_map_t::~var_map_t()

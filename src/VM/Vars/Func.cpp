@@ -20,14 +20,14 @@ var_fn_t::var_fn_t( const std::string & src_name, const std::string & kw_arg,
 		    const std::unordered_map< std::string, var_base_t * > & assn_args,
 		    const fn_body_t & body, const bool is_native, const size_t & src_id,
 		    const size_t & idx )
-	: var_base_t( VT_FUNC, src_id, idx, true, false ), m_src_name( src_name ), m_kw_arg( kw_arg ),
+	: var_base_t( type_id< var_fn_t >(), src_id, idx, true, false ), m_src_name( src_name ), m_kw_arg( kw_arg ),
 	  m_var_arg( var_arg ), m_args( args ), m_assn_args( assn_args ), m_body( body ),
 	  m_is_native( is_native )
 {}
 var_fn_t::var_fn_t( const std::string & src_name, const std::vector< std::string > & args,
 		    const std::unordered_map< std::string, var_base_t * > & assn_args,
 		    const fn_body_t & body, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_FUNC, src_id, idx, true, false ), m_src_name( src_name ), m_args( args ),
+	: var_base_t( type_id< var_fn_t >(), src_id, idx, true, false ), m_src_name( src_name ), m_args( args ),
 	  m_assn_args( assn_args ), m_body( body ), m_is_native( true )
 {}
 var_fn_t::~var_fn_t()
