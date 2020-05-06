@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_int_t::var_int_t( const mpz_class & val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_INT, src_id, idx ), m_val( val ) {}
+	: var_base_t( VT_INT, src_id, idx, false, false ), m_val( val ) {}
 
 var_base_t * var_int_t::copy( const size_t & src_id, const size_t & idx ) { return new var_int_t( m_val, src_id, idx ); }
 mpz_class & var_int_t::get() { return m_val; }

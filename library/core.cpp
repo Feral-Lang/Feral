@@ -44,7 +44,7 @@ var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_STR ) {
 		vm.fail( fd.idx, "expected string argument for typename, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	vm.set_typename( STRUCT_DEF( fd.args[ 0 ] )->id(), STR( fd.args[ 1 ] )->get() );

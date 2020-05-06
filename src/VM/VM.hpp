@@ -86,7 +86,7 @@ struct vm_state_t
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );
 
-	void add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref );
+	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
 	inline void add_native_typefn( const int & type, const std::string & name, nativefnptr_t fn,
 				       const size_t & args_count, const size_t & src_id, const size_t & idx )
 	{
@@ -94,11 +94,12 @@ struct vm_state_t
 						      std::vector< std::string >( args_count, "" ),
 						      {}, { .native = fn }, src_id, idx ), false );
 	}
-	var_fn_t * get_typefn( const int & type, const std::string & name );
+	var_fn_t * get_typefn( const size_t & type, const std::string & name );
 
 	// used to convert typeid -> name
-	void set_typename( const int & type, const std::string & name );
-	std::string type_name( const int & type );
+	void set_typename( const size_t & type, const std::string & name );
+	std::string type_name( const size_t & type );
+	std::string type_name( const var_base_t * val );
 
 	inline const std::string & self_binary() const { return m_self_binary; }
 	inline const std::string & dll_core_load_loc() const { return m_dll_core_load_loc; }
@@ -118,9 +119,9 @@ private:
 	// type ids for custom types (negative)
 	int m_custom_types;
 	// functions for any and all types
-	std::unordered_map< int, vars_frame_t * > m_typefns;
+	std::unordered_map< size_t, vars_frame_t * > m_typefns;
 	// names of types (optional)
-	std::unordered_map< int, std::string > m_typenames;
+	std::unordered_map< size_t, std::string > m_typenames;
 	// location where feral binary exists (used by sys.self_binary())
 	std::string m_self_binary;
 	// directory where (core) module is loaded from (used by builder)

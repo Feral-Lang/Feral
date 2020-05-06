@@ -104,7 +104,7 @@ int vm_state_t::dll_typeid( const std::string & name )
 	return m_dll_typenames[ name ];
 }
 
-void vm_state_t::add_typefn( const int & type, const std::string & name, var_base_t * fn, const bool iref )
+void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref )
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) {
 		m_typefns[ type ] = new vars_frame_t();
@@ -117,7 +117,7 @@ void vm_state_t::add_typefn( const int & type, const std::string & name, var_bas
 	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
-var_fn_t * vm_state_t::get_typefn( const int & type, const std::string & name )
+var_fn_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
 {
 	auto it = m_typefns.find( type );
 	if( it == m_typefns.end() ) return FN( m_typefns[ VT_ALL ]->get( name ) );
@@ -126,18 +126,21 @@ var_fn_t * vm_state_t::get_typefn( const int & type, const std::string & name )
 	return FN( m_typefns[ VT_ALL ]->get( name ) );
 }
 
-void vm_state_t::set_typename( const int & type, const std::string & name )
+void vm_state_t::set_typename( const size_t & type, const std::string & name )
 {
 	m_typenames[ type ] = name;
 }
-std::string vm_state_t::type_name( const int & type )
+std::string vm_state_t::type_name( const size_t & type )
 {
 	if( m_typenames.find( type ) != m_typenames.end() ) {
 		return m_typenames[ type ];
 	}
 	return "typeid<" + std::to_string( type ) + ">";
 }
-
+std::string vm_state_t::type_name( const var_base_t * val )
+{
+	return type_name( val->type() != VT_TYPEID ? val->id() : val->type() );
+}
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )
 {
 	if( m_globals.find( name ) != m_globals.end() ) return;

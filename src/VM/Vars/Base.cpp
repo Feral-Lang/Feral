@@ -12,11 +12,15 @@
 
 #include "Base.hpp"
 
-var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & idx )
-	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 )
+var_base_t::var_base_t( const int & type, const size_t & src_id, const size_t & idx,
+			const bool & callable, const bool & attr_based )
+	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 ),
+	  m_callable( callable ), m_attr_based( attr_based )
 {}
 var_base_t::~var_base_t()
 {}
+
+size_t var_base_t::id() const { return m_type; }
 
 void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
@@ -42,6 +46,16 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 	var_dref( str );
 	return true;
 }
+
+var_base_t * var_base_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
+			       const std::vector< fn_assn_arg_t > & assn_args,
+			       const std::unordered_map< std::string, size_t > & assn_args_loc,
+			       const size_t & src_id, const size_t & idx )
+{ return nullptr; }
+
+bool var_base_t::attr_exists( const std::string & name ) const { return false; }
+void var_base_t::attr_set( const std::string & name, var_base_t * val, const bool iref ) {}
+var_base_t * var_base_t::attr_get( const std::string & name ) { return nullptr; }
 
 void * var_base_t::operator new( size_t sz )
 {

@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_nil_t::var_nil_t( const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_NIL, src_id, idx ) {}
+	: var_base_t( VT_NIL, src_id, idx, false, false ) {}
 
 var_base_t * var_nil_t::copy( const size_t & src_id, const size_t & idx ) { return new var_nil_t( src_id, idx ); }
 void var_nil_t::set( var_base_t * from ) {}

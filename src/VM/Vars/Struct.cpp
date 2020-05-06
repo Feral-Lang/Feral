@@ -13,9 +13,9 @@
 ////////////////////////////////////////////////////////////// VAR_STRUCT //////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_struct_t::var_struct_t( const int & type_id, const std::unordered_map< std::string, var_base_t * > & attrs,
-			    const size_t & src_id, const size_t & idx )
-	: var_attr_based_t( type_id, src_id, idx ), m_attrs( attrs ) {}
+var_struct_t::var_struct_t( const std::unordered_map< std::string, var_base_t * > & attrs,
+			    const int & type_id, const size_t & src_id, const size_t & idx )
+	: var_base_t( VT_STRUCT, src_id, idx, false, true ), m_attrs( attrs ), m_id( type_id ) {}
 
 var_struct_t::~var_struct_t()
 {
@@ -24,19 +24,20 @@ var_struct_t::~var_struct_t()
 	}
 }
 
+size_t var_struct_t::id() const { return m_id; }
+
 var_base_t * var_struct_t::copy( const size_t & src_id, const size_t & idx )
 {
 	std::unordered_map< std::string, var_base_t * > attrs;
 	for( auto & attr : m_attrs ) {
 		attrs[ attr.first ] = attr.second->copy( src_id, idx );
 	}
-	return new var_struct_t( m_type, attrs, src_id, idx );
+	return new var_struct_t( attrs, m_type, src_id, idx );
 }
 
 void var_struct_t::set( var_base_t * from )
 {
 	var_struct_t * st = STRUCT( from );
-	m_type = st->m_type;
 	for( auto & attr : m_attrs ) {
 		var_dref( attr.second );
 	}
@@ -44,6 +45,7 @@ void var_struct_t::set( var_base_t * from )
 		var_iref( attr.second );
 	}
 	m_attrs = st->m_attrs;
+	m_id = st->m_id;
 }
 
 bool var_struct_t::attr_exists( const std::string & name ) const

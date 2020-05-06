@@ -84,24 +84,20 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			// for creation with 'in' parameter
 			// if it's a function, add that to vm.typefuncs
-			if( val->type() == VT_FUNC ) {
-				if( in->type() == VT_STRUCT_DEF ) {
-					vm.add_typefn( STRUCT_DEF( in )->id(), name, val, true );
-				} else if( in->type() == VT_TYPEID ) {
-					vm.add_typefn( TYPEID( in )->get(), name, val, true );
-				} else {
-					vm.add_typefn( in->type(), name, val, true );
-				}
+			if( val->callable() ) {
+				// since id() is virtual, it automatically accomodates
+				// struct_def, typeid, as well as simple type()
+				vm.add_typefn( in->id(), name, val, true );
 			} else { // else add to attribute if type >= _VT_LAST
-				if( in->type() < _VT_LAST ) {
+				if( !in->attr_based() ) {
 					vm.fail( op.idx, "attributes can be added only to structure objects" );
 					goto create_fail;
 				}
 				// only copy if reference count > 1 (no point in copying unique values)
 				if( val->ref() == 1 ) {
-					ATTR_BASED( in )->attr_set( name, val, true );
+					in->attr_set( name, val, true );
 				} else {
-					ATTR_BASED( in )->attr_set( name, val->copy( src_id, op.idx ), false );
+					in->attr_set( name, val->copy( src_id, op.idx ), false );
 				}
 			}
 		create_done:
@@ -143,10 +139,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		}
 		case OP_JMPTPOP: // fallthrough
 		case OP_JMPT: {
-			if( vms->back()->type() != VT_BOOL ) {
-				vm.fail( op.idx, "expected boolean operand for jump instruction" );
-				goto fail;
-			}
+			assert( vms->back()->type() == VT_BOOL );
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
 			if( res ) i = op.data.sz - 1;
 			if( !res || op.op == OP_JMPTPOP ) vms->pop();
@@ -154,10 +147,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 		}
 		case OP_JMPFPOP: // fallthrough
 		case OP_JMPF: {
-			if( vms->back()->type() != VT_BOOL ) {
-				vm.fail( op.idx, "expected boolean operand for jump instruction" );
-				goto fail;
-			}
+			assert( vms->back()->type() == VT_BOOL );
 			bool res = static_cast< var_bool_t * >( vms->back() )->get();
 			if( !res ) i = op.data.sz - 1;
 			if( res || op.op == OP_JMPFPOP ) vms->pop();
@@ -252,7 +242,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				var_dref( in_base );
 				goto fncall_fail;
 			}
-			if( fn_base->type() != VT_FUNC && fn_base->type() != VT_STRUCT_DEF ) {
+			if( !fn_base->callable() ) {
 				vm.fail( op.idx, "'%s' is not a function or struct definition",
 					 vm.type_name( fn_base->type() ).c_str() );
 				var_dref( in_base );
@@ -265,7 +255,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					goto fncall_fail;
 				}
 			} else if( fn_base->type() == VT_STRUCT_DEF ) { // VT_STRUCT_DEF
-				var_base_t * res = STRUCT_DEF( fn_base )->init( vm, args, assn_args, src_id, op.idx );
+				var_base_t * res = STRUCT_DEF( fn_base )->call( vm, args, assn_args, assn_args_loc, src_id, op.idx );
 				if( !res ) {
 					vm.fail( op.idx, "object creation failed, look at error above" );
 					goto fncall_fail;
@@ -287,8 +277,8 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			const std::string attr = op.data.s;
 			var_base_t * in_base = vms->pop( false );
 			var_base_t * val = nullptr;
-			if( in_base->type() >= _VT_LAST || in_base->type() == VT_SRC ) {
-				val = ATTR_BASED( in_base )->attr_get( attr );
+			if( in_base->attr_based() ) {
+				val = in_base->attr_get( attr );
 			}
 			if( !val ) val = vm.get_typefn( in_base->type(), attr );
 			if( val == nullptr ) {
