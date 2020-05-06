@@ -13,12 +13,13 @@
 //////////////////////////////////////////////////////////// VAR_TYPEID ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_typeid_t::var_typeid_t( const int & val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_TYPEID, src_id, idx ), m_val( val ) {}
+var_typeid_t::var_typeid_t( const size_t & val, const size_t & src_id, const size_t & idx )
+	: var_base_t( VT_TYPEID, src_id, idx, false, false ), m_val( val ) {}
 
 var_base_t * var_typeid_t::copy( const size_t & src_id, const size_t & idx ) { return new var_typeid_t( m_val, src_id, idx ); }
-int & var_typeid_t::get() { return m_val; }
 void var_typeid_t::set( var_base_t * from )
 {
 	m_val = TYPEID( from )->get();
 }
+size_t & var_typeid_t::get() { return m_val; }
+size_t var_typeid_t::id() const { return m_val; }

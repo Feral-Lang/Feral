@@ -22,7 +22,7 @@ var_base_t * flt_add( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	res += rhs;
@@ -39,7 +39,7 @@ var_base_t * flt_sub( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	res -= rhs;
@@ -56,7 +56,7 @@ var_base_t * flt_mul( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	res *= rhs;
@@ -73,12 +73,12 @@ var_base_t * flt_div( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	if( rhs == 0 ) {
 		vm.fail( fd.idx, "modulo with zero as rhs is invalid",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	res /= rhs;
@@ -94,7 +94,7 @@ var_base_t * flt_addassn( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	FLT( fd.args[ 0 ] )->get() += rhs;
@@ -110,7 +110,7 @@ var_base_t * flt_subassn( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	FLT( fd.args[ 0 ] )->get() -= rhs;
@@ -126,7 +126,7 @@ var_base_t * flt_mulassn( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	FLT( fd.args[ 0 ] )->get() *= rhs;
@@ -142,7 +142,7 @@ var_base_t * flt_divassn( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	FLT( fd.args[ 0 ] )->get() /= rhs;
@@ -201,7 +201,7 @@ var_base_t * flt_lt( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than operation, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	return lhs < rhs ? vm.tru : vm.fals;
@@ -217,7 +217,7 @@ var_base_t * flt_gt( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than operation, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	return lhs > rhs ? vm.tru : vm.fals;
@@ -233,7 +233,7 @@ var_base_t * flt_le( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer less than/equals operation, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	return lhs <= rhs ? vm.tru : vm.fals;
@@ -249,7 +249,7 @@ var_base_t * flt_ge( vm_state_t & vm, const fn_data_t & fd )
 		rhs = FLT( fd.args[ 1 ] )->get();
 	} else {
 		vm.fail( fd.idx, "expected int or float argument for integer greater than/equals operation, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 	return lhs >= rhs ? vm.tru : vm.fals;

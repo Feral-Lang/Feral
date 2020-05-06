@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_str_t::var_str_t( const std::string & val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_STR, src_id, idx ), m_val( val ) {}
+	: var_base_t( VT_STR, src_id, idx, false, false ), m_val( val ) {}
 
 var_base_t * var_str_t::copy( const size_t & src_id, const size_t & idx ) { return new var_str_t( m_val, src_id, idx ); }
 std::string & var_str_t::get() { return m_val; }

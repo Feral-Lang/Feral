@@ -30,7 +30,7 @@ public:
 
 var_int_iterable_t::var_int_iterable_t( const mpz_class & begin, const mpz_class & end, const mpz_class & step,
 					const size_t & src_id, const size_t & idx )
-	: var_base_t( int_iterable_typeid, src_id, idx ), m_begin( begin ), m_end( end ),
+	: var_base_t( int_iterable_typeid, src_id, idx, false, false ), m_begin( begin ), m_end( end ),
 	  m_step( step ), m_curr( begin ), m_started( false ), m_is_reverse( step < 0 )
 {}
 
@@ -95,7 +95,7 @@ var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->type() != VT_BOOL ) {
 		vm.fail( fd.idx, "expected boolean argument for assertion, found: %s",
-			 vm.type_name( fd.args[ 1 ]->type() ).c_str() );
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 

@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_bool_t::var_bool_t( const bool val, const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_BOOL, src_id, idx ), m_val( val ) {}
+	: var_base_t( VT_BOOL, src_id, idx, false, false ), m_val( val ) {}
 
 var_base_t * var_bool_t::copy( const size_t & src_id, const size_t & idx ) { return new var_bool_t( m_val, src_id, idx ); }
 bool & var_bool_t::get() { return m_val; }

@@ -20,7 +20,7 @@
 var_struct_def_t::var_struct_def_t( const int & id, const std::vector< std::string > & attr_order,
 				    const std::unordered_map< std::string, var_base_t * > & attrs,
 				    const size_t & src_id, const size_t & idx )
-	: var_base_t( VT_STRUCT_DEF, src_id, idx ), m_attr_order( attr_order ), m_attrs( attrs ),
+	: var_base_t( VT_STRUCT_DEF, src_id, idx, true, false ), m_attr_order( attr_order ), m_attrs( attrs ),
 	  m_id( id ) {}
 
 var_struct_def_t::~var_struct_def_t()
@@ -53,8 +53,9 @@ void var_struct_def_t::set( var_base_t * from )
 	m_attrs = st->m_attrs;
 }
 
-var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_base_t * > & args,
+var_base_t * var_struct_def_t::call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 				     const std::vector< fn_assn_arg_t > & assn_args,
+				     const std::unordered_map< std::string, size_t > & assn_args_loc,
 				     const size_t & src_id, const size_t & idx )
 {
 	for( auto & aa : assn_args ) {
@@ -104,7 +105,7 @@ var_base_t * var_struct_def_t::init( vm_state_t & vm, const std::vector< var_bas
 		++it;
 	}
 
-	return new var_struct_t( m_id, attrs, src_id, idx );
+	return new var_struct_t( attrs, m_id, src_id, idx );
 fail:
 	for( auto attr : attrs ) {
 		var_dref( attr.second );
