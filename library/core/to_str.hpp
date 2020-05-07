@@ -93,23 +93,4 @@ var_base_t * map_to_str( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( res );
 }
 
-var_base_t * struct_to_str( vm_state_t & vm, const fn_data_t & fd )
-{
-	var_struct_t * data = STRUCT( fd.args[ 0 ] );
-	std::string res = vm.type_name( data ) + "{";
-	for( auto & e : data->attrs() ) {
-		std::string str;
-		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
-			return nullptr;
-		}
-		res += e.first + ": " + str + ", ";
-	}
-	if( data->attrs().size() > 0 ) {
-		res.pop_back();
-		res.pop_back();
-	}
-	res += "}";
-	return make< var_str_t >( res );
-}
-
 #endif // LIBRARY_CORE_TO_STR_HPP

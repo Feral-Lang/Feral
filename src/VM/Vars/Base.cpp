@@ -85,7 +85,6 @@ void init_typenames( vm_state_t & vm )
 	vm.set_typename( type_id< var_map_t >(), "map" );
 	vm.set_typename( type_id< var_fn_t >(), "function" );
 	vm.set_typename( type_id< var_file_t >(), "file" );
-	vm.set_typename( type_id< var_struct_def_t >(), "struct_def" );
 	vm.set_typename( type_id< var_src_t >(), "module" );
 
 	vm.gadd( "nil_t", make< var_typeid_t >( type_id< var_nil_t >() ) );
@@ -98,6 +97,5 @@ void init_typenames( vm_state_t & vm )
 	vm.gadd( "map_t", make< var_typeid_t >( type_id< var_map_t >() ) );
 	vm.gadd( "func_t", make< var_typeid_t >( type_id< var_fn_t >() ) );
 	vm.gadd( "file_t", make< var_typeid_t >( type_id< var_file_t >() ) );
-	vm.gadd( "struct_def_t", make< var_typeid_t >( type_id< var_struct_def_t >() ) );
 	vm.gadd( "src_t", make< var_typeid_t >( type_id< var_src_t >() ) );
 }
