@@ -101,7 +101,6 @@ INIT_MODULE( core )
 	vm.add_native_typefn( type_id< var_str_t >(),	 "str", str_to_str,    0, src_id, idx );
 	vm.add_native_typefn( type_id< var_vec_t >(),	 "str", vec_to_str,    0, src_id, idx );
 	vm.add_native_typefn( type_id< var_map_t >(),	 "str", map_to_str,    0, src_id, idx );
-	vm.add_native_typefn( type_id< var_struct_t >(), "str", struct_to_str, 0, src_id, idx );
 
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
