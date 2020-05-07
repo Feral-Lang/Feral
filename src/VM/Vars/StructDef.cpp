@@ -116,4 +116,4 @@ fail:
 
 const std::vector< std::string > & var_struct_def_t::attr_order() const { return m_attr_order; }
 const std::unordered_map< std::string, var_base_t * > & var_struct_def_t::attrs() const { return m_attrs; }
-size_t var_struct_def_t::id() const { return m_id; }
+size_t var_struct_def_t::typefn_id() const { return m_id; }

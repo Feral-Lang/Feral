@@ -27,7 +27,7 @@ var_base_t::var_base_t( const size_t & type, const size_t & src_id, const size_t
 var_base_t::~var_base_t()
 {}
 
-size_t var_base_t::id() const { return m_type; }
+size_t var_base_t::typefn_id() const { return m_type; }
 
 void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 

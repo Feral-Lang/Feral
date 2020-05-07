@@ -22,4 +22,4 @@ void var_typeid_t::set( var_base_t * from )
 	m_val = TYPEID( from )->get();
 }
 size_t & var_typeid_t::get() { return m_val; }
-size_t var_typeid_t::id() const { return m_val; }
+size_t var_typeid_t::typefn_id() const { return m_val; }

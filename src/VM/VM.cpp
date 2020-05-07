@@ -132,7 +132,7 @@ std::string vm_state_t::type_name( const size_t & type )
 }
 std::string vm_state_t::type_name( const var_base_t * val )
 {
-	return type_name( !val->istype< var_typeid_t >() ? val->id() : val->type() );
+	return type_name( val->type() );
 }
 void vm_state_t::gadd( const std::string & name, var_base_t * val, const bool iref )
 {
