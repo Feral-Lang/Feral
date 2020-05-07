@@ -76,27 +76,6 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-void vm_state_t::register_type( const size_t & id, const std::string & name, const size_t & src_id, const size_t & idx )
-{
-	assert( m_dll_typenames.find( name ) == m_dll_typenames.end() );
-	m_dll_typenames[ name ] = id;
-	m_typenames[ id ] = name;
-	// only add to source if it's not main source, else add to globals
-	// for example, utils, core will be added to globals
-	if( src_stack.size() > 1 ) {
-		src_stack.back()->add_native_var( name, make_all< var_typeid_t >( id, src_id, idx ), true, true );
-	} else {
-		assert( m_globals.find( name ) == m_globals.end() );
-		m_globals[ name ] = new var_typeid_t( id, src_id, idx );
-	}
-}
-
-int vm_state_t::dll_typeid( const std::string & name )
-{
-	if( m_dll_typenames.find( name ) == m_dll_typenames.end() ) return 0;
-	return m_dll_typenames[ name ];
-}
-
 void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref )
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) {

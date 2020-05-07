@@ -75,27 +75,14 @@ void var_base_t::operator delete( void * ptr, size_t sz )
 
 void init_typenames( vm_state_t & vm )
 {
-	vm.set_typename( type_id< var_nil_t >(), "nil" );
-	vm.set_typename( type_id< var_typeid_t >(), "typeid" );
-	vm.set_typename( type_id< var_bool_t >(), "bool" );
-	vm.set_typename( type_id< var_int_t >(), "int" );
-	vm.set_typename( type_id< var_flt_t >(), "float" );
-	vm.set_typename( type_id< var_str_t >(), "string" );
-	vm.set_typename( type_id< var_vec_t >(), "vector" );
-	vm.set_typename( type_id< var_map_t >(), "map" );
-	vm.set_typename( type_id< var_fn_t >(), "function" );
-	vm.set_typename( type_id< var_file_t >(), "file" );
-	vm.set_typename( type_id< var_src_t >(), "module" );
-
-	vm.gadd( "nil_t", make< var_typeid_t >( type_id< var_nil_t >() ) );
-	vm.gadd( "typeid_t", make< var_typeid_t >( type_id< var_typeid_t >() ) );
-	vm.gadd( "bool_t", make< var_typeid_t >( type_id< var_bool_t >() ) );
-	vm.gadd( "int_t", make< var_typeid_t >( type_id< var_int_t >() ) );
-	vm.gadd( "flt_t", make< var_typeid_t >( type_id< var_flt_t >() ) );
-	vm.gadd( "str_t", make< var_typeid_t >( type_id< var_str_t >() ) );
-	vm.gadd( "vec_t", make< var_typeid_t >( type_id< var_vec_t >() ) );
-	vm.gadd( "map_t", make< var_typeid_t >( type_id< var_map_t >() ) );
-	vm.gadd( "func_t", make< var_typeid_t >( type_id< var_fn_t >() ) );
-	vm.gadd( "file_t", make< var_typeid_t >( type_id< var_file_t >() ) );
-	vm.gadd( "src_t", make< var_typeid_t >( type_id< var_src_t >() ) );
+	vm.register_type< var_nil_t >( "nil" );
+	vm.register_type< var_typeid_t >( "typeid" );
+	vm.register_type< var_bool_t >( "bool" );
+	vm.register_type< var_int_t >( "int" );
+	vm.register_type< var_flt_t >( "flt" );
+	vm.register_type< var_str_t >( "str" );
+	vm.register_type< var_vec_t >( "vec" );
+	vm.register_type< var_map_t >( "map" );
+	vm.register_type< var_fn_t >( "func" );
+	vm.register_type< var_src_t >( "src" );
 }
