@@ -40,17 +40,6 @@ var_base_t * all_copy( vm_state_t & vm, const fn_data_t & fd )
 	return copy;
 }
 
-var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
-{
-	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
-		vm.fail( fd.idx, "expected string argument for typename, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	vm.set_typename( STRUCT_DEF( fd.args[ 0 ] )->id(), STR( fd.args[ 1 ] )->get() );
-	return vm.nil;
-}
-
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_base_t * mod_var = fd.args[ 1 ];
@@ -113,8 +102,6 @@ INIT_MODULE( core )
 	vm.add_native_typefn( type_id< var_vec_t >(),	 "str", vec_to_str,    0, src_id, idx );
 	vm.add_native_typefn( type_id< var_map_t >(),	 "str", map_to_str,    0, src_id, idx );
 	vm.add_native_typefn( type_id< var_struct_t >(), "str", struct_to_str, 0, src_id, idx );
-
-	vm.add_native_typefn( type_id< var_struct_def_t >(), "set_typename", struct_def_set_typename, 1, src_id, idx );
 
 	// global required
 	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );

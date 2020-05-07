@@ -79,13 +79,13 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	void register_type( const size_t & id, const std::string & name, const size_t & src_id, const size_t & idx );
+	void register_type( const std::uintptr_t & id, const std::string & name, const size_t & src_id, const size_t & idx );
 	// returns 0 on failure because no dll type can have id >= 0
 	// see vm_state_t() -> m_custom_types for more info
 	int dll_typeid( const std::string & name );
 
-	void add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref );
-	inline void add_native_typefn( const int & type, const std::string & name, nativefnptr_t fn,
+	void add_typefn( const std::uintptr_t & type, const std::string & name, var_base_t * fn, const bool iref );
+	inline void add_native_typefn( const std::uintptr_t & type, const std::string & name, nativefnptr_t fn,
 				       const size_t & args_count, const size_t & src_id, const size_t & idx )
 	{
 		add_typefn( type, name, new var_fn_t( src_stack.back()->src()->path(),
@@ -95,8 +95,8 @@ struct vm_state_t
 	var_base_t * get_typefn( const size_t & type, const std::string & name );
 
 	// used to convert typeid -> name
-	void set_typename( const size_t & type, const std::string & name );
-	std::string type_name( const size_t & type );
+	void set_typename( const std::uintptr_t & type, const std::string & name );
+	std::string type_name( const std::uintptr_t & type );
 	std::string type_name( const var_base_t * val );
 
 	inline const std::string & self_binary() const { return m_self_binary; }
@@ -114,20 +114,20 @@ private:
 	std::vector< std::string > m_dll_locs;
 	// global vars/objects that are required
 	std::unordered_map< std::string, var_base_t * > m_globals;
-	// functions for any and all types
-	std::unordered_map< size_t, vars_frame_t * > m_typefns;
+	// functions for any and all C++ types
+	std::unordered_map< std::uintptr_t, vars_frame_t * > m_typefns;
 	// names of types (optional)
-	std::unordered_map< size_t, std::string > m_typenames;
+	std::unordered_map< std::uintptr_t, std::string > m_typenames;
+	// dll type name to id mapping
+	std::unordered_map< std::string, std::uintptr_t > m_dll_typenames;
+	// all functions to call before unloading dlls
+	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 	// location where feral binary exists (used by sys.self_binary())
 	std::string m_self_binary;
 	// directory where (core) module is loaded from (used by builder)
 	std::string m_dll_core_load_loc;
 	// directory where feral libraries and config and stuff lives
 	std::string m_feral_home_dir;
-	// dll type name to id mapping
-	std::unordered_map< std::string, int > m_dll_typenames;
-	// all functions to call before unloading dlls
-	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 };
 
 template< typename T, typename ... Args > T * make( Args... args )

@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var_struct_t::var_struct_t( const std::unordered_map< std::string, var_base_t * > & attrs,
-			    const size_t & struct_id, const size_t & src_id, const size_t & idx )
+			    const std::uintptr_t & struct_id, const size_t & src_id, const size_t & idx )
 	: var_base_t( type_id< var_struct_t >(), src_id, idx, false, true ), m_attrs( attrs ), m_id( struct_id ) {}
 
 var_struct_t::~var_struct_t()
@@ -24,7 +24,7 @@ var_struct_t::~var_struct_t()
 	}
 }
 
-size_t var_struct_t::typefn_id() const { return m_id; }
+std::uintptr_t var_struct_t::typefn_id() const { return m_id; }
 
 var_base_t * var_struct_t::copy( const size_t & src_id, const size_t & idx )
 {
