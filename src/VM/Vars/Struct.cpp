@@ -24,7 +24,7 @@ var_struct_t::~var_struct_t()
 	}
 }
 
-size_t var_struct_t::id() const { return m_id; }
+size_t var_struct_t::typefn_id() const { return m_id; }
 
 var_base_t * var_struct_t::copy( const size_t & src_id, const size_t & idx )
 {

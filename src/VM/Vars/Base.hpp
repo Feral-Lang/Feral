@@ -78,8 +78,8 @@ public:
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
 	inline size_t type() const { return m_type; }
-	// used for denoting things like structs
-	virtual size_t id() const;
+	// used for denoting things like structs in typefns
+	virtual size_t typefn_id() const;
 
 	inline size_t src_id() const { return m_src_id; }
 	inline size_t idx() const { return m_idx; }
@@ -144,7 +144,7 @@ public:
 	void set( var_base_t * from );
 
 	size_t & get();
-	size_t id() const;
+	size_t typefn_id() const;
 };
 #define TYPEID( x ) static_cast< var_typeid_t * >( x )
 
@@ -334,7 +334,7 @@ public:
 
 	const std::vector< std::string > & attr_order() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
-	size_t id() const;
+	size_t typefn_id() const;
 };
 #define STRUCT_DEF( x ) static_cast< var_struct_def_t * >( x )
 
@@ -347,8 +347,6 @@ public:
 		      const size_t & struct_id, const size_t & src_id, const size_t & idx );
 	~var_struct_t();
 
-	size_t id() const;
-
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
@@ -358,6 +356,7 @@ public:
 
 	const std::vector< std::string > & attr_order() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
+	size_t typefn_id() const;
 };
 #define STRUCT( x ) static_cast< var_struct_t * >( x )
 
