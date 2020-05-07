@@ -250,7 +250,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			args.insert( args.begin(), in_base );
 			res = fn_base->call( vm, args, assn_args, assn_args_loc, src_id, op.idx );
 			if( !res ) {
-				vm.fail( op.idx, "'%s' call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				vm.fail( op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
 				goto fncall_fail;
 			}
 			if( !res->istype< var_nil_t >() ) {

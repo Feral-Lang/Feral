@@ -31,6 +31,22 @@ typedef void ( * mod_deinit_fn_t )();
 #define DEINIT_MODULE( name )			\
 	extern "C" void deinit_##name()
 
+template< typename T, typename ... Args > T * make( Args... args )
+{
+	// 0, 0 for src_id and idx
+	T * res = new T( args..., 0, 0 );
+	res->dref();
+	return res;
+}
+
+template< typename T, typename ... Args > T * make_all( Args... args )
+{
+	// 0, 0 for src_id and idx
+	T * res = new T( args... );
+	res->dref();
+	return res;
+}
+
 struct vm_state_t
 {
 	bool exit_called;
@@ -79,10 +95,13 @@ struct vm_state_t
 	void gadd( const std::string & name, var_base_t * val, const bool iref = true );
 	var_base_t * gget( const std::string & name );
 
-	void register_type( const std::uintptr_t & id, const std::string & name, const size_t & src_id, const size_t & idx );
-	// returns 0 on failure because no dll type can have id >= 0
-	// see vm_state_t() -> m_custom_types for more info
-	int dll_typeid( const std::string & name );
+	template< typename ... T > void register_type( const std::string & name, const size_t & src_id = 0, const size_t & idx = 0 )
+	{
+		set_typename( type_id< T ... >(), name );
+		var_typeid_t * type_var = make_all< var_typeid_t >( type_id< T ... >(), src_id, idx );
+		if( src_stack.empty() ) gadd( name + "_t", type_var );
+		else src_stack.back()->add_native_var( name + "_t", type_var, true, true );
+	}
 
 	void add_typefn( const std::uintptr_t & type, const std::string & name, var_base_t * fn, const bool iref );
 	inline void add_native_typefn( const std::uintptr_t & type, const std::string & name, nativefnptr_t fn,
@@ -118,8 +137,6 @@ private:
 	std::unordered_map< std::uintptr_t, vars_frame_t * > m_typefns;
 	// names of types (optional)
 	std::unordered_map< std::uintptr_t, std::string > m_typenames;
-	// dll type name to id mapping
-	std::unordered_map< std::string, std::uintptr_t > m_dll_typenames;
 	// all functions to call before unloading dlls
 	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 	// location where feral binary exists (used by sys.self_binary())
@@ -129,22 +146,6 @@ private:
 	// directory where feral libraries and config and stuff lives
 	std::string m_feral_home_dir;
 };
-
-template< typename T, typename ... Args > T * make( Args... args )
-{
-	// 0, 0 for src_id and idx
-	T * res = new T( args..., 0, 0 );
-	res->dref();
-	return res;
-}
-
-template< typename T, typename ... Args > T * make_all( Args... args )
-{
-	// 0, 0 for src_id and idx
-	T * res = new T( args... );
-	res->dref();
-	return res;
-}
 
 const char * nmod_ext();
 const char * fmod_ext( const bool compiled = false );

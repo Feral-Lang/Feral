@@ -282,26 +282,6 @@ public:
 };
 #define FN( x ) static_cast< var_fn_t * >( x )
 
-class var_file_t : public var_base_t
-{
-	FILE * m_file;
-	std::string m_mode;
-	bool m_owner;
-public:
-	var_file_t( FILE * const file, const std::string & mode, const size_t & src_id,
-		    const size_t & idx, const bool owner = true );
-	~var_file_t();
-
-	void * get_data( const size_t & idx );
-
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
-
-	inline FILE * const get() const { return m_file; }
-	inline const std::string & mode() const { return m_mode; }
-};
-#define FILE( x ) static_cast< var_file_t * >( x )
-
 class vars_t;
 class var_src_t : public var_base_t
 {
