@@ -133,9 +133,9 @@ static void remove_back_slash( std::string & s );
 namespace lex
 {
 
-Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t prefix_idx )
+Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & begin_idx, const size_t & end_idx )
 {
-	const std::string src = src_file.data().substr( prefix_idx );
+	const std::string & src = src_file.data();
 	if( src.empty() ) return E_OK;
 
 	Errors err = E_OK;
@@ -145,8 +145,8 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t pr
 	bool comment_line = false;
 
 	// tokenize the input
-	size_t i = prefix_idx;
-	while( i < src_len ) {
+	size_t i = begin_idx;
+	while( i < end_idx ) {
 		if( comment_line && CURR( src ) == '\n' ) {
 			comment_line = false;
 			++i;
