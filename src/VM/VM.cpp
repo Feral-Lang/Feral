@@ -76,7 +76,7 @@ void vm_state_t::push_src( const std::string & src_path )
 
 void vm_state_t::pop_src() { var_dref( src_stack.back() ); src_stack.pop_back(); }
 
-void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_base_t * fn, const bool iref )
+void vm_state_t::add_typefn( const std::uintptr_t & type, const std::string & name, var_base_t * fn, const bool iref )
 {
 	if( m_typefns.find( type ) == m_typefns.end() ) {
 		m_typefns[ type ] = new vars_frame_t();
@@ -89,8 +89,9 @@ void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_
 	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
-var_base_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
+var_base_t * vm_state_t::get_typefn( const std::uintptr_t & type, const std::string & name, const bool & all_only )
 {
+	if( all_only ) return m_typefns[ type_id< var_all_t >() ]->get( name );
 	auto it = m_typefns.find( type );
 	if( it == m_typefns.end() ) return m_typefns[ type_id< var_all_t >() ]->get( name );
 	var_base_t * res = it->second->get( name );
@@ -98,11 +99,11 @@ var_base_t * vm_state_t::get_typefn( const size_t & type, const std::string & na
 	return FN( m_typefns[ type_id< var_all_t >() ]->get( name ) );
 }
 
-void vm_state_t::set_typename( const size_t & type, const std::string & name )
+void vm_state_t::set_typename( const std::uintptr_t & type, const std::string & name )
 {
 	m_typenames[ type ] = name;
 }
-std::string vm_state_t::type_name( const size_t & type )
+std::string vm_state_t::type_name( const std::uintptr_t & type )
 {
 	if( m_typenames.find( type ) != m_typenames.end() ) {
 		return m_typenames[ type ];
@@ -154,8 +155,8 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	return false;
 }
 
-bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id, const size_t & idx,
-			    const bool set_dll_core_load_loc )
+bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id,
+			    const size_t & idx, const bool set_dll_core_load_loc )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
