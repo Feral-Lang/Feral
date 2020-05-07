@@ -33,7 +33,7 @@ void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
-	var_base_t * str_fn = vm.get_typefn( this->type(), "str" );
+	var_base_t * str_fn = vm.get_typefn( this->type(), "str", false );
 	if( !str_fn ) {
 		vm.fail( this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
 		return false;
@@ -75,6 +75,8 @@ void var_base_t::operator delete( void * ptr, size_t sz )
 
 void init_typenames( vm_state_t & vm )
 {
+	vm.register_type< var_all_t >( "all" );
+
 	vm.register_type< var_nil_t >( "nil" );
 	vm.register_type< var_typeid_t >( "typeid" );
 	vm.register_type< var_bool_t >( "bool" );

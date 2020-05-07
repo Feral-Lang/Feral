@@ -228,14 +228,15 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				in_base = vms->pop( false );
 				if( in_base->attr_based() ) {
 					fn_base = in_base->attr_get( fn_name );
+					if( fn_base == nullptr ) fn_base = vm.get_typefn( in_base->typefn_id(), fn_name, true );
 				} else {
-					fn_base = vm.get_typefn( in_base->typefn_id(), fn_name );
+					fn_base = vm.get_typefn( in_base->typefn_id(), fn_name, false );
 				}
 			} else {
 				fn_base = vms->pop( false );
 			}
 			if( !fn_base ) {
-				if( mem_call ) vm.fail( op.idx, "function '%s' does not exist for type: %s",
+				if( mem_call ) vm.fail( op.idx, "callable '%s' does not exist for %s",
 							fn_name.c_str(), vm.type_name( in_base ).c_str() );
 				else vm.fail( op.idx, "this function does not exist" );
 				var_dref( in_base );
@@ -273,8 +274,9 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			var_base_t * val = nullptr;
 			if( in_base->attr_based() ) {
 				val = in_base->attr_get( attr );
+				if( val == nullptr ) val = vm.get_typefn( in_base->typefn_id(), attr, true );
 			} else {
-				val = vm.get_typefn( in_base->typefn_id(), attr );
+				val = vm.get_typefn( in_base->typefn_id(), attr, false );
 			}
 			if( val == nullptr ) {
 				vm.fail( op.idx, "type %s does not contain attribute: '%s'",
