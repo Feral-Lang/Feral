@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////// VAR_STRUCT_DEF /////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_struct_def_t::var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
+var_struct_def_t::var_struct_def_t( const std::uintptr_t & id, const std::vector< std::string > & attr_order,
 				    const std::unordered_map< std::string, var_base_t * > & attrs,
 				    const size_t & src_id, const size_t & idx )
 	: var_base_t( type_id< var_struct_def_t >(), src_id, idx, true, false ), m_attr_order( attr_order ), m_attrs( attrs ),
@@ -74,8 +74,8 @@ var_base_t * var_struct_def_t::call( vm_state_t & vm, const std::vector< var_bas
 		}
 		if( m_attrs[ * it ]->type() != arg->type() ) {
 			vm.fail( arg->idx(), "expected type: %s, found: %s",
-				   vm.type_name( m_attrs[ * it ]->type() ).c_str(),
-				   vm.type_name( arg->type() ).c_str() );
+				   vm.type_name( m_attrs[ * it ] ).c_str(),
+				   vm.type_name( arg ).c_str() );
 			goto fail;
 		}
 		attrs[ * it ] = arg->copy( src_id, idx );
@@ -90,8 +90,8 @@ var_base_t * var_struct_def_t::call( vm_state_t & vm, const std::vector< var_bas
 		}
 		if( m_attrs[ a_arg.name ]->type() != a_arg.val->type() ) {
 			vm.fail( a_arg.idx, "expected type: %s, found: %s",
-				 vm.type_name( m_attrs[ a_arg.name ]->type() ).c_str(),
-				 vm.type_name( a_arg.val->type() ).c_str() );
+				 vm.type_name( m_attrs[ a_arg.name ] ).c_str(),
+				 vm.type_name( a_arg.val ).c_str() );
 			goto fail;
 		}
 		if( attrs.find( a_arg.name ) != attrs.end() ) {
@@ -116,4 +116,4 @@ fail:
 
 const std::vector< std::string > & var_struct_def_t::attr_order() const { return m_attr_order; }
 const std::unordered_map< std::string, var_base_t * > & var_struct_def_t::attrs() const { return m_attrs; }
-size_t var_struct_def_t::typefn_id() const { return m_id; }
+std::uintptr_t var_struct_def_t::typefn_id() const { return m_id; }

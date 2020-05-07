@@ -19,7 +19,7 @@ size_t alloc_typeid()
 	return id++;
 }
 
-var_base_t::var_base_t( const size_t & type, const size_t & src_id, const size_t & idx,
+var_base_t::var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 			const bool & callable, const bool & attr_based )
 	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 ),
 	  m_callable( callable ), m_attr_based( attr_based )
@@ -27,7 +27,7 @@ var_base_t::var_base_t( const size_t & type, const size_t & src_id, const size_t
 var_base_t::~var_base_t()
 {}
 
-size_t var_base_t::typefn_id() const { return m_type; }
+std::uintptr_t var_base_t::typefn_id() const { return m_type; }
 
 void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
@@ -45,7 +45,7 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 	var_base_t * str = vm.vm_stack->pop( false );
 	if( !str->istype< var_str_t >() ) {
 		vm.fail( this->idx(), "expected string return type from 'str' function, received: %s",
-			 vm.type_name( str->type() ).c_str() );
+			 vm.type_name( str ).c_str() );
 		var_dref( str );
 		return false;
 	}

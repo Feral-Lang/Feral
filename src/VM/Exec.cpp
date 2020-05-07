@@ -35,7 +35,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 #ifdef DEBUG_MODE
 		fprintf( stdout, "%s [%zu]: %*s: ", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
 		for( auto & e : vms->get() ) {
-			fprintf( stdout, "%s ", vm.type_name( e->type() ).c_str() );
+			fprintf( stdout, "%s ", vm.type_name( e ).c_str() );
 		}
 		fprintf( stdout, "\n" );
 #endif // DEBUG_MODE
@@ -83,23 +83,22 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				goto create_done;
 			}
 			// for creation with 'in' parameter
-			// if it's a function, add that to vm.typefuncs
-			if( val->callable() ) {
-				// since typefn_id() is virtual, it automatically accomodates
-				// struct_def, typeid, as well as simple type()
-				vm.add_typefn( in->typefn_id(), name, val, true );
-			} else { // else add to attribute if type >= _VT_LAST
-				if( !in->attr_based() ) {
-					vm.fail( op.idx, "attributes can be added only to structure objects" );
-					goto create_fail;
-				}
+			// add unconditionally to an attribute based
+			if( in->attr_based() ) {
 				// only copy if reference count > 1 (no point in copying unique values)
 				if( val->ref() == 1 ) {
 					in->attr_set( name, val, true );
 				} else {
 					in->attr_set( name, val->copy( src_id, op.idx ), false );
 				}
+				goto create_done;
 			}
+			if( !val->callable() ) {
+				vm.fail( op.idx, "only callables can be added to non attribute based types" );
+				goto create_fail;
+			}
+			// if it's a function, add that to vm.typefuncs
+			vm.add_typefn( in->typefn_id(), name, val, true );
 		create_done:
 			var_dref( in );
 			var_dref( val );
@@ -115,7 +114,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			if( var->type() != val->type() ) {
 				vm.fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
 					 "; to redeclare a variable using another type, use the 'let' statement",
-					 vm.type_name( var->type() ).c_str(), vm.type_name( val->type() ).c_str() );
+					 vm.type_name( var ).c_str(), vm.type_name( val ).c_str() );
 				var_dref( val );
 				var_dref( var );
 				goto fail;
@@ -229,8 +228,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 				in_base = vms->pop( false );
 				if( in_base->attr_based() ) {
 					fn_base = in_base->attr_get( fn_name );
-				}
-				if( !fn_base ) {
+				} else {
 					fn_base = vm.get_typefn( in_base->typefn_id(), fn_name );
 				}
 			} else {
@@ -238,14 +236,14 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			}
 			if( !fn_base ) {
 				if( mem_call ) vm.fail( op.idx, "function '%s' does not exist for type: %s",
-							fn_name.c_str(), vm.type_name( in_base->type() ).c_str() );
+							fn_name.c_str(), vm.type_name( in_base ).c_str() );
 				else vm.fail( op.idx, "this function does not exist" );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( !fn_base->callable() ) {
 				vm.fail( op.idx, "'%s' is not a function or struct definition",
-					 vm.type_name( fn_base->type() ).c_str() );
+					 vm.type_name( fn_base ).c_str() );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
@@ -275,11 +273,12 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			var_base_t * val = nullptr;
 			if( in_base->attr_based() ) {
 				val = in_base->attr_get( attr );
+			} else {
+				val = vm.get_typefn( in_base->typefn_id(), attr );
 			}
-			if( !val ) val = vm.get_typefn( in_base->typefn_id(), attr );
 			if( val == nullptr ) {
 				vm.fail( op.idx, "type %s does not contain attribute: '%s'",
-					 vm.type_name( in_base->type() ).c_str(), attr.c_str() );
+					 vm.type_name( in_base ).c_str(), attr.c_str() );
 				goto attr_fail;
 			}
 			var_dref( in_base );

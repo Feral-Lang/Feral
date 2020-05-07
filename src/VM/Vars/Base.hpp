@@ -21,12 +21,8 @@
 #include "../../Extra/mpfrxx.hpp"
 #include "../SrcFile.hpp"
 
-template< class T > using decay_t = typename std::decay< T >::type;
-
 // for functions that run on on all types/objects
-static const size_t VT_ALL = 0;
-
-size_t alloc_typeid();
+static const std::uintptr_t VT_ALL = 0;
 
 class var_base_t;
 struct fn_assn_arg_t
@@ -39,7 +35,7 @@ struct fn_assn_arg_t
 struct vm_state_t;
 class var_base_t
 {
-	size_t m_type;
+	std::uintptr_t m_type;
 	size_t m_src_id;
 	size_t m_idx;
 	size_t m_ref;
@@ -48,20 +44,16 @@ class var_base_t
 	bool m_attr_based;
 
 	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
-	template< typename ... > static std::size_t family() {
-		static const std::size_t value = alloc_typeid();
-		return value;
-	}
-	template< typename ... T > static inline std::size_t _type() {
-		return family< decay_t< T > ... >();
+	template< typename ... T > static inline std::size_t _type_id() {
+		return reinterpret_cast< std::uintptr_t >( & _type_id< T ... > );
 	}
 	template< typename ... T > friend size_t type_id();
 public:
-	var_base_t( const size_t & type, const size_t & src_id, const size_t & idx,
+	var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 		    const bool & callable, const bool & attr_based );
 	virtual ~var_base_t();
 
-	template< typename ... T > bool istype() const { return m_type == var_base_t::_type< T ... >(); }
+	template< typename ... T > bool istype() const { return m_type == var_base_t::_type_id< T ... >(); }
 
 	// must always be overridden
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
@@ -77,9 +69,9 @@ public:
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
-	inline size_t type() const { return m_type; }
+	inline std::uintptr_t type() const { return m_type; }
 	// used for denoting things like structs in typefns
-	virtual size_t typefn_id() const;
+	virtual std::uintptr_t typefn_id() const;
 
 	inline size_t src_id() const { return m_src_id; }
 	inline size_t idx() const { return m_idx; }
@@ -106,7 +98,7 @@ public:
 
 template< typename ... T > size_t type_id()
 {
-	return var_base_t::_type< T ... >();
+	return var_base_t::_type_id< T ... >();
 }
 
 template< typename T > inline void var_iref( T * var )
@@ -136,15 +128,15 @@ public:
 
 class var_typeid_t : public var_base_t
 {
-	size_t m_val;
+	std::uintptr_t m_val;
 public:
-	var_typeid_t( const size_t & val, const size_t & src_id, const size_t & idx );
+	var_typeid_t( const std::uintptr_t & val, const size_t & src_id, const size_t & idx );
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	size_t & get();
-	size_t typefn_id() const;
+	std::uintptr_t & get();
+	std::uintptr_t typefn_id() const;
 };
 #define TYPEID( x ) static_cast< var_typeid_t * >( x )
 
@@ -315,10 +307,10 @@ class var_struct_def_t : public var_base_t
 	std::vector< std::string > m_attr_order;
 	std::unordered_map< std::string, var_base_t * > m_attrs;
 	// type id of struct which will be used as m_type for struct objects
-	size_t m_id;
+	std::uintptr_t m_id;
 
 public:
-	var_struct_def_t( const size_t & id, const std::vector< std::string > & attr_order,
+	var_struct_def_t( const std::uintptr_t & id, const std::vector< std::string > & attr_order,
 			  const std::unordered_map< std::string, var_base_t * > & attrs,
 			  const size_t & src_id, const size_t & idx );
 	~var_struct_def_t();
@@ -334,17 +326,17 @@ public:
 
 	const std::vector< std::string > & attr_order() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
-	size_t typefn_id() const;
+	std::uintptr_t typefn_id() const;
 };
 #define STRUCT_DEF( x ) static_cast< var_struct_def_t * >( x )
 
 class var_struct_t : public var_base_t
 {
 	std::unordered_map< std::string, var_base_t * > m_attrs;
-	size_t m_id;
+	std::uintptr_t m_id;
 public:
 	var_struct_t( const std::unordered_map< std::string, var_base_t * > & attrs,
-		      const size_t & struct_id, const size_t & src_id, const size_t & idx );
+		      const std::uintptr_t & struct_id, const size_t & src_id, const size_t & idx );
 	~var_struct_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
@@ -356,7 +348,7 @@ public:
 
 	const std::vector< std::string > & attr_order() const;
 	const std::unordered_map< std::string, var_base_t * > & attrs() const;
-	size_t typefn_id() const;
+	std::uintptr_t typefn_id() const;
 };
 #define STRUCT( x ) static_cast< var_struct_t * >( x )
 
