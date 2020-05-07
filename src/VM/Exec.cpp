@@ -231,7 +231,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 					fn_base = in_base->attr_get( fn_name );
 				}
 				if( !fn_base ) {
-					fn_base = vm.get_typefn( in_base->type(), fn_name );
+					fn_base = vm.get_typefn( in_base->id(), fn_name );
 				}
 			} else {
 				fn_base = vms->pop( false );
@@ -276,7 +276,7 @@ int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
 			if( in_base->attr_based() ) {
 				val = in_base->attr_get( attr );
 			}
-			if( !val ) val = vm.get_typefn( in_base->type(), attr );
+			if( !val ) val = vm.get_typefn( in_base->id(), attr );
 			if( val == nullptr ) {
 				vm.fail( op.idx, "type %s does not contain attribute: '%s'",
 					 vm.type_name( in_base->type() ).c_str(), attr.c_str() );
