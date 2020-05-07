@@ -104,12 +104,14 @@ struct vm_state_t
 	}
 
 	void add_typefn( const std::uintptr_t & type, const std::string & name, var_base_t * fn, const bool iref );
-	inline void add_native_typefn( const std::uintptr_t & type, const std::string & name, nativefnptr_t fn,
-				       const size_t & args_count, const size_t & src_id, const size_t & idx )
+	template< typename ... T > void add_native_typefn( const std::string & name, nativefnptr_t fn, const size_t & args_count,
+							   const size_t & src_id, const size_t & idx )
 	{
-		add_typefn( type, name, new var_fn_t( src_stack.back()->src()->path(),
-						      std::vector< std::string >( args_count, "" ),
-						      {}, { .native = fn }, src_id, idx ), false );
+		add_typefn( type_id< T ... >(), name,
+			    new var_fn_t( src_stack.back()->src()->path(),
+					  std::vector< std::string >( args_count, "" ),
+					  {}, { .native = fn }, src_id, idx ),
+			    false );
 	}
 	var_base_t * get_typefn( const size_t & type, const std::string & name );
 
