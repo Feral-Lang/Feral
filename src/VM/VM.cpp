@@ -92,10 +92,10 @@ void vm_state_t::add_typefn( const size_t & type, const std::string & name, var_
 var_base_t * vm_state_t::get_typefn( const size_t & type, const std::string & name )
 {
 	auto it = m_typefns.find( type );
-	if( it == m_typefns.end() ) return m_typefns[ VT_ALL ]->get( name );
+	if( it == m_typefns.end() ) return m_typefns[ type_id< var_all_t >() ]->get( name );
 	var_base_t * res = it->second->get( name );
 	if( res ) return res;
-	return FN( m_typefns[ VT_ALL ]->get( name ) );
+	return FN( m_typefns[ type_id< var_all_t >() ]->get( name ) );
 }
 
 void vm_state_t::set_typename( const size_t & type, const std::string & name )

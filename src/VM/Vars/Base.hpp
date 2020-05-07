@@ -21,9 +21,6 @@
 #include "../../Extra/mpfrxx.hpp"
 #include "../SrcFile.hpp"
 
-// for functions that run on on all types/objects
-static const std::uintptr_t VT_ALL = 0;
-
 class var_base_t;
 struct fn_assn_arg_t
 {
@@ -115,6 +112,16 @@ template< typename T > inline void var_dref( T * & var )
 		var = nullptr;
 	}
 }
+
+// dummy type to denote all other types
+class var_all_t : public var_base_t
+{
+public:
+	var_all_t( const size_t & src_id, const size_t & idx );
+
+	var_base_t * copy( const size_t & src_id, const size_t & idx );
+	void set( var_base_t * from );
+};
 
 class var_nil_t : public var_base_t
 {
