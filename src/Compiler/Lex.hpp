@@ -160,10 +160,11 @@ typedef std::vector< tok_t > toks_t;
  *
  * \param src_file Source file object of the source code
  * \param toks Vector where tokens should be stored
- * \param prefix_idx Optionally, position from where the content should be read
+ * \param begin_idx Optionally, position from where the content should be read
+ * \param end_idx Optionally, position till where the content should be read
  * \return Errors Status of tokenizing operation
  */
-Errors tokenize( const srcfile_t & src_file, toks_t & toks, const size_t prefix_idx = 0 );
+Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & begin_idx = 0, const size_t & end_idx = 0 );
 
 /**
  * \brief Check if the given type (int) is a variable data
