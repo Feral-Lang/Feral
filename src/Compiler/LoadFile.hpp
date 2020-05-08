@@ -15,6 +15,11 @@
 #include "../Common/Errors.hpp"
 #include "../VM/SrcFile.hpp"
 
-srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
+Errors fmod_read_code( const std::string & data, const std::string & src_dir, const std::string & src_path,
+		       bcode_t & bc, const size_t & flags, const bool is_main_src,
+		       const bool & skip_expr_cols, const size_t & begin_idx = 0, const size_t & end_idx = -1 );
+
+srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src,
+		       Errors & err, const bool & skip_expr_cols, const size_t & begin_idx = 0, const size_t & end_idx = -1 );
 
 #endif // COMPILER_LOAD_FILE_HPP

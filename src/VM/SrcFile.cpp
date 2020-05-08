@@ -20,6 +20,15 @@ static size_t src_id()
 srcfile_t::srcfile_t( const std::string & dir, const std::string & path, const bool is_main )
 	: m_id( src_id() ), m_dir( dir ), m_path( path ), m_is_main( is_main ) {}
 
+srcfile_t::srcfile_t( const std::string & dir, const std::string & path, const std::string & data,
+		      const bool is_main )
+	: m_id( src_id() ), m_dir( dir ), m_path( path ), m_data( data ), m_is_main( is_main )
+{
+	std::vector< src_col_range_t > cols;
+	cols.push_back( { 0, m_data.size() } );
+	add_cols( cols );
+}
+
 Errors srcfile_t::load_file()
 {
 	FILE * fp;

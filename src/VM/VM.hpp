@@ -22,7 +22,12 @@ typedef std::vector< var_src_t * > src_stack_t;
 
 typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
-typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err );
+typedef Errors ( * fmod_read_code_fn_t )( const std::string & data, const std::string & src_dir, const std::string & src_path,
+					  bcode_t & bc, const size_t & flags, const bool is_main_src,
+					  const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx );
+
+typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src,
+					  Errors & err, const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx );
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm, const size_t src_id, const size_t & idx );
 typedef void ( * mod_deinit_fn_t )();
@@ -82,9 +87,11 @@ struct vm_state_t
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
 	bool load_nmod( const std::string & mod_str, const size_t & src_id, const size_t & idx,
 			const bool set_dll_core_load_loc = false );
-	int load_fmod( const std::string & mod_file );
+	int fmod_load( const std::string & mod_file, const bool & skip_expr_cols );
+	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
 
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
+	inline void set_fmod_read_code_fn( fmod_read_code_fn_t read_code_fn ) { m_src_read_code_fn = read_code_fn; }
 
 	inline const std::vector< std::string > & inc_locs() const { return m_inc_locs; }
 	inline const std::vector< std::string > & dll_locs() const { return m_dll_locs; }
@@ -130,6 +137,8 @@ struct vm_state_t
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
+	// code loading function
+	fmod_read_code_fn_t m_src_read_code_fn;
 	// include and module locations - searches in increasing order of vector elements
 	std::vector< std::string > m_inc_locs;
 	std::vector< std::string > m_dll_locs;

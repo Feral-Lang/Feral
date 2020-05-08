@@ -20,25 +20,21 @@
 
 #include "LoadFile.hpp"
 
-srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src, Errors & err )
+Errors fmod_read_code( const std::string & data, const std::string & src_dir, const std::string & src_path,
+		       bcode_t & bc, const size_t & flags, const bool is_main_src,
+		       const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx )
 {
-	std::string src_dir;
-	std::string src_path = fs::abs_path( src_file, & src_dir );
-
-	srcfile_t * src = new srcfile_t( src_dir, src_path, is_main_src );
-
 	// lexical analysis
 	lex::toks_t toks;
 
-	phelper_t ph( * src, toks );
+	phelper_t ph( toks );
+	ph.set_skip_expr_cols( skip_expr_cols );
 	ptree_t * ptree = nullptr;
-	bcode_t & bc = src->bcode();
 
-	err = src->load_file();
-	if( err != E_OK ) goto fail;
-
-	err = lex::tokenize( * src, toks );
-	if( err != E_OK ) goto fail;
+	Errors err = lex::tokenize( data, toks, src_dir, src_path, begin_idx, end_idx );
+	if( err != E_OK ) {
+		goto end;
+	}
 
 	// show tokens
 	if( flags & OPT_T && ( flags & OPT_R || is_main_src ) ) {
@@ -50,8 +46,8 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 		}
 	}
 
-	err = parser::parse( * src, toks, ptree, ph );
-	if( err != E_OK ) goto fail;
+	err = parser::parse( ph, toks, ptree );
+	if( err != E_OK ) goto end;
 
 	// show tree
 	if( flags & OPT_P && ( flags & OPT_R || is_main_src ) ) {
@@ -62,7 +58,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	}
 
 	err = gen::generate( ptree, bc ) ? E_OK : E_CODEGEN_FAIL;
-	if( err != E_OK ) goto fail;
+	if( err != E_OK ) goto end;
 
 	// show bytecode
 	if( flags & OPT_B && ( flags & OPT_R || is_main_src ) ) {
@@ -81,33 +77,28 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 			}
 		}
 	}
+end:
+	if( ptree ) delete ptree;
+	return err;
+}
 
-	if( flags & OPT_C ) {
-		// remove '.fer' from file path
-		static const size_t fmod_ext_len = strlen( fmod_ext() );
-		std::string comp_file = src_file.substr( 0, src_file.size() - fmod_ext_len );
-		comp_file += fmod_ext( true );
-		std::ofstream f( comp_file, std::ios::out | std::ios::binary );
-		if( !f.good() ) {
-			fprintf( stderr, "failed to open file %s for writing bytecode\n", comp_file.c_str() );
-			err = E_FAIL;
-			goto fail;
-		}
-		if( bc.size() == 0 ) {
-			fprintf( stderr, "nothing to write - file empty\n" );
-			f.close();
-			err = E_FAIL;
-			goto fail;
-		}
-		fprintf( stdout, "byte compiling %s -> %s ...\n",
-			 src_file.c_str(), comp_file.c_str() );
-		f.write( ( char * ) ( & bc.get()[ 0 ] ), sizeof( op_t ) * bc.size() );
-		f.close();
+srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src,
+		       Errors & err, const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx )
+{
+	std::string src_dir;
+	std::string src_path = fs::abs_path( src_file, & src_dir );
+
+	srcfile_t * src = new srcfile_t( src_dir, src_path, is_main_src );
+	err = src->load_file();
+	if( err != E_OK ) goto fail;
+	err = fmod_read_code( src->data(), src->dir(), src->path(), src->bcode(),
+			      flags, is_main_src, skip_expr_cols, begin_idx, end_idx );
+	if( err != E_OK ) {
+		src->fail( err::val(), err::str().c_str() );
+		goto fail;
 	}
-	delete ptree;
 	return src;
 fail:
-	if( ptree ) delete ptree;
 	delete src;
 	return nullptr;
 }
