@@ -85,7 +85,7 @@ struct vm_state_t
 	// nmod = native module
 	// fmod = feral module
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
-	bool load_nmod( const std::string & mod_str, const size_t & src_id, const size_t & idx,
+	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx,
 			const bool set_dll_core_load_loc = false );
 	int fmod_load( const std::string & mod_file, const bool & skip_expr_cols );
 	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
