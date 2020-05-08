@@ -111,7 +111,7 @@ var_base_t * var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > 
 		}
 		vars->stash( m_kw_arg, make< var_map_t >( map ) );
 	}
-	if( vm::exec( vm, m_body.feral.begin, m_body.feral.end ) == E_EXEC_FAIL ) {
+	if( vm::exec( vm, nullptr, m_body.feral.begin, m_body.feral.end ) == E_EXEC_FAIL ) {
 		goto fail;
 	}
 	vm.pop_src();

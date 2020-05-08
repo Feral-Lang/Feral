@@ -24,10 +24,10 @@ typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
 typedef Errors ( * fmod_read_code_fn_t )( const std::string & data, const std::string & src_dir, const std::string & src_path,
 					  bcode_t & bc, const size_t & flags, const bool is_main_src,
-					  const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx );
+					  const bool & expr_only, const size_t & begin_idx, const size_t & end_idx );
 
 typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src,
-					  Errors & err, const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx );
+					  Errors & err, const size_t & begin_idx, const size_t & end_idx );
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm, const size_t src_id, const size_t & idx );
 typedef void ( * mod_deinit_fn_t )();
@@ -87,7 +87,7 @@ struct vm_state_t
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
 	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx,
 			const bool set_dll_core_load_loc = false );
-	int fmod_load( const std::string & mod_file, const bool & skip_expr_cols );
+	int fmod_load( const std::string & mod_file );
 	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
 
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
@@ -165,7 +165,7 @@ namespace vm
 {
 
 // end = 0 = till size of bcode
-int exec( vm_state_t & vm, const size_t & begin = 0, const size_t & end = 0 );
+int exec( vm_state_t & vm, const bcode_t * custom_bcode = nullptr, const size_t & begin = 0, const size_t & end = 0 );
 
 }
 

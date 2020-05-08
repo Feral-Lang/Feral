@@ -16,14 +16,14 @@ namespace vm
 {
 
 // declared in VM.hpp
-int exec( vm_state_t & vm, const size_t & begin, const size_t & end )
+int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, const size_t & end )
 {
 	var_src_t * src = vm.current_source();
 	vars_t * vars = src->vars();
 	srcfile_t * src_file = src->src();
 	size_t src_id = src_file->id();
 	vm_stack_t * vms = vm.vm_stack;
-	const auto & bc = src_file->bcode().get();
+	const auto & bc = custom_bcode ? custom_bcode->get() : src_file->bcode().get();
 	size_t bc_sz = end == 0 ? bc.size() : end;
 
 	std::vector< fn_body_span_t > bodies;

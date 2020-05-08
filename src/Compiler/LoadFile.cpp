@@ -22,13 +22,12 @@
 
 Errors fmod_read_code( const std::string & data, const std::string & src_dir, const std::string & src_path,
 		       bcode_t & bc, const size_t & flags, const bool is_main_src,
-		       const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx )
+		       const bool & expr_only, const size_t & begin_idx, const size_t & end_idx )
 {
 	// lexical analysis
 	lex::toks_t toks;
 
 	phelper_t ph( toks );
-	ph.set_skip_expr_cols( skip_expr_cols );
 	ptree_t * ptree = nullptr;
 
 	Errors err = lex::tokenize( data, toks, src_dir, src_path, begin_idx, end_idx );
@@ -46,7 +45,11 @@ Errors fmod_read_code( const std::string & data, const std::string & src_dir, co
 		}
 	}
 
-	err = parser::parse( ph, toks, ptree );
+	if( expr_only ) {
+		err = parse_expr( ph, ( stmt_base_t * & )ptree );
+	} else {
+		err = parser::parse( ph, toks, ptree );
+	}
 	if( err != E_OK ) goto end;
 
 	// show tree
@@ -83,7 +86,7 @@ end:
 }
 
 srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src,
-		       Errors & err, const bool & skip_expr_cols, const size_t & begin_idx, const size_t & end_idx )
+		       Errors & err, const size_t & begin_idx, const size_t & end_idx )
 {
 	std::string src_dir;
 	std::string src_path = fs::abs_path( src_file, & src_dir );
@@ -92,7 +95,7 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 	err = src->load_file();
 	if( err != E_OK ) goto fail;
 	err = fmod_read_code( src->data(), src->dir(), src->path(), src->bcode(),
-			      flags, is_main_src, skip_expr_cols, begin_idx, end_idx );
+			      flags, is_main_src, false, begin_idx, end_idx );
 	if( err != E_OK ) {
 		src->fail( err::val(), err::str().c_str() );
 		goto fail;

@@ -99,8 +99,9 @@ public:
 	OpCodes at( const size_t & pos ) const;
 	void updatesz( const size_t & pos, const size_t & value );
 
-	const std::vector< op_t > & get() const;
-	size_t size() const;
+	inline const std::vector< op_t > & get() const { return m_bcode; }
+	inline std::vector< op_t > & getmut() { return m_bcode; }
+	inline size_t size() const { return m_bcode.size(); }
 };
 
 #endif // VM_OPCODES_HPP

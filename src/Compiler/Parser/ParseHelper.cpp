@@ -13,8 +13,8 @@
 
 phelper_t::phelper_t( lex::toks_t & toks, const size_t begin )
 	: m_toks( toks ), m_invalid( 0, TOK_INVALID, "" ),
-	  m_eof( toks.size() > 0 ? toks.back().pos : 0, TOK_EOF, "" ), m_idx( begin ),
-	  m_skip_expr_cols( false ) {}
+	  m_eof( toks.size() > 0 ? toks.back().pos : 0, TOK_EOF, "" ),
+	  m_idx( begin ) {}
 
 const lex::tok_t * phelper_t::peak( const int offset ) const
 {
