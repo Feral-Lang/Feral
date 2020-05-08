@@ -1,0 +1,7 @@
+let fmt = import('std/fmt');
+
+let templ_str = 'hi there {i + 1} person';
+
+for let i = 0; i < 4; ++i {
+	assert(fmt.template(templ_str) == 'hi there ' + (i + 1).str() + ' person');
+}
