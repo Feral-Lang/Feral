@@ -58,9 +58,8 @@ int main( int argc, char ** argv )
 		src_file += fmod_ext();
 	}
 
-	srcfile_t * main_src = fmod_load( src_file, flags, true, err );
+	srcfile_t * main_src = fmod_load( src_file, flags, true, err, false );
 	if( err != E_OK ) {
-		if( main_src ) delete main_src;
 		return err;
 	}
 
@@ -68,6 +67,7 @@ int main( int argc, char ** argv )
 	if( !( flags & OPT_D ) ) {
 		vm_state_t vm( fer_bin, code_args, flags );
 		vm.set_fmod_load_fn( fmod_load );
+		vm.set_fmod_read_code_fn( fmod_read_code );
 		vm.push_src( main_src, 0 );
 		if( !vm.load_core_mods() ) {
 			vm.pop_src();

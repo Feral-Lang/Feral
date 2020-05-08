@@ -68,7 +68,7 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	// load_fmod() also adds the src to all_srcs map (push_src() function)
-	int err = vm.load_fmod( file );
+	int err = vm.fmod_load( file, false );
 	if( err != E_OK ) {
 		vm.fail( file_var->idx(), "module import failed, look at error above (exit code: %d)", err );
 		return nullptr;

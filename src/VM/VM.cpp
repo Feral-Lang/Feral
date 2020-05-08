@@ -197,12 +197,12 @@ bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id,
 	return true;
 }
 
-int vm_state_t::load_fmod( const std::string & mod_file )
+int vm_state_t::fmod_load( const std::string & mod_file, const bool & skip_expr_cols )
 {
 	if( all_srcs.find( mod_file ) != all_srcs.end() ) return E_OK;
 
 	Errors err = E_OK;
-	srcfile_t * src = m_src_load_fn( mod_file, exec_flags, false, err );
+	srcfile_t * src = m_src_load_fn( mod_file, exec_flags, false, err, skip_expr_cols, 0, -1 );
 	if( err != E_OK ) {
 		if( src ) delete src;
 		return err;
