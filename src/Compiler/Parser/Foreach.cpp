@@ -18,14 +18,14 @@ Errors parse_foreach( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 	ph.next();
 	if( !ph.accept( TOK_IDEN ) ) {
-		ph.fail( "expected identifier for loop variable" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected identifier for loop variable" );
 		goto fail;
 	}
 	loop_var = ph.peak();
 	ph.next();
 
 	if( !ph.accept( TOK_IN ) ) {
-		ph.fail( "expected token 'in' for foreach loop after identifier" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected token 'in' for foreach loop after identifier" );
 		goto fail;
 	}
 	ph.next();
@@ -35,7 +35,7 @@ Errors parse_foreach( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	if( !ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "expected left brace to begin body of loop, found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected left brace to begin body of loop, found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}

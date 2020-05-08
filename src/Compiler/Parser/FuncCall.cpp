@@ -30,7 +30,7 @@ begin:
 	} else if( parse_expr_15( ph, expr ) == E_OK ) {
 		args.push_back( expr );
 	} else {
-		ph.fail( "failed to parse function call args" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "failed to parse function call args" );
 		goto fail;
 	}
 

@@ -22,13 +22,13 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	if( sost->type == TOK_CONTINUE || sost->type == TOK_BREAK ) {
-		ph.fail( "statement of type '%s' expects semicolon after the keyword, found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "statement of type '%s' expects semicolon after the keyword, found: '%s'",
 			 TokStrs[ sost->type ], TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
 
 	if( sost->type == TOK_RETURN && ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "'return' statement expects a semicolon or expression after the keyword, not a block" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "'return' statement expects a semicolon or expression after the keyword, not a block" );
 		goto fail;
 	}
 
@@ -42,7 +42,7 @@ Errors parse_single_operand_stmt( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	if( !ph.accept( TOK_COLS ) ) {
-		ph.fail( "expected semicolon to denote end of statement '%s', but found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected semicolon to denote end of statement '%s', but found: '%s'",
 			 TokStrs[ sost->type ], TokStrs[ ph.peakt() ] );
 		goto fail;
 	}

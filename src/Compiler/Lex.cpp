@@ -119,26 +119,23 @@ const char * TokStrs[ _TOK_LAST ] = {
 #define PREV( src ) ( src_len > 0 && i > 0 ? src[ i - 1 ] : 0 )
 #define SET_OP_TYPE_BRK( type ) op_type = type; break
 
-#define SRC_FAIL( ... ) src_file.fail( i, __VA_ARGS__ )
 
-
-static std::string get_name( const srcfile_t & src_file, size_t & i );
+static std::string get_name( const std::string & src, size_t & i );
 static int classify_str( const std::string & str );
-static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_type );
-static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string & buf );
-static int get_operator( const srcfile_t & src_file, size_t & i );
+static std::string get_num( const std::string & src, size_t & i, int & num_type );
+static Errors get_const_str( const std::string & src, size_t & i, std::string & buf );
+static int get_operator( const std::string & src, size_t & i );
 static inline bool is_valid_num_char( const char c );
 static void remove_back_slash( std::string & s );
 
 namespace lex
 {
 
-Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & begin_idx, const size_t & end_idx )
+Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string & src_dir,
+		 const std::string & src_path, const size_t & begin_idx, size_t end_idx )
 {
-	const std::string & src = src_file.data();
 	if( src.empty() ) return E_OK;
 
-	Errors err = E_OK;
 	size_t src_len = src.size();
 
 	bool comment_block = false;
@@ -146,6 +143,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 
 	// tokenize the input
 	size_t i = begin_idx;
+	end_idx = end_idx == -1 ? src_len : end_idx;
 	while( i < end_idx ) {
 		if( comment_line && CURR( src ) == '\n' ) {
 			comment_line = false;
@@ -156,9 +154,7 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 
 		if( !comment_line && CURR( src ) == '*' && NEXT( src ) == '/' ) {
 			if( !comment_block ) {
-				SRC_FAIL( "encountered multi line comment terminator '*/' "
-					  "in non commented block" );
-				err = E_LEX_FAIL;
+				err::set( E_LEX_FAIL, i, "encountered multi line comment terminator '*/' in non commented block" );
 				break;
 			}
 			i += 2;
@@ -187,12 +183,12 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 		if( ( CURR( src ) == '.' && ( isalpha( NEXT( src ) ) || NEXT( src ) == '_' ) && !isalnum( PREV( src ) ) && PREV( src ) != '_' &&
 		      PREV( src ) != ')' && PREV( src ) != ']' && PREV( src ) != '\'' && PREV( src ) != '"' ) ||
 		    isalpha( CURR( src ) ) || CURR( src ) == '_' ) {
-			std::string str = get_name( src_file, i );
+			std::string str = get_name( src, i );
 			// check if string is a keyword
 			int str_class = classify_str( str );
 			if( str == "__SRC_DIR__" || str == "__SRC_PATH__" ) {
-				if( str == "__SRC_DIR__" ) str = src_file.dir();
-				if( str == "__SRC_PATH__" ) str = src_file.path();
+				if( str == "__SRC_DIR__" ) str = src_dir;
+				if( str == "__SRC_PATH__" ) str = src_path;
 				str_class = TOK_STR;
 			}
 			if( str[ 0 ] == '.' ) str.erase( str.begin() );
@@ -203,9 +199,9 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 		// numbers
 		if( isdigit( CURR( src ) ) ) {
 			int num_type = TOK_INT;
-			std::string num = get_num( src_file, i, num_type );
+			std::string num = get_num( src, i, num_type );
 			if( num.empty() ) {
-				err = E_LEX_FAIL;
+				err::code() = E_LEX_FAIL;
 				break;
 			}
 			toks.emplace_back( i - num.size(), num_type, num );
@@ -215,9 +211,9 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 		// const strings
 		if( CURR( src ) == '\"' || CURR( src ) == '\'' || CURR( src ) == '`' ) {
 			std::string str;
-			Errors res = get_const_str( src_file, i, str );
+			Errors res = get_const_str( src, i, str );
 			if( res != E_OK ) {
-				err = res;
+				err::code() = res;
 				break;
 			}
 			toks.emplace_back( i - str.size(), TOK_STR, str );
@@ -225,9 +221,9 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 		}
 
 		// operators
-		int op_type = get_operator( src_file, i );
+		int op_type = get_operator( src, i );
 		if( op_type < 0 ) {
-			err = E_LEX_FAIL;
+			err::code() = E_LEX_FAIL;
 			break;
 		}
 		if( op_type == TOK_TDOT ) {
@@ -237,14 +233,13 @@ Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & 
 		}
 	}
 
-	return err;
+	return ( Errors )err::code();
 }
 
 }
 
-static std::string get_name( const srcfile_t & src_file, size_t & i )
+static std::string get_name( const std::string & src, size_t & i )
 {
-	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	std::string buf;
 	buf.push_back( src[ i++ ] );
@@ -278,14 +273,13 @@ static int classify_str( const std::string & str )
 	return str[ 0 ] == '.' ? TOK_STR : TOK_IDEN;
 }
 
-static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_type )
+static std::string get_num( const std::string & src, size_t & i, int & num_type )
 {
-	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	std::string buf;
 	int first_digit_at = i;
 
-	bool success = true;
+	err::code() = E_OK;
 	int dot_encountered = -1;
 
 	while( i < src_len ) {
@@ -312,25 +306,23 @@ static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_ty
 					return buf;
 				}
 			} else {
-				SRC_FAIL( "encountered dot (.) character "
+				err::set( E_LEX_FAIL, i, "encountered dot (.) character "
 					  "when the number being retrieved (from column %d) "
 					  "already had one at column %d",
 					  first_digit_at + 1, dot_encountered + 1 );
-				success = false;
 			}
 			break;
 		default:
 			if( isalnum( c ) ) {
-				SRC_FAIL( "encountered invalid character '%c' "
+				err::set( E_LEX_FAIL, i, "encountered invalid character '%c' "
 					  "while retrieving a number (from column %d)",
 					  c, first_digit_at + 1 );
-				success = false;
 			} else {
 				return buf;
 			}
 
 		}
-		if( success == false ) {
+		if( err::code() != E_OK ) {
 			return "";
 		}
 		buf.push_back( c ); ++i;
@@ -338,9 +330,8 @@ static std::string get_num( const srcfile_t & src_file, size_t & i, int & num_ty
 	return buf;
 }
 
-static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string & buf )
+static Errors get_const_str( const std::string & src, size_t & i, std::string & buf )
 {
-	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	buf.clear();
 	const char quote_type = CURR( src );
@@ -353,8 +344,8 @@ static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string
 	}
 	if( CURR( src ) != quote_type ) {
 		i = starting_at;
-		SRC_FAIL( "no matching quote for '%c' found", quote_type );
-		return E_LEX_FAIL;
+		err::set( E_LEX_FAIL, i, "no matching quote for '%c' found", quote_type );
+		return ( Errors )err::code();
 	}
 	// omit ending quote
 	++i;
@@ -362,9 +353,8 @@ static Errors get_const_str( const srcfile_t & src_file, size_t & i, std::string
 	return E_OK;
 }
 
-static int get_operator( const srcfile_t & src_file, size_t & i )
+static int get_operator( const std::string & src, size_t & i )
 {
-	const std::string & src = src_file.data();
 	size_t src_len = src.size();
 	int op_type = -1;
 	switch( CURR( src ) ) {
@@ -546,7 +536,7 @@ static int get_operator( const srcfile_t & src_file, size_t & i )
 	case '}':
 		SET_OP_TYPE_BRK( TOK_RBRACE );
 	default:
-		SRC_FAIL( "unknown operator '%c' found", CURR( src ) );
+		err::set( E_LEX_FAIL, i, "unknown operator '%c' found", CURR( src ) );
 		op_type = -1;
 	}
 
