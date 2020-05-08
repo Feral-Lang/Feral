@@ -26,7 +26,14 @@ dyn_lib_t::~dyn_lib_t()
 void * dyn_lib_t::load( const std::string & file )
 {
 	if( m_handles.find( file ) == m_handles.end() ) {
-		auto tmp = dlopen( file.c_str(), RTLD_LAZY );
+		// RTLD_GLOBAL is required for allowing unique type_id<>() across shared library
+		// boundaries; see the following
+		// https://cpptruths.blogspot.com/2018/11/non-colliding-efficient.html (section: Dynamically Loaded Libraries)
+		// https://linux.die.net/man/3/dlopen (section: RTLD_GLOBAL)
+		// RTLD_NOW is simply used to ensure everything is resolved at dlopen, therefore,
+		// showing the internal error if not resolved (since dlopen will return NULL then)
+		// this ensures proper error output and exit instead of segfaulting or something
+		auto tmp = dlopen( file.c_str(), RTLD_NOW | RTLD_GLOBAL );
 		if( tmp == nullptr ) {
 			fprintf( stderr, "internal error: dyn lib failed to open %s: %s\n", file.c_str(), dlerror() );
 			return nullptr;

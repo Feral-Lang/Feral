@@ -12,13 +12,6 @@
 
 #include "Base.hpp"
 
-size_t alloc_typeid()
-{
-	// skip VT_ALL
-	static size_t id = 1;
-	return id++;
-}
-
 var_base_t::var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 			const bool & callable, const bool & attr_based )
 	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 ),
@@ -28,8 +21,6 @@ var_base_t::~var_base_t()
 {}
 
 std::uintptr_t var_base_t::typefn_id() const { return m_type; }
-
-void * var_base_t::get_data( const size_t & idx ) { return nullptr; }
 
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
