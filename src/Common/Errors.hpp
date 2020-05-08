@@ -34,9 +34,11 @@ namespace err
 {
 
 size_t & code();
+size_t & val();
 std::string & str();
 
-void set( size_t err_code, const char * msg, ... );
+// err_val is for things like idx, etc.
+void set( const size_t & err_code, const size_t & err_val, const char * msg, ... );
 
 }
 
