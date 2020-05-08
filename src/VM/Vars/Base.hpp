@@ -15,7 +15,6 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
-#include <type_traits>
 #include <gmpxx.h>
 
 #include "../../Extra/mpfrxx.hpp"
@@ -55,12 +54,6 @@ public:
 	// must always be overridden
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
 	virtual void set( var_base_t * from ) = 0;
-
-	// overridden by the type that needs it (mainly custom types like var_file_t)
-	// returns nullptr by default
-	// can use idx to specify which data to retrieve if multiple options are
-	// available
-	virtual void * get_data( const size_t & idx );
 
 	bool to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx );
 
