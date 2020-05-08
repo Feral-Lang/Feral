@@ -22,7 +22,8 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
-	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc )
+	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc ),
+	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr )
 {
 	init_typenames( * this );
 
@@ -155,7 +156,7 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	return false;
 }
 
-bool vm_state_t::load_nmod( const std::string & mod_str, const size_t & src_id,
+bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id,
 			    const size_t & idx, const bool set_dll_core_load_loc )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
@@ -219,7 +220,7 @@ bool vm_state_t::load_core_mods()
 	// TODO: perhaps embed these in feral binary to remove the requirement of installation location
 	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
-		if( !load_nmod( mod, 0, 0, mod == "core" ) ) return false;
+		if( !nmod_load( mod, 0, 0, mod == "core" ) ) return false;
 	}
 	return true;
 }
