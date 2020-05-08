@@ -21,7 +21,7 @@ Errors parse_conditional( phelper_t & ph, stmt_base_t * & loc )
 
 _if_elif:
 	if( got_else ) {
-		ph.fail( "cannot have an else if block after else block for a condtion" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "cannot have an else if block after else block for a condtion" );
 		goto fail;
 	}
 	tok = ph.peak();
@@ -32,7 +32,7 @@ _if_elif:
 	goto block;
 _else:
 	if( got_else ) {
-		ph.fail( "cannot have more than one else block for a condtion" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "cannot have more than one else block for a condtion" );
 		goto fail;
 	}
 	tok = ph.peak();
@@ -40,7 +40,7 @@ _else:
 	got_else = true;
 block:
 	if( !ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "expected block for statement '%s'", TokStrs[ tok->type ] );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected block for statement '%s'", TokStrs[ tok->type ] );
 		goto fail;
 	}
 	if( parse_block( ph, cond.body ) != E_OK ) {

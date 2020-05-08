@@ -47,7 +47,7 @@ incr:
 	}
 body:
 	if( !ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "expected left brace to begin body of loop, found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected left brace to begin body of loop, found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}

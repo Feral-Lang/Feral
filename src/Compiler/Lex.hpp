@@ -155,16 +155,20 @@ struct tok_t
 typedef std::vector< tok_t > toks_t;
 
 /**
- * \brief Main tokenizing function which is called for generating
- *	  tokens from source code and store them as a vector of tok_t (toks_t)
+ * \brief Tokenizing function which is called for generating
+ *	  tokens from source code string store them as a vector of tok_t (toks_t);
+ *	  sets err::set() for setting errors
  *
- * \param src_file Source file object of the source code
+ * \param src_code Source code string
  * \param toks Vector where tokens should be stored
+ * \param src_dir directory string where the source code is located
+ * \param src_path location string where the source code is located
  * \param begin_idx Optionally, position from where the content should be read
  * \param end_idx Optionally, position till where the content should be read
  * \return Errors Status of tokenizing operation
  */
-Errors tokenize( const srcfile_t & src_file, lex::toks_t & toks, const size_t & begin_idx = 0, const size_t & end_idx = 0 );
+Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string & src_dir,
+		 const std::string & src_path, const size_t & begin_idx = 0, size_t end_idx = -1 );
 
 /**
  * \brief Check if the given type (int) is a variable data

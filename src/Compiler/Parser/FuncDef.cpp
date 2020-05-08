@@ -18,13 +18,13 @@ Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 
 	if( !ph.accept( TOK_FN ) ) {
-		ph.fail( "function declaration parsing requires function keyword" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "function declaration parsing requires function keyword" );
 		goto fail;
 	}
 	ph.next();
 
 	if( !ph.accept( TOK_LPAREN ) ) {
-		ph.fail( "expected left parenthesis here for function declaration" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected left parenthesis here for function declaration" );
 		goto fail;
 	}
 	ph.next();
@@ -35,7 +35,7 @@ rparen:
 		goto post_args;
 	}
 	if( args_done ) {
-		ph.fail( "expected right parenthesis for enclosing function arguments" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected right parenthesis for enclosing function arguments" );
 		goto fail;
 	}
 	if( parse_fn_decl_args( ph, args ) != E_OK ) {
@@ -46,7 +46,7 @@ rparen:
 
 post_args:
 	if( !ph.accept( TOK_LBRACE ) ) {
-		ph.fail( "expected left brace for body of function, found: '%s'", TokStrs[ ph.peakt() ] );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected left brace for body of function, found: '%s'", TokStrs[ ph.peakt() ] );
 	}
 	if( parse_block( ph, body ) != E_OK ) {
 		fprintf( stderr, "failed to parse block for function\n" );
@@ -71,12 +71,12 @@ Errors parse_fn_decl_args( phelper_t & ph, stmt_base_t * & loc )
 	size_t idx = ph.peak()->pos;
 begin:
 	if( va_arg ) {
-		ph.fail( "cannot have any argument after variadic arg declaration" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "cannot have any argument after variadic arg declaration" );
 		goto fail;
 	}
 	if( ph.accept( TOK_STR ) ) { // check kw arg
 		if( kw_arg ) {
-			ph.fail( "function can't have multiple keyword args (previous: %s)",
+			err::set( E_PARSE_FAIL, ph.peak()->pos, "function can't have multiple keyword args (previous: %s)",
 				 kw_arg->val()->data.c_str() );
 			goto fail;
 		}
@@ -84,7 +84,7 @@ begin:
 		ph.next();
 	} else if( ph.accept( TOK_IDEN ) && ph.peakt( 1 ) != TOK_ASSN && ph.peakt( 1 ) != TOK_TDOT ) {
 		if( done_assn_args.size() > 0 ) {
-			ph.fail( "cannot have a simple parameter after default argument" );
+			err::set( E_PARSE_FAIL, ph.peak()->pos, "cannot have a simple parameter after default argument" );
 			goto fail;
 		}
 		ph.sett( TOK_STR );
@@ -101,8 +101,7 @@ begin:
 				goto fail;
 			}
 			if( done_assn_args.find( lhs->data ) != done_assn_args.end() ) {
-				ph.fail( lhs->pos, "cannot have more than one assigned argument of same name" );
-				ph.fail( done_assn_args[ lhs->data ], "previouse here" );
+				err::set( E_PARSE_FAIL, lhs->pos, "cannot have more than one assigned argument of same name" );
 				delete rhs;
 				goto fail;
 			}
@@ -114,7 +113,7 @@ begin:
 			ph.next(); ph.next();
 		}
 	} else {
-		ph.fail( "failed to parse function def args" );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "failed to parse function def args" );
 		goto fail;
 	}
 

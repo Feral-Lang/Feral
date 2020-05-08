@@ -17,7 +17,7 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 
 	if( with_brace ) {
 		if( !ph.accept( TOK_LBRACE ) ) {
-			ph.fail( "Expected block to begin with left brace, found '%s'",
+			err::set( E_PARSE_FAIL, ph.peak()->pos, "Expected block to begin with left brace, found '%s'",
 				 TokStrs[ ph.peakt() ] );
 			goto fail;
 		}
@@ -50,7 +50,7 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 
 	if( with_brace ) {
 		if( !ph.accept( TOK_RBRACE ) ) {
-			ph.fail( idx, "Expected this block to end with a right brace, found '%s'",
+			err::set( E_PARSE_FAIL, idx, "Expected this block to end with a right brace, found '%s'",
 				 TokStrs[ ph.peakt() ] );
 			goto fail;
 		}

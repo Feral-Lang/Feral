@@ -15,7 +15,7 @@ Errors parse_expr_cols( phelper_t & ph, stmt_base_t * & loc )
 		goto fail;
 	}
 	if( !ph.accept( TOK_COLS ) ) {
-		ph.fail( "expected semicolon at the end of expression, found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected semicolon at the end of expression, found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
@@ -561,7 +561,7 @@ Errors parse_expr_01( phelper_t & ph, stmt_base_t * & loc )
 			goto fail;
 		}
 		if( !ph.accept( TOK_RPAREN ) ) {
-			ph.fail( idx, "could not find ending parenthesis for expression" );
+			err::set( E_PARSE_FAIL, idx, "could not find ending parenthesis for expression" );
 			goto fail;
 		}
 		ph.next();
@@ -585,7 +585,7 @@ begin_loop:
 				goto fail;
 			}
 			if( !ph.accept( TOK_RPAREN ) ) {
-				ph.fail( idx, "missing closing parenthesis for function call" );
+				err::set( E_PARSE_FAIL, idx, "missing closing parenthesis for function call" );
 				goto fail;
 			}
 			ph.next();
@@ -597,7 +597,7 @@ begin_loop:
 				goto fail;
 			}
 			if( !ph.accept( TOK_RBRACK ) ) {
-				ph.fail( idx, "missing closing bracket for subscript expression" );
+				err::set( E_PARSE_FAIL, idx, "missing closing bracket for subscript expression" );
 				goto fail;
 			}
 			ph.next();
@@ -637,7 +637,7 @@ Errors parse_term( phelper_t & ph, stmt_base_t * & loc, const bool make_const )
 	} else if( !make_const && ph.accept( TOK_FN ) ) {
 		if( parse_fn_decl( ph, loc ) != E_OK ) goto fail;
 	} else {
-		ph.fail( "invalid or extraneous token type '%s' received in expression", TokStrs[ ph.peakt() ] );
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "invalid or extraneous token type '%s' received in expression", TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
 	return E_OK;

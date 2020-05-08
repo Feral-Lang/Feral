@@ -11,9 +11,10 @@
 
 #include "ParseHelper.hpp"
 
-phelper_t::phelper_t( const srcfile_t & src, lex::toks_t & toks, const size_t begin )
-	: m_src( src ), m_toks( toks ), m_idx( begin ), m_invalid( 0, TOK_INVALID, "" ),
-	  m_eof( toks.size() > 0 ? toks.back().pos : 0, TOK_EOF, "" ) {}
+phelper_t::phelper_t( lex::toks_t & toks, const size_t begin )
+	: m_toks( toks ), m_invalid( 0, TOK_INVALID, "" ),
+	  m_eof( toks.size() > 0 ? toks.back().pos : 0, TOK_EOF, "" ), m_idx( begin ),
+	  m_skip_expr_cols( false ) {}
 
 const lex::tok_t * phelper_t::peak( const int offset ) const
 {
@@ -57,35 +58,8 @@ TokType phelper_t::prevt()
 	return m_toks[ m_idx ].type;
 }
 
-void phelper_t::sett( const TokType type )
-{
-	if( m_idx < m_toks.size() ) m_toks[ m_idx ].type = type;
-}
-
 const lex::tok_t * phelper_t::at( const size_t & idx ) const
 {
 	if( idx >= m_toks.size() ) return & m_invalid;
 	return & m_toks[ idx ];
-}
-
-bool phelper_t::has_next() const { return m_idx + 1 < m_toks.size(); }
-
-size_t phelper_t::idx() const { return m_idx; }
-
-void phelper_t::set_idx( const size_t & idx ) { m_idx = idx; }
-
-void phelper_t::fail( const char * msg, ... ) const
-{
-	va_list args;
-	va_start( args, msg );
-	m_src.fail( peak()->type == TOK_EOF ? peak( -1 )->pos : peak()->pos, msg, args );
-	va_end( args );
-}
-
-void phelper_t::fail( const size_t & idx, const char * msg, ... ) const
-{
-	va_list args;
-	va_start( args, msg );
-	m_src.fail( idx, msg, args );
-	va_end( args );
 }

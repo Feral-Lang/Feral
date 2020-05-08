@@ -16,7 +16,7 @@ Errors parse_var_decl( phelper_t & ph, stmt_base_t * & loc )
 
 	size_t idx = ph.peak()->pos;
 	if( !ph.accept( TOK_LET ) ) {
-		ph.fail( "expected keyword 'let' here, but found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected keyword 'let' here, but found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
@@ -35,7 +35,7 @@ begin:
 	}
 
 	if( !ph.accept( TOK_COLS ) ) {
-		ph.fail( "expected semicolon after variable declaration, found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected semicolon after variable declaration, found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
@@ -69,7 +69,7 @@ Errors parse_var_decl_base( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	if( !ph.accept( TOK_ASSN ) ) {
-		ph.fail( "expected assignment operator here for var decl, but found: '%s'",
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected assignment operator here for var decl, but found: '%s'",
 			 TokStrs[ ph.peakt() ] );
 		goto fail;
 	}
