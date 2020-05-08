@@ -21,13 +21,19 @@ size_t & code()
 	return ecode;
 }
 
+size_t & val()
+{
+	static size_t _val = 0;
+	return _val;
+}
+
 std::string & str()
 {
 	static std::string estr = "";
 	return estr;
 }
 
-void set( size_t err_code, const char * msg, ... )
+void set( const size_t & err_code, const size_t & err_val, const char * msg, ... )
 {
 	static char err[ 2048 ];
 	memset( err, 0, sizeof( err ) );
@@ -38,6 +44,7 @@ void set( size_t err_code, const char * msg, ... )
 	va_end( vargs );
 
 	code() = err_code;
+	val() = err_val;
 	str() = "error: " + std::string( err ) + "\n";
 }
 
