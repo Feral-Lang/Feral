@@ -18,8 +18,6 @@ class phelper_t
 	lex::toks_t & m_toks; // requires modification at parsing stage
 	lex::tok_t m_invalid, m_eof;
 	size_t m_idx;
-	// if true, will skip checking semicolons in expr_cols
-	bool m_skip_expr_cols;
 public:
 	phelper_t( lex::toks_t & toks, const size_t begin = 0 );
 
@@ -55,9 +53,6 @@ public:
 
 	inline size_t idx() const { return m_idx; }
 	inline void set_idx( const size_t & idx ) { m_idx = idx; }
-
-	inline bool skip_expr_cols() { return m_skip_expr_cols; }
-	inline void set_skip_expr_cols( const bool & val ) { m_skip_expr_cols = val; }
 };
 
 #endif // COMPILER_PARSER_PARSE_HELPER_HPP

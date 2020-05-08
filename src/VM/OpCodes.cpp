@@ -104,6 +104,3 @@ void bcode_t::updatesz( const size_t & pos, const size_t & value )
 	if( pos >= m_bcode.size() ) return;
 	m_bcode[ pos ].data.sz = value;
 }
-
-const std::vector< op_t > & bcode_t::get() const { return m_bcode; }
-size_t bcode_t::size() const { return m_bcode.size(); }
