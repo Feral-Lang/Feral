@@ -1,0 +1,1 @@
+assert('some string'._typestr_() == 'str');
