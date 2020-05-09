@@ -28,7 +28,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 
 	std::vector< fn_body_span_t > bodies;
 
-	vars->push_fn();
+	if( !custom_bcode ) vars->push_fn();
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
@@ -42,9 +42,9 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		switch( op.op ) {
 		case OP_LOAD: {
 			if( op.dtype != ODT_IDEN ) {
-				var_base_t * res = consts::get( vm, op.dtype, op.data, op.idx );
+				var_base_t * res = consts::get( vm, op.dtype, op.data, op.src_id, op.idx );
 				if( res == nullptr ) {
-					vm.fail( op.idx, "invalid data received as const" );
+					vm.fail( op.src_id, op.idx, "invalid data received as const" );
 					goto fail;
 				}
 				vms->push( res );
@@ -53,7 +53,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				if( res == nullptr ) {
 					res = vm.gget( op.data.s );
 					if( res == nullptr ) {
-						vm.fail( op.idx, "variable '%s' does not exist", op.data.s );
+						vm.fail( op.src_id, op.idx, "variable '%s' does not exist", op.data.s );
 						goto fail;
 					}
 				}
@@ -78,7 +78,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				if( val->ref() == 1 ) {
 					vars->add( name, val, true );
 				} else {
-					vars->add( name, val->copy( src_id, op.idx ), false );
+					vars->add( name, val->copy( op.src_id, op.idx ), false );
 				}
 				goto create_done;
 			}
@@ -89,12 +89,12 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				if( val->ref() == 1 ) {
 					in->attr_set( name, val, true );
 				} else {
-					in->attr_set( name, val->copy( src_id, op.idx ), false );
+					in->attr_set( name, val->copy( op.src_id, op.idx ), false );
 				}
 				goto create_done;
 			}
 			if( !val->callable() ) {
-				vm.fail( op.idx, "only callables can be added to non attribute based types" );
+				vm.fail( op.src_id, op.idx, "only callables can be added to non attribute based types" );
 				goto create_fail;
 			}
 			// if it's a function, add that to vm.typefuncs
@@ -112,7 +112,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			var_base_t * var = vms->pop( false );
 			var_base_t * val = vms->pop( false );
 			if( var->type() != val->type() ) {
-				vm.fail( op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
+				vm.fail( op.src_id, op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
 					 "; to redeclare a variable using another type, use the 'let' statement",
 					 vm.type_name( var ).c_str(), vm.type_name( val ).c_str() );
 				var_dref( val );
@@ -184,7 +184,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				vms->pop();
 				if( op.data.s[ i ] == '1' ) {
 					// name is guaranteed to be unique, thanks to parser
-					assn_args[ name ] = vms->back()->copy( src_id, op.idx );
+					assn_args[ name ] = vms->back()->copy( op.src_id, op.idx );
 					vms->pop();
 				}
 				args.push_back( name );
@@ -195,7 +195,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 
 			vms->push( new var_fn_t( src_file->path(), kw_arg, var_arg,
 						 args, assn_args, fn_body_t{ .feral = body },
-						 false, src_id, op.idx ),
+						 false, op.src_id, op.idx ),
 				   false );
 			break;
 		}
@@ -214,7 +214,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 					const std::string name = STR( vms->back() )->get();
 					vms->pop();
 					var_base_t * val = vms->pop( false );
-					assn_args.push_back( { idx, name, val } );
+					assn_args.push_back( { src_id, idx, name, val } );
 					assn_args_loc[ name ] = assn_args.size() - 1;
 				}
 			}
@@ -236,22 +236,22 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				fn_base = vms->pop( false );
 			}
 			if( !fn_base ) {
-				if( mem_call ) vm.fail( op.idx, "callable '%s' does not exist for %s",
+				if( mem_call ) vm.fail( op.src_id, op.idx, "callable '%s' does not exist for %s",
 							fn_name.c_str(), vm.type_name( in_base ).c_str() );
-				else vm.fail( op.idx, "this function does not exist" );
+				else vm.fail( op.src_id, op.idx, "this function does not exist" );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
 			if( !fn_base->callable() ) {
-				vm.fail( op.idx, "'%s' is not a function or struct definition",
+				vm.fail( op.src_id, op.idx, "'%s' is not a function or struct definition",
 					 vm.type_name( fn_base ).c_str() );
 				var_dref( in_base );
 				goto fncall_fail;
 			}
 			args.insert( args.begin(), in_base );
-			res = fn_base->call( vm, args, assn_args, assn_args_loc, src_id, op.idx );
+			res = fn_base->call( vm, args, assn_args, assn_args_loc, op.src_id, op.idx );
 			if( !res ) {
-				vm.fail( op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
 				goto fncall_fail;
 			}
 			if( !res->istype< var_nil_t >() ) {
@@ -279,7 +279,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				val = vm.get_typefn( in_base->typefn_id(), attr, false );
 			}
 			if( val == nullptr ) {
-				vm.fail( op.idx, "type %s does not contain attribute: '%s'",
+				vm.fail( op.src_id, op.idx, "type %s does not contain attribute: '%s'",
 					 vm.type_name( in_base ).c_str(), attr.c_str() );
 				goto attr_fail;
 			}
@@ -322,10 +322,10 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	}
 
 done:
-	vars->pop_fn();
+	if( !custom_bcode ) vars->pop_fn();
 	return vm.exit_code;
 fail:
-	vars->pop_fn();
+	if( !custom_bcode ) vars->pop_fn();
 	return E_EXEC_FAIL;
 }
 

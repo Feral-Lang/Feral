@@ -45,7 +45,7 @@ void set( const size_t & err_code, const size_t & err_val, const char * msg, ...
 
 	code() = err_code;
 	val() = err_val;
-	str() = "error: " + std::string( err ) + "\n";
+	str() = std::string( err );
 }
 
 }

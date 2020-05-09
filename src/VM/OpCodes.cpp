@@ -74,23 +74,23 @@ bcode_t::~bcode_t()
 
 void bcode_t::add( const size_t & idx, const OpCodes op )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_NIL, { .s = nullptr } } );
+	m_bcode.push_back( op_t{ 0, idx, op, ODT_NIL, { .s = nullptr } } );
 }
 void bcode_t::adds( const size_t & idx, const OpCodes op, const OpDataType dtype, const std::string & data )
 {
-	m_bcode.push_back( op_t{ idx, op, dtype, { .s = scpy( data ) } } );
+	m_bcode.push_back( op_t{ 0, idx, op, dtype, { .s = scpy( data ) } } );
 }
 void bcode_t::addb( const size_t & idx, const OpCodes op, const bool & data )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_BOOL, { .b = data } } );
+	m_bcode.push_back( op_t{ 0, idx, op, ODT_BOOL, { .b = data } } );
 }
 void bcode_t::addsz( const size_t & idx, const OpCodes op, const std::string & data )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_SZ, { .sz = std::stoull( data ) } } );
+	m_bcode.push_back( op_t{ 0, idx, op, ODT_SZ, { .sz = std::stoull( data ) } } );
 }
 void bcode_t::addsz( const size_t & idx, const OpCodes op, const size_t & data )
 {
-	m_bcode.push_back( op_t{ idx, op, ODT_SZ, { .sz = data } } );
+	m_bcode.push_back( op_t{ 0, idx, op, ODT_SZ, { .sz = data } } );
 }
 
 OpCodes bcode_t::at( const size_t & pos ) const

@@ -58,8 +58,8 @@ var_base_t * var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > 
 {
 	// - 1 for self
 	if( args.size() - 1 < m_args.size() - m_assn_args.size() || ( args.size() - 1 > m_args.size() && m_var_arg.empty() ) ) {
-		vm.fail( idx, "argument count required: %zu (without default args: %zu), received: %zu",
-						m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
+		vm.fail( src_id, idx, "argument count required: %zu (without default args: %zu), received: %zu",
+			 m_args.size(), m_args.size() - m_assn_args.size(), args.size() - 1 );
 		return nullptr;
 	}
 	if( m_is_native ) {

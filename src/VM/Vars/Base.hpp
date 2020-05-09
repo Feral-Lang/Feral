@@ -23,6 +23,7 @@
 class var_base_t;
 struct fn_assn_arg_t
 {
+	size_t src_id;
 	size_t idx;
 	std::string name;
 	var_base_t * val;

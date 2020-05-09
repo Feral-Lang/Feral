@@ -91,13 +91,13 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
-		vm.fail( fd.idx, "expected boolean argument for assertion, found: %s",
+		vm.fail( fd.src_id, fd.idx, "expected boolean argument for assertion, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
 
 	if( !BOOL( fd.args[ 1 ] )->get() ) {
-		vm.fail( fd.idx, "assertion failed" );
+		vm.fail( fd.src_id, fd.idx, "assertion failed" );
 		return nullptr;
 	}
 	return vm.nil;
