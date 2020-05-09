@@ -31,7 +31,6 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 	} else {
 		str_fn = vm.get_typefn( typefn_id(), "str", false );
 	}
-	str_fn = vm.get_typefn( this->type(), "str", false );
 	if( !str_fn ) {
 		vm.fail( this->src_id(), this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
 		return false;
