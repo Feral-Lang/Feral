@@ -163,7 +163,7 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id,
 	std::string mod_file = mod_str;
 	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "libferal" );
 	if( !mod_exists( m_dll_locs, mod_file, nmod_ext() ) ) {
-		fail( idx, "module file: %s not found in locations: %s",
+		fail( src_id, idx, "module file: %s not found in locations: %s",
 		      ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
@@ -175,20 +175,20 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id,
 	if( dlib->fexists( mod_file ) ) return true;
 
 	if( !dlib->load( mod_file ) ) {
-		fail( idx, "unable to load module file: %s",
+		fail( src_id, idx, "unable to load module file: %s",
 		      mod_file.c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
 	}
 	mod_init_fn_t init_fn = ( mod_init_fn_t )dlib->get( mod_file, "init_" + mod );
 	if( init_fn == nullptr ) {
-		fail( idx, "module file: %s does not contain init function (%s)",
+		fail( src_id, idx, "module file: %s does not contain init function (%s)",
 		      mod_file.c_str(), ( "init_" + mod ).c_str() );
 		dlib->unload( mod_file );
 		return false;
 	}
 	if( !init_fn( * this, src_id, idx ) ) {
 		dlib->unload( mod_file );
-		fail( idx, "init function in module file: %s didn't return okay",
+		fail( src_id, idx, "init function in module file: %s didn't return okay",
 		      mod_file.c_str() );
 		return false;
 	}
@@ -225,11 +225,15 @@ bool vm_state_t::load_core_mods()
 	return true;
 }
 
-void vm_state_t::fail( const size_t & idx, const char * msg, ... ) const
+void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const
 {
 	va_list vargs;
 	va_start( vargs, msg );
-	current_source_file()->fail( idx, msg, vargs );
+	for( auto & src : all_srcs ) {
+		if( src.second->src()->id() == src_id ) {
+			src.second->src()->fail( idx, msg, vargs );
+		}
+	}
 	va_end( vargs );
 }
 

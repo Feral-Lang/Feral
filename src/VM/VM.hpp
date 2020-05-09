@@ -131,7 +131,7 @@ struct vm_state_t
 	inline const std::string & dll_core_load_loc() const { return m_dll_core_load_loc; }
 	inline const std::string & feral_home_dir() { return m_feral_home_dir; }
 
-	void fail( const size_t & idx, const char * msg, ... ) const;
+	void fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const;
 
 	bool load_core_mods();
 private:

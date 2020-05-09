@@ -17,7 +17,7 @@
 var_base_t * bool_lt( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
-		vm.fail( fd.idx, "expected boolean argument for logical less than, found: %s",
+		vm.fail( fd.src_id, fd.idx, "expected boolean argument for logical less than, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
@@ -27,7 +27,7 @@ var_base_t * bool_lt( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * bool_gt( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
-		vm.fail( fd.idx, "expected boolean argument for logical greater than, found: %s",
+		vm.fail( fd.src_id, fd.idx, "expected boolean argument for logical greater than, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
@@ -37,7 +37,7 @@ var_base_t * bool_gt( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * bool_le( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
-		vm.fail( fd.idx, "expected boolean argument for logical less than or equal, found: %s",
+		vm.fail( fd.src_id, fd.idx, "expected boolean argument for logical less than or equal, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
@@ -47,7 +47,7 @@ var_base_t * bool_le( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * bool_ge( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_bool_t >() ) {
-		vm.fail( fd.idx, "expected boolean argument for logical greater than or equal, found: %s",
+		vm.fail( fd.src_id, fd.idx, "expected boolean argument for logical greater than or equal, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}

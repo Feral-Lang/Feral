@@ -100,6 +100,9 @@ srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const
 		src->fail( err::val(), err::str().c_str() );
 		goto fail;
 	}
+	for( auto & bc : src->bcode().getmut() ) {
+		bc.src_id = src->id();
+	}
 	return src;
 fail:
 	delete src;

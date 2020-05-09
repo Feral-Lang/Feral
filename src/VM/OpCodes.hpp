@@ -78,6 +78,8 @@ union op_data_t
 
 struct op_t
 {
+	// src_id is set afterwards since srcfile_t is usually made at later time
+	size_t src_id;
 	size_t idx;
 	OpCodes op;
 	OpDataType dtype;

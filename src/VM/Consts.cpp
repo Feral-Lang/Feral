@@ -12,7 +12,7 @@
 namespace consts
 {
 
-var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & idx )
+var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & src_id, const size_t & idx )
 {
 	if( type == ODT_BOOL ) {
 		return opd.b ? vm.tru : vm.fals;
@@ -22,9 +22,9 @@ var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd,
 		return vm.nil;
 	}
 
-	if( type == ODT_INT ) return make_all< var_int_t >( mpz_class( opd.s ), vm.current_source()->src_id(), idx );
-	else if( type == ODT_FLT ) return make_all< var_flt_t >( mpfr::mpreal( opd.s ), vm.current_source()->src_id(), idx );
-	else if( type == ODT_STR ) return make_all< var_str_t >( opd.s, vm.current_source()->src_id(), idx );
+	if( type == ODT_INT ) return make_all< var_int_t >( mpz_class( opd.s ), src_id, idx );
+	else if( type == ODT_FLT ) return make_all< var_flt_t >( mpfr::mpreal( opd.s ), src_id, idx );
+	else if( type == ODT_STR ) return make_all< var_str_t >( opd.s, src_id, idx );
 
 	return nullptr;
 }
