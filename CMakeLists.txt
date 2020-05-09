@@ -78,6 +78,15 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif()
 
+# Because Android has issues with dlopen()'s RTLD_GLOBAL; See:
+# https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-search-order
+# https://android.googlesource.com/platform/bionic/+/30b17e32f0b403a97cef7c4d1fcab471fa316340/linker/linker_namespaces.cpp#100
+# https://android-ndk.narkive.com/iNWj05IV/weak-symbol-linking-when-loading-dynamic-libraries
+set(EXTRA_LD_FLAGS "")
+if(ANDROID)
+	set(EXTRA_LD_FLAGS "-z global")
+endif()
+
 # Finally! The sources!!!!!
 
 # Set Config.hpp.in template
@@ -102,6 +111,7 @@ add_library(feral-common SHARED ${SRCS} ${INCS})
 set_target_properties(feral-common
     PROPERTIES
     OUTPUT_NAME feralcomm
+    LINK_FLAGS "${EXTRA_LD_FLAGS}"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
@@ -126,6 +136,7 @@ target_link_libraries(feral-vm feral-common ${CMAKE_DL_LIBS} ${MPFR_LIBRARIES} $
 set_target_properties(feral-vm
     PROPERTIES
     OUTPUT_NAME feralvm
+    LINK_FLAGS "${EXTRA_LD_FLAGS}"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
@@ -151,6 +162,7 @@ target_link_libraries(feral-compiler feral-common feral-vm)
 set_target_properties(feral-compiler
     PROPERTIES
     OUTPUT_NAME feralcomp
+    LINK_FLAGS "${EXTRA_LD_FLAGS}"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
@@ -172,6 +184,7 @@ target_link_libraries(feral-bin feral-compiler feral-vm)
 set_target_properties(feral-bin
 	PROPERTIES
 	OUTPUT_NAME feral
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
@@ -192,6 +205,7 @@ foreach(m ${mods})
 	set_target_properties(${mod}
 	    PROPERTIES
 	    PREFIX "libferal"
+	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
 	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
 	    INSTALL_RPATH_USE_LINK_PATH TRUE
 	)
