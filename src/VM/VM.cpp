@@ -23,7 +23,9 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
 	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc ),
-	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr )
+	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr ),
+	  m_sys_prefix( STRINGIFY( BUILD_PREFIX_DIR ) ),
+	  m_user_prefix( env::get("HOME") + "/.feral" )
 {
 	init_typenames( * this );
 
@@ -34,13 +36,11 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	}
 	src_args = new var_vec_t( src_args_vec, false, 0, 0 );
 
-	m_feral_home_dir = env::get("HOME") + "/.feral";
+	m_inc_locs.push_back( m_user_prefix + "/include" );
+	m_dll_locs.push_back( m_user_prefix + "/lib" );
 
-	m_inc_locs.emplace_back( m_feral_home_dir + "/include" );
-	m_dll_locs.emplace_back( m_feral_home_dir + "/lib" );
-
-	m_inc_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral" );
-	m_dll_locs.emplace_back( STRINGIFY( BUILD_PREFIX_DIR ) "/lib/feral" );
+	m_inc_locs.push_back( m_sys_prefix + "/include/feral" );
+	m_dll_locs.push_back( m_sys_prefix + "/lib/feral" );
 }
 
 vm_state_t::~vm_state_t()
@@ -156,8 +156,7 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	return false;
 }
 
-bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id,
-			    const size_t & idx, const bool set_dll_core_load_loc )
+bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx )
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
@@ -166,10 +165,6 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id,
 		fail( src_id, idx, "module file: %s not found in locations: %s",
 		      ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
-	}
-
-	if( set_dll_core_load_loc ) {
-		m_dll_core_load_loc = mod_file.substr( 0, mod_file.find_last_of( '/' ) );
 	}
 
 	if( dlib->fexists( mod_file ) ) return true;
@@ -220,7 +215,7 @@ bool vm_state_t::load_core_mods()
 	// TODO: perhaps embed these in feral binary to remove the requirement of installation location
 	std::vector< std::string > mods = { "core", "utils" };
 	for( auto & mod : mods ) {
-		if( !nmod_load( mod, 0, 0, mod == "core" ) ) return false;
+		if( !nmod_load( mod, 0, 0 ) ) return false;
 	}
 	return true;
 }
