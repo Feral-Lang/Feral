@@ -14,9 +14,11 @@
 
 var_base_t::var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 			const bool & callable, const bool & attr_based )
-	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 ),
-	  m_callable( callable ), m_attr_based( attr_based )
-{}
+	: m_type( type ), m_src_id( src_id ), m_idx( idx ), m_ref( 1 ), m_info( 0 )
+{
+	if( callable ) m_info |= VI_CALLABLE;
+	if( attr_based ) m_info |= VI_ATTR_BASED;
+}
 var_base_t::~var_base_t()
 {}
 

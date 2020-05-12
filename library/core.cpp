@@ -45,6 +45,12 @@ var_base_t * all_copy( vm_state_t & vm, const fn_data_t & fd )
 	return copy;
 }
 
+var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
+{
+	fd.args[ 1 ]->set_load_as_ref();
+	return fd.args[ 1 ];
+}
+
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_base_t * mod_var = fd.args[ 1 ];
@@ -94,12 +100,13 @@ INIT_MODULE( core )
 	const std::string & src_name = vm.current_source_file()->path();
 
 	// fundamental functions for builtin types
-	vm.add_native_typefn< var_all_t >( "_type_",     all_get_type,	 0, src_id, idx );
-	vm.add_native_typefn< var_all_t >( "_typestr_", all_get_typestr, 0, src_id, idx );
-	vm.add_native_typefn< var_all_t >(     "==",     all_eq,       	 1, src_id, idx );
-	vm.add_native_typefn< var_all_t >(     "!=",     all_ne,       	 1, src_id, idx );
-	vm.add_native_typefn< var_all_t >(   "copy",     all_copy,     	 0, src_id, idx );
-	vm.add_native_typefn< var_all_t >(    "str",     all_to_str,   	 0, src_id, idx );
+	vm.add_native_typefn< var_all_t >( "_type_",     all_get_type,	  0, src_id, idx );
+	vm.add_native_typefn< var_all_t >( "_typestr_",  all_get_typestr, 0, src_id, idx );
+	vm.add_native_typefn< var_all_t >(     "==",     all_eq,       	  1, src_id, idx );
+	vm.add_native_typefn< var_all_t >(     "!=",     all_ne,       	  1, src_id, idx );
+	vm.add_native_typefn< var_all_t >(   "copy",     all_copy,     	  0, src_id, idx );
+
+	vm.add_native_typefn< var_all_t >(    "str",     all_to_str,   	  0, src_id, idx );
 
 	vm.add_native_typefn< var_nil_t >(    "str", nil_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_typeid_t >( "str", typeid_to_str, 0, src_id, idx );
@@ -111,8 +118,9 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_map_t >(    "str", map_to_str,    0, src_id, idx );
 
 	// global required
-	vm.gadd( "mload", new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
+	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file }, src_id, idx ), false );
+	vm.gadd( "ref",    new var_fn_t( src_name, { "" }, {}, { .native = reference }, src_id, idx ), false );
 	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, {}, { .native = is_main_src }, src_id, idx ), false );
 
 	// core type functions
