@@ -85,8 +85,7 @@ struct vm_state_t
 	// nmod = native module
 	// fmod = feral module
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
-	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx,
-			const bool set_dll_core_load_loc = false );
+	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx );
 	int fmod_load( const std::string & mod_file );
 	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
 
@@ -128,8 +127,8 @@ struct vm_state_t
 	std::string type_name( const var_base_t * val );
 
 	inline const std::string & self_binary() const { return m_self_binary; }
-	inline const std::string & dll_core_load_loc() const { return m_dll_core_load_loc; }
-	inline const std::string & feral_home_dir() { return m_feral_home_dir; }
+	inline const std::string & sys_prefix() { return m_sys_prefix; }
+	inline const std::string & user_prefix() { return m_user_prefix; }
 
 	void fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const;
 
@@ -152,10 +151,10 @@ private:
 	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 	// location where feral binary exists (used by sys.self_binary())
 	std::string m_self_binary;
-	// directory where (core) module is loaded from (used by builder)
-	std::string m_dll_core_load_loc;
+	// prefix directory where feral was installed
+	std::string m_sys_prefix;
 	// directory where feral libraries and config and stuff lives
-	std::string m_feral_home_dir;
+	std::string m_user_prefix;
 };
 
 const char * nmod_ext();
