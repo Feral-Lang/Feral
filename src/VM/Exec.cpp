@@ -27,6 +27,9 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	size_t bc_sz = end == 0 ? bc.size() : end;
 
 	std::vector< fn_body_span_t > bodies;
+	std::vector< var_base_t * > args;
+	std::vector< fn_assn_arg_t > assn_args;
+	std::unordered_map< std::string, size_t > assn_args_loc;
 
 	if( !custom_bcode ) vars->push_fn();
 
@@ -75,8 +78,10 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			var_base_t * val = vms->pop( false );
 			if( !in ) {
 				// only copy if reference count > 1 (no point in copying unique values)
-				if( val->ref() == 1 ) {
+				// or if load_as_ref() of value is true
+				if( val->load_as_ref() || val->ref() == 1 ) {
 					vars->add( name, val, true );
+					val->unset_load_as_ref();
 				} else {
 					vars->add( name, val->copy( op.src_id, op.idx ), false );
 				}
@@ -86,8 +91,10 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			// add unconditionally to an attribute based
 			if( in->attr_based() ) {
 				// only copy if reference count > 1 (no point in copying unique values)
-				if( val->ref() == 1 ) {
+				// or if load_as_ref() of value is true
+				if( val->load_as_ref() || val->ref() == 1 ) {
 					in->attr_set( name, val, true );
+					val->unset_load_as_ref();
 				} else {
 					in->attr_set( name, val->copy( op.src_id, op.idx ), false );
 				}
@@ -203,9 +210,9 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		case OP_FNCL: {
 			size_t len = strlen( op.data.s );
 			bool mem_call = op.op == OP_MEM_FNCL;
-			std::vector< var_base_t * > args;
-			std::vector< fn_assn_arg_t > assn_args;
-			std::unordered_map< std::string, size_t > assn_args_loc;
+			args.clear();
+			assn_args.clear();
+			assn_args_loc.clear();
 			for( size_t i = 0; i < len; ++i ) {
 				if( op.data.s[ i ] == '0' ) {
 					args.push_back( vms->pop( false ) );

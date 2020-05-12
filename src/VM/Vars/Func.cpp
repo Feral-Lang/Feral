@@ -101,7 +101,7 @@ var_base_t * var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > 
 			vec.push_back( args[ i ] );
 			++i;
 		}
-		vars->stash( m_var_arg, make< var_vec_t >( vec ) );
+		vars->stash( m_var_arg, make< var_vec_t >( vec, false ) );
 	}
 	if( !m_kw_arg.empty() ) {
 		std::unordered_map< std::string, var_base_t * > map;

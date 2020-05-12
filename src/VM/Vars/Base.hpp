@@ -29,6 +29,13 @@ struct fn_assn_arg_t
 	var_base_t * val;
 };
 
+enum VARINFO
+{
+	VI_CALLABLE = 1 << 0,
+	VI_ATTR_BASED = 1 << 1,
+	VI_LOAD_AS_REF = 1 << 2,
+};
+
 struct vm_state_t;
 class var_base_t
 {
@@ -37,8 +44,11 @@ class var_base_t
 	size_t m_idx;
 	size_t m_ref;
 
-	bool m_callable;
-	bool m_attr_based;
+	// TODO: make a character instead of multiple bools instead?
+	// right most bit = 0 => callable (bool)
+	// 1 => attr_based (bool)
+	// 2 => load_as_reference (bool)
+	char m_info;
 
 	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
 	template< typename ... T > static inline std::size_t _type_id() {
@@ -71,8 +81,12 @@ public:
 	inline size_t dref() { assert( m_ref > 0 ); --m_ref; return m_ref; }
 	inline size_t ref() const { return m_ref; }
 
-	inline bool callable() { return m_callable; }
-	inline bool attr_based() { return m_attr_based; }
+	inline bool callable() { return m_info & VI_CALLABLE; }
+	inline bool attr_based() { return m_info & VI_ATTR_BASED; }
+
+	inline void set_load_as_ref() { m_info |= VI_LOAD_AS_REF; }
+	inline void unset_load_as_ref() { m_info &= ~VI_LOAD_AS_REF; }
+	inline bool load_as_ref() { return m_info & VI_LOAD_AS_REF; }
 
 	virtual var_base_t * call( vm_state_t & vm, const std::vector< var_base_t * > & args,
 				   const std::vector< fn_assn_arg_t > & assn_args,
@@ -196,14 +210,17 @@ public:
 class var_vec_t : public var_base_t
 {
 	std::vector< var_base_t * > m_val;
+	bool m_refs;
 public:
-	var_vec_t( const std::vector< var_base_t * > & val, const size_t & src_id, const size_t & idx );
+	var_vec_t( const std::vector< var_base_t * > & val, const bool & refs,
+		   const size_t & src_id, const size_t & idx );
 	~var_vec_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
 	std::vector< var_base_t * > & get();
+	bool is_ref_vec();
 };
 #define VEC( x ) static_cast< var_vec_t * >( x )
 
@@ -227,6 +244,7 @@ struct fn_body_span_t
 	size_t end;
 };
 
+// TODO: can the size be reduced?
 struct fn_data_t
 {
 	size_t src_id;

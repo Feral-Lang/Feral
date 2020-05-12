@@ -32,7 +32,7 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	for( auto & arg : args ) {
 		src_args_vec.push_back( new var_str_t( arg, 0, 0 ) );
 	}
-	src_args = new var_vec_t( src_args_vec, 0, 0 );
+	src_args = new var_vec_t( src_args_vec, false, 0, 0 );
 
 	m_feral_home_dir = env::get("HOME") + "/.feral";
 
