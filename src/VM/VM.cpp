@@ -18,7 +18,7 @@
 #include "Vars.hpp"
 #include "VM.hpp"
 
-// env: FERAL_SEARCH_PATHS
+// env: FERAL_PATHS
 vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags )
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
@@ -36,7 +36,7 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	}
 	src_args = new var_vec_t( src_args_vec, false, 0, 0 );
 
-	std::vector< std::string > extra_search_paths = str::split( env::get( "FERAL_SEARCH_PATHS" ), ';' );
+	std::vector< std::string > extra_search_paths = str::split( env::get( "FERAL_PATHS" ), ';' );
 
 	for( auto & path : extra_search_paths ) {
 		m_inc_locs.push_back( path + "/include/feral" );
