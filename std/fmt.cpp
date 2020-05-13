@@ -34,7 +34,7 @@ var_base_t * templ( vm_state_t & vm, const fn_data_t & fd )
 	std::string fmt_str = STR( fd.args[ 1 ] )->get();
 	std::string tmp;
 	bool prev_back_slash = false;
-	bool in_brace = false;
+	int brace_count = 0;
 
 	for( size_t i = 0; i < fmt_str.size(); ++i ) {
 		if( fmt_str[ i ] == '{' ) {
@@ -44,11 +44,18 @@ var_base_t * templ( vm_state_t & vm, const fn_data_t & fd )
 				prev_back_slash = false;
 				continue;
 			}
-			in_brace = true;
+			++brace_count;
+			if( brace_count > 1 ) {
+				goto capture;
+			}
 			fmt_str.erase( fmt_str.begin() + i-- );
 			continue;
 		}
-		if( fmt_str[ i ] == '}' && in_brace ) {
+		if( fmt_str[ i ] == '}' && brace_count > 0 ) {
+			--brace_count;
+			if( brace_count > 0 ) {
+				goto capture;
+			}
 			std::string res;
 			if( !eval( vm, tmp, res, fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx() ) ) {
 				return nullptr;
@@ -58,15 +65,21 @@ var_base_t * templ( vm_state_t & vm, const fn_data_t & fd )
 			fmt_str.insert( fmt_str.begin() + i, res.begin(), res.end() );
 			i += res.size();
 			--i;
-			in_brace = false;
 			continue;
 		}
-		if( in_brace ) {
+	capture:
+		if( brace_count > 0 ) {
 			tmp += fmt_str[ i ];
 			fmt_str.erase( fmt_str.begin() + i-- );
 			continue;
 		}
 		prev_back_slash = fmt_str[ i ] == '\\';
+	}
+	if( brace_count > 0 ) {
+		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(),
+			 "invalid template: mismatched braces found (brace count: %d)",
+			 brace_count );
+		return nullptr;
 	}
 
 	return make< var_str_t >( fmt_str );
