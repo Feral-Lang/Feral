@@ -1,0 +1,30 @@
+mload('std/os');
+
+let str = import('std/str');
+let vec = import('std/vec');
+let fs = import('std/fs');
+
+let set_env = fn(var, val, overwrite = false) {
+	return set_env_native(var, val, overwrite);
+};
+
+# OS name, current possible values:
+# android
+# linux
+# macos
+# bsd
+let name = os_get_name_native();
+
+# find the given file (exec) in the PATH variables
+# return the entire file path if found, empty string if not
+let find_exec = fn(exec) {
+	for dir in get_env('PATH').split().each() {
+		if fs.exists(dir + '/' + exec) { return dir + '/' + exec; }
+	}
+	return '';
+};
+
+# chmod command wrapper
+let chmod = fn(dest, mode = '0755', recurse = true) {
+	return chmod_native(dest, mode, recurse);
+};

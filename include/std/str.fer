@@ -1,0 +1,5 @@
+mload('std/str');
+
+let split in str_t = fn(delim = ':') {
+	return self.split_native(delim);
+};

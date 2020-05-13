@@ -114,17 +114,11 @@ Inside the repository, create a directory (say `build`), `cd` in it and run the 
 ```
 cd Feral && mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release # optionally PREFIX_DIR=<dir> can be set before this
-sudo make -j<cpu cores on your system> install
+make -j<cpu cores on your system> install
 ```
 
-`sudo` is required to install the program to system directory (`/usr/local` by default). The environment variable `PREFIX_DIR` can be set to overwrite that.
-
-Once Feral is installed, you will also probably require the standard libraries for it which are available here:
-[Feral-Lang/Feral-Std](https://github.com/Feral-Lang/Feral-Std)
-
-Follow same steps as above for the standard library repository as well.
-
-Once installation is done, execute the installed `feral` binary (`PREFIX_DIR/bin/feral`) to use the Feral language.
+By default, `PREFIX_DIR=$HOME/.feral`.
+Once installation is done, execute the installed `feral` binary (`$PREFIX_DIR/bin/feral`) to use the Feral language.
 
 ## Post Installation
 

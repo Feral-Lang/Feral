@@ -1,0 +1,5 @@
+mload('std/sys');
+
+let exit = fn(code = 0) {
+	return exit_native(code);
+};

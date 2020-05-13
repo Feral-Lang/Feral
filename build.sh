@@ -69,24 +69,18 @@ mkdir ~/.feral-installer && cd ~/.feral-installer
 # Clone the language source code
 echo '[INFO] Cloning required repositories...'
 git clone https://github.com/Feral-Lang/Feral.git
-git clone https://github.com/Feral-Lang/Feral-Std.git
 
 build() {
     mkdir build && cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
-    $SUDO make -j$CORES install
+    make -j$CORES install
     cd ..
 }
 
-echo '[INFO] Building language...'
+echo '[INFO] Building language & standard library...'
 cd Feral
 build
 cd ..
-
-echo '[INFO] Building standard library...'
-cd Feral-Std
-build
-cd ../..
 
 echo '[INFO] Done! Cleaning up...'
 rm -rf ~/.feral-installer

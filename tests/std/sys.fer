@@ -3,4 +3,8 @@ let sys = import('std/sys');
 assert(!sys.var_exists('a'));
 assert(sys.var_exists('sys'));
 
+sys.args;
+sys.self_binary;
+sys.prefix;
+
 sys.exit(0);

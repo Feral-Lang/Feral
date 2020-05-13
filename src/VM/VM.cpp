@@ -18,14 +18,14 @@
 #include "Vars.hpp"
 #include "VM.hpp"
 
+// env: FERAL_SEARCH_PATHS
 vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags )
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
 	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc ),
 	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr ),
-	  m_sys_prefix( STRINGIFY( BUILD_PREFIX_DIR ) ),
-	  m_user_prefix( env::get("HOME") + "/.feral" )
+	  m_prefix( STRINGIFY( BUILD_PREFIX_DIR ) )
 {
 	init_typenames( * this );
 
@@ -36,11 +36,15 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 	}
 	src_args = new var_vec_t( src_args_vec, false, 0, 0 );
 
-	m_inc_locs.push_back( m_user_prefix + "/include" );
-	m_dll_locs.push_back( m_user_prefix + "/lib" );
+	std::vector< std::string > extra_search_paths = str::split( env::get( "FERAL_SEARCH_PATHS" ), ';' );
 
-	m_inc_locs.push_back( m_sys_prefix + "/include/feral" );
-	m_dll_locs.push_back( m_sys_prefix + "/lib/feral" );
+	for( auto & path : extra_search_paths ) {
+		m_inc_locs.push_back( path + "/include/feral" );
+		m_dll_locs.push_back( path + "/lib/feral" );
+	}
+
+	m_inc_locs.push_back( m_prefix + "/include/feral" );
+	m_dll_locs.push_back( m_prefix + "/lib/feral" );
 }
 
 vm_state_t::~vm_state_t()

@@ -1,0 +1,123 @@
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let fmt = import('std/fmt');
+let vec = import('std/vec');
+let sys = import('std/sys');
+let lang = import('std/lang');
+let cmake_base = import('./cmake_gen/base');
+let install = import('./cmake_gen/install');
+let find_lib = import('./cmake_gen/find_lib');
+let shared_lib = import('./cmake_gen/shared_lib');
+let binary = import('./cmake_gen/binary');
+
+let default_install_rpaths = sys.prefix + '/lib;' +
+			     sys.prefix + '/types;' +
+			     sys.prefix  + '/lib/feral;' +
+			     sys.prefix  + '/lib/feral/std;' +
+			     sys.prefix  + '/lib/feral/types;' +
+			     sys.prefix  + '/lib/feral/types/std';
+
+let core_t = lang.struct(
+	version = '2.8',
+	proj_name = 'test',
+	cxx_std = '11',
+	install_prefix = sys.prefix,
+	install_rpaths = default_install_rpaths,
+	deps = vec.new(refs = true, shared_lib.gmp, shared_lib.gmpxx, shared_lib.mpfr),
+	installs = vec.new(refs = true),
+	shared_libs = vec.new(refs = true),
+	binaries = vec.new(refs = true),
+	is_sys_install = false,
+	use_feral_vm = false
+);
+
+let new = fn(proj_name) { return core_t(proj_name = proj_name); };
+
+let sys_install = fn() {
+	self.is_sys_install = true;
+	self.install_prefix = sys.prefix;
+	return self;
+};
+
+let gen in core_t = fn(ret = false) {
+	let deps_str = '';
+	for d in self.deps.each() {
+		deps_str += d.gen() + '\n';
+	}
+	let installs_str = '';
+	for i in self.installs.each() {
+		installs_str += i.gen() + '\n';
+	}
+	let shared_libs_str = '';
+	for sl in self.shared_libs.each() {
+		shared_libs_str += sl.gen() + '\n';
+	}
+	let binaries_str = '';
+	for bin in self.binaries.each() {
+		binaries_str += bin.gen() + '\n';
+	}
+	let data = fmt.template(cmake_base.template_base);
+	if ret {
+		return data;
+	}
+	let file = fs.open(os.get_cwd() + '/CMakeLists.txt', 'w+');
+	io.fprintln(file, data);
+	return nil;
+};
+
+let add_dep in core_t = fn(name) {
+	let lib = find_lib.new(name);
+	self.deps.push(lib);
+	return ref(lib);
+};
+
+let add_install in core_t = fn(name) {
+	let ins = install.new(name, self.is_sys_install);
+	self.installs.push(ins);
+	return ref(ins);
+};
+
+let add_shared_lib in core_t = fn(name, with_feral_vm = true) {
+	let lib = shared_lib.new(name, self.is_sys_install);
+	self.add_gmp_libs(lib);
+	if with_feral_vm { self.add_feralvm_libs(lib); }
+	self.shared_libs.push(lib);
+	return ref(lib);
+};
+
+let add_type_lib in core_t = fn(name, with_feral_vm = true) {
+	let lib = shared_lib.new_type(name, self.is_sys_install);
+	self.add_gmp_libs(lib);
+	if with_feral_vm { self.add_feralvm_libs(lib); }
+	self.shared_libs.push(lib);
+	return ref(lib);
+};
+
+let add_bin in core_t = fn(name, with_feral_vm = true) {
+	let bin = binary.new(name);
+	self.add_gmp_libs(bin);
+	if with_feral_vm { self.add_feralvm_libs(bin); }
+	self.binaries.push(bin);
+	return ref(bin);
+};
+
+let add_rpath in core_t = fn(rpath) { self.install_rpaths += ';' + rpath; return self; };
+
+# internal functions
+
+let add_feralvm_libs in core_t = fn(obj) {
+	if !self.use_feral_vm {
+		self.deps.push(shared_lib.feralvm);
+		self.use_feral_vm = true;
+	}
+	obj.add_dep(shared_lib.feralvm);
+	return self;
+};
+
+let add_gmp_libs in core_t = fn(obj) {
+	obj.add_dep(shared_lib.gmp);
+	obj.add_dep(shared_lib.gmpxx);
+	obj.add_dep(shared_lib.mpfr);
+	return self;
+};

@@ -15,6 +15,7 @@ namespace str
 
 std::vector< std::string > split( const std::string & data, const char delim, const bool keep_delim )
 {
+	if( data.empty() ) return {};
 	std::string temp;
 	std::vector< std::string > vec;
 

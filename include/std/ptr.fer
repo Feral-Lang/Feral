@@ -1,0 +1,5 @@
+mload('std/ptr');
+
+let new = fn(val = nil) {
+	return new_native(val);
+};
