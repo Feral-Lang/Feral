@@ -9,9 +9,11 @@ endif()
 
 if(DEFINED ENV{PREFIX_DIR} AND NOT "$ENV{PREFIX_DIR}" STREQUAL "")
 	set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
+else()
+	set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.feral")
 endif()
+set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 add_definitions(-DBUILD_PREFIX_DIR=${CMAKE_INSTALL_PREFIX})
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/feral")
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
 if(DEFINED ENV{MEM_PROFILE})
@@ -28,11 +30,22 @@ set(FERAL_VERSION_PATCH 2)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(ORIGIN "@ORIGIN")
+if(APPLE)
+	set(ORIGIN "@loader_path")
+endif()
+set(CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral;${ORIGIN}/.")
+set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_MACOSX_RPATH TRUE)
 
 include(CheckCXXCompilerFlag)
+
+# For libGMP on macOS and BSD
+if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
+	include_directories(/usr/local/include)
+endif()
 
 find_library(GMP_LIBRARY gmp REQUIRED)
 find_library(GMPXX_LIBRARY gmpxx REQUIRED)
@@ -52,11 +65,6 @@ else()
 	message("-- Using thread flags: ${CMAKE_THREAD_LIBS_INIT}")
 	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
 	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
-endif()
-
-# For libGMP on macOS and BSD
-if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
-	include_directories(/usr/local/include)
 endif()
 
 find_program(CCACHE_PROGRAM ccache)
@@ -94,7 +102,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOU
 
 # Feral Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
 )
 
 # Install Extra headers and (cmake) modules
@@ -198,20 +206,282 @@ install(TARGETS feral-bin
 file(GLOB_RECURSE mods RELATIVE "${PROJECT_SOURCE_DIR}" "library/*.cpp")
 foreach(m ${mods})
 	get_filename_component(mod ${m} NAME_WE)
-	get_filename_component(moddir ${m} DIRECTORY)
-	string(SUBSTRING ${moddir} 7 -1 moddir)
 	add_library(${mod} SHARED "${m}")
 	target_link_libraries(${mod} feral-vm)
 	set_target_properties(${mod}
 	    PROPERTIES
 	    PREFIX "libferal"
 	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
+	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/"
 	    INSTALL_RPATH_USE_LINK_PATH TRUE
 	)
 	install(TARGETS ${mod}
 		LIBRARY
-		  DESTINATION lib/feral/${moddir}
+		  DESTINATION lib/feral/
 		  COMPONENT Libraries
 	)
 endforeach()
+
+
+# Standard Library
+
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Types
+
+# fs
+set(mod "fs_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# map
+set(mod "map_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm struct_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# ptr
+set(mod "ptr_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# struct
+set(mod "struct_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# vec
+set(mod "vec_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# Libraries
+
+# fmt
+set(mod "fmt")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm feral-compiler ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# fs
+set(mod "fs")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# io
+set(mod "io")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# lang
+set(mod "lang")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} struct_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# map
+set(mod "map")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} map_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# os
+set(mod "os")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# ptr
+set(mod "ptr")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} ptr_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# str
+set(mod "str")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# sys
+set(mod "sys")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# vec
+set(mod "vec")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} vec_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)

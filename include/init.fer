@@ -15,7 +15,7 @@ if USER_HOME.empty() {
 
 io.cprintln('Initializing Feral for use ...');
 
-let FERAL_HOME = sys.user_prefix;
+let FERAL_HOME = sys.prefix;
 let FERAL_INC = FERAL_HOME + '/include';
 let FERAL_LIB = FERAL_HOME + '/lib';
 let FERAL_BIN = FERAL_HOME + '/bin';

@@ -1,0 +1,79 @@
+let fmt = import('std/fmt');
+let vec = import('std/vec');
+let lang = import('std/lang');
+let find_lib = import('./find_lib');
+
+let shared_lib_base =
+`# {self.lib_name}{name_suffix}
+set(mod_tmp "{self.lib_name}")
+set(mod "$\\{mod_tmp}{name_suffix}")
+add_library($\\{mod} SHARED "$\\{PROJECT_SOURCE_DIR}/{self.src_path}/$\\{mod_tmp}.cpp" {other_srcs})
+target_link_libraries($\\{mod}{dep_names})
+set_target_properties($\\{mod}
+    PROPERTIES
+    PREFIX "libferal"
+    LINK_FLAGS "$\\{EXTRA_LD_FLAGS}"
+    LIBRARY_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/lib/{self.path_suffix}"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS $\\{mod}
+	LIBRARY
+	  DESTINATION lib/{self.path_suffix}
+	  COMPONENT Libraries
+)`;
+
+let feralvm = find_lib.new('feralvm');
+feralvm.make_reqd().add_path_suffix('feral');
+
+let gmp = find_lib.new('gmp');
+gmp.make_reqd();
+
+let gmpxx = find_lib.new('gmpxx');
+gmpxx.make_reqd();
+
+let mpfr = find_lib.new('mpfr');
+mpfr.make_reqd();
+
+let shared_lib_t = lang.struct(
+	lib_name = 'sample_shared_lib',
+	deps = vec.new(refs = true),
+	src_path = 'src',
+	other_srcs = vec.new(),
+	path_suffix = ''
+);
+
+let new = fn(name, is_sys_install) {
+	let lib = shared_lib_t(lib_name = name);
+	if is_sys_install { self.path_suffix = 'feral/'; }
+	return shared_lib_t(lib_name = name); };
+
+let new_type = fn(name, is_sys_install) {
+	let lib = shared_lib_t(lib_name = name);
+	if is_sys_install { self.path_suffix = 'feral/'; }
+	lib.path_suffix += 'types';
+	return lib;
+};
+
+let set_path_suffix in shared_lib_t = fn(suffix) { self.path_suffix = suffix; return self; };
+
+let add_dep in shared_lib_t = fn(dep) { self.deps.push(dep); return self; };
+
+let gen in shared_lib_t = fn() {
+	let dep_names = ' ';
+	for d in self.deps.each() {
+		dep_names += '${' + d.name() + '} ';
+	}
+	dep_names.pop();
+	let name_suffix = '';
+	if self.path_suffix == 'types' {
+		self.src_path = self.path_suffix;
+		name_suffix = '_type';
+	}
+	return fmt.template(shared_lib_base);
+};
+
+let name in shared_lib_t = fn() {
+	let name_suffix = '';
+	if self.path_suffix == 'types' { name_suffix = '_type'; }
+	return self.lib_name + name_suffix;
+};

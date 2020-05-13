@@ -1,0 +1,36 @@
+mload('std/vec');
+
+let '==' in vec_t = fn(other) {
+	if self._type_() != other._type_() { return false; }
+	if self.len() != other.len() { return false; }
+	let len = self.len();
+	for let i = 0; i < len; ++i {
+		if self[i] != other[i] { return false; }
+	}
+	return true;
+};
+
+# stores in the type - NOT object
+let find in vec_t = fn(obj) {
+	for data in self.each() {
+		if data == obj { return true; }
+	}
+	return false;
+};
+
+# returns true if element is found in the list, else false
+let rem in vec_t = fn(obj) {
+	let len = self.len();
+	for let i = 0; i < len; ++i {
+		if self[i] == obj {
+			self.erase(i);
+			return true;
+		}
+	}
+	return false;
+};
+
+let slice in vec_t = fn(start, end = -1) {
+	if end == -1 { end = self.len(); }
+	return self.slice_native(start, end);
+};

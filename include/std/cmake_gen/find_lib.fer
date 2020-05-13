@@ -1,0 +1,46 @@
+let str = import('std/str');
+let fmt = import('std/fmt');
+let lang = import('std/lang');
+
+let find_lib_base =
+`find_library({self.var_name.upper()}_LIBRARY {self.lib_name} {self.path_suffixes} {self.required})
+`;
+
+let reqd_line_base =
+`if(NOT {self.var_name.upper()}_LIBRARY)
+	message(FATAL_ERROR "{self.var_name} is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
+endif()
+`;
+
+let find_lib_t = lang.struct(
+	template = find_lib_base,
+	lib_name = 'test',
+	var_name = '',
+	path_suffixes = '',
+	required = ''
+);
+
+let new = fn(lib_name) { return find_lib_t(lib_name = lib_name); };
+
+let make_reqd in find_lib_t = fn() {
+	self.required = 'REQUIRED';
+	self.template += reqd_line_base;
+	return self;
+};
+
+let set_var_name in find_lib_t = fn(var_name) { self.var_name = var_name; return self; };
+
+let add_path_suffix in find_lib_t = fn(path_suffix) { self.path_suffixes += path_suffix; return self; };
+
+let name in find_lib_t = fn() {
+	if !self.var_name.empty() {
+		return self.var_name.upper() + '_LIBRARY';
+	}
+	return self.lib_name.upper() + '_LIBRARY';
+};
+
+let gen in find_lib_t = fn() {
+	if self.var_name == '' { self.var_name = self.lib_name; }
+	if !self.path_suffixes.empty() { self.path_suffixes = 'PATH_SUFFIXES "' + self.path_suffixes + '"'; }
+	return fmt.template(self.template);
+};

@@ -127,8 +127,7 @@ struct vm_state_t
 	std::string type_name( const var_base_t * val );
 
 	inline const std::string & self_binary() const { return m_self_binary; }
-	inline const std::string & sys_prefix() { return m_sys_prefix; }
-	inline const std::string & user_prefix() { return m_user_prefix; }
+	inline const std::string & prefix() { return m_prefix; }
 
 	void fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const;
 
@@ -151,10 +150,8 @@ private:
 	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
 	// location where feral binary exists (used by sys.self_binary())
 	std::string m_self_binary;
-	// prefix directory where feral was installed
-	std::string m_sys_prefix;
-	// directory where feral libraries and config and stuff lives
-	std::string m_user_prefix;
+	// prefix directory where feral is installed
+	std::string m_prefix;
 };
 
 const char * nmod_ext();
