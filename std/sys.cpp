@@ -7,6 +7,8 @@
 	before using or altering the project.
 */
 
+#include "../src/Compiler/Config.hpp"
+
 #include "../src/VM/VM.hpp"
 
 var_base_t * _exit( vm_state_t & vm, const fn_data_t & fd )
@@ -41,5 +43,12 @@ INIT_MODULE( sys )
 
 	src->add_native_var( "self_binary", make_all< var_str_t >( vm.self_binary(), src_id, idx ) );
 	src->add_native_var( "prefix",  make_all< var_str_t >(  vm.prefix(), src_id, idx ) );
+
+	src->add_native_var( "version_major", make_all< var_int_t >( FERAL_VERSION_MAJOR, src_id, idx ) );
+	src->add_native_var( "version_minor", make_all< var_int_t >( FERAL_VERSION_MINOR, src_id, idx ) );
+	src->add_native_var( "version_patch", make_all< var_int_t >( FERAL_VERSION_PATCH, src_id, idx ) );
+
+	src->add_native_var( "build_date", make_all< var_str_t >( BUILD_DATE, src_id, idx ) );
+	src->add_native_var( "build_compiler", make_all< var_str_t >( BUILD_CXX_COMPILER, src_id, idx ) );
 	return true;
 }
