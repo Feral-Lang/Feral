@@ -26,7 +26,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/src/Extra/cmake_modules")
 
 set(FERAL_VERSION_MAJOR 0)
 set(FERAL_VERSION_MINOR 0)
-set(FERAL_VERSION_PATCH 2)
+set(FERAL_VERSION_PATCH 3)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -100,12 +100,12 @@ endif()
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
 
-# Feral Includes
+# Install Feral Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
 )
 
-# Install Extra headers and (cmake) modules
+# Install Extra headers and cmake modules
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Extra/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Extra"
 	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.cmake"

@@ -7,4 +7,11 @@ sys.args;
 sys.self_binary;
 sys.prefix;
 
+sys.version_major;
+sys.version_minor;
+sys.version_patch;
+
+sys.build_date;
+sys.build_compiler;
+
 sys.exit(0);
