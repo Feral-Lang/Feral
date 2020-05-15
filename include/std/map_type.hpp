@@ -10,7 +10,7 @@
 #ifndef MAP_HPP
 #define MAP_HPP
 
-#include "VM/VM.hpp"
+#include "../VM/VM.hpp"
 
 class var_map_iterable_t : public var_base_t
 {

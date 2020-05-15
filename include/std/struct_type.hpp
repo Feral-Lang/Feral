@@ -10,7 +10,7 @@
 #ifndef STRUCT_HPP
 #define STRUCT_HPP
 
-#include "VM/VM.hpp"
+#include "../VM/VM.hpp"
 
 class var_struct_def_t : public var_base_t
 {
