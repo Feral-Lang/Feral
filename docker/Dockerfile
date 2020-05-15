@@ -3,9 +3,7 @@ FROM archlinux/base:latest
 RUN pacman -Sy base-devel vim valgrind git bc ccache cmake gmp --needed --noconfirm
 RUN pacman -Sy libffi --needed --noconfirm
 WORKDIR /feral
-RUN echo -e "export PREFIX_DIR='/usr'\n\
-\n\
-# build feral\n\
+RUN echo -e "# build feral\n\
 function bf {\n\
         CWD=\$(pwd)\n\
         cd /feral/Feral\n\
