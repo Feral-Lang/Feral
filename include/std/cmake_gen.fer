@@ -62,13 +62,13 @@ let add_dep in core_t = fn(name) {
 };
 
 let add_install in core_t = fn(name) {
-	let ins = install.new(name);
+	let ins = install.new(name, self.proj_name);
 	self.installs.push(ins);
 	return ref(ins);
 };
 
 let add_shared_lib in core_t = fn(name, with_feral_vm = true) {
-	let lib = shared_lib.new(name);
+	let lib = shared_lib.new(name, self.proj_name);
 	if with_feral_vm { self.add_feralvm_libs(lib); }
 	self.shared_libs.push(lib);
 	return ref(lib);

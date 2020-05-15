@@ -10,7 +10,7 @@
 #ifndef VEC_HPP
 #define VEC_HPP
 
-#include "VM/VM.hpp"
+#include "../VM/VM.hpp"
 
 class var_vec_iterable_t : public var_base_t
 {

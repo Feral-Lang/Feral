@@ -17,7 +17,7 @@ set_target_properties($\\{mod}
 )
 install(TARGETS $\\{mod}
 	LIBRARY
-	  DESTINATION lib/feral
+	  DESTINATION lib/feral/{self.proj_name}
 	  COMPONENT Libraries
 )`;
 
@@ -25,13 +25,14 @@ let feralvm = find_lib.new('feralvm');
 feralvm.make_reqd().add_path_suffix('feral');
 
 let shared_lib_t = lang.struct(
+	proj_name = '',
 	lib_name = 'sample_shared_lib',
 	other_srcs = '',
 	deps = vec.new(refs = true),
 	src_path = 'src'
 );
 
-let new = fn(name) { return shared_lib_t(lib_name = name); };
+let new = fn(name, proj) { return shared_lib_t(lib_name = name, proj_name = proj); };
 
 let add_src in shared_lib_t = fn(src) { self.other_srcs += ' ' + src; return self; };
 
