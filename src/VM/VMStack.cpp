@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "VMStack.hpp"
+#include "VM/VMStack.hpp"
 
 vm_stack_t::vm_stack_t() {}
 

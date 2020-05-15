@@ -7,9 +7,9 @@
 	before using or altering the project.
 */
 
-#include "../src/Compiler/Config.hpp"
+#include "Compiler/Config.hpp"
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 var_base_t * _exit( vm_state_t & vm, const fn_data_t & fd )
 {

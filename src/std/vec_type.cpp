@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "../include/std/vec_type.hpp"
+#include "std/vec_type.hpp"
 
 var_vec_iterable_t::var_vec_iterable_t( var_vec_t * vec, const size_t & src_id, const size_t & idx )
 	: var_base_t( type_id< var_vec_iterable_t >(), src_id, idx, false, false ), m_vec( vec ), m_curr( 0 )

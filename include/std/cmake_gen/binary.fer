@@ -6,7 +6,7 @@ let find_lib = import('./find_lib');
 let binary_base =
 `# {self.bin_name} binary
 set(mod "{self.bin_name}")
-add_executable($\\{mod} "$\\{PROJECT_SOURCE_DIR}/{self.src_path}/{self.main_src}")
+add_executable($\\{mod} "$\\{PROJECT_SOURCE_DIR}/{self.src_path}/{self.main_src}" {self.other_srcs})
 target_link_libraries($\\{mod}{dep_names})
 set_target_properties($\\{mod}
 	PROPERTIES
@@ -23,12 +23,15 @@ install(TARGETS $\\{mod}
 
 let binary_t = lang.struct(
 	bin_name = 'sample_bin',
+	other_srcs = '',
 	deps = vec.new(refs = true),
 	src_path = 'src',
 	main_src = 'Main.cpp'
 );
 
 let new = fn(name) { return binary_t(bin_name = name); };
+
+let add_src = fn(src) { self.other_srcs += ' ' + src; return self; };
 
 let add_dep in binary_t = fn(dep) { self.deps.push(dep); return self; };
 let set_src_path in binary_t = fn(path) { self.src_path = path; return self; };
@@ -37,7 +40,7 @@ let set_main_src in binary_t = fn(main_src) { self.main_src = main_src; return s
 let gen in binary_t = fn() {
 	let dep_names = ' ';
 	for d in self.deps.each() {
-		dep_names += '${' + d.name() + '} ';
+		dep_names += d.name() + ' ';
 	}
 	dep_names.pop();
 	return fmt.template(binary_base);

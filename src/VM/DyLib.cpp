@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <dlfcn.h>
 
-#include "DyLib.hpp"
+#include "VM/DyLib.hpp"
 
 dyn_lib_t::dyn_lib_t() {}
 

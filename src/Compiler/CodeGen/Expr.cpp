@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 // used for AND and OR operations - all locations from where to jump
 static std::vector< size_t > jmp_locs;

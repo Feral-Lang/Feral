@@ -9,8 +9,8 @@
 
 #include <cstring>
 
-#include "OpCodes.hpp"
-#include "Memory.hpp"
+#include "VM/OpCodes.hpp"
+#include "VM/Memory.hpp"
 
 const char * OpCodeStrs[ _OP_LAST ] = {
 	"CREATE",	// create a new variable

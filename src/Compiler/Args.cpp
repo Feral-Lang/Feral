@@ -9,7 +9,7 @@
 
 #include <cstring>
 
-#include "Args.hpp"
+#include "Compiler/Args.hpp"
 
 const size_t OPT_A = 1 << 0;
 const size_t OPT_B = 1 << 1; // show byte code

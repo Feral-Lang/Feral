@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Lex.hpp"
+#include "Compiler/Lex.hpp"
 
 const char * TokStrs[ _TOK_LAST ] = {
 	"INT",

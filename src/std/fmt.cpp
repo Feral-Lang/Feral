@@ -13,8 +13,8 @@
 #include <dirent.h>
 #include <sys/wait.h>
 
-#include "../src/Compiler/Parser.hpp"
-#include "../src/VM/VM.hpp"
+#include "Compiler/Parser.hpp"
+#include "VM/VM.hpp"
 
 bool eval( vm_state_t & vm, const std::string & data, std::string & res, const size_t & src_id, const size_t & idx );
 

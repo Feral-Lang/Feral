@@ -9,16 +9,15 @@
 
 #include <fstream>
 
-#include "../Common/FS.hpp"
-#include "../VM/VM.hpp"
+#include "Common/FS.hpp"
 
-#include "Config.hpp"
-#include "Args.hpp"
-#include "Lex.hpp"
-#include "Parser.hpp"
-#include "CodeGen.hpp"
+#include "VM/VM.hpp"
 
-#include "LoadFile.hpp"
+#include "Compiler/Args.hpp"
+#include "Compiler/Lex.hpp"
+#include "Compiler/Parser.hpp"
+#include "Compiler/CodeGen.hpp"
+#include "Compiler/LoadFile.hpp"
 
 Errors fmod_read_code( const std::string & data, const std::string & src_dir, const std::string & src_path,
 		       bcode_t & bc, const size_t & flags, const bool is_main_src,

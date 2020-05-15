@@ -13,9 +13,9 @@
 #include <dirent.h>
 #include <sys/wait.h>
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
-#include "../include/std/fs_type.hpp"
+#include "std/fs_type.hpp"
 
 enum WalkEntry {
 	FILES = 1 << 0,

@@ -10,7 +10,7 @@
 #ifndef PTR_HPP
 #define PTR_HPP
 
-#include "../../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 class var_ptr_t : public var_base_t
 {

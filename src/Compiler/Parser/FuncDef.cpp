@@ -9,7 +9,7 @@
 
 #include <unordered_map>
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 Errors parse_fn_decl( phelper_t & ph, stmt_base_t * & loc )
 {

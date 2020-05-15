@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 {

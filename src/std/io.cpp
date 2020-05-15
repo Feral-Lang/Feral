@@ -7,9 +7,9 @@
 	before using or altering the project.
 */
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
-#include "../include/std/fs_type.hpp"
+#include "std/fs_type.hpp"
 
 const size_t MAX_C_STR_LEN = 1025;
 extern std::unordered_map< std::string, const char * > COL;

@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 std::vector< var_base_t * > _str_split( const std::string & data, const char delim,
 					const size_t & src_id, const size_t & idx );

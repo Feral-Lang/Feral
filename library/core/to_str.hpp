@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "../../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 var_base_t * all_to_str( vm_state_t & vm, const fn_data_t & fd )
 {

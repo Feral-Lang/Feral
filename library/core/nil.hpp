@@ -10,7 +10,7 @@
 #ifndef LIBRARY_CORE_NIL_HPP
 #define LIBRARY_CORE_NIL_HPP
 
-#include "../../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 var_base_t * nil_eq( vm_state_t & vm, const fn_data_t & fd )
 {

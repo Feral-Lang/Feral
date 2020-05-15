@@ -7,9 +7,9 @@
 	before using or altering the project.
 */
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
-#include "../include/std/struct_type.hpp"
+#include "std/struct_type.hpp"
 
 static uintptr_t gen_struct_enum_id()
 {

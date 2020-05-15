@@ -9,8 +9,8 @@
 
 #include <cstring>
 
-#include "Consts.hpp"
-#include "Vars.hpp"
+#include "VM/Consts.hpp"
+#include "VM/Vars.hpp"
 
 namespace vm
 {

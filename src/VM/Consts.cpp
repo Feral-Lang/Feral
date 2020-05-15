@@ -7,7 +7,7 @@
   before using or altering the project.
 */
 
-#include "Consts.hpp"
+#include "VM/Consts.hpp"
 
 namespace consts
 {

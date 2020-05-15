@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "CodeGen.hpp"
+#include "Compiler/CodeGen.hpp"
 
 namespace gen
 {

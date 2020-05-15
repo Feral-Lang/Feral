@@ -13,6 +13,7 @@
 #include "../../Common/Errors.hpp"
 #include "../../VM/OpCodes.hpp"
 #include "../Parser/Stmts.hpp"
+#include "../Parser/Internal.hpp"
 
 extern std::vector< std::string > fn_call_args;
 

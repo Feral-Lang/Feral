@@ -13,6 +13,7 @@ else()
 	set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.feral")
 endif()
 set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
+include_directories(${PROJECT_SOURCE_DIR}/include)
 add_definitions(-DBUILD_PREFIX_DIR=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
@@ -22,7 +23,7 @@ if(DEFINED ENV{MEM_PROFILE})
 endif()
 
 # add cmake_modules path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/src/Extra/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/include/Extra/cmake_modules")
 
 set(FERAL_VERSION_MAJOR 0)
 set(FERAL_VERSION_MINOR 0)
@@ -98,21 +99,15 @@ endif()
 # Finally! The sources!!!!!
 
 # Set Config.hpp.in template
-configure_file("${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Compiler/Config.hpp" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/include/Common/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Common/Config.hpp" @ONLY)
 
-# Install Feral Includes
+# Install Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
 )
 
-# Install Extra headers and cmake modules
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Extra/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Extra"
-	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.cmake"
-)
-
 # Feral Common
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.hpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/Common/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Common/*.cpp")
 
 add_library(feral-common SHARED ${SRCS} ${INCS})
@@ -130,13 +125,9 @@ install(TARGETS feral-common
 	PUBLIC_HEADER
 	  DESTINATION include/feral
 )
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Common/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Common"
-	FILES_MATCHING PATTERN "*.hpp"
-)
 
 # Feral VM
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.hpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/VM/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.cpp")
 
 add_library(feral-vm SHARED ${SRCS} ${INCS})
@@ -155,13 +146,9 @@ install(TARGETS feral-vm
 	PUBLIC_HEADER
 	  DESTINATION include/feral
 )
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/VM/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/VM"
-	FILES_MATCHING PATTERN "*.hpp"
-)
 
 # Feral Compiler
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.hpp")
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/Compiler/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/Compiler/*.cpp")
 list(REMOVE_ITEM SRCS "src/Compiler/Main.cpp")
 
@@ -180,10 +167,6 @@ install(TARGETS feral-compiler
 	  COMPONENT Libraries
 	PUBLIC_HEADER
 	  DESTINATION include/feral
-)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/Compiler/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral/Compiler"
-	FILES_MATCHING PATTERN "*.hpp"
 )
 
 # Feral Binary
@@ -225,13 +208,11 @@ endforeach()
 
 # Standard Library
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 # Types
 
 # fs
 set(mod "fs_type")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm)
 set_target_properties(${mod}
 	PROPERTIES
@@ -248,7 +229,7 @@ install(TARGETS ${mod}
 
 # map
 set(mod "map_type")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm struct_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -265,7 +246,7 @@ install(TARGETS ${mod}
 
 # ptr
 set(mod "ptr_type")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm)
 set_target_properties(${mod}
 	PROPERTIES
@@ -282,7 +263,7 @@ install(TARGETS ${mod}
 
 # struct
 set(mod "struct_type")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm)
 set_target_properties(${mod}
 	PROPERTIES
@@ -299,7 +280,7 @@ install(TARGETS ${mod}
 
 # vec
 set(mod "vec_type")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm)
 set_target_properties(${mod}
 	PROPERTIES
@@ -318,7 +299,7 @@ install(TARGETS ${mod}
 
 # fmt
 set(mod "fmt")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm feral-compiler ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
@@ -335,7 +316,7 @@ install(TARGETS ${mod}
 
 # fs
 set(mod "fs")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -352,7 +333,7 @@ install(TARGETS ${mod}
 
 # io
 set(mod "io")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -369,7 +350,7 @@ install(TARGETS ${mod}
 
 # lang
 set(mod "lang")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} struct_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -386,7 +367,7 @@ install(TARGETS ${mod}
 
 # map
 set(mod "map")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} map_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -403,7 +384,7 @@ install(TARGETS ${mod}
 
 # os
 set(mod "os")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
@@ -420,7 +401,7 @@ install(TARGETS ${mod}
 
 # ptr
 set(mod "ptr")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} ptr_type)
 set_target_properties(${mod}
 	PROPERTIES
@@ -437,7 +418,7 @@ install(TARGETS ${mod}
 
 # str
 set(mod "str")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
@@ -454,7 +435,7 @@ install(TARGETS ${mod}
 
 # sys
 set(mod "sys")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
@@ -471,7 +452,7 @@ install(TARGETS ${mod}
 
 # vec
 set(mod "vec")
-add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/std/${mod}.cpp")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} vec_type)
 set_target_properties(${mod}
 	PROPERTIES

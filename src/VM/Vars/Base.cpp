@@ -7,10 +7,10 @@
 	before using or altering the project.
 */
 
-#include "../Memory.hpp"
-#include "../VM.hpp"
+#include "VM/Memory.hpp"
+#include "VM/VM.hpp"
 
-#include "Base.hpp"
+#include "VM/Vars/Base.hpp"
 
 var_base_t::var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 			const bool & callable, const bool & attr_based )

@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 Errors parse_expr_cols( phelper_t & ph, stmt_base_t * & loc )
 {

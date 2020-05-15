@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 bool stmt_conditional_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
