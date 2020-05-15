@@ -108,6 +108,11 @@ endif()
 
 # Finally! The sources!!!!!
 
+# Install {self.proj_name} headers
+install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/include/"
+	DESTINATION "$\\{CMAKE_INSTALL_PREFIX}/include/feral/{self.proj_name}"
+)
+
 {installs_str}
 
 # Libraries
