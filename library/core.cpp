@@ -15,7 +15,7 @@
 
 #include "core/to_str.hpp"
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 var_base_t * all_get_type( vm_state_t & vm, const fn_data_t & fd )
 {

@@ -9,7 +9,7 @@
 
 #include <cstdarg>
 
-#include "ParseHelper.hpp"
+#include "Compiler/Parser/ParseHelper.hpp"
 
 phelper_t::phelper_t( lex::toks_t & toks, const size_t begin )
 	: m_toks( toks ), m_invalid( 0, TOK_INVALID, "" ),

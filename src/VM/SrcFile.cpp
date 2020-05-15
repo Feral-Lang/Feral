@@ -9,7 +9,7 @@
 
 #include <cstdarg>
 
-#include "SrcFile.hpp"
+#include "VM/SrcFile.hpp"
 
 static size_t src_id()
 {

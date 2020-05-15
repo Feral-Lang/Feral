@@ -9,6 +9,8 @@ let find_lib_base =
 let reqd_line_base =
 `if(NOT {self.var_name.upper()}_LIBRARY)
 	message(FATAL_ERROR "{self.var_name} is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
+else()
+	message("-- {self.var_name} found at: $\\{{self.var_name.upper()}_LIBRARY}")
 endif()
 `;
 
@@ -34,9 +36,9 @@ let add_path_suffix in find_lib_t = fn(path_suffix) { self.path_suffixes += path
 
 let name in find_lib_t = fn() {
 	if !self.var_name.empty() {
-		return self.var_name.upper() + '_LIBRARY';
+		return '${' + self.var_name.upper() + '_LIBRARY}';
 	}
-	return self.lib_name.upper() + '_LIBRARY';
+	return '${' + self.lib_name.upper() + '_LIBRARY}';
 };
 
 let gen in find_lib_t = fn() {

@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#include "Vars.hpp"
-#include "Memory.hpp"
+#include "VM/Memory.hpp"
+#include "VM/Vars.hpp"
 
 vars_frame_t::vars_frame_t() {}
 vars_frame_t::~vars_frame_t()

@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 class var_int_iterable_t : public var_base_t
 {

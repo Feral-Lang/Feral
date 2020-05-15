@@ -10,7 +10,7 @@
 #ifndef LIBRARY_CORE_FLT_HPP
 #define LIBRARY_CORE_FLT_HPP
 
-#include "../../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 var_base_t * flt_add( vm_state_t & vm, const fn_data_t & fd )
 {

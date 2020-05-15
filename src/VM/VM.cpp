@@ -11,12 +11,12 @@
 #include <cstdlib>
 #include <cstdarg>
 
-#include "../Common/String.hpp"
-#include "../Common/Env.hpp"
-#include "../Common/FS.hpp"
+#include "Common/Env.hpp"
+#include "Common/FS.hpp"
+#include "Common/String.hpp"
 
-#include "Vars.hpp"
-#include "VM.hpp"
+#include "VM/Vars.hpp"
+#include "VM/VM.hpp"
 
 // env: FERAL_PATHS
 vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags )

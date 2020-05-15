@@ -10,7 +10,7 @@
 #include <cstring>
 #include <cstdarg>
 
-#include "Errors.hpp"
+#include "Common/Errors.hpp"
 
 namespace err
 {

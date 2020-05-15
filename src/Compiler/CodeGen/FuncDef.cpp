@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Internal.hpp"
+#include "Compiler/CodeGen/Internal.hpp"
 
 static std::vector< std::string > fn_args;
 

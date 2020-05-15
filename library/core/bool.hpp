@@ -10,7 +10,7 @@
 #ifndef LIBRARY_CORE_BOOL_HPP
 #define LIBRARY_CORE_BOOL_HPP
 
-#include "../../src/VM/VM.hpp"
+#include "VM/VM.hpp"
 
 // logical functions
 

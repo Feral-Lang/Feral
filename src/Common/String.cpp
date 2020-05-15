@@ -10,6 +10,8 @@
 #include <vector>
 #include <string>
 
+#include "Common/String.hpp"
+
 namespace str
 {
 

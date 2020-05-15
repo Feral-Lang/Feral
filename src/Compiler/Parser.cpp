@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Parser.hpp"
+#include "Compiler/Parser.hpp"
 
 namespace parser
 {

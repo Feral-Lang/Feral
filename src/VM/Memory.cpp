@@ -7,7 +7,7 @@
 	before using or altering the project.
 */
 
-#include "Memory.hpp"
+#include "VM/Memory.hpp"
 
 namespace mem
 {

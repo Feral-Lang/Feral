@@ -11,13 +11,14 @@
 #include <cstdio>
 #include <cstring>
 
-#include "../Common/String.hpp"
-#include "../Common/FS.hpp"
-#include "../VM/VM.hpp"
+#include "Common/Config.hpp"
+#include "Common/FS.hpp"
+#include "Common/String.hpp"
 
-#include "Config.hpp"
-#include "Args.hpp"
-#include "LoadFile.hpp"
+#include "Compiler/Args.hpp"
+#include "Compiler/LoadFile.hpp"
+
+#include "VM/VM.hpp"
 
 int main( int argc, char ** argv )
 {

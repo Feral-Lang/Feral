@@ -5,30 +5,21 @@ let lang = import('std/lang');
 let install_base =
 `# Install {self.install_name}
 install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/{self.src_path}"
-	DESTINATION "$\\{CMAKE_INSTALL_PREFIX}/{self.dest_path}/{self.suffix_path}"
+	DESTINATION "$\\{CMAKE_INSTALL_PREFIX}/{self.src_path}/feral"
 	FILES_MATCHING PATTERN "{self.pattern}"
 )`;
 
 let install_t = lang.struct(
 	install_name = 'sample_install',
 	src_path = 'include',
-	dest_path = 'include',
-	suffix_path = '',
-	pattern = '*.fer'
+	pattern = '*.*'
 );
 
-let new = fn(name, is_sys_install) {
-	let ins = install_t(install_name = name);
-	if is_sys_install { self.suffix_path = 'feral/'; }
-	return install_t(install_name = name);
-};
+let new = fn(name) { return install_t(install_name = name); };
 
 let set_src_path in install_t = fn(path) { self.src_path = path; return self; };
-let set_dest_path in install_t = fn(path) { self.dest_path = path; return self; };
-let set_path_suffix in install_t = fn(suffix) { self.suffix_path += suffix; return self; };
 let set_pattern in install_t = fn(pattern) { self.pattern = pattern; return self; };
 
 let gen in install_t = fn() {
-	if self.src_path == 'types' { self.suffix_path = 'types'; }
 	return fmt.template(install_base);
 };
