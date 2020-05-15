@@ -44,7 +44,6 @@ class var_base_t
 	size_t m_idx;
 	size_t m_ref;
 
-	// TODO: make a character instead of multiple bools instead?
 	// right most bit = 0 => callable (bool)
 	// 1 => attr_based (bool)
 	// 2 => load_as_reference (bool)

@@ -31,7 +31,7 @@ set(FERAL_VERSION_PATCH 3)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(ORIGIN "@ORIGIN")
+set(ORIGIN "$ORIGIN")
 if(APPLE)
 	set(ORIGIN "@loader_path")
 endif()

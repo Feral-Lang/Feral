@@ -15,11 +15,10 @@
 //////////////////////////////////////////////////////////// Functions /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: vec.new() with default size (using size = n)
 var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 {
 	std::vector< var_base_t * > vec_val;
-	vec_val.reserve( fd.args.size() - 1 );
+	size_t reserve_size = fd.args.size() - 1;
 	bool refs = false;
 	if( fd.assn_args_loc.find( "refs" ) != fd.assn_args_loc.end() ) {
 		var_base_t * refs_var = fd.assn_args[ fd.assn_args_loc.at( "refs" ) ].val;
@@ -30,6 +29,16 @@ var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 		}
 		refs = BOOL( refs_var )->get();
 	}
+	if( fd.assn_args_loc.find( "size" ) != fd.assn_args_loc.end() ) {
+		var_base_t * size_var = fd.assn_args[ fd.assn_args_loc.at( "size" ) ].val;
+		if( !size_var->istype< var_int_t >() ) {
+			vm.fail( fd.src_id, fd.idx, "expected 'size' named argument to be of type int for vec.new(), found: %s",
+				 vm.type_name( size_var ).c_str() );
+			return nullptr;
+		}
+		reserve_size = INT( size_var )->get().get_ui();
+	}
+	vec_val.reserve( reserve_size );
 	if( refs ) {
 		for( size_t i = 1; i < fd.args.size(); ++i ) {
 			var_iref( fd.args[ i ] );
