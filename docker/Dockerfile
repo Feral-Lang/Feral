@@ -13,14 +13,6 @@ function bf {\n\
         cd \$CWD\n\
 }\n\
 \n\
-# build feral stdlib\n\
-function bfs {\n\
-        CWD=\$(pwd)\n\
-        cd /feral/Feral-Std\n\
-        rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j\$(nproc) && make install\n\
-        cd \$CWD\n\
-}\n\
-\n\
 alias b='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j\$(nproc) && make install; cd ..'\n\
 alias ccb='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make -j\$(nproc) && make install; cd ..'\n\
 alias db='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j\$(nproc) && make install; cd ..'\n" >> ~/.bashrc
