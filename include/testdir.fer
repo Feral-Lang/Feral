@@ -39,9 +39,7 @@ for file in files.each() {
 	}
 }
 
-if failed > 0 || !sys.args.find('--valgrind') {
-	io.cprintln('total: {y}', files.len(),
-		    '{0}, passed: {g}', passed,
-		    '{0}, failed: {r}', failed, '{0}');
-	sys.exit(failed);
-}
+io.cprintln('total: {y}', files.len(),
+	    '{0}, passed: {g}', passed,
+	    '{0}, failed: {r}', failed, '{0}');
+sys.exit(failed);

@@ -29,7 +29,8 @@ task:
     install_script: pkg install -y git gmp mpfr mpc cmake wget valgrind
     compile_script:
         - wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/build.sh && sh build.sh
-    tests_script: ${HOME}/.feral/bin/feral testdir tests && ${HOME}/.feral/bin/feral testdir tests --valgrind
+    # valgrind causes invalid KERN_PROC_PATHNAME to be set therefore manually FERAL_PATHS is set
+    tests_script: ${HOME}/.feral/bin/feral testdir tests && export FERAL_PATHS=${HOME}/.feral && ${HOME}/.feral/bin/feral testdir tests --valgrind
 
 task:
     name: macOS Catalina Apple llvm 11.0.0
