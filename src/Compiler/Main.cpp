@@ -11,14 +11,9 @@
 #include <cstdio>
 #include <cstring>
 
-#if __APPLE__
-#include <mach-o/dyld.h> // for _NSGetExecutablePath()
-#else
-#include <unistd.h> // for readlink()
-#endif
-
 #include "Common/Config.hpp"
 #include "Common/FS.hpp"
+#include "Common/Env.hpp"
 #include "Common/String.hpp"
 
 #include "Compiler/Args.hpp"
@@ -42,20 +37,7 @@ int main( int argc, char ** argv )
 
 	// feral binary absolute location
 	std::string feral_base, feral_bin;
-	char path[ MAX_PATH_CHARS ];
-	memset( path, 0, MAX_PATH_CHARS );
-#if __linux__ || __ANDROID__
-	readlink( "/proc/self/exe", path, MAX_PATH_CHARS );
-	feral_bin = path;
-#elif __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
-	readlink( "/proc/curproc/file", path, MAX_PATH_CHARS );
-	feral_bin = path;
-#elif __APPLE__
-	uint32_t sz = MAX_PATH_CHARS;
-	_NSGetExecutablePath( path, & sz );
-	feral_bin = path;
-#endif
-	feral_bin = fs::abs_path( feral_bin, & feral_base, true );
+	feral_bin = fs::abs_path( env::get_proc_path(), & feral_base, true );
 
 	std::string src_file = args[ "__main__" ];
 
