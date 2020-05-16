@@ -11,6 +11,9 @@
 
 #include "VM/VM.hpp"
 
+#define _STRINGIZE(x) #x
+#define STRINGIFY(x) _STRINGIZE(x)
+
 var_base_t * _exit( vm_state_t & vm, const fn_data_t & fd )
 {
 	vm.exit_called = true;
@@ -41,8 +44,10 @@ INIT_MODULE( sys )
 
 	src->add_native_var( "args", vm.src_args );
 
-	src->add_native_var( "self_binary", make_all< var_str_t >( vm.self_binary(), src_id, idx ) );
-	src->add_native_var( "prefix",  make_all< var_str_t >(  vm.prefix(), src_id, idx ) );
+	src->add_native_var( "install_prefix", make_all< var_str_t >( STRINGIFY( INSTALL_PREFIX ), src_id, idx ) );
+
+	src->add_native_var( "self_bin", make_all< var_str_t >( vm.self_bin(), src_id, idx ) );
+	src->add_native_var( "self_base", make_all< var_str_t >( vm.self_base(), src_id, idx ) );
 
 	src->add_native_var( "version_major", make_all< var_int_t >( FERAL_VERSION_MAJOR, src_id, idx ) );
 	src->add_native_var( "version_minor", make_all< var_int_t >( FERAL_VERSION_MINOR, src_id, idx ) );

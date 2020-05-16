@@ -20,7 +20,8 @@ namespace fs
 
 bool exists( const std::string & loc );
 
-std::string abs_path( const std::string & loc, std::string * dir = nullptr );
+std::string abs_path( const std::string & loc, std::string * dir = nullptr,
+		      const bool & dir_add_double_dot = false );
 
 std::string cwd();
 

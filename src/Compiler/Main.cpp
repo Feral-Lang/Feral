@@ -11,6 +11,12 @@
 #include <cstdio>
 #include <cstring>
 
+#if __APPLE__
+#include <mach-o/dyld.h> // for _NSGetExecutablePath()
+#else
+#include <unistd.h> // for readlink()
+#endif
+
 #include "Common/Config.hpp"
 #include "Common/FS.hpp"
 #include "Common/String.hpp"
@@ -35,15 +41,29 @@ int main( int argc, char ** argv )
 	Errors err = E_OK;
 
 	// feral binary absolute location
-	std::string fer_bin = argv[ 0 ];
+	std::string feral_base, feral_bin;
+	char path[ MAX_PATH_CHARS ];
+	memset( path, 0, MAX_PATH_CHARS );
+#if __linux__ || __ANDROID__
+	readlink( "/proc/self/exe", path, MAX_PATH_CHARS );
+	feral_bin = path;
+#elif __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
+	readlink( "/proc/curproc/file", path, MAX_PATH_CHARS );
+	feral_bin = path;
+#elif __APPLE__
+	uint32_t sz = MAX_PATH_CHARS;
+	_NSGetExecutablePath( path, & sz );
+	feral_bin = path;
+#endif
+	feral_bin = fs::abs_path( feral_bin, & feral_base, true );
 
 	std::string src_file = args[ "__main__" ];
 
-	if( src_file == "init" || src_file == "testdir" ) {
+	if( src_file == "testdir" ) {
 		if( fs::exists( src_file + fmod_ext() ) ) {
 			src_file += fmod_ext();
 		} else {
-			src_file = STRINGIFY( BUILD_PREFIX_DIR ) "/include/feral/" + src_file + fmod_ext();
+			src_file = feral_base + "/include/feral/" + src_file + fmod_ext();
 		}
 	} else if( src_file == "install" || src_file == "build" ) {
 		if( src_file == "install" ) code_args.insert( code_args.begin(), "install" );
@@ -66,7 +86,7 @@ int main( int argc, char ** argv )
 
 	int exec_err = 0;
 	if( !( flags & OPT_D ) ) {
-		vm_state_t vm( fer_bin, code_args, flags );
+		vm_state_t vm( feral_bin, feral_base, code_args, flags );
 		vm.set_fmod_load_fn( fmod_load );
 		vm.set_fmod_read_code_fn( fmod_read_code );
 		vm.push_src( main_src, 0 );

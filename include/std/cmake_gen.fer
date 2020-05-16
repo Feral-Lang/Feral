@@ -11,13 +11,13 @@ let find_lib = import('./cmake_gen/find_lib');
 let shared_lib = import('./cmake_gen/shared_lib');
 let binary = import('./cmake_gen/binary');
 
-let default_install_rpaths = sys.prefix + '/lib/feral/std;' + sys.prefix  + '/lib/feral';
+let default_install_rpaths = sys.install_prefix + '/lib/feral/std;' + sys.install_prefix  + '/lib/feral';
 
 let core_t = lang.struct(
 	version = '2.8',
 	proj_name = 'test',
 	cxx_std = '11',
-	prefix = sys.prefix,
+	prefix = sys.install_prefix,
 	install_rpaths = default_install_rpaths,
 	deps = vec.new(refs = true),
 	installs = vec.new(refs = true),
