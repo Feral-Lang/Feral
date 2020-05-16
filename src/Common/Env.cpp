@@ -8,6 +8,7 @@
 */
 
 #include <cstdlib>
+#include <cstring>
 
 #if __APPLE__
 #include <mach-o/dyld.h> // for _NSGetExecutablePath()
