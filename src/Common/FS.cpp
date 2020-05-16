@@ -24,13 +24,18 @@ bool exists( const std::string & loc )
 	return access( loc.c_str(), F_OK ) != -1;
 }
 
-std::string abs_path( const std::string & loc, std::string * dir )
+std::string abs_path( const std::string & loc, std::string * dir, const bool & dir_add_double_dot )
 {
 	static char abs[ MAX_PATH_CHARS ];
 	realpath( loc.c_str(), abs );
 	if( dir != nullptr ) {
 		std::string _abs = abs;
 		* dir = _abs.substr( 0, _abs.find_last_of( '/' ) );
+		if( dir_add_double_dot ) {
+			* dir += "/..";
+			realpath( dir->c_str(), abs );
+			* dir = abs;
+		}
 	}
 	return abs;
 }

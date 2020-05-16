@@ -74,7 +74,8 @@ struct vm_state_t
 	// arguments for feral source from command line
 	var_base_t * src_args;
 
-	vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags );
+	vm_state_t( const std::string & self_bin, const std::string & self_base,
+		   const std::vector< std::string > & args, const size_t & flags );
 	~vm_state_t();
 
 	void push_src( srcfile_t * src, const size_t & idx );
@@ -86,7 +87,8 @@ struct vm_state_t
 	// fmod = feral module
 	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
 	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx );
-	int fmod_load( const std::string & mod_file );
+	// updated mod_str with actual file name (full canonical path)
+	int fmod_load( std::string & mod_str, const size_t & src_id, const size_t & idx );
 	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
 
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
@@ -126,8 +128,8 @@ struct vm_state_t
 	std::string type_name( const std::uintptr_t & type );
 	std::string type_name( const var_base_t * val );
 
-	inline const std::string & self_binary() const { return m_self_binary; }
-	inline const std::string & prefix() { return m_prefix; }
+	inline const std::string & self_bin() const { return m_self_bin; }
+	inline const std::string & self_base() const { return m_self_base; }
 
 	void fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const;
 
@@ -148,10 +150,10 @@ private:
 	std::unordered_map< std::uintptr_t, std::string > m_typenames;
 	// all functions to call before unloading dlls
 	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
-	// location where feral binary exists (used by sys.self_binary())
-	std::string m_self_binary;
-	// prefix directory where feral is installed
-	std::string m_prefix;
+	// path where feral binary exists (used by sys.self_bin())
+	std::string m_self_bin;
+	// parent directory of where feral binary exists (used by sys.self_base())
+	std::string m_self_base;
 };
 
 const char * nmod_ext();

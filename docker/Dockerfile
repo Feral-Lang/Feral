@@ -13,4 +13,4 @@ function bf {\n\
 \n\
 alias b='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j\$(nproc) && make install; cd ..'\n\
 alias ccb='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && make -j\$(nproc) && make install; cd ..'\n\
-alias db='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j\$(nproc) && make install; cd ..'\n" >> ~/.bashrc
+alias db='rm -rf dockerbuild && mkdir -p dockerbuild && cd dockerbuild && cmake .. -DCMAKE_BUILD_TYPE=Debug && make -j\$(nproc) && make install; cd ..'\n" >> ~/.bashrc

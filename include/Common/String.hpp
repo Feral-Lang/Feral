@@ -13,9 +13,6 @@
 #include <vector>
 #include <string>
 
-#define _STRINGIZE(x) #x
-#define STRINGIFY(x) _STRINGIZE(x)
-
 namespace str
 {
 

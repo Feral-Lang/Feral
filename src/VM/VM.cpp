@@ -19,13 +19,13 @@
 #include "VM/VM.hpp"
 
 // env: FERAL_PATHS
-vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< std::string > & args, const size_t & flags )
+vm_state_t::vm_state_t( const std::string & self_bin, const std::string & self_base,
+			const std::vector< std::string > & args, const size_t & flags )
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
-	  dlib( new dyn_lib_t() ), m_self_binary( self_binary_loc ),
-	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr ),
-	  m_prefix( STRINGIFY( BUILD_PREFIX_DIR ) )
+	  dlib( new dyn_lib_t() ), m_self_bin( self_bin ), m_self_base( self_base ),
+	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr )
 {
 	init_typenames( * this );
 
@@ -43,8 +43,8 @@ vm_state_t::vm_state_t( const std::string & self_binary_loc, const std::vector< 
 		m_dll_locs.push_back( path + "/lib/feral" );
 	}
 
-	m_inc_locs.push_back( m_prefix + "/include/feral" );
-	m_dll_locs.push_back( m_prefix + "/lib/feral" );
+	m_inc_locs.push_back( m_self_base + "/include/feral" );
+	m_dll_locs.push_back( m_self_base + "/lib/feral" );
 }
 
 vm_state_t::~vm_state_t()
@@ -137,7 +137,7 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 	if( mod.front() != '~' && mod.front() != '/' && mod.front() != '.' ) {
 		for( auto & loc : locs ) {
 			if( fs::exists( loc + "/" + mod + ext ) ) {
-				mod = loc + "/" + mod + ext;
+				mod = fs::abs_path( loc + "/" + mod + ext );
 				return true;
 			}
 		}
@@ -197,8 +197,14 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id, 
 	return true;
 }
 
-int vm_state_t::fmod_load( const std::string & mod_file )
+// updated mod_str with actual file name (full canonical path)
+int vm_state_t::fmod_load( std::string & mod_file, const size_t & src_id, const size_t & idx )
 {
+	if( !mod_exists( m_inc_locs, mod_file, fmod_ext() ) ) {
+		fail( src_id, idx, "import file: %s not found in locations: %s",
+		      ( mod_file + fmod_ext() ).c_str(), str::stringify( m_inc_locs ).c_str() );
+		return E_FAIL;
+	}
 	if( all_srcs.find( mod_file ) != all_srcs.end() ) return E_OK;
 
 	Errors err = E_OK;

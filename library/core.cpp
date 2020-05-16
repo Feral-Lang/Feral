@@ -76,12 +76,8 @@ var_base_t * import_file( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string file = STR( file_var )->get();
-	if( !vm.mod_exists( vm.inc_locs(), file, fmod_ext() ) ) {
-		vm.fail( file_var->src_id(), file_var->idx(), "could not find module file: '%s.fer'", file.c_str() );
-		return nullptr;
-	}
 	// load_fmod() also adds the src to all_srcs map (push_src() function)
-	int err = vm.fmod_load( file );
+	int err = vm.fmod_load( file, fd.src_id, fd.idx );
 	if( err != E_OK ) {
 		vm.fail( file_var->src_id(), file_var->idx(), "module import failed, look at error above (exit code: %d)", err );
 		return nullptr;
