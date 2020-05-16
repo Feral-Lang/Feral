@@ -8,7 +8,7 @@ let vec = import('std/vec');
 let sys = import('std/sys');
 
 if sys.args.empty() {
-	io.println('Usage: ', sys.self_binary, ' ', __SRC_PATH__, ' <directory>');
+	io.println('Usage: ', sys.self_bin, ' ', __SRC_PATH__, ' <directory>');
 	sys.exit(1);
 }
 
@@ -29,7 +29,7 @@ if sys.args.find('--valgrind') {
 
 for file in files.each() {
 	io.cprint('{y}testing script {c}\'', file, '\' {0}... ');
-	let res = os.exec(valgrind + sys.self_binary + ' ' + file + ' >/dev/null');
+	let res = os.exec(valgrind + sys.self_bin + ' ' + file + ' >/dev/null');
 	if res == 0 {
 		io.cprintln('{g}pass{0}');
 		++passed;
