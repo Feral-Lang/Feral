@@ -17,6 +17,8 @@ namespace env
 
 std::string get( const std::string & key );
 
+std::string get_proc_path();
+
 }
 
 #endif // COMMON_ENV_HPP
