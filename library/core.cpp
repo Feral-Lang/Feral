@@ -1,7 +1,7 @@
 /*
 	Copyright (c) 2020, Electrux
 	All rights reserved.
-	Using the BSD 3-Clause license for the project,
+	Using the GNU GPL 3.0 license for the project,
 	main LICENSE file resides in project's root directory.
 	Please read that file and understand the license terms
 	before using or altering the project.
@@ -14,6 +14,7 @@
 #include "core/str.hpp"
 
 #include "core/to_str.hpp"
+#include "core/to_int.hpp"
 
 #include "VM/VM.hpp"
 
@@ -102,8 +103,8 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_all_t >(     "!=",     all_ne,       	  1, src_id, idx );
 	vm.add_native_typefn< var_all_t >(   "copy",     all_copy,     	  0, src_id, idx );
 
-	vm.add_native_typefn< var_all_t >(    "str",     all_to_str,   	  0, src_id, idx );
-
+	// to string
+	vm.add_native_typefn< var_all_t >(    "str", all_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_nil_t >(    "str", nil_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_typeid_t >( "str", typeid_to_str, 0, src_id, idx );
 	vm.add_native_typefn< var_bool_t >(   "str", bool_to_str,   0, src_id, idx );
@@ -112,6 +113,14 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_str_t >(    "str", str_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(    "str", vec_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_map_t >(    "str", map_to_str,    0, src_id, idx );
+
+	// to int
+	vm.add_native_typefn< var_nil_t >(    "int", nil_to_int,    0, src_id, idx );
+	vm.add_native_typefn< var_typeid_t >( "int", typeid_to_int, 0, src_id, idx );
+	vm.add_native_typefn< var_bool_t >(   "int", bool_to_int,   0, src_id, idx );
+	vm.add_native_typefn< var_int_t >(    "int", int_to_int,    0, src_id, idx );
+	vm.add_native_typefn< var_flt_t >(    "int", flt_to_int,    0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(    "int", str_to_int,    0, src_id, idx );
 
 	// global required
 	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
@@ -136,17 +145,21 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_bool_t >( "!", bool_not, 0, src_id, idx );
 
 	// int
-	vm.add_native_typefn< var_int_t >( "+", int_add, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "-", int_sub, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "*", int_mul, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "/", int_div, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "%", int_mod, 1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "+",  int_add,    1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "-",  int_sub,    1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "*",  int_mul,    1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "/",  int_div,    1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "%",  int_mod,    1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "<<", int_lshift, 1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( ">>", int_rshift, 1, src_id, idx );
 
-	vm.add_native_typefn< var_int_t >( "+=", int_addassn, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "-=", int_subassn, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "*=", int_mulassn, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "/=", int_divassn, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "%=", int_modassn, 1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "+=",  int_addassn,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "-=",  int_subassn,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "*=",  int_mulassn,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "/=",  int_divassn,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "%=",  int_modassn,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "<<=", int_lshiftassn,  1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( ">>=", int_rshiftassn,  1, src_id, idx );
 
 	vm.add_native_typefn< var_int_t >( "**",  int_pow, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "++x", int_preinc, 0, src_id, idx );

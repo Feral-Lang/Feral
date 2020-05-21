@@ -7,18 +7,22 @@ assert(1 == 1);
 assert(1 != 2);
 
 # arithmetic
-assert(5 + 1 == 6);
-assert(5 - 1 == 4);
-assert(5 * 2 == 10);
-assert(5 / 2 == 2);
-assert(5 % 2 == 1);
+assert(4 << 1 == 8);
+assert(4 >> 1 == 2);
+assert(5 + 1  == 6);
+assert(5 - 1  == 4);
+assert(5 * 2  == 10);
+assert(5 / 2  == 2);
+assert(5 % 2  == 1);
 
-let a = 10, b = 5;
-assert((a += b) == 15);
-assert((a -= b) == 10);
-assert((a *= b) == 50);
-assert((a /= b) == 10);
-assert((a %= b) == 0);
+let a = 4, b = 2;
+assert((a <<= b) == 16);
+assert((a >>= b) == 4);
+assert((a += b)  == 6);
+assert((a -= b)  == 4);
+assert((a *= b)  == 8);
+assert((a /= b)  == 4);
+assert((a %= b)  == 0);
 
 # others
 assert(4 ** 3 == 64);

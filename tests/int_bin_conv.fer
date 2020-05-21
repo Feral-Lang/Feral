@@ -1,0 +1,23 @@
+let str = import('std/str');
+let vec = import('std/vec');
+
+let num = 1025619;
+let bin = '';
+
+let tmp = num;
+while tmp > 0 {
+	bin = (tmp % 2).str() + bin;
+	tmp /= 2;
+}
+
+assert(bin == '11111010011001010011');
+
+let sz = bin.len();
+let pow = 2 ** sz;
+tmp = 0;
+
+for let i = 0; i < sz; ++i {
+	tmp += bin[i].int() * (pow >>= 1);
+}
+
+assert(tmp == num);
