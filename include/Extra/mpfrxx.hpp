@@ -13,7 +13,10 @@
     Pere Constans, Peter van Hoof, Gael Guennebaud, Tsai Chia Cheng,
     Alexei Zubanov, Jauhien Piatlicki, Victor Berger, John Westwood,
     Petr Aleksandrov, Orion Poplawski, Charles Karney, Arash Partow,
-    Rodney James, Jorge Leitao.
+    Rodney James, Jorge Leitao, Electrux Redsworth.
+
+    Modification by Electrux:
+    Added toInt() member function for mpreal -> mpz_class conversion
 
     Licensing:
     (A) MPFR C++ is under GNU General Public License ("GPL").
@@ -318,6 +321,9 @@ public:
     // Convert mpreal to string with n significant digits in base b
     // n = -1 -> convert with the maximum available digits
     std::string toString(int n = -1, int b = 10, mp_rnd_t mode = mpreal::get_default_rnd()) const;
+
+    // Convert mpreal to mpz_class
+    mpz_class toInt(mp_rnd_t mode = mpreal::get_default_rnd()) const;
 
 #if (MPFR_VERSION >= MPFR_VERSION_NUM(2,4,0))
     std::string toString(const std::string& format) const;
@@ -1880,6 +1886,12 @@ inline std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 #endif
 }
 
+inline mpz_class mpreal::toInt(mp_rnd_t mode) const
+{
+    mpz_class res;
+	mpfr_get_z(res.get_mpz_t(), mpfr_ptr(), mode);
+    return res;
+}
 
 //////////////////////////////////////////////////////////////////////////
 // I/O
