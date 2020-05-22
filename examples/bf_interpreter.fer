@@ -3,6 +3,7 @@ let os = import('std/os');
 let vec = import('std/vec');
 let str = import('std/str');
 let sys = import('std/sys');
+let prog = import('./bf_hello_world');
 
 # TODO: optimize this out using (hash)map
 let jmp_fwd = fn(v, i) {
@@ -27,8 +28,7 @@ let jmp_bwd = fn(v, i) {
 	return i >= 0;
 };
 
-let content = io.scaneof('Enter BrainFuck string to interpret:\n');
-let len = content.len();
+let len = prog.data.len();
 
 # initialize data array to single element
 # (growing till DATA_UPPER_LIMIT over time)
@@ -37,8 +37,8 @@ let data = vec.new(0);
 let data_ptr = 0;
 
 for let i = 0; i < len; ++i {
-	#io.println(i, '\t', content[i], '\t', data);
-	if content[i] == '>' {
+	#io.println(i, '\t', prog.data[i], '\t', data);
+	if prog.data[i] == '>' {
 		if data_ptr >= DATA_UPPER_LIMIT {
 			io.println('went above upper limit of data pointer (',
 				   data.len(), ') at character position: ', i);
@@ -48,37 +48,37 @@ for let i = 0; i < len; ++i {
 		if data_ptr >= data.len() {
 			data.push(0);
 		}
-	} elif content[i] == '<' {
+	} elif prog.data[i] == '<' {
 		if data_ptr <= 0 {
 			io.println('went below lower limit of data pointer (',
 				   0, ') at character position: ', i);
 			sys.exit(1);
 		}
 		--data_ptr;
-	} elif content[i] == '+' {
+	} elif prog.data[i] == '+' {
 		++data[data_ptr];
-	} elif content[i] == '-' {
+	} elif prog.data[i] == '-' {
 		--data[data_ptr];
-	} elif content[i] == '.' {
+	} elif prog.data[i] == '.' {
 		if data[data_ptr] == 0 {
 			io.print('(nil)');
 		} else {
 			io.print(data[data_ptr].chr());
 		}
-	} elif content[i] == ',' {
+	} elif prog.data[i] == ',' {
 		data[data_ptr] = io.scan().byt();
-	} elif content[i] == '[' {
+	} elif prog.data[i] == '[' {
 		if data[data_ptr] != 0 { continue; }
 		let i_tmp = i;
-		if !jmp_fwd(content, i) {
+		if !jmp_fwd(prog.data, i) {
 			io.println(`failed to find equivalent jump to ']' from position: `,
 				   i_tmp);
 			sys.exit(1);
 		}
-	} elif content[i] == ']' {
+	} elif prog.data[i] == ']' {
 		if data[data_ptr] == 0 { continue; }
 		let i_tmp = i;
-		if !jmp_bwd(content, i) {
+		if !jmp_bwd(prog.data, i) {
 			io.println(`failed to find equivalent jump to '[' from position: `,
 				   i_tmp);
 			sys.exit(1);

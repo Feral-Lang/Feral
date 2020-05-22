@@ -33,7 +33,7 @@ struct mem_pool_t
 
 class mem_mgr_t
 {
-	std::vector< mem_pool_t > m_pools;	
+	std::vector< mem_pool_t > m_pools;
 	std::map< size_t, std::list< u8 * > > m_free_chunks;
 
 	void alloc_pool();

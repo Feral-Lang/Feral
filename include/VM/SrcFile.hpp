@@ -18,7 +18,7 @@
 
 /**
  * \brief Defines the range of columns for a line of source code
- * 
+ *
  */
 struct src_col_range_t
 {
@@ -29,7 +29,7 @@ struct src_col_range_t
 /**
  * \brief Defines a source code file object, contains its name, directory,
  * content, and line divisions (based on indices)
- * 
+ *
  */
 class srcfile_t
 {
@@ -47,7 +47,7 @@ class srcfile_t
 public:
 	/**
 	 * \brief Construct a new srcfile_t object
-	 * 
+	 *
 	 * \param dir Directory of source file
 	 * \param path Full path of source file
 	 * \param is_main Boolean - determins if this source is the main source file (default: false)
@@ -56,7 +56,7 @@ public:
 
 	/**
 	 * \brief Construct a new srcfile_t object (do not call load_file() after this)
-	 * 
+	 *
 	 * \param dir Directory of source file
 	 * \param path Full path of source file
 	 * \param path Full path of source file
@@ -74,13 +74,13 @@ public:
 
 	/**
 	 * \brief Append content to an instance
-	 * 
+	 *
 	 * \param data The content to be appended
 	 */
 	void add_data( const std::string & data );
 	/**
 	 * \brief Append line divisions to an instance
-	 * 
+	 *
 	 * \param cols Line divisions to be appended (vector of src_col_range_t)
 	 */
 	void add_cols( const std::vector< src_col_range_t > & cols );
@@ -108,14 +108,14 @@ public:
 
 	/**
 	 * \brief Get the data object
-	 * 
+	 *
 	 * \return const std::string& Returns the data object with const qualifier
 	 */
 	inline const std::string & data() const { return m_data; }
 
 	/**
 	 * \brief Get the bcode_t
-	 * 
+	 *
 	 * \return bcode_t& Returns the bcode_t object
 	 */
 	bcode_t & bcode() { return m_bcode; }
@@ -123,7 +123,7 @@ public:
 	/**
 	 * \brief Check if the source is main src
 	 *
-	 * \return bool is main source 
+	 * \return bool is main source
 	 */
 	inline bool is_main() const { return m_is_main; }
 
