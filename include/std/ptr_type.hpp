@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#ifndef PTR_HPP
-#define PTR_HPP
+#ifndef PTR_TYPE_HPP
+#define PTR_TYPE_HPP
 
 #include "../VM/VM.hpp"
 
@@ -28,4 +28,4 @@ public:
 };
 #define PTR( x ) static_cast< var_ptr_t * >( x )
 
-#endif // PTR_HPP
+#endif // PTR_TYPE_HPP

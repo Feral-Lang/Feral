@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#ifndef VEC_HPP
-#define VEC_HPP
+#ifndef VEC_TYPE_HPP
+#define VEC_TYPE_HPP
 
 #include "../VM/VM.hpp"
 
@@ -27,4 +27,4 @@ public:
 };
 #define VEC_ITERABLE( x ) static_cast< var_vec_iterable_t * >( x )
 
-#endif // VEC_HPP
+#endif // VEC_TYPE_HPP

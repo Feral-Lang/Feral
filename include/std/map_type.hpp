@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#ifndef MAP_HPP
-#define MAP_HPP
+#ifndef MAP_TYPE_HPP
+#define MAP_TYPE_HPP
 
 #include "../VM/VM.hpp"
 
@@ -27,4 +27,4 @@ public:
 };
 #define MAP_ITERABLE( x ) static_cast< var_map_iterable_t * >( x )
 
-#endif // MAP_HPP
+#endif // MAP_TYPE_HPP
