@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#ifndef FS_HPP
-#define FS_HPP
+#ifndef FS_TYPE_HPP
+#define FS_TYPE_HPP
 
 #include "../VM/VM.hpp"
 
@@ -52,4 +52,4 @@ public:
 };
 #define FILE_ITERABLE( x ) static_cast< var_file_iterable_t * >( x )
 
-#endif // FS_HPP
+#endif // FS_TYPE_HPP

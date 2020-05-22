@@ -7,8 +7,8 @@
 	before using or altering the project.
 */
 
-#ifndef STRUCT_HPP
-#define STRUCT_HPP
+#ifndef STRUCT_TYPE_HPP
+#define STRUCT_TYPE_HPP
 
 #include "../VM/VM.hpp"
 
@@ -69,4 +69,4 @@ public:
 };
 #define STRUCT( x ) static_cast< var_struct_t * >( x )
 
-#endif // STRUCT_HPP
+#endif // STRUCT_TYPE_HPP
