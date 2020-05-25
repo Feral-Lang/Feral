@@ -1,0 +1,25 @@
+let str = import('std/str');
+let vec = import('std/vec');
+
+let s = '12345';
+
+assert(s.len() == 5);
+assert(!s.empty());
+assert(s.front() == '1');
+assert(s.back() == '5');
+assert(s.push('a') == '12345a');
+assert(s.pop() == '12345');
+assert(s.set(0, '0') == '02345');
+assert(s.insert(1, '1') == '012345');
+assert(s.erase(0) == '12345');
+assert(s.lastidx() == 4);
+
+let a = '\n\t  ' + s + ' \t';
+assert(a.trim() == s);
+a = 'abcde';
+assert(a.upper() == 'ABCDE');
+
+assert(s.split('3') == vec.new('12', '45'));
+
+assert('A'.byt() == 65);
+assert(66.chr() == 'B');
