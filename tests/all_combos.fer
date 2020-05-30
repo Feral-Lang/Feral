@@ -1,0 +1,20 @@
+let str = import('std/str');
+
+let combinations = fn(tail, head = '') {
+	if tail.empty() {
+		++total;
+		return;
+	}
+
+	let len = tail.len();
+	for let i = 0; i < len; ++i {
+		let _head = head + tail[i];
+		let _tail = tail;
+		_tail.erase(i);
+		combinations(_tail, _head);
+	}
+};
+
+let total = 0;
+combinations('elecrw');
+assert(total == 720);
