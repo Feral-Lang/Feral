@@ -195,6 +195,31 @@ var_base_t * vec_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	return res;
 }
 
+var_base_t * vec_sub( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected starting index to be of type 'int' for vec.sub(), found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected ending index to be of type 'int' for vec.sub(), found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+
+	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
+	size_t begin = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t end = INT( fd.args[ 2 ] )->get().get_ui();
+
+	std::vector< var_base_t * > newvec;
+	if( end > begin ) newvec.reserve( end - begin );
+	for( size_t i = begin; i < end; ++i ) {
+		newvec.push_back( vec[ i ]->copy( fd.src_id, fd.idx ) );
+	}
+	return make< var_vec_t >( newvec, true );
+}
+
 var_base_t * vec_slice( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
@@ -241,6 +266,7 @@ INIT_MODULE( vec )
 	vm.add_native_typefn< var_vec_t >(      "[]",      vec_at, 1, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(    "each",    vec_each, 0, src_id, idx );
 
+	vm.add_native_typefn< var_vec_t >( "sub_native",   vec_sub,   2, src_id, idx );
 	vm.add_native_typefn< var_vec_t >( "slice_native", vec_slice, 2, src_id, idx );
 
 	vm.add_native_typefn< var_vec_iterable_t >( "next", vec_iterable_next, 0, src_id, idx );

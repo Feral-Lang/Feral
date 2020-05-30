@@ -290,7 +290,7 @@ var_base_t * int_preinc( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * int_postinc( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
+	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class res = lhs++;
 	return make< var_int_t >( res );
 }
@@ -304,7 +304,7 @@ var_base_t * int_predec( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * int_postdec( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
+	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
 	mpz_class res = lhs--;
 	return make< var_int_t >( res );
 }

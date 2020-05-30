@@ -78,7 +78,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			var_base_t * val = vms->pop( false );
 			if( !in ) {
 				// only copy if reference count > 1 (no point in copying unique values)
-				// or if load_as_ref() of value is true
+				// or if load_as_ref() of value is false
 				if( val->load_as_ref() || val->ref() == 1 ) {
 					vars->add( name, val, true );
 					val->unset_load_as_ref();
@@ -91,7 +91,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			// add unconditionally to an attribute based
 			if( in->attr_based() ) {
 				// only copy if reference count > 1 (no point in copying unique values)
-				// or if load_as_ref() of value is true
+				// or if load_as_ref() of value is false
 				if( val->load_as_ref() || val->ref() == 1 ) {
 					in->attr_set( name, val, true );
 					val->unset_load_as_ref();

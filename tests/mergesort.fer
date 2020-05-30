@@ -1,0 +1,27 @@
+let vec = import('std/vec');
+
+# takes a vector
+let mergesort = fn(arr) {
+	if arr.len() <= 1 { return; }
+
+	let mid = arr.len() / 2;
+	let l = arr.sub(0, mid);
+	let r = arr.sub(mid, arr.len());
+
+	mergesort(l);
+	mergesort(r);
+
+	let i = 0, j = 0, k = 0;
+
+	while i < l.len() && j < r.len() {
+		if l[i] <= r[j] { arr[k++] = l[i++]; }
+		else { arr[k++] = r[j++]; }
+	}
+
+	while i < l.len() { arr[k++] = l[i++]; }
+	while j < r.len() { arr[k++] = r[j++]; }
+};
+
+let list = vec.new(5, 2, 3, 1, 4, 9, 7);
+mergesort(list);
+assert(list == vec.new(1, 2, 3, 4, 5, 7, 9));
