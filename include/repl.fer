@@ -1,0 +1,43 @@
+let io = import('std/io');
+let str = import('std/str');
+let vec = import('std/vec');
+let term = import('std/term');
+
+io.println('starting repl ', term.fd_stdin);
+term.set_mode(term.fd_stdin, term.mode_raw);
+io.println('running repl\r\n');
+
+let lines = vec.new();
+let line = '';
+let ch = '';
+let curr_line = lines.len() - 1;
+while io.readchars(term.fd_stdin, ch, 1) > 0 {
+	# escape sequence
+	if ch.byt() == 26 {
+		if io.readchars(term.fd_stdin, ch, 1) < 1 { break; }
+		if ch == '[' {
+			if io.readchars(term.fd_stdin, ch, 1) < 1 { break; }
+			# up
+			if ch == 'A' && curr_line >= 0 {
+				line = lines[curr_line--];
+			} elif ch == 'B' && curr_line < lines.len() {
+				line = lines[curr_line++];
+			}
+			io.print('\r', line);
+		}
+		continue;
+	}
+	# enter/carriage return
+	if ch.byt() == 10 {
+		if line.len() > 0 {
+			lines.push(line);
+			curr_line = lines.len() - 1;
+		}
+		io.println();
+	}
+	if ch == 'q' {
+		break;
+	}
+}
+
+term.set_mode(term.fd_stdin, term.mode_orig);

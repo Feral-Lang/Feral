@@ -279,6 +279,23 @@ install(TARGETS ${mod}
 	  COMPONENT Libraries
 )
 
+# term
+set(mod "term_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
 # vec
 set(mod "vec_type")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
@@ -438,6 +455,23 @@ install(TARGETS ${mod}
 set(mod "sys")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# term
+set(mod "term")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} term_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
