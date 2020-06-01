@@ -22,6 +22,7 @@ bool stmt_fn_call_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 )
 		( * arg )->gen_code( bc );
 	}
 
+	fn_call_args.back() += m_va_unpack ? '1' : '0';
 	fn_call_args.back() += std::string( m_args.size(), '0' );
 	fn_call_args.back() += std::string( m_assn_args.size(), '1' );
 	return true;

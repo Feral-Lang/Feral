@@ -102,14 +102,14 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		bc.adds( m_oper->pos, OP_ATTR, ODT_STR, static_cast< const stmt_simple_t * >( m_rhs )->val()->data );
 		goto done;
 	} else if( m_oper->type == TOK_OPER_FN || m_oper->type == TOK_OPER_MEM_FN ) {
-		bc.adds( m_oper->pos, m_oper->type == TOK_OPER_FN ? OP_FNCL : OP_MEM_FNCL, ODT_STR, m_rhs ? fn_call_args.back() : "" );
+		bc.adds( m_oper->pos, m_oper->type == TOK_OPER_FN ? OP_FNCL : OP_MEM_FNCL, ODT_STR, m_rhs ? fn_call_args.back() : "0" );
 		if( m_rhs ) fn_call_args.pop_back();
 		goto done;
 	}
 
 	// skip extras (functions and dummy)
 	if( m_oper->type < TOK_OPER_FN || m_oper->type >= TOK_OPER_SUBS ) {
-		bc.adds( m_oper->pos, OP_MEM_FNCL, ODT_STR, m_rhs ? "0" : "" );
+		bc.adds( m_oper->pos, OP_MEM_FNCL, ODT_STR, m_rhs ? "00" : "0" );
 	}
 done:
 	if( f2 ) bc.add( idx(), OP_ULOAD );

@@ -3,41 +3,57 @@ let str = import('std/str');
 let vec = import('std/vec');
 let term = import('std/term');
 
+let printflush = fn(d0, data...) {
+	io.print(d0, data...);
+	io.fflush(io.stdout);
+};
+
+let printlnflush = fn(data...) {
+	io.println(data...);
+	io.fflush(io.stdout);
+};
+
 io.println('starting repl ', term.fd_stdin);
 term.set_mode(term.fd_stdin, term.mode_raw);
-io.println('running repl\r\n');
+io.println('running repl\r');
 
 let lines = vec.new();
 let line = '';
 let ch = '';
-let curr_line = lines.len() - 1;
-while io.readchars(term.fd_stdin, ch, 1) > 0 {
+let curr_line = 0;
+printflush('>> ');
+while io.readch(term.fd_stdin, ch) > 0 {
+	#io.println(ch.byt(), '\r');
 	# escape sequence
-	if ch.byt() == 26 {
-		if io.readchars(term.fd_stdin, ch, 1) < 1 { break; }
-		if ch == '[' {
-			if io.readchars(term.fd_stdin, ch, 1) < 1 { break; }
-			# up
-			if ch == 'A' && curr_line >= 0 {
-				line = lines[curr_line--];
-			} elif ch == 'B' && curr_line < lines.len() {
-				line = lines[curr_line++];
-			}
-			io.print('\r', line);
+	if ch == '[' {
+		if io.readch(term.fd_stdin, ch) < 1 { break; }
+		# up
+		if ch == 'A' && curr_line > 0 {
+			io.print('\b \b' * line.len());
+			line = lines[curr_line--];
+		} elif ch == 'B' && curr_line < lines.len() - 1 {
+			io.print('\b \b' * line.len());
+			line = lines[curr_line++];
 		}
+		printflush('\r>> ', line);
 		continue;
 	}
 	# enter/carriage return
-	if ch.byt() == 10 {
+	if ch.byt() == 13 {
 		if line.len() > 0 {
 			lines.push(line);
 			curr_line = lines.len() - 1;
 		}
-		io.println();
+		io.println('\r');
+		printflush('>> ');
+		continue;
 	}
 	if ch == 'q' {
+		printlnflush('\r');
 		break;
 	}
+	line += ch;
+	printflush(ch);
 }
 
 term.set_mode(term.fd_stdin, term.mode_orig);

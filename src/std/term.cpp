@@ -54,8 +54,8 @@ INIT_MODULE( term )
 	mode_raw.c_oflag &= ~( OPOST );
 	mode_raw.c_cflag |= ( CS8 );
 	mode_raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
-	mode_raw.c_cc[ VMIN ] = 0;
-	mode_raw.c_cc[ VTIME ] = 1;
+	mode_raw.c_cc[ VMIN ] = 1;
+	mode_raw.c_cc[ VTIME ] = 0;
 	src->add_native_var( "mode_orig", make_all< var_term_t >( mode_orig, src_id, idx ) );
 	src->add_native_var( "mode_raw", make_all< var_term_t >( mode_raw, src_id, idx ) );
 

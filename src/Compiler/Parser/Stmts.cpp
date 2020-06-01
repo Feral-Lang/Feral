@@ -279,8 +279,9 @@ const stmt_block_t * stmt_fn_def_t::body() const { return m_body; }
 
 stmt_fn_call_args_t::stmt_fn_call_args_t( const std::vector< const stmt_base_t * > & args,
 					  const std::vector< const stmt_fn_assn_arg_t * > & assn_args,
-					  const size_t & idx )
-	: stmt_base_t( GT_FN_ARGS, idx ), m_args( args ), m_assn_args( assn_args ) {}
+					  const bool & va_unpack, const size_t & idx )
+	: stmt_base_t( GT_FN_ARGS, idx ), m_args( args ), m_assn_args( assn_args ),
+	  m_va_unpack( va_unpack ) {}
 stmt_fn_call_args_t::~stmt_fn_call_args_t()
 {
 	for( auto & a : m_args ) delete a;
@@ -290,7 +291,7 @@ stmt_fn_call_args_t::~stmt_fn_call_args_t()
 void stmt_fn_call_args_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Arguments at: %p\n", this );
+	io::print( has_next, "Arguments at: %p (va_unpack: %s)\n", this, m_va_unpack ? "yes" : "no" );
 	for( size_t i = 0; i < m_args.size(); ++i ) {
 		m_args[ i ]->disp( i != m_args.size() - 1 || m_assn_args.size() > 0 );
 	}
@@ -301,6 +302,7 @@ void stmt_fn_call_args_t::disp( const bool has_next ) const
 }
 const std::vector< const stmt_base_t * > & stmt_fn_call_args_t::args() const { return m_args; }
 const std::vector< const stmt_fn_assn_arg_t * > & stmt_fn_call_args_t::assn_args() const { return m_assn_args; }
+const bool & stmt_fn_call_args_t::va_unpack() const { return m_va_unpack; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// SINGLE_EXPR_STMT ////////////////////////////////////////////////////

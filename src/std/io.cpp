@@ -8,6 +8,7 @@
 */
 
 #include <unistd.h>
+#include <termios.h>
 
 #include "VM/VM.hpp"
 
@@ -195,7 +196,7 @@ var_base_t * fflush( vm_state_t & vm, const fn_data_t & fd )
 	return vm.nil;
 }
 
-var_base_t * readchars( vm_state_t & vm, const fn_data_t & fd )
+var_base_t * readchar( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
 		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected an integer argument for file descriptor, found: %s",
@@ -207,22 +208,13 @@ var_base_t * readchars( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 2 ] ).c_str() );
 		return nullptr;
 	}
-	if( !fd.args[ 3 ]->istype< var_int_t >() ) {
-		vm.fail( fd.args[ 3 ]->src_id(), fd.args[ 3 ]->idx(), "expected an integer argument for number of chars, found: %s",
-			 vm.type_name( fd.args[ 3 ] ).c_str() );
-		return nullptr;
-	}
 
-	size_t num_chars = INT( fd.args[ 3 ] )->get().get_ui();
-	char * chars = new char[ num_chars ];
-	int res = read( INT( fd.args[ 1 ] )->get().get_si(), chars, num_chars );
-	fprintf( stdout, "Read: %d\n", res );
-	if( res == -1 && errno != EAGAIN ) {
-		goto end;
+	int fdescr = INT( fd.args[ 1 ] )->get().get_si();
+	char c = 0;
+	int res = read( fdescr, & c, 1 );
+	if( res > 0 ) {
+		STR( fd.args[ 2 ] )->get() = std::string( 1, c );
 	}
-	STR( fd.args[ 2 ] )->get() = chars;
-end:
-	delete[] chars;
 	return make< var_int_t >( res );
 }
 
@@ -241,7 +233,7 @@ INIT_MODULE( io )
 	src->add_native_fn( "scan_native", scan, 1 );
 	src->add_native_fn( "scaneof_native", scaneof, 1 );
 	src->add_native_fn( "fflush", fflush, 1 );
-	src->add_native_fn( "readchars", readchars, 3 );
+	src->add_native_fn( "readch", readchar, 2 );
 
 	// stdout and stderr cannot be owned by a var_file_t
 	src->add_native_var( "stdout", make_all< var_file_t >( stdout, "w", src_id, idx, false ) );
