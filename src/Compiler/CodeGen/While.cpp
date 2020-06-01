@@ -11,7 +11,7 @@
 
 bool stmt_while_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 {
-	bc.addsz( idx(), OP_BLKA, 1 );
+	bc.add( idx(), OP_PUSH_LOOP );
 
 	// loop expression
 	size_t begin_loop = bc.size();
@@ -29,7 +29,7 @@ bool stmt_while_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	bc.updatesz( jmp_loop_out_loc, bc.size() );
 
 	size_t break_jmp_loc = bc.size();
-	bc.addsz( idx(), OP_BLKR, 1 );
+	bc.add( idx(), OP_POP_LOOP );
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {

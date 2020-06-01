@@ -193,10 +193,11 @@ class stmt_fn_call_args_t : public stmt_base_t
 {
 	const std::vector< const stmt_base_t * > m_args;
 	const std::vector< const stmt_fn_assn_arg_t * > m_assn_args;
+	const bool m_va_unpack;
 public:
 	stmt_fn_call_args_t( const std::vector< const stmt_base_t * > & args,
 			     const std::vector< const stmt_fn_assn_arg_t * > & assn_args,
-			     const size_t & idx );
+			     const bool & va_unpack, const size_t & idx );
 	~stmt_fn_call_args_t();
 
 	void disp( const bool has_next ) const;
@@ -205,6 +206,7 @@ public:
 
 	const std::vector< const stmt_base_t * > & args() const;
 	const std::vector< const stmt_fn_assn_arg_t * > & assn_args() const;
+	const bool & va_unpack() const;
 };
 
 /*

@@ -208,12 +208,13 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		}
 		case OP_MEM_FNCL: // fallthrough
 		case OP_FNCL: {
-			size_t len = strlen( op.data.s );
-			bool mem_call = op.op == OP_MEM_FNCL;
 			args.clear();
 			assn_args.clear();
 			assn_args_loc.clear();
-			for( size_t i = 0; i < len; ++i ) {
+			size_t len = strlen( op.data.s );
+			bool mem_call = op.op == OP_MEM_FNCL;
+			bool va_unpack = op.data.s[ 0 ] == '1';
+			for( size_t i = 1; i < len; ++i ) {
 				if( op.data.s[ i ] == '0' ) {
 					args.push_back( vms->pop( false ) );
 				} else {
@@ -229,6 +230,20 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			var_base_t * fn_base = nullptr;
 			var_base_t * res = nullptr;
 			std::string fn_name;
+			if( va_unpack ) {
+				if( !args.back()->istype< var_vec_t >() ) {
+					vm.fail( args.back()->src_id(), args.back()->idx(),
+						 "variadic unpack requires a vector to unpack" );
+					goto fncall_fail;
+				}
+				var_vec_t * vec = VEC( args.back() );
+				args.pop_back();
+				for( auto & e : vec->get() ) {
+					var_iref( e );
+					args.push_back( e );
+				}
+				var_dref( vec );
+			}
 			if( mem_call ) {
 				fn_name = STR( vms->back() )->get();
 				vms->pop();
