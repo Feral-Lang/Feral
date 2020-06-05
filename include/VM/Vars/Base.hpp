@@ -50,16 +50,18 @@ class var_base_t
 	char m_info;
 
 	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
-	template< typename ... T > static inline std::size_t _type_id() {
-		return reinterpret_cast< std::uintptr_t >( & _type_id< T ... > );
+	template< typename T > static inline std::uintptr_t _type_id()
+	{
+		// no need for static variable as function is inlined
+		return reinterpret_cast< std::uintptr_t >( & _type_id< T > );
 	}
-	template< typename ... T > friend size_t type_id();
+	template< typename T > friend size_t type_id();
 public:
 	var_base_t( const std::uintptr_t & type, const size_t & src_id, const size_t & idx,
 		    const bool & callable, const bool & attr_based );
 	virtual ~var_base_t();
 
-	template< typename ... T > bool istype() const { return m_type == var_base_t::_type_id< T ... >(); }
+	template< typename T > bool istype() const { return m_type == var_base_t::_type_id< T >(); }
 
 	// must always be overridden
 	virtual var_base_t * copy( const size_t & src_id, const size_t & idx ) = 0;
@@ -100,9 +102,9 @@ public:
 	static void operator delete( void * ptr, size_t sz );
 };
 
-template< typename ... T > size_t type_id()
+template< typename T > size_t type_id()
 {
-	return var_base_t::_type_id< T ... >();
+	return var_base_t::_type_id< T >();
 }
 
 template< typename T > inline void var_iref( T * var )
