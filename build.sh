@@ -73,7 +73,9 @@ git clone https://github.com/Feral-Lang/Feral.git
 build() {
     mkdir build && cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
+    if [ "$?" -ne 0 ]; then exit 1; fi
     make -j$CORES install
+    if [ "$?" -ne 0 ]; then exit 1; fi
     cd ..
 }
 
