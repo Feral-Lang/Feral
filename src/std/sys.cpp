@@ -15,9 +15,6 @@
 
 #include "VM/VM.hpp"
 
-#define _STRINGIZE(x) #x
-#define STRINGIFY(x) _STRINGIZE(x)
-
 var_base_t * _exit( vm_state_t & vm, const fn_data_t & fd )
 {
 	vm.exit_called = true;

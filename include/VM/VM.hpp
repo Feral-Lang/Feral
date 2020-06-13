@@ -22,6 +22,9 @@
 #include "Vars.hpp"
 #include "VMStack.hpp"
 
+#define _STRINGIZE(x) #x
+#define STRINGIFY(x) _STRINGIZE(x)
+
 typedef std::vector< var_src_t * > src_stack_t;
 
 typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;

@@ -16,9 +16,6 @@
 
 #include "VM/VM.hpp"
 
-#define _STRINGIZE(x) #x
-#define STRINGIFY(x) _STRINGIZE(x)
-
 #define ARITHI_FUNC( name )											\
 var_base_t * int_##name( vm_state_t & vm, const fn_data_t & fd )						\
 {														\
