@@ -12,6 +12,7 @@
 */
 
 #include <regex>
+#include <cstring>
 
 #include <unistd.h>
 #include <dirent.h>
