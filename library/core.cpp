@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #include "core/nil.hpp"
@@ -153,13 +157,13 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_int_t >( "<<", int_lshift, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( ">>", int_rshift, 1, src_id, idx );
 
-	vm.add_native_typefn< var_int_t >( "+=",  int_addassn,     1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "-=",  int_subassn,     1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "*=",  int_mulassn,     1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "/=",  int_divassn,     1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "%=",  int_modassn,     1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "<<=", int_lshiftassn,  1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( ">>=", int_rshiftassn,  1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "+=",  int_assn_add,   1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "-=",  int_assn_sub,   1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "*=",  int_assn_mul,   1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "/=",  int_assn_div,   1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "%=",  int_assn_mod,   1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "<<=", int_lshiftassn, 1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( ">>=", int_rshiftassn, 1, src_id, idx );
 
 	vm.add_native_typefn< var_int_t >( "**",  int_pow, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "++x", int_preinc, 0, src_id, idx );
@@ -182,10 +186,10 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_flt_t >( "*", flt_mul, 1, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( "/", flt_div, 1, src_id, idx );
 
-	vm.add_native_typefn< var_flt_t >( "+=", flt_addassn, 1, src_id, idx );
-	vm.add_native_typefn< var_flt_t >( "-=", flt_subassn, 1, src_id, idx );
-	vm.add_native_typefn< var_flt_t >( "*=", flt_mulassn, 1, src_id, idx );
-	vm.add_native_typefn< var_flt_t >( "/=", flt_divassn, 1, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "+=", flt_assn_add, 1, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "-=", flt_assn_sub, 1, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "*=", flt_assn_mul, 1, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "/=", flt_assn_div, 1, src_id, idx );
 
 	vm.add_native_typefn< var_flt_t >( "++x", flt_preinc, 0, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( "x++", flt_postinc, 0, src_id, idx );

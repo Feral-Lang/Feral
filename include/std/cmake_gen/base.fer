@@ -53,11 +53,6 @@ if(NOT GMP_LIBRARY)
 	message(FATAL_ERROR "gmp is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
 endif()
 
-find_library(GMPXX_LIBRARY gmpxx REQUIRED)
-if(NOT GMPXX_LIBRARY)
-	message(FATAL_ERROR "gmpxx is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
-endif()
-
 find_library(MPFR_LIBRARY mpfr REQUIRED)
 if(NOT MPFR_LIBRARY)
 	message(FATAL_ERROR "mpfr is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")

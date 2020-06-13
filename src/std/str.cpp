@@ -1,11 +1,17 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
+
+#include <algorithm>
 
 #include "VM/VM.hpp"
 
@@ -72,7 +78,7 @@ var_base_t * str_setat( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 2 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::string & dest = STR( fd.args[ 0 ] )->get();
 	if( pos >= dest.size() ) {
 		vm.fail( fd.src_id, fd.idx, "position %zu is not within string of length %zu",
@@ -97,7 +103,7 @@ var_base_t * str_insert( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 2 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::string & dest = STR( fd.args[ 0 ] )->get();
 	if( pos > dest.size() ) {
 		vm.fail( fd.src_id, fd.idx, "position %zu is greater than string length %zu",
@@ -116,7 +122,7 @@ var_base_t * str_erase( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::string & str = STR( fd.args[ 0 ] )->get();
 	if( pos < str.size() ) str.erase( str.begin() + pos );
 	return fd.args[ 0 ];
@@ -172,8 +178,7 @@ var_base_t * byt( vm_state_t & vm, const fn_data_t & fd )
 // ASCII (int) to character (str)
 var_base_t * chr( vm_state_t & vm, const fn_data_t & fd )
 {
-	const mpz_class & num = INT( fd.args[ 0 ] )->get();
-	return make< var_str_t >( std::string( 1, ( char )num.get_si() ) );
+	return make< var_str_t >( std::string( 1, ( char )mpz_get_si( INT( fd.args[ 0 ] )->get() ) ) );
 }
 
 INIT_MODULE( str )

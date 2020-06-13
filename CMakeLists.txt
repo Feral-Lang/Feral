@@ -23,11 +23,11 @@ if(DEFINED ENV{MEM_PROFILE})
 endif()
 
 # add cmake_modules path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/include/Extra/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 
 set(FERAL_VERSION_MAJOR 0)
 set(FERAL_VERSION_MINOR 0)
-set(FERAL_VERSION_PATCH 4)
+set(FERAL_VERSION_PATCH 5)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -49,7 +49,6 @@ if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 endif()
 
 find_library(GMP_LIBRARY gmp REQUIRED)
-find_library(GMPXX_LIBRARY gmpxx REQUIRED)
 find_package(MPFR REQUIRED)
 if(NOT MPFR_FOUND)
 	message(FATAL_ERROR "MPFR library is required but missing")
@@ -102,6 +101,11 @@ endif()
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Common/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Common/Config.hpp" @ONLY)
 
+# Install CMake modules
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/cmake_modules/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake_modules"
+)
+
 # Install Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
@@ -132,7 +136,7 @@ file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/VM/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/VM/*.cpp")
 
 add_library(feral-vm SHARED ${SRCS} ${INCS})
-target_link_libraries(feral-vm feral-common ${CMAKE_DL_LIBS} ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(feral-vm feral-common ${CMAKE_DL_LIBS} ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(feral-vm
     PROPERTIES
     OUTPUT_NAME feralvm
@@ -318,7 +322,7 @@ install(TARGETS ${mod}
 # fmt
 set(mod "fmt")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm feral-compiler ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(${mod} feral-vm feral-compiler ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -335,7 +339,7 @@ install(TARGETS ${mod}
 # fs
 set(mod "fs")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} fs_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -352,7 +356,7 @@ install(TARGETS ${mod}
 # io
 set(mod "io")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} fs_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} fs_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -369,7 +373,7 @@ install(TARGETS ${mod}
 # lang
 set(mod "lang")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} struct_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} struct_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -386,7 +390,7 @@ install(TARGETS ${mod}
 # map
 set(mod "map")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} map_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} map_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -403,7 +407,7 @@ install(TARGETS ${mod}
 # os
 set(mod "os")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -420,7 +424,7 @@ install(TARGETS ${mod}
 # ptr
 set(mod "ptr")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} ptr_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} ptr_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -437,7 +441,7 @@ install(TARGETS ${mod}
 # str
 set(mod "str")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -454,7 +458,7 @@ install(TARGETS ${mod}
 # sys
 set(mod "sys")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY})
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -471,7 +475,7 @@ install(TARGETS ${mod}
 # term
 set(mod "term")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} term_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} term_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
@@ -488,7 +492,7 @@ install(TARGETS ${mod}
 # vec
 set(mod "vec")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMPXX_LIBRARY} ${GMP_LIBRARY} vec_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} vec_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"

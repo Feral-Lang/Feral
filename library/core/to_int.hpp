@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #ifndef LIBRARY_CORE_TO_INT_HPP
@@ -34,12 +38,16 @@ var_base_t * int_to_int( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * flt_to_int( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_int_t >( FLT( fd.args[ 0 ] )->get().toInt() );
+	var_int_t * res = make< var_int_t >( 0 );
+	mpfr_get_z( res->get(), FLT( fd.args[ 0 ] )->get(), mpfr_get_default_rounding_mode() );
+	return res;
 }
 
 var_base_t * str_to_int( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_int_t >( mpz_class( STR( fd.args[ 0 ] )->get() ) );
+	var_int_t * res = make< var_int_t >( 0 );
+	mpz_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), 0 );
+	return res;
 }
 
 #endif // LIBRARY_CORE_TO_INT_HPP

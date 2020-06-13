@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #ifndef LIBRARY_CORE_INT_HPP
@@ -12,400 +16,222 @@
 
 #include "VM/VM.hpp"
 
-var_base_t * int_add( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for addition, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res += rhs;
-	return make< var_int_t >( res );
+#define _STRINGIZE(x) #x
+#define STRINGIFY(x) _STRINGIZE(x)
+
+#define ARITHI_FUNC( name )											\
+var_base_t * int_##name( vm_state_t & vm, const fn_data_t & fd )						\
+{														\
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {								\
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );				\
+		mpz_##name( res->get(), res->get(), INT( fd.args[ 1 ] )->get() );				\
+		return res;											\
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {							\
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );				\
+		mpz_t tmp;											\
+		mpz_init( tmp );										\
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );		\
+		mpz_##name( res->get(), res->get(), tmp );							\
+		mpz_clear( tmp );										\
+		return res;											\
+	}													\
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int " STRINGIFY( name ) ", found: %s",	\
+		 vm.type_name( fd.args[ 1 ] ).c_str() );							\
+	return nullptr;												\
 }
 
-var_base_t * int_sub( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for subtraction, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res -= rhs;
-	return make< var_int_t >( res );
+#define ARITHI_ASSN_FUNC( name )											\
+var_base_t * int_assn_##name( vm_state_t & vm, const fn_data_t & fd )							\
+{															\
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {									\
+		mpz_##name( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );	\
+		return fd.args[ 0 ];											\
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {								\
+		mpz_t tmp;												\
+		mpz_init( tmp );											\
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );			\
+		mpz_##name( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), tmp );				\
+		mpz_clear( tmp );											\
+		return fd.args[ 0 ];											\
+	}														\
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int " STRINGIFY( name ) "-assign, found: %s",	\
+		 vm.type_name( fd.args[ 1 ] ).c_str() );								\
+	return nullptr;													\
 }
 
-var_base_t * int_mul( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for multiplication, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res *= rhs;
-	return make< var_int_t >( res );
+#define LOGICI_FUNC( name, sym )											\
+var_base_t * int_##name( vm_state_t & vm, const fn_data_t & fd )							\
+{															\
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {									\
+		return mpz_cmp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() ) sym 0 ? vm.tru : vm.fals;	\
+	}														\
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int " STRINGIFY( name ) ", found: %s",			\
+		 vm.type_name( fd.args[ 1 ] ).c_str() );								\
+	return nullptr;													\
 }
 
-var_base_t * int_div( vm_state_t & vm, const fn_data_t & fd )
+ARITHI_FUNC( add )
+ARITHI_FUNC( sub )
+ARITHI_FUNC( mul )
+ARITHI_FUNC( div )
+ARITHI_FUNC( mod )
+
+ARITHI_ASSN_FUNC( add )
+ARITHI_ASSN_FUNC( sub )
+ARITHI_ASSN_FUNC( mul )
+ARITHI_ASSN_FUNC( div )
+ARITHI_ASSN_FUNC( mod )
+
+LOGICI_FUNC( lt, < )
+LOGICI_FUNC( gt, > )
+LOGICI_FUNC( le, <= )
+LOGICI_FUNC( ge, >= )
+
+var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for division, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		return mpz_cmp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() ) == 0 ? vm.tru : vm.fals;
 	}
-	if( rhs == 0 ) {
-		vm.fail( fd.src_id, fd.idx, "modulo with zero as rhs is invalid",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res /= rhs;
-	return make< var_int_t >( res );
+	return vm.fals;
 }
 
-var_base_t * int_mod( vm_state_t & vm, const fn_data_t & fd )
+var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for modulo, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		return mpz_cmp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() ) != 0 ? vm.tru : vm.fals;
 	}
-	if( rhs == 0 ) {
-		vm.fail( fd.src_id, fd.idx, "modulo with zero as rhs is invalid",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res %= rhs;
-	return make< var_int_t >( res );
+	return vm.tru;
 }
 
 var_base_t * int_lshift( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_mul_2exp( res->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( INT( fd.args[ 1 ] )->get() ) );
+		return res;
 	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for left shift, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_mul_2exp( res->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( tmp ) );
+		mpz_clear( tmp );
+		return res;
 	}
-	if( rhs == 0 ) {
-		vm.fail( fd.src_id, fd.idx, "modulo with zero as rhs is invalid",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res <<= rhs.get_ui();
-	return make< var_int_t >( res );
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int leftshift, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
 }
 
 var_base_t * int_rshift( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class res = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_div_2exp( res->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( INT( fd.args[ 1 ] )->get() ) );
+		return res;
 	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for right shift, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_div_2exp( res->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( tmp ) );
+		mpz_clear( tmp );
+		return res;
 	}
-	if( rhs == 0 ) {
-		vm.fail( fd.src_id, fd.idx, "modulo with zero as rhs is invalid",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	res >>= rhs.get_ui();
-	return make< var_int_t >( res );
-}
-
-var_base_t * int_addassn( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for addition assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	INT( fd.args[ 0 ] )->get() += rhs;
-	return fd.args[ 0 ];
-}
-
-var_base_t * int_subassn( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for subtraction assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	INT( fd.args[ 0 ] )->get() -= rhs;
-	return fd.args[ 0 ];
-}
-
-var_base_t * int_mulassn( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for multiplication assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	INT( fd.args[ 0 ] )->get() *= rhs;
-	return fd.args[ 0 ];
-}
-
-var_base_t * int_divassn( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for division assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	INT( fd.args[ 0 ] )->get() /= rhs;
-	return fd.args[ 0 ];
-}
-
-var_base_t * int_modassn( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for modulo assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	INT( fd.args[ 0 ] )->get() %= rhs;
-	return fd.args[ 0 ];
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int rightshift, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
 }
 
 var_base_t * int_lshiftassn( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
+		mpz_mul_2exp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( INT( fd.args[ 1 ] )->get() ) );
+		return fd.args[ 0 ];
 	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for left shift assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_mul_2exp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( tmp ) );
+		mpz_clear( tmp );
+		return fd.args[ 0 ];
 	}
-	INT( fd.args[ 0 ] )->get() <<= rhs.get_ui();
-	return fd.args[ 0 ];
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int leftshift-assign, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
 }
 
 var_base_t * int_rshiftassn( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
+		mpz_div_2exp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( INT( fd.args[ 1 ] )->get() ) );
+		return fd.args[ 0 ];
 	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for right shift assign, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_div_2exp( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), mpz_get_si( tmp ) );
+		mpz_clear( tmp );
+		return fd.args[ 0 ];
 	}
-	INT( fd.args[ 0 ] )->get() >>= rhs.get_ui();
-	return fd.args[ 0 ];
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int rightshift-assign, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
 }
 
 var_base_t * int_pow( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_pow_ui( res->get(), res->get(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ) );
+		return res;
 	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for power, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_pow_ui( res->get(), res->get(), mpz_get_ui( tmp ) );
+		mpz_clear( tmp );
+		return res;
 	}
-	var_int_t * res = make< var_int_t >( 0 );
-	mpz_pow_ui( res->get().get_mpz_t(), lhs.get_mpz_t(), rhs.get_ui() );
-	return res;
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int power, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
 }
 
 var_base_t * int_preinc( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
-	++lhs;
+	mpz_add_ui( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), 1 );
 	return fd.args[ 0 ];
 }
 
 var_base_t * int_postinc( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class res = lhs++;
-	return make< var_int_t >( res );
+	var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+	mpz_add_ui( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), 1 );
+	return res;
 }
 
 var_base_t * int_predec( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
-	--lhs;
+	mpz_sub_ui( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), 1 );
 	return fd.args[ 0 ];
 }
 
 var_base_t * int_postdec( vm_state_t & vm, const fn_data_t & fd )
 {
-	mpz_class & lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class res = lhs--;
-	return make< var_int_t >( res );
+	var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+	mpz_sub_ui( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), 1 );
+	return res;
 }
 
 var_base_t * int_usub( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_int_t >( -INT( fd.args[ 0 ] )->get() );
+	var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+	mpz_neg( res->get(), res->get() );
+	return res;
 }
 
 // logical functions
-
-var_base_t * int_lt( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for integer less than operation, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	return lhs < rhs ? vm.tru : vm.fals;
-}
-
-var_base_t * int_gt( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for integer greater than operation, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	return lhs > rhs ? vm.tru : vm.fals;
-}
-
-var_base_t * int_le( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for integer less than/equals operation, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	return lhs <= rhs ? vm.tru : vm.fals;
-}
-
-var_base_t * int_ge( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		vm.fail( fd.src_id, fd.idx, "expected int or float argument for integer greater than/equals operation, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	return lhs >= rhs ? vm.tru : vm.fals;
-}
-
-var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		return vm.fals;
-	}
-	return lhs == rhs ? vm.tru : vm.fals;
-}
-
-var_base_t * int_ne( vm_state_t & vm, const fn_data_t & fd )
-{
-	mpz_class lhs = INT( fd.args[ 0 ] )->get();
-	mpz_class rhs = 0;
-	if( fd.args[ 1 ]->istype< var_int_t >() ) {
-		rhs = INT( fd.args[ 1 ] )->get();
-	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
-		rhs = FLT( fd.args[ 1 ] )->get().toInt();
-	} else {
-		return vm.tru;
-	}
-	return lhs != rhs ? vm.tru : vm.fals;
-}
 
 #endif // LIBRARY_CORE_INT_HPP

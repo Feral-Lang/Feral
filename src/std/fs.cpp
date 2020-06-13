@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #include <regex>
@@ -97,8 +101,8 @@ var_base_t * fs_file_seek( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 2 ] ).c_str() );
 		return nullptr;
 	}
-	long pos = INT( fd.args[ 1 ] )->get().get_si();
-	int origin = INT( fd.args[ 2 ] )->get().get_si();
+	long pos = mpz_get_si( INT( fd.args[ 1 ] )->get() );
+	int origin = mpz_get_si( INT( fd.args[ 2 ] )->get() );
 	return make< var_int_t >( fseek( file, pos, origin ) );
 }
 
@@ -196,7 +200,7 @@ var_base_t * fs_walkdir( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string dir_str = STR( fd.args[ 1 ] )->get();
-	size_t flags = INT( fd.args[ 2 ] )->get().get_ui();
+	size_t flags = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
 	std::string regex_str = STR( fd.args[ 3 ] )->get();
 	std::regex regex( regex_str );
 	if( dir_str.size() > 0 && dir_str.back() != '/' ) dir_str += "/";
