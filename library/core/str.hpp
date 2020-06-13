@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #ifndef LIBRARY_CORE_STR_HPP
@@ -32,11 +36,14 @@ var_base_t * str_mul( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
-	mpz_class & rhs = INT( fd.args[ 1 ] )->get();
+	mpz_t i;
+	mpz_init_set_si( i, 0 );
+	mpz_t & rhs = INT( fd.args[ 1 ] )->get();
 	std::string res;
-	for( mpz_class i = 0; i < rhs; ++i ) {
+	for( ; mpz_cmp( i, rhs ) < 0; mpz_add_ui( i, i, 1 ) ) {
 		res += lhs;
 	}
+	mpz_clear( i );
 	return make< var_str_t >( res );
 }
 
@@ -59,12 +66,15 @@ var_base_t * str_mulassn( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string & lhs = STR( fd.args[ 0 ] )->get();
-	mpz_class & rhs = INT( fd.args[ 1 ] )->get();
+	mpz_t i;
+	mpz_init_set_si( i, 0 );
+	mpz_t & rhs = INT( fd.args[ 1 ] )->get();
 	std::string res;
-	for( mpz_class i = 0; i < rhs; ++i ) {
+	for( ; mpz_cmp( i, rhs ) < 0; mpz_add_ui( i, i, 1 ) ) {
 		res += lhs;
 	}
 	lhs = res;
+	mpz_clear( i );
 	return fd.args[ 0 ];
 }
 
@@ -146,7 +156,7 @@ var_base_t * str_at( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::string & str = STR( fd.args[ 0 ] )->get();
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	if( pos >= str.size() ) return vm.nil;
 	return make< var_str_t >( std::string( 1, str[ pos ] ) );
 }

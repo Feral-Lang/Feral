@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #ifndef VM_VARS_BASE_HPP
@@ -15,9 +19,9 @@
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
-#include <gmpxx.h>
+#include <gmp.h>
+#include <mpfr.h>
 
-#include "../../Extra/mpfrxx.hpp"
 #include "../SrcFile.hpp"
 
 class var_base_t;
@@ -102,7 +106,7 @@ public:
 	static void operator delete( void * ptr, size_t sz );
 };
 
-template< typename T > size_t type_id()
+template< typename T > std::uintptr_t type_id()
 {
 	return var_base_t::_type_id< T >();
 }
@@ -171,27 +175,35 @@ public:
 
 class var_int_t : public var_base_t
 {
-	mpz_class m_val;
+	mpz_t m_val;
 public:
-	var_int_t( const mpz_class & val, const size_t & src_id, const size_t & idx );
+	var_int_t( const mpz_t val, const size_t & src_id, const size_t & idx );
+	var_int_t( const int & val, const size_t & src_id, const size_t & idx );
+	var_int_t( const mpfr_t val, const size_t & src_id, const size_t & idx );
+	var_int_t( const char * val, const size_t & src_id, const size_t & idx );
+	~var_int_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	mpz_class & get();
+	mpz_t & get();
 };
 #define INT( x ) static_cast< var_int_t * >( x )
 
 class var_flt_t : public var_base_t
 {
-	mpfr::mpreal m_val;
+	mpfr_t m_val;
 public:
-	var_flt_t( const mpfr::mpreal & val, const size_t & src_id, const size_t & idx );
+	var_flt_t( const mpfr_t val, const size_t & src_id, const size_t & idx );
+	var_flt_t( const double & val, const size_t & src_id, const size_t & idx );
+	var_flt_t( const mpz_t val, const size_t & src_id, const size_t & idx );
+	var_flt_t( const char * val, const size_t & src_id, const size_t & idx );
+	~var_flt_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	mpfr::mpreal & get();
+	mpfr_t & get();
 };
 #define FLT( x ) static_cast< var_flt_t * >( x )
 

@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #include "VM/VM.hpp"
@@ -36,7 +40,7 @@ var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 				 vm.type_name( cap_var ).c_str() );
 			return nullptr;
 		}
-		reserve_cap = INT( cap_var )->get().get_ui();
+		reserve_cap = mpz_get_ui( INT( cap_var )->get() );
 	}
 	vec_val.reserve( reserve_cap );
 	if( refs ) {
@@ -110,7 +114,7 @@ var_base_t * vec_setat( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
 	if( pos >= vec.size() ) {
 		vm.fail( fd.src_id, fd.idx, "position %zu is not within string of length %zu",
@@ -134,7 +138,7 @@ var_base_t * vec_insert( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
 	if( pos > vec.size() ) {
 		vm.fail( fd.src_id, fd.idx, "position %zu is greater than vector length %zu",
@@ -157,7 +161,7 @@ var_base_t * vec_erase( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
 	if( pos >= vec.size() ) {
 		vm.fail( fd.src_id, fd.idx, "attempted erase on pos: %zu, vector size: %zu",
@@ -182,7 +186,7 @@ var_base_t * vec_at( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
-	size_t pos = INT( fd.args[ 1 ] )->get().get_ui();
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	if( pos >= vec.size() ) return vm.nil;
 	return vec[ pos ];
 }
@@ -209,8 +213,8 @@ var_base_t * vec_sub( vm_state_t & vm, const fn_data_t & fd )
 	}
 
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
-	size_t begin = INT( fd.args[ 1 ] )->get().get_ui();
-	size_t end = INT( fd.args[ 2 ] )->get().get_ui();
+	size_t begin = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
+	size_t end = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
 
 	std::vector< var_base_t * > newvec;
 	if( end > begin ) newvec.reserve( end - begin );
@@ -234,8 +238,8 @@ var_base_t * vec_slice( vm_state_t & vm, const fn_data_t & fd )
 	}
 
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
-	size_t begin = INT( fd.args[ 1 ] )->get().get_ui();
-	size_t end = INT( fd.args[ 2 ] )->get().get_ui();
+	size_t begin = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
+	size_t end = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
 
 	std::vector< var_base_t * > newvec;
 	if( end > begin ) newvec.reserve( end - begin );

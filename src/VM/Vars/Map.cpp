@@ -1,10 +1,14 @@
 /*
-	Copyright (c) 2020, Electrux
-	All rights reserved.
-	Using the GNU GPL 3.0 license for the project,
-	main LICENSE file resides in project's root directory.
-	Please read that file and understand the license terms
-	before using or altering the project.
+	MIT License
+
+	Copyright (c) 2020 Feral Language repositories
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so.
 */
 
 #include "VM/Vars/Base.hpp"
