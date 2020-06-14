@@ -285,24 +285,75 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 
 	err::code() = E_OK;
 	int dot_encountered = -1;
+	int base = 10;
+
+	bool read_base = false;
 
 	while( i < src_len ) {
 		const char c = CURR( src );
 		const char next = NEXT( src );
 		switch( c ) {
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
+		case 'x':
+		case 'X': {
+			if( read_base ) {
+				base = 16;
+				read_base = false;
+				break;
+			}
+			goto fail;
+		}
+		case 'f':
+		case 'F':
+		case 'e':
+		case 'E':
+		case 'd':
+		case 'D':
+		case 'c':
+		case 'C':
+		case 'b':
+		case 'B': {
+			if( read_base ) {
+				base = 2;
+				read_base = false;
+				break;
+			}
+		}
+		case 'a':
+		case 'A': {
+			if( base >= 16 ) break;
+			goto fail;
+		}
 		case '9':
+		case '8':
+			if( base > 8 ) break;
+			goto fail;
+		case '7':
+		case '6':
+		case '5':
+		case '4':
+		case '3':
+		case '2':
+			if( base > 2 ) break;
+			goto fail;
+		case '1':
+			read_base = false;
 			break;
+		case '0': {
+			if( i == first_digit_at ) {
+				read_base = true;
+				base = 8;
+				break;
+			}
+			if( i == first_digit_at + 1 && read_base ) {
+				goto fail;
+			}
+			read_base = false;
+			break;
+		}
 		case '.':
-			if( dot_encountered == -1 ) {
+			if( base != 10 ) {
+				err::set( E_LEX_FAIL, i, "encountered dot (.) character when base is not 10 (%d)", base );
+			} else if( dot_encountered == -1 ) {
 				if( next >= '0' && next <= '9' ) {
 					dot_encountered = i;
 					num_type = TOK_FLT;
@@ -317,10 +368,10 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 			}
 			break;
 		default:
+fail:
 			if( isalnum( c ) ) {
 				err::set( E_LEX_FAIL, i, "encountered invalid character '%c' "
-					  "while retrieving a number (from column %d)",
-					  c, first_digit_at + 1 );
+					  "while retrieving a number of base %d", c, base );
 			} else {
 				return buf;
 			}
