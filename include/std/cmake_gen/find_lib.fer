@@ -2,12 +2,13 @@ let io = import('std/io');
 let os = import('std/os');
 let vec = import('std/vec');
 let str = import('std/str');
+let sys = import('std/sys');
 let fmt = import('std/fmt');
 let lang = import('std/lang');
 
 let find_lib_base =
 `{extra}
-find_library({self.var_name.upper()}_LIBRARY {self.lib_name} {self.path_suffixes} {self.required} {brew_prefix_path})
+find_library({self.var_name.upper()}_LIBRARY {self.lib_name}{self.path_suffixes}{self.required}{prefix_path})
 `;
 
 let reqd_line_base =
@@ -25,13 +26,14 @@ let find_lib_t = lang.struct(
 	path_suffixes = '',
 	required = '',
 	use_homebrew = false,
-	homebrew_name = ''
+	homebrew_name = '',
+	feral_lib = false
 );
 
 let new = fn(lib_name) { return find_lib_t(lib_name = lib_name); };
 
 let make_reqd in find_lib_t = fn() {
-	self.required = 'REQUIRED';
+	self.required = ' REQUIRED';
 	self.template += reqd_line_base;
 	return self;
 };
@@ -48,14 +50,17 @@ let name in find_lib_t = fn() {
 };
 
 let use_brew in find_lib_t = fn(homebrew_name = '') {
+	if os.name != 'macos' { return self; }
 	self.use_homebrew = true;
 	if !homebrew_name.empty() { self.homebrew_name = homebrew_name; }
 	else { self.homebrew_name = self.lib_name; }
 	return self;
 };
 
-let gen_brew_info in find_lib_t = fn(brew_prefix_path) {
-	brew_prefix_path = '';
+let make_feral_lib in find_lib_t = fn() { self.feral_lib = true; return self; };
+
+let gen_brew_info in find_lib_t = fn(prefix_path) {
+	prefix_path = '';
 	if !self.use_homebrew || os.name != 'macos' { return false; }
 	let brew = os.find_exec('brew');
 	if brew.empty() {
@@ -65,19 +70,27 @@ let gen_brew_info in find_lib_t = fn(brew_prefix_path) {
 	let out = vec.new();
 	let res = os.exec(brew + ' --prefix ' + self.homebrew_name + ' 2>/dev/null', out);
 	if res != 0 || out.empty() { return false; }
-	brew_prefix_path = out[0];
+	prefix_path = out[0];
 	return true;
 };
 
 let gen in find_lib_t = fn() {
 	if self.var_name == '' { self.var_name = self.lib_name; }
-	if !self.path_suffixes.empty() { self.path_suffixes = 'PATH_SUFFIXES "' + self.path_suffixes + '"'; }
+	if !self.path_suffixes.empty() { self.path_suffixes = ' PATH_SUFFIXES "' + self.path_suffixes + '"'; }
 	let extra = '';
+	let prefix_path = '';
 	let brew_prefix = '';
-	let brew_prefix_path = '';
-	if self.use_homebrew && os.name == 'macos' && self.gen_brew_info(brew_prefix) {
+	if self.use_homebrew && self.gen_brew_info(brew_prefix) {
 		extra = 'include_directories(' + brew_prefix + '/include)';
-		brew_prefix_path = 'PATHS ' + brew_prefix + '/lib NO_DEFAULT_PATH';
+		prefix_path = ' PATHS ' + brew_prefix + '/lib';
+	}
+	if self.feral_lib {
+		if !self.use_homebrew { prefix_path = ' PATHS'; }
+		prefix_path += ' ' + sys.install_prefix + '/lib/feral';
+		self.lib_name = 'feral' + self.lib_name;
+	}
+	if self.use_homebrew || self.feral_lib {
+		 prefix_path += ' NO_DEFAULT_PATH';
 	}
 	return fmt.template(self.template);
 };
