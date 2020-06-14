@@ -281,7 +281,7 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 {
 	size_t src_len = src.size();
 	std::string buf;
-	int first_digit_at = i;
+	size_t first_digit_at = i;
 
 	err::code() = E_OK;
 	int dot_encountered = -1;
@@ -336,6 +336,8 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 			if( base > 2 ) break;
 			goto fail;
 		case '1':
+			read_base = false;
+			break;
 		case '0': {
 			if( i == first_digit_at ) {
 				read_base = true;
@@ -346,7 +348,7 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 			break;
 		}
 		case '.':
-			if( base != 10 ) {
+			if( !read_base && base != 10 ) {
 				err::set( E_LEX_FAIL, i, "encountered dot (.) character when base is not 10 (%d)", base );
 			} else if( dot_encountered == -1 ) {
 				if( next >= '0' && next <= '9' ) {
@@ -357,10 +359,12 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 				}
 			} else {
 				err::set( E_LEX_FAIL, i, "encountered dot (.) character "
-					  "when the number being retrieved (from column %d) "
+					  "when the number being retrieved (from column %zu) "
 					  "already had one at column %d",
 					  first_digit_at + 1, dot_encountered + 1 );
 			}
+			read_base = false;
+			base = 10;
 			break;
 		default:
 fail:
