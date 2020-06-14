@@ -15,6 +15,12 @@ let set_env = fn(var, val, overwrite = false) {
 # bsd
 let name = os_get_name_native();
 
+# execute command, optionally get output in second argument
+# if it is a vector
+let exec = fn(cmd, out = nil) {
+	return exec_native(cmd, out);
+};
+
 # find the given file (exec) in the PATH variables
 # return the entire file path if found, empty string if not
 let find_exec = fn(exec) {

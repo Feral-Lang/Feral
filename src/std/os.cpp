@@ -79,18 +79,33 @@ var_base_t * exec_custom( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
+	var_vec_t * out = nullptr;
+	if( fd.args[ 2 ]->istype< var_vec_t >() ) {
+		out = VEC( fd.args[ 2 ] );
+	}
+
 	std::string cmd = STR( fd.args[ 1 ] )->get();
 
 	FILE * pipe = popen( cmd.c_str(), "r" );
 	if( !pipe ) return make< var_int_t >( 1 );
-	char * line = NULL;
+	char * csline = NULL;
 	size_t len = 0;
 	ssize_t nread;
 
-	while( ( nread = getline( & line, & len, pipe ) ) != -1 ) {
-		fprintf( stdout, "%s", line );
+	if( !out ) {
+		while( ( nread = getline( & csline, & len, pipe ) ) != -1 ) {
+			fprintf( stdout, "%s", csline );
+		}
+	} else {
+		std::vector< var_base_t * > & resvec = out->get();
+		std::string line;
+		while( ( nread = getline( & csline, & len, pipe ) ) != -1 ) {
+			line = csline;
+			while( line.back() == '\n' || line.back() == '\r' ) line.pop_back();
+			resvec.push_back( new var_str_t( line, fd.src_id, fd.idx ) );
+		}
 	}
-	free( line );
+	if( csline ) free( csline );
 	int res = pclose( pipe );
 
 	res = WEXITSTATUS( res );
@@ -281,7 +296,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "get_env", get_env, 1 );
 	src->add_native_fn( "set_env_native", set_env, 3 );
 
-	src->add_native_fn( "exec", exec_custom, 1 );
+	src->add_native_fn( "exec_native", exec_custom, 2 );
 	src->add_native_fn( "install", install, 2 );
 
 	src->add_native_fn( "os_get_name_native", os_get_name );
