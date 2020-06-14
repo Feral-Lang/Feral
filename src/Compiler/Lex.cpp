@@ -336,16 +336,11 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 			if( base > 2 ) break;
 			goto fail;
 		case '1':
-			read_base = false;
-			break;
 		case '0': {
 			if( i == first_digit_at ) {
 				read_base = true;
 				base = 8;
 				break;
-			}
-			if( i == first_digit_at + 1 && read_base ) {
-				goto fail;
 			}
 			read_base = false;
 			break;
