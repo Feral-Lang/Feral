@@ -79,8 +79,7 @@ var_base_t * fs_file_lines( vm_state_t & vm, const fn_data_t & fd )
 	std::vector< var_base_t * > lines;
 	while( ( read = getline( & line_ptr, & len, file ) ) != -1 ) {
 		std::string line = line_ptr;
-		while( line.back() == '\n' ) line.pop_back();
-		while( line.back() == '\r' ) line.pop_back();
+		while( line.back() == '\n' || line.back() == '\r' ) line.pop_back();
 		lines.push_back( new var_str_t( line, fd.src_id, fd.idx ) );
 	}
 	if( line_ptr ) free( line_ptr );
