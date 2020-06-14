@@ -6,14 +6,17 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 ## General
 
-- [ ] Move everything related to structs to std/lang
+- [ ] (l)stat (fs module)
+- [ ] JSON (de)serializer
+- [ ] IPC
+- [ ] (Un)Archiver
 - [ ] Develop REPL (in Feral)
   - [ ] Requires getch() or similar (does **not** show on output; reads each char as raw byte)
     - [ ] Will require a full set of key list (`kb.A`, `kb.B`, `kb.CAPS`, ...)
 
 ## Core & Standard Library Test Cases (Repository: [Feral-Lang/Feral](https://github.com/Feral-Lang/Feral))
 
-- [ ] Writing test cases for the language, related to:
+- [x] Writing test cases for the language, related to:
   - [x] Nil
   - [x] Integers
   - [x] Floating point numbers
@@ -36,10 +39,10 @@ Standard Library:
 - [x] Maps
 - [x] FS
 - [x] Lang
-- [ ] OS
+- [x] OS
 - [x] Ptr
 - [x] Runtime
-- [ ] String
+- [x] String
 - [x] Sys
 
 ## Book (Repository: [Feral-Lang/Book](https://github.com/Feral-Lang/Book))
@@ -79,12 +82,12 @@ Standard Library:
 - [x] OS
   - [x] `set_working_directory()` - Changes the program's working directory
 - [x] Ptr
-- [ ] Runtime
-  - [ ] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
+- [x] Sys
+  - [x] `var_exists()` - Checks if a variable name exists in the virtual machine at the time of function call
 
 ## Other
 
 These are possible ideas, but still in debate.
 
-- [ ] A proper build system - for building external modules/libraries without the need of CMake
+- [x] CMake generator for external modules
 - [ ] A package manager - to install various external modules/libraries from a package index
