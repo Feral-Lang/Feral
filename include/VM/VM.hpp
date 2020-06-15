@@ -128,7 +128,7 @@ struct vm_state_t
 					  {}, { .native = fn }, src_id, idx ),
 			    false );
 	}
-	var_base_t * get_typefn( const size_t & type, const std::string & name, const bool & all_only );
+	var_base_t * get_typefn( var_base_t * var, const std::string & name );
 
 	// used to convert typeid -> name
 	void set_typename( const std::uintptr_t & type, const std::string & name );

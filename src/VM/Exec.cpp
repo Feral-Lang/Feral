@@ -252,12 +252,8 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				fn_name = STR( vms->back() )->get();
 				vms->pop();
 				in_base = vms->pop( false );
-				if( in_base->attr_based() ) {
-					fn_base = in_base->attr_get( fn_name );
-					if( fn_base == nullptr ) fn_base = vm.get_typefn( in_base->typefn_id(), fn_name, true );
-				} else {
-					fn_base = vm.get_typefn( in_base->typefn_id(), fn_name, false );
-				}
+				if( in_base->attr_based() ) fn_base = in_base->attr_get( fn_name );
+				if( fn_base == nullptr ) fn_base = vm.get_typefn( in_base, fn_name );
 			} else {
 				fn_base = vms->pop( false );
 			}
@@ -298,12 +294,8 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			const std::string attr = op.data.s;
 			var_base_t * in_base = vms->pop( false );
 			var_base_t * val = nullptr;
-			if( in_base->attr_based() ) {
-				val = in_base->attr_get( attr );
-				if( val == nullptr ) val = vm.get_typefn( in_base->typefn_id(), attr, true );
-			} else {
-				val = vm.get_typefn( in_base->typefn_id(), attr, false );
-			}
+			if( in_base->attr_based() ) val = in_base->attr_get( attr );
+			if( val == nullptr ) val = vm.get_typefn( in_base, attr );
 			if( val == nullptr ) {
 				vm.fail( op.src_id, op.idx, "type %s does not contain attribute: '%s'",
 					 vm.type_name( in_base ).c_str(), attr.c_str() );

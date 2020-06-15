@@ -98,14 +98,23 @@ void vm_state_t::add_typefn( const std::uintptr_t & type, const std::string & na
 	}
 	m_typefns[ type ]->add( name, fn, iref );
 }
-var_base_t * vm_state_t::get_typefn( const std::uintptr_t & type, const std::string & name, const bool & all_only )
+var_base_t * vm_state_t::get_typefn( var_base_t * var, const std::string & name )
 {
-	if( all_only ) return m_typefns[ type_id< var_all_t >() ]->get( name );
-	auto it = m_typefns.find( type );
-	if( it == m_typefns.end() ) return m_typefns[ type_id< var_all_t >() ]->get( name );
-	var_base_t * res = it->second->get( name );
+	auto it = m_typefns.find( var->typefn_id() );
+	var_base_t * res = nullptr;
+	if( it == m_typefns.end() ) {
+		if( var->attr_based() ) goto attr_based;
+		return m_typefns[ type_id< var_all_t >() ]->get( name );
+	}
+	res = it->second->get( name );
 	if( res ) return res;
-	return FN( m_typefns[ type_id< var_all_t >() ]->get( name ) );
+	return m_typefns[ type_id< var_all_t >() ]->get( name );
+attr_based:
+	it = m_typefns.find( var->type() );
+	if( it == m_typefns.end() ) return m_typefns[ type_id< var_all_t >() ]->get( name );
+	res = it->second->get( name );
+	if( res ) return res;
+	return m_typefns[ type_id< var_all_t >() ]->get( name );
 }
 
 void vm_state_t::set_typename( const std::uintptr_t & type, const std::string & name )
