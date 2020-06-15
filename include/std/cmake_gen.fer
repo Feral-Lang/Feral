@@ -50,7 +50,7 @@ let gen in core_t = fn(ret = false) {
 	if ret {
 		return data;
 	}
-	let file = fs.open(os.get_cwd() + '/CMakeLists.txt', 'w+');
+	let file = fs.fopen(os.get_cwd() + '/CMakeLists.txt', 'w+');
 	io.fprintln(file, data);
 	return nil;
 };

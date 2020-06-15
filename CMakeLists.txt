@@ -373,7 +373,7 @@ install(TARGETS ${mod}
 # fs
 set(mod "fs")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
-target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} fs_type)
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} fs_type bytebuffer_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
