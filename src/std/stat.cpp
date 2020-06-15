@@ -11,8 +11,9 @@
 	furnished to do so.
 */
 
-#include <sys/errno.h>
-#include <sys/stat.h>
+#include <cstring> // strerror()
+#include <sys/errno.h> // errno
+#include <sys/stat.h> // stat()
 
 #include "std/struct_type.hpp"
 #include "VM/VM.hpp"
