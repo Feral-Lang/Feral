@@ -1,7 +1,7 @@
 mload('std/fs');
 
-let open = fn(file, mode = 'r') {
-	return open_native(file, mode);
+let fopen = fn(file, mode = 'r') {
+	return fopen_native(file, mode);
 };
 
 let walkdir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {

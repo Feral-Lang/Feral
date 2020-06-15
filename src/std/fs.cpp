@@ -15,11 +15,13 @@
 #include <cstring>
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <sys/wait.h>
 
 #include "VM/VM.hpp"
 
+#include "std/bytebuffer_type.hpp"
 #include "std/fs_type.hpp"
 
 enum WalkEntry {
@@ -208,31 +210,163 @@ var_base_t * fs_walkdir( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_vec_t >( v, false );
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// File Descriptor Functions ////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// equivalent to open( path, O_WRONLY | O_CREAT | O_TRUNC, mode )
+var_base_t * fs_fd_create( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for file name, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for mode, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	int res = creat( STR( fd.args[ 1 ] )->get().c_str(), mpz_get_si( INT( fd.args[ 2 ] )->get() ) );
+	if( res < 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to create file: '%s', error: %s",
+			 STR( fd.args[ 1 ] )->get().c_str(), strerror( errno ) );
+		return nullptr;
+	}
+	return make< var_int_t >( res );
+}
+
+var_base_t * fs_fd_open( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for file name, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for open flags, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	int res = open( STR( fd.args[ 1 ] )->get().c_str(), mpz_get_si( INT( fd.args[ 2 ] )->get() ) );
+	if( res < 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to open file: '%s', error: %s",
+			 STR( fd.args[ 1 ] )->get().c_str(), strerror( errno ) );
+		return nullptr;
+	}
+	return make< var_int_t >( res );
+}
+
+var_base_t * fs_fd_read( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for file descriptor, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_bytebuffer_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected bytebuffer containing data to write, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	var_bytebuffer_t * bb = BYTEBUFFER( fd.args[ 2 ] );
+	errno = 0;
+	ssize_t res = read( mpz_get_si( INT( fd.args[ 1 ] )->get() ), bb->get_buf(), bb->get_size() );
+	if( res < 0 || errno != 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to read from file descriptor: '%d', error: %s",
+			 mpz_get_si( INT( fd.args[ 2 ] )->get() ), strerror( errno ) );
+		return nullptr;
+	}
+	return make< var_int_t >( res );
+}
+
+var_base_t * fs_fd_write( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for file descriptor, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_bytebuffer_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected bytebuffer containing data to write, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	var_bytebuffer_t * bb = BYTEBUFFER( fd.args[ 2 ] );
+	errno = 0;
+	ssize_t res = write( mpz_get_si( INT( fd.args[ 1 ] )->get() ), bb->get_buf(), bb->get_size() );
+	if( res < 0 || errno != 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to write to file descriptor: '%d', error: %s",
+			 mpz_get_si( INT( fd.args[ 2 ] )->get() ), strerror( errno ) );
+		return nullptr;
+	}
+	return make< var_int_t >( res );
+}
+
+var_base_t * fs_fd_close( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for file descriptor, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	int res = close( mpz_get_si( INT( fd.args[ 1 ] )->get() ) );
+	if( res < 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to close file descriptor: '%d', error: %s",
+			 mpz_get_si( INT( fd.args[ 2 ] )->get() ), strerror( errno ) );
+		return nullptr;
+	}
+	return make< var_int_t >( res );
+}
+
 INIT_MODULE( fs )
 {
 	var_src_t * src = vm.current_source();
 
 	src->add_native_fn( "exists", fs_exists, 1 );
-	src->add_native_fn( "open_native", fs_open, 2 );
+	src->add_native_fn( "fopen_native", fs_open, 2 );
 	src->add_native_fn( "walkdir_native", fs_walkdir, 3 );
 
 	vm.add_native_typefn< var_file_t >( "lines", fs_file_lines, 0, src_id, idx );
 	vm.add_native_typefn< var_file_t >( "each_line", fs_file_each_line, 0, src_id, idx );
 	vm.add_native_typefn< var_file_t >( "read_blocks", fs_file_read_blocks, 2, src_id, idx );
-
 	vm.add_native_typefn< var_file_t >( "seek", fs_file_seek, 2, src_id, idx );
 
 	vm.add_native_typefn< var_file_iterable_t >( "next", fs_file_iterable_next, 0, src_id, idx );
 
+	// file descriptor
+	src->add_native_fn( "open",  fs_fd_open,  2 );
+	src->add_native_fn( "read",  fs_fd_read,  2 );
+	src->add_native_fn( "write", fs_fd_write, 2 );
+	src->add_native_fn( "close", fs_fd_close, 1 );
+
 	// constants
+
+	// fs.walkdir()
 	src->add_native_var( "WALK_FILES", make_all< var_int_t >( WalkEntry::FILES, src_id, idx ) );
 	src->add_native_var( "WALK_DIRS", make_all< var_int_t >( WalkEntry::DIRS, src_id, idx ) );
 	src->add_native_var( "WALK_RECURSE", make_all< var_int_t >( WalkEntry::RECURSE, src_id, idx ) );
 
+	// <file>.seek()
 	src->add_native_var( "SEEK_SET", make_all< var_int_t >( SEEK_SET, src_id, idx ) );
 	src->add_native_var( "SEEK_CUR", make_all< var_int_t >( SEEK_CUR, src_id, idx ) );
 	src->add_native_var( "SEEK_END", make_all< var_int_t >( SEEK_END, src_id, idx ) );
 
+	// file descriptor flags
+	src->add_native_var( "O_RDONLY", make_all< var_int_t >( O_RDONLY, src_id, idx ) );
+	src->add_native_var( "O_WRONLY", make_all< var_int_t >( O_WRONLY, src_id, idx ) );
+	src->add_native_var( "O_RDWR", make_all< var_int_t >( O_RDWR, src_id, idx ) );
+	src->add_native_var( "O_APPEND", make_all< var_int_t >( O_APPEND, src_id, idx ) );
+	src->add_native_var( "O_CREAT", make_all< var_int_t >( O_CREAT, src_id, idx ) );
+	src->add_native_var( "O_DSYNC", make_all< var_int_t >( O_DSYNC, src_id, idx ) );
+	src->add_native_var( "O_EXCL", make_all< var_int_t >( O_EXCL, src_id, idx ) );
+	src->add_native_var( "O_NOCTTY", make_all< var_int_t >( O_NOCTTY, src_id, idx ) );
+	src->add_native_var( "O_NONBLOCK", make_all< var_int_t >( O_NONBLOCK, src_id, idx ) );
+#ifdef __linux__
+	src->add_native_var( "O_RSYNC", make_all< var_int_t >( O_RSYNC, src_id, idx ) );
+#endif
+	src->add_native_var( "O_SYNC", make_all< var_int_t >( O_SYNC, src_id, idx ) );
+	src->add_native_var( "O_TRUNC", make_all< var_int_t >( O_TRUNC, src_id, idx ) );
 	return true;
 }
 

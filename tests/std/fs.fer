@@ -13,7 +13,7 @@ sample comment block
 multiline
 */
 
-let file = fs.open(__SRC_PATH__);
+let file = fs.fopen(__SRC_PATH__);
 
 assert(file.lines().len() > 0);
 
