@@ -31,12 +31,9 @@ std::uintptr_t var_base_t::typefn_id() const { return m_type; }
 bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx )
 {
 	var_base_t * str_fn = nullptr;
-	if( attr_based() ) {
-		str_fn = attr_get( "str" );
-		if( str_fn == nullptr ) str_fn = vm.get_typefn( typefn_id(), "str", true );
-	} else {
-		str_fn = vm.get_typefn( typefn_id(), "str", false );
-	}
+	if( attr_based() ) str_fn = attr_get( "str" );
+	if( str_fn == nullptr ) str_fn = vm.get_typefn( this, "str" );
+
 	if( !str_fn ) {
 		vm.fail( this->src_id(), this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
 		return false;

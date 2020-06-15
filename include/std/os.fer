@@ -1,8 +1,10 @@
 mload('std/os');
 
+let fs = import('std/fs');
 let str = import('std/str');
 let vec = import('std/vec');
-let fs = import('std/fs');
+# stat function here
+let stat = import('std/stat').stat;
 
 let set_env = fn(var, val, overwrite = false) {
 	return set_env_native(var, val, overwrite);
