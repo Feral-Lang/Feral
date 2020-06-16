@@ -82,8 +82,65 @@ var_base_t * stat_native( vm_state_t & vm, const fn_data_t & fd )
 	return vm.nil;
 }
 
+var_base_t * stat_isreg( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISREG(mode) );
+}
+
+var_base_t * stat_isdir( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISDIR(mode) );
+}
+
+var_base_t * stat_ischr( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISCHR(mode) );
+}
+
+var_base_t * stat_isblk( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISBLK(mode) );
+}
+
+var_base_t * stat_isfifo( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISFIFO(mode) );
+}
+
+var_base_t * stat_islnk( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISLNK(mode) );
+}
+
+var_base_t * stat_issock( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_struct_t * st = STRUCT( fd.args[ 1 ] );
+	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
+	return make< var_bool_t >( S_ISSOCK(mode) );
+}
+
 INIT_MODULE( stat )
 {
-	vm.current_source()->add_native_fn( "stat_native", stat_native, 2 );
+	var_src_t * src = vm.current_source();
+	src->add_native_fn( "stat_native",   stat_native,  2 );
+	src->add_native_fn( "isreg_native",  stat_isreg,   1 );
+	src->add_native_fn( "isdir_native",  stat_isdir,   1 );
+	src->add_native_fn( "ischr_native",  stat_ischr,   1 );
+	src->add_native_fn( "isblk_native",  stat_isblk,   1 );
+	src->add_native_fn( "isfifo_native", stat_isfifo,  1 );
+	src->add_native_fn( "islnk_native",  stat_islnk,   1 );
+	src->add_native_fn( "issock_native", stat_issock,  1 );
 	return true;
 }

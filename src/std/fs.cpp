@@ -358,7 +358,9 @@ INIT_MODULE( fs )
 	src->add_native_var( "O_RDWR", make_all< var_int_t >( O_RDWR, src_id, idx ) );
 	src->add_native_var( "O_APPEND", make_all< var_int_t >( O_APPEND, src_id, idx ) );
 	src->add_native_var( "O_CREAT", make_all< var_int_t >( O_CREAT, src_id, idx ) );
+#if __linux__ || __APPLE__
 	src->add_native_var( "O_DSYNC", make_all< var_int_t >( O_DSYNC, src_id, idx ) );
+#endif
 	src->add_native_var( "O_EXCL", make_all< var_int_t >( O_EXCL, src_id, idx ) );
 	src->add_native_var( "O_NOCTTY", make_all< var_int_t >( O_NOCTTY, src_id, idx ) );
 	src->add_native_var( "O_NONBLOCK", make_all< var_int_t >( O_NONBLOCK, src_id, idx ) );
