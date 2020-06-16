@@ -1,3 +1,4 @@
+mload('std/stat');
 let lang = import('std/lang');
 
 let stat_t = lang.struct(
@@ -16,7 +17,13 @@ let stat_t = lang.struct(
 	blocks = 0
 );
 
-mload('std/stat');
+let isreg  in stat_t = fn() { return isreg_native(self);  };
+let isdir  in stat_t = fn() { return isdir_native(self);  };
+let ischr  in stat_t = fn() { return ischr_native(self);  };
+let isblk  in stat_t = fn() { return isblk_native(self);  };
+let isfifo in stat_t = fn() { return isfifo_native(self); };
+let islnk  in stat_t = fn() { return islnk_native(self);  };
+let issock in stat_t = fn() { return issock_native(self); };
 
 let stat = fn(of) {
 	let st = stat_t();
