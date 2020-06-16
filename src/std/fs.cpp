@@ -335,10 +335,10 @@ INIT_MODULE( fs )
 	vm.add_native_typefn< var_file_iterable_t >( "next", fs_file_iterable_next, 0, src_id, idx );
 
 	// file descriptor
-	src->add_native_fn( "open",  fs_fd_open,  2 );
-	src->add_native_fn( "read",  fs_fd_read,  2 );
-	src->add_native_fn( "write", fs_fd_write, 2 );
-	src->add_native_fn( "close", fs_fd_close, 1 );
+	src->add_native_fn( "open_native", fs_fd_open,  2 );
+	src->add_native_fn( "read",	   fs_fd_read,  2 );
+	src->add_native_fn( "write",	   fs_fd_write, 2 );
+	src->add_native_fn( "close",	   fs_fd_close, 1 );
 
 	// constants
 

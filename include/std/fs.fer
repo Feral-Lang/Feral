@@ -7,3 +7,7 @@ let fopen = fn(file, mode = 'r') {
 let walkdir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
 	return walkdir_native(dir, mode, regex);
 };
+
+let open = fn(name, mode = O_RDONLY) {
+	return open_native(name, mode);
+};
