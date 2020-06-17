@@ -1,0 +1,75 @@
+#!/usr/bin/env feral
+
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let sys = import('std/sys');
+let vec = import('std/vec');
+
+if sys.args.len() < 1 {
+	io.println('enter subcommand: l(ist)|a(dd)|d(elete)');
+	sys.exit(1);
+}
+
+let file_loc = os.get_env('HOME') + '/.notes.txt';
+
+
+let list = fn() {
+	let file = fs.fopen(file_loc, 'a+');
+	let i = 1;
+	file.seek(0, fs.SEEK_SET);
+	for line in file.each_line() {
+		io.println('[', i++, ']: ', line);
+	}
+};
+
+let add = fn(data) {
+	let file = fs.fopen(file_loc, 'a+');
+	io.fprintln(file, data);
+	io.println('>> ', data);
+};
+
+let delete = fn(id) {
+	let file = fs.fopen(file_loc, 'a+');
+	file.seek(0, fs.SEEK_SET);
+	let lines = file.lines();
+	if lines.empty() {
+		io.println('no notes present, cannot delete anything');
+		sys.exit(1);
+	}
+	if id == 0 || id > lines.len() {
+		io.println('invalid id: ', id, ', expected [', 1, lines.len(), ']');
+		return;
+	}
+	let data = lines[id - 1];
+	lines.erase(id - 1);
+	let file = fs.fopen(file_loc, 'w+');
+	for line in lines.each() {
+		io.fprintln(file, line);
+	}
+	io.println('>> ', data);
+};
+
+let subcmd = sys.args[0];
+
+if subcmd == 'l' || subcmd == 'list' {
+	list();
+} elif subcmd == 'a' || subcmd == 'add' {
+	if sys.args.len() < 2 {
+		io.println('expected item to be added, after add subcommand');
+		sys.exit(1);
+	}
+	let note = '';
+	for let i = 1; i < sys.args.len(); ++i { note += sys.args[i] + ' '; }
+	note.pop();
+	add(note);
+} elif subcmd == 'd' || subcmd == 'delete' {
+	if sys.args.len() < 2 {
+		io.println('expected item id to be deleted, after delete subcommand');
+		sys.exit(1);
+	}
+	delete(sys.args[1].int());
+} else {
+	io.println('invalid subcommand, possible options are: l(ist)|a(dd)|d(elete)');
+	sys.exit(1);
+}

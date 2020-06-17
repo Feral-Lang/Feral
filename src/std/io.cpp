@@ -51,7 +51,7 @@ var_base_t * println( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * fprint( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_file_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file argument for fflush, found: %s",
+		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file argument for fprint, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
@@ -73,7 +73,7 @@ var_base_t * fprint( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * fprintln( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_file_t >() ) {
-		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file argument for fflush, found: %s",
+		vm.fail( fd.args[ 1 ]->src_id(), fd.args[ 1 ]->idx(), "expected a file argument for fprintln, found: %s",
 			 vm.type_name( fd.args[ 1 ] ).c_str() );
 		return nullptr;
 	}
