@@ -45,12 +45,8 @@ int main( int argc, char ** argv )
 
 	std::string src_file = args[ "__main__" ];
 
-	if( src_file == "testdir" ) {
-		if( fs::exists( src_file + fmod_ext() ) ) {
-			src_file += fmod_ext();
-		} else {
-			src_file = feral_base + "/include/feral/" + src_file + fmod_ext();
-		}
+	if( src_file == "testdir" && !fs::exists( src_file ) ) {
+		src_file = feral_base + "/include/feral/" + src_file + fmod_ext();
 	} else if( src_file == "install" || src_file == "build" ) {
 		if( src_file == "install" ) code_args.insert( code_args.begin(), "install" );
 		src_file = std::string( "build" ) + fmod_ext();
@@ -59,10 +55,6 @@ int main( int argc, char ** argv )
 	if( src_file.empty() ) {
 		fprintf( stderr, "usage: %s [flags] <source file>\n", argv[ 0 ] );
 		return E_FAIL;
-	}
-
-	if( src_file.find( fmod_ext() ) == std::string::npos ) {
-		src_file += fmod_ext();
 	}
 
 	srcfile_t * main_src = fmod_load( src_file, flags, true, err, false );
