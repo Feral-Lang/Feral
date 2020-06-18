@@ -71,6 +71,61 @@ var_base_t * fs_open( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_file_t >( file, mode );
 }
 
+var_base_t * fs_walkdir( vm_state_t & vm, const fn_data_t & fd )
+{
+	std::vector< var_base_t * > v;
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for directory name, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for walk mode, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 3 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for file regex, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	std::string dir_str = STR( fd.args[ 1 ] )->get();
+	size_t flags = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
+	std::string regex_str = STR( fd.args[ 3 ] )->get();
+	std::regex regex( regex_str );
+	if( dir_str.size() > 0 && dir_str.back() != '/' ) dir_str += "/";
+	get_entries_internal( dir_str, v, flags, fd.src_id, fd.idx, regex );
+	return make< var_vec_t >( v, false );
+}
+
+var_base_t * fs_file_reopen( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_file_t * file = FILE( fd.args[ 0 ] );
+	if( file->get() && file->owner() ) fclose( file->get() );
+
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for file name, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for file open mode, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	const std::string & file_name = STR( fd.args[ 1 ] )->get();
+	const std::string & mode = STR( fd.args[ 2 ] )->get();
+	file->get() = fopen( file_name.c_str(), mode.c_str() );
+	if( !file->get() ) {
+		vm.fail( fd.src_id, fd.idx, "failed to open file '%s' in mode: %s",
+			 file_name.c_str(), mode.c_str() );
+		return nullptr;
+	}
+	file->mode() = mode;
+	file->owner() = true;
+	return fd.args[ 0 ];
+}
+
 var_base_t * fs_file_lines( vm_state_t & vm, const fn_data_t & fd )
 {
 	FILE * const file = FILE( fd.args[ 0 ] )->get();
@@ -181,33 +236,6 @@ var_base_t * fs_file_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	var_base_t * res = nullptr;
 	if( !it->next( res ) ) return vm.nil;
 	return res;
-}
-
-var_base_t * fs_walkdir( vm_state_t & vm, const fn_data_t & fd )
-{
-	std::vector< var_base_t * > v;
-	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "expected string argument for directory name, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
-		return nullptr;
-	}
-	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "expected int argument for walk mode, found: %s",
-			 vm.type_name( fd.args[ 2 ] ).c_str() );
-		return nullptr;
-	}
-	if( !fd.args[ 3 ]->istype< var_str_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "expected string argument for file regex, found: %s",
-			 vm.type_name( fd.args[ 2 ] ).c_str() );
-		return nullptr;
-	}
-	std::string dir_str = STR( fd.args[ 1 ] )->get();
-	size_t flags = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
-	std::string regex_str = STR( fd.args[ 3 ] )->get();
-	std::regex regex( regex_str );
-	if( dir_str.size() > 0 && dir_str.back() != '/' ) dir_str += "/";
-	get_entries_internal( dir_str, v, flags, fd.src_id, fd.idx, regex );
-	return make< var_vec_t >( v, false );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -327,6 +355,7 @@ INIT_MODULE( fs )
 	src->add_native_fn( "fopen_native", fs_open, 2 );
 	src->add_native_fn( "walkdir_native", fs_walkdir, 3 );
 
+	vm.add_native_typefn< var_file_t >( "reopen_native", fs_file_reopen, 2, src_id, idx );
 	vm.add_native_typefn< var_file_t >( "lines", fs_file_lines, 0, src_id, idx );
 	vm.add_native_typefn< var_file_t >( "each_line", fs_file_each_line, 0, src_id, idx );
 	vm.add_native_typefn< var_file_t >( "read_blocks", fs_file_read_blocks, 2, src_id, idx );
@@ -339,6 +368,9 @@ INIT_MODULE( fs )
 	src->add_native_fn( "read",	   fs_fd_read,  2 );
 	src->add_native_fn( "write",	   fs_fd_write, 2 );
 	src->add_native_fn( "close",	   fs_fd_close, 1 );
+
+	vm.register_type< var_file_t >( "file", src_id, idx );
+	vm.register_type< var_file_iterable_t >( "file_iterable", src_id, idx );
 
 	// constants
 
