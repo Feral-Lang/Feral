@@ -4,6 +4,10 @@ let fopen = fn(file, mode = 'r') {
 	return fopen_native(file, mode);
 };
 
+let reopen in file_t = fn(file, mode = 'r') {
+	return self.reopen_native(file, mode);
+};
+
 let walkdir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
 	return walkdir_native(dir, mode, regex);
 };

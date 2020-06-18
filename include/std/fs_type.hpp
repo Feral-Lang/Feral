@@ -33,8 +33,9 @@ public:
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	inline FILE * const get() const { return m_file; }
-	inline const std::string & mode() const { return m_mode; }
+	inline FILE *& get() { return m_file; }
+	inline std::string & mode() { return m_mode; }
+	inline bool & owner() { return m_owner; }
 };
 #define FILE( x ) static_cast< var_file_t * >( x )
 
