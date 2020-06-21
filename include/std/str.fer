@@ -1,5 +1,10 @@
 mload('std/str');
 
+let substr in str_t = fn(begin = 0, len = -1) {
+	if len == -1 { len = self.len(); }
+	return self.substr_native(begin, len);
+};
+
 let split in str_t = fn(delim = ':') {
 	return self.split_native(delim);
 };

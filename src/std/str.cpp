@@ -128,6 +128,40 @@ var_base_t * str_erase( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 0 ];
 }
 
+var_base_t * str_find( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected argument to be of type str for string.find(), found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	std::string & str = STR( fd.args[ 0 ] )->get();
+	std::string & what = STR( fd.args[ 1 ] )->get();
+	size_t pos = str.find( what );
+	if( pos == std::string::npos ) {
+		return make< var_int_t >( -1 );
+	}
+	return make< var_int_t >( pos );
+}
+
+var_base_t * str_substr( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected begin argument to be of type integer for string.erase(), found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected length argument to be of type integer for string.erase(), found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
+	size_t len = mpz_get_ui( INT( fd.args[ 2 ] )->get() );
+	std::string & str = STR( fd.args[ 0 ] )->get();
+	return make< var_str_t >( str.substr( pos, len ) );
+}
+
 var_base_t * str_last( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_int_t >( STR( fd.args[ 0 ] )->get().size() - 1 );
@@ -185,20 +219,21 @@ INIT_MODULE( str )
 {
 	var_src_t * src = vm.current_source();
 
-	vm.add_native_typefn< var_str_t >(     "len", str_size,   0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(   "empty", str_empty,  0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(   "front", str_front,  0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(    "back", str_back,   0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(    "push", str_push,   1, src_id, idx );
-	vm.add_native_typefn< var_str_t >(     "pop", str_pop,    0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(     "set", str_setat,  2, src_id, idx );
-	vm.add_native_typefn< var_str_t >(  "insert", str_insert, 2, src_id, idx );
-	vm.add_native_typefn< var_str_t >(   "erase", str_erase,  1, src_id, idx );
-	vm.add_native_typefn< var_str_t >( "lastidx", str_last,   0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(    "trim", str_trim,   0, src_id, idx );
-	vm.add_native_typefn< var_str_t >(   "upper", str_upper,  0, src_id, idx );
-
-	vm.add_native_typefn< var_str_t >( "split_native", str_split, 1, src_id, idx );
+	vm.add_native_typefn< var_str_t >(	     "len", str_size,   0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(         "empty", str_empty,  0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(         "front", str_front,  0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(          "back", str_back,   0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(          "push", str_push,   1, src_id, idx );
+	vm.add_native_typefn< var_str_t >(           "pop", str_pop,    0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(           "set", str_setat,  2, src_id, idx );
+	vm.add_native_typefn< var_str_t >(        "insert", str_insert, 2, src_id, idx );
+	vm.add_native_typefn< var_str_t >(         "erase", str_erase,  1, src_id, idx );
+	vm.add_native_typefn< var_str_t >(          "find", str_find,   1, src_id, idx );
+	vm.add_native_typefn< var_str_t >( "substr_native", str_substr, 2, src_id, idx );
+	vm.add_native_typefn< var_str_t >(       "lastidx", str_last,   0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(          "trim", str_trim,   0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(         "upper", str_upper,  0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(  "split_native", str_split,  1, src_id, idx );
 
 	vm.add_native_typefn< var_str_t >( "byt", byt, 0, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "chr", chr, 0, src_id, idx );
