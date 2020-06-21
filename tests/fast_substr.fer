@@ -1,0 +1,31 @@
+# similar to rabin-karp algorithm
+
+let io = import('std/io');
+let str = import('std/str');
+let vec = import('std/vec');
+
+let str = 'abracadabra';
+
+# substring
+let ss = 'abra';
+let ss_len = ss.len();
+let ss_hash = 0;
+for let i = 0; i < ss_len; ++i { ss_hash += ss[i].byt() * 103; }
+
+let locs = vec.new();
+let window = '';
+let hash = 0;
+for let i = 0; i < str.len(); ++i {
+	window += str[i];
+	hash += str[i].byt() * 103;
+	if window.len() < ss_len { continue; }
+	if window.len() > ss_len {
+		hash -= window.front().byt() * 103;
+		window.erase(0);
+	}
+	if hash == ss_hash && ss == window {
+		locs.push(i - ss_len + 1);
+	}
+}
+
+assert(locs == vec.new(0, 7));
