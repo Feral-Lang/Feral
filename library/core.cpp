@@ -101,11 +101,11 @@ INIT_MODULE( core )
 	const std::string & src_name = vm.current_source_file()->path();
 
 	// fundamental functions for builtin types
-	vm.add_native_typefn< var_all_t >( "_type_",     all_get_type,	  0, src_id, idx );
-	vm.add_native_typefn< var_all_t >( "_typestr_",  all_get_typestr, 0, src_id, idx );
-	vm.add_native_typefn< var_all_t >(     "==",     all_eq,       	  1, src_id, idx );
-	vm.add_native_typefn< var_all_t >(     "!=",     all_ne,       	  1, src_id, idx );
-	vm.add_native_typefn< var_all_t >(   "copy",     all_copy,     	  0, src_id, idx );
+	vm.add_native_typefn< var_all_t >(    "_type_", all_get_type,	 0, src_id, idx );
+	vm.add_native_typefn< var_all_t >( "_typestr_", all_get_typestr, 0, src_id, idx );
+	vm.add_native_typefn< var_all_t >(        "==", all_eq,       	 1, src_id, idx );
+	vm.add_native_typefn< var_all_t >(        "!=", all_ne,       	 1, src_id, idx );
+	vm.add_native_typefn< var_all_t >(      "copy", all_copy,     	 0, src_id, idx );
 
 	// to string
 	vm.add_native_typefn< var_all_t >(    "str", all_to_str,    0, src_id, idx );
@@ -165,10 +165,10 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_int_t >( "<<=", int_lshiftassn, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( ">>=", int_rshiftassn, 1, src_id, idx );
 
-	vm.add_native_typefn< var_int_t >( "**",  int_pow, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "++x", int_preinc, 0, src_id, idx );
+	vm.add_native_typefn< var_int_t >(  "**", int_pow,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "++x", int_preinc,  0, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "x++", int_postinc, 0, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "--x", int_predec, 0, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "--x", int_predec,  0, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "x--", int_postdec, 0, src_id, idx );
 
 	vm.add_native_typefn< var_int_t >( "u-", int_usub, 0, src_id, idx );
@@ -191,9 +191,9 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_flt_t >( "*=", flt_assn_mul, 1, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( "/=", flt_assn_div, 1, src_id, idx );
 
-	vm.add_native_typefn< var_flt_t >( "++x", flt_preinc, 0, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "++x", flt_preinc,  0, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( "x++", flt_postinc, 0, src_id, idx );
-	vm.add_native_typefn< var_flt_t >( "--x", flt_predec, 0, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "--x", flt_predec,  0, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( "x--", flt_postdec, 0, src_id, idx );
 
 	vm.add_native_typefn< var_flt_t >( "u-", flt_usub, 0, src_id, idx );
