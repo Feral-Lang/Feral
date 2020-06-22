@@ -14,6 +14,7 @@
 #include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include <limits.h>
 #include <sys/wait.h>
@@ -287,6 +288,31 @@ var_base_t * os_chmod( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( exec_internal( cmd ) );
 }
 
+var_base_t * os_mv( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for from, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+
+	if( !fd.args[ 2 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for to, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+
+	const char * from  = STR( fd.args[ 1 ] )->get().c_str();
+	const char * to = STR( fd.args[ 2 ] )->get().c_str();
+
+	if( std::rename( from, to ) < 0 ) {
+		vm.fail( fd.src_id, fd.idx, "failed to move with error: %s", strerror( errno ) );
+		return nullptr;
+	}
+
+	return make< var_int_t >( 0 );
+}
+
 INIT_MODULE( os )
 {
 	var_src_t * src = vm.current_source();
@@ -308,6 +334,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "rm", os_rm, 1, true );
 
 	src->add_native_fn( "cp", os_copy, 2, true );
+	src->add_native_fn( "mv", os_mv, 2 );
 
 	src->add_native_fn( "chmod_native", os_chmod, 3 );
 
