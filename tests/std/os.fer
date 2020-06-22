@@ -25,6 +25,10 @@ assert(os.get_cwd() == cwd);
 let dir = '__testdir__';
 os.mkdir(dir);
 assert(fs.exists(dir));
+os.mv(dir, '__moved_testdir__');
+assert(fs.exists('__moved_testdir__'));
+assert(!fs.exists(dir));
+os.mv('__moved_testdir__', dir);
 os.rm(dir);
 assert(!fs.exists(dir));
 
