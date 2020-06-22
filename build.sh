@@ -62,14 +62,6 @@ fi
 # we can delete that directory and get back to the original directory
 trap exit_handler INT
 
-# Create a temporary directory
-echo '[INFO] Creating temporary directory at ~/.feral-installer...'
-mkdir ~/.feral-installer && cd ~/.feral-installer
-
-# Clone the language source code
-echo '[INFO] Cloning required repositories...'
-git clone https://github.com/Feral-Lang/Feral.git
-
 build() {
     mkdir build && cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
@@ -79,10 +71,19 @@ build() {
     cd ..
 }
 
+if [ -z "$CI" ]; then
+    # Create a temporary directory
+    echo '[INFO] Creating temporary directory at ~/.feral-installer...'
+    mkdir ~/.feral-installer && cd ~/.feral-installer
+
+    # Clone the language source code
+    echo '[INFO] Cloning required repositories...'
+    git clone https://github.com/Feral-Lang/Feral.git
+    cd Feral
+fi
+
 echo '[INFO] Building language & standard library...'
-cd Feral
 build
-cd ..
 
 echo '[INFO] Done! Cleaning up...'
 rm -rf ~/.feral-installer
