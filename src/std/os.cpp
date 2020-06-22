@@ -307,7 +307,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "mkdir", os_mkdir, 1, true );
 	src->add_native_fn( "rm", os_rm, 1, true );
 
-	src->add_native_fn( "copy", os_copy, 2, true );
+	src->add_native_fn( "cp", os_copy, 2, true );
 
 	src->add_native_fn( "chmod_native", os_chmod, 3 );
 

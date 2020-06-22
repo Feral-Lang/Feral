@@ -29,7 +29,7 @@ os.rm(dir);
 assert(!fs.exists(dir));
 
 let cpfile = '__testcpfile__';
-os.copy(__SRC_PATH__, cpfile);
+os.cp(__SRC_PATH__, cpfile);
 assert(fs.exists(cpfile));
 os.rm(cpfile);
 assert(!fs.exists(cpfile));

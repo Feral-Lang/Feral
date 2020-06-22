@@ -1,6 +1,5 @@
 let vec = import('std/vec');
 
-# takes a vector
 let mergesort = fn(arr) {
 	if arr.len() <= 1 { return; }
 
