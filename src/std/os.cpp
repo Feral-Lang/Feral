@@ -304,8 +304,8 @@ var_base_t * os_mv( vm_state_t & vm, const fn_data_t & fd)
     const char * firstParam  = STR(fd.args[ 1 ])->get().c_str();
     const char * secondParam = STR(fd.args[ 2 ])->get().c_str();
 
-    if (std::rename(firstParam, secondParam) < 0) {
-        vm.fail( fd.src_id, fd.idx, strerror(errno) );
+    if ( std::rename( firstParam, secondParam ) < 0) {
+        vm.fail( fd.src_id, fd.idx, strerror( errno ) );
         return nullptr;
     }
 
@@ -333,7 +333,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "rm", os_rm, 1, true );
 
 	src->add_native_fn( "cp", os_copy, 2, true );
-    src->add_native_fn( "mv", os_mv, 2, true );
+    src->add_native_fn( "mv", os_mv, 2 );
 
 	src->add_native_fn( "chmod_native", os_chmod, 3 );
 
