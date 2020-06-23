@@ -84,6 +84,93 @@ LOGICI_FUNC( gt, > )
 LOGICI_FUNC( le, <= )
 LOGICI_FUNC( ge, >= )
 
+var_base_t * int_band( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_and( res->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return res;
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise and, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_bor( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_ior( res->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return res;
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise or, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_bxor( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_xor( res->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return res;
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise xor, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_bnot( vm_state_t & vm, const fn_data_t & fd )
+{
+	var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+	mpz_com( res->get(), INT( fd.args[ 0 ] )->get() );
+	return res;
+}
+
+var_base_t * int_bandassn( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		mpz_and( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return fd.args[ 0 ];
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise and-assn, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_borassn( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		mpz_ior( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return fd.args[ 0 ];
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise or-assn, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_bxorassn( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		mpz_xor( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return fd.args[ 0 ];
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int argument for int bitwise xor, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_bnotassn( vm_state_t & vm, const fn_data_t & fd )
+{
+	mpz_com( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get() );
+	return fd.args[ 0 ];
+}
+
+var_base_t * int_popcnt( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( mpz_popcount( INT( fd.args[ 0 ] )->get() ) );
+}
+
 var_base_t * int_eq( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( fd.args[ 1 ]->istype< var_int_t >() ) {

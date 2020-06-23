@@ -21,7 +21,6 @@
 
 var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::vector< var_base_t * > vec_val;
 	size_t reserve_cap = fd.args.size() - 1;
 	bool refs = false;
 	if( fd.assn_args_loc.find( "refs" ) != fd.assn_args_loc.end() ) {
@@ -42,6 +41,8 @@ var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 		}
 		reserve_cap = mpz_get_ui( INT( cap_var )->get() );
 	}
+	var_vec_t * res = make< var_vec_t >( std::vector< var_base_t * >{}, refs );
+	std::vector< var_base_t * > & vec_val = res->get();
 	vec_val.reserve( reserve_cap );
 	if( refs ) {
 		for( size_t i = 1; i < fd.args.size(); ++i ) {
@@ -53,12 +54,17 @@ var_base_t * vec_new( vm_state_t & vm, const fn_data_t & fd )
 			vec_val.push_back( fd.args[ i ]->copy( fd.src_id, fd.idx ) );
 		}
 	}
-	return make< var_vec_t >( vec_val, refs );
+	return res;
 }
 
 var_base_t * vec_size( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_int_t >( VEC( fd.args[ 0 ] )->get().size() );
+}
+
+var_base_t * vec_cap( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( VEC( fd.args[ 0 ] )->get().capacity() );
 }
 
 var_base_t * vec_empty( vm_state_t & vm, const fn_data_t & fd )
@@ -257,6 +263,7 @@ INIT_MODULE( vec )
 	src->add_native_fn( "new", vec_new, 0, true );
 
 	vm.add_native_typefn< var_vec_t >(     "len",    vec_size, 0, src_id, idx );
+	vm.add_native_typefn< var_vec_t >(     "cap",     vec_cap, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(   "empty",   vec_empty, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(   "front",   vec_front, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(    "back",    vec_back, 0, src_id, idx );
