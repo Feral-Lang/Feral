@@ -180,7 +180,6 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_int_t >( "==", int_eq, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "!=", int_ne, 1, src_id, idx );
 
-	// TODO: add tests
 	vm.add_native_typefn< var_int_t >( "&", int_band, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "|", int_bor,  1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "^", int_bxor, 1, src_id, idx );
@@ -189,7 +188,6 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_int_t >( "&=", int_bandassn, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "|=", int_borassn,  1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "^=", int_bxorassn, 1, src_id, idx );
-	vm.add_native_typefn< var_int_t >( "~=", int_bnotassn, 0, src_id, idx );
 
 	vm.add_native_typefn< var_int_t >( "popcnt", int_popcnt, 0, src_id, idx );
 
