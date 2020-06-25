@@ -32,3 +32,20 @@ assert(--4 == 3);
 assert(4-- == 4);
 
 assert(-5 != -(-5));
+
+# bitwise
+assert((5 & 2) == 0);
+assert((5 & 4) == 4);
+assert((5 | 2) == 7);
+assert((5 | 4) == 5);
+assert((5 ^ 2) == 7);
+assert((5 ^ 4) == 1);
+assert(~5 == -6);
+assert(~0 == -1);
+
+assert(((a = 5) &= b) == 0);
+assert(((a = 5) |= b) == 7);
+assert(((a = 5) ^= b) == 7);
+
+assert(5.popcnt() == 2);
+assert(0.popcnt() == 0);
