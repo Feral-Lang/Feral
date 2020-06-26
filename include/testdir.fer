@@ -4,6 +4,7 @@
 let io = import('std/io');
 let fs = import('std/fs');
 let os = import('std/os');
+let mp = import('std/multiproc');
 let vec = import('std/vec');
 let sys = import('std/sys');
 
@@ -14,6 +15,29 @@ if sys.args.empty() {
 
 let files = fs.walkdir(sys.args[0], fs.WALK_RECURSE, '(.*)\\.fer');
 let passed = 0, failed = 0;
+let tpool = vec.new(refs = true);
+let max_procs = mp.nproc();
+
+let wait_procs = fn(max_procs, with_valgrind) {
+	while tpool.len() >= max_procs {
+		for let i = 0; i < tpool.len(); ++i {
+			if !tpool[i].done() { continue; }
+			let t = tpool[i];
+			if t.res() != 0 {
+				++failed;
+				if with_valgrind {
+					io.cprintln('{r}failed {y}', files[ t.id() ], '{c} with valgrind{0}, {y}code{0}: {r}', t.res(),'{0}');
+				} else {
+					io.cprintln('{r}failed {y}', files[ t.id() ], '{0}, {y}code{0}: {r}', t.res(),'{0}');
+				}
+				io.fflush(io.stdout);
+			} else {
+				++passed;
+			}
+			tpool.erase(i--);
+		}
+	}
+};
 
 let valgrind = '';
 if sys.args.find('--valgrind') {
@@ -28,16 +52,12 @@ if sys.args.find('--valgrind') {
 }
 
 for file in files.each() {
-	io.cprint('{y}testing script {c}\'', file, '\' {0}... ');
-	let res = os.exec(valgrind + sys.self_bin + ' ' + file + ' >/dev/null');
-	if res == 0 {
-		io.cprintln('{g}pass{0}');
-		++passed;
-	} else {
-		io.cprintln('{r}fail{0}');
-		++failed;
-	}
+	wait_procs(max_procs, !valgrind.empty());
+	io.cprintln('{c}test{0}: {y}', file, '{0} ...');
+	io.fflush(io.stdout);
+	tpool.push(mp.new(valgrind + sys.self_bin + ' ' + file + ' >/dev/null'));
 }
+wait_procs(1, !valgrind.empty());
 
 io.cprintln('total: {y}', files.len(),
 	    '{0}, passed: {g}', passed,

@@ -27,7 +27,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 
 set(FERAL_VERSION_MAJOR 0)
 set(FERAL_VERSION_MINOR 0)
-set(FERAL_VERSION_PATCH 6)
+set(FERAL_VERSION_PATCH 7)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -317,6 +317,23 @@ install(TARGETS ${mod}
 	  COMPONENT Libraries
 )
 
+# thread
+set(mod "thread_type")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
 # vec
 set(mod "vec_type")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
@@ -425,6 +442,23 @@ install(TARGETS ${mod}
 set(mod "map")
 add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
 target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} map_type)
+set_target_properties(${mod}
+	PROPERTIES
+	PREFIX "libferal"
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/std"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS ${mod}
+	LIBRARY
+	  DESTINATION lib/feral/std
+	  COMPONENT Libraries
+)
+
+# multiproc
+set(mod "multiproc")
+add_library(${mod} SHARED "${PROJECT_SOURCE_DIR}/src/std/${mod}.cpp")
+target_link_libraries(${mod} feral-vm ${MPFR_LIBRARIES} ${GMP_LIBRARY} thread_type)
 set_target_properties(${mod}
 	PROPERTIES
 	PREFIX "libferal"
