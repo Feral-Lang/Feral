@@ -242,6 +242,8 @@ var_base_t * fs_file_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 ///////////////////////////////////////////////////// File Descriptor Functions ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: write tests
+
 // equivalent to open( path, O_WRONLY | O_CREAT | O_TRUNC, mode )
 var_base_t * fs_fd_create( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -305,6 +307,7 @@ var_base_t * fs_fd_read( vm_state_t & vm, const fn_data_t & fd )
 			 mpz_get_si( INT( fd.args[ 2 ] )->get() ), strerror( errno ) );
 		return nullptr;
 	}
+	bb->set_len( res );
 	return make< var_int_t >( res );
 }
 
@@ -322,7 +325,7 @@ var_base_t * fs_fd_write( vm_state_t & vm, const fn_data_t & fd )
 	}
 	var_bytebuffer_t * bb = BYTEBUFFER( fd.args[ 2 ] );
 	errno = 0;
-	ssize_t res = write( mpz_get_si( INT( fd.args[ 1 ] )->get() ), bb->get_buf(), bb->get_size() );
+	ssize_t res = write( mpz_get_si( INT( fd.args[ 1 ] )->get() ), bb->get_buf(), bb->get_len() );
 	if( res < 0 || errno != 0 ) {
 		vm.fail( fd.src_id, fd.idx, "failed to write to file descriptor: '%d', error: %s",
 			 mpz_get_si( INT( fd.args[ 2 ] )->get() ), strerror( errno ) );

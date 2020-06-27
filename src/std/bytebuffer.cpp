@@ -41,16 +41,33 @@ var_base_t * bytebuffer_resize( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 0 ];
 }
 
+var_base_t * bytebuffer_set_len( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for bytebuffer len, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	var_bytebuffer_t * self = BYTEBUFFER( fd.args[ 0 ] );
+	self->set_len( mpz_get_ui( INT( fd.args[ 1 ] )->get() ) );
+	return fd.args[ 0 ];
+}
+
 var_base_t * bytebuffer_size( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_int_t >( BYTEBUFFER( fd.args[ 0 ] )->get_size() );
 }
 
+var_base_t * bytebuffer_len( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( BYTEBUFFER( fd.args[ 0 ] )->get_len() );
+}
+
 var_base_t * bytebuffer_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_bytebuffer_t * self = BYTEBUFFER( fd.args[ 0 ] );
-	if( self->get_size() == 0 ) return make< var_str_t >( "" );
-	return make< var_str_t >( std::string( self->get_buf(), self->get_size() ) );
+	if( self->get_len() == 0 ) return make< var_str_t >( "" );
+	return make< var_str_t >( std::string( self->get_buf(), self->get_len() ) );
 }
 
 INIT_MODULE( bytebuffer )
@@ -58,8 +75,10 @@ INIT_MODULE( bytebuffer )
 	var_src_t * src = vm.current_source();
 	src->add_native_fn( "new_native", bytebuffer_new_native, 1 );
 
-	vm.add_native_typefn< var_bytebuffer_t >( "resize", bytebuffer_resize, 1, src_id, idx );
-	vm.add_native_typefn< var_bytebuffer_t >( "len",    bytebuffer_size,   0, src_id, idx );
-	vm.add_native_typefn< var_bytebuffer_t >( "str",    bytebuffer_to_str, 0, src_id, idx );
+	vm.add_native_typefn< var_bytebuffer_t >( "resize",  bytebuffer_resize,  1, src_id, idx );
+	vm.add_native_typefn< var_bytebuffer_t >( "set_len", bytebuffer_set_len, 1, src_id, idx );
+	vm.add_native_typefn< var_bytebuffer_t >( "cap",     bytebuffer_size,    0, src_id, idx );
+	vm.add_native_typefn< var_bytebuffer_t >( "len",     bytebuffer_len,     0, src_id, idx );
+	vm.add_native_typefn< var_bytebuffer_t >( "str",     bytebuffer_to_str,  0, src_id, idx );
 	return true;
 }
