@@ -57,6 +57,11 @@ var_base_t * map_len( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( MAP( fd.args[ 0 ] )->get().size() );
 }
 
+var_base_t * map_is_ref( vm_state_t & vm, const fn_data_t & fd )
+{
+	return MAP( fd.args[ 0 ] )->is_ref_map() ? vm.tru : vm.fals;
+}
+
 var_base_t * map_empty( vm_state_t & vm, const fn_data_t & fd )
 {
 	return MAP( fd.args[ 0 ] )->get().empty() ? vm.tru : vm.fals;
@@ -139,6 +144,7 @@ INIT_MODULE( map )
 	src->add_native_fn( "new", map_new, 0, true );
 
 	vm.add_native_typefn< var_map_t >(    "len", map_len,    0, src_id, idx );
+	vm.add_native_typefn< var_map_t >( "is_ref", map_is_ref, 0, src_id, idx );
 	vm.add_native_typefn< var_map_t >(  "empty", map_empty,  0, src_id, idx );
 	vm.add_native_typefn< var_map_t >( "insert", map_insert, 2, src_id, idx );
 	vm.add_native_typefn< var_map_t >(  "erase", map_erase,  1, src_id, idx );
