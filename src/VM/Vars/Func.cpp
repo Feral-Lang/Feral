@@ -112,7 +112,7 @@ var_base_t * var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > 
 			var_iref( arg.val );
 			map[ arg.name ] = arg.val;
 		}
-		vars->stash( m_kw_arg, make< var_map_t >( map ) );
+		vars->stash( m_kw_arg, make< var_map_t >( map, false ) );
 	}
 	if( vm::exec( vm, nullptr, m_body.feral.begin, m_body.feral.end ) == E_EXEC_FAIL ) {
 		goto fail;

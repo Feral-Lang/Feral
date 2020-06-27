@@ -15,7 +15,8 @@
 #include "std/map_type.hpp"
 
 var_map_iterable_t::var_map_iterable_t( var_map_t * map, const size_t & src_id, const size_t & idx )
-	: var_base_t( type_id< var_map_iterable_t >(), src_id, idx, false, false ), m_map( map ), m_curr( map->get().begin() )
+	: var_base_t( type_id< var_map_iterable_t >(), src_id, idx, false, false ), m_map( map ),
+	  m_curr( map->get().begin() )
 {
 	var_iref( m_map );
 }

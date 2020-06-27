@@ -126,6 +126,8 @@ template< typename T > inline void var_dref( T * & var )
 	}
 }
 
+// TODO: inline all getters/setters
+
 // dummy type to denote all other types
 class var_all_t : public var_base_t
 {
@@ -240,14 +242,17 @@ public:
 class var_map_t : public var_base_t
 {
 	std::unordered_map< std::string, var_base_t * > m_val;
+	bool m_refs;
 public:
-	var_map_t( const std::unordered_map< std::string, var_base_t * > & val, const size_t & src_id, const size_t & idx );
+	var_map_t( const std::unordered_map< std::string, var_base_t * > & val,
+		   const bool & refs, const size_t & src_id, const size_t & idx );
 	~var_map_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
 	std::unordered_map< std::string, var_base_t * > & get();
+	bool is_ref_map();
 };
 #define MAP( x ) static_cast< var_map_t * >( x )
 

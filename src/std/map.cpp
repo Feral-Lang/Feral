@@ -25,6 +25,16 @@ var_base_t * map_new( vm_state_t & vm, const fn_data_t & fd )
 		vm.fail( fd.src_id, fd.idx, "argument count must be even to create a map" );
 		return nullptr;
 	}
+	bool refs = false;
+	if( fd.assn_args_loc.find( "refs" ) != fd.assn_args_loc.end() ) {
+		var_base_t * refs_var = fd.assn_args[ fd.assn_args_loc.at( "refs" ) ].val;
+		if( !refs_var->istype< var_bool_t >() ) {
+			vm.fail( fd.src_id, fd.idx, "expected 'refs' named argument to be of type bool for map.new(), found: %s",
+				 vm.type_name( refs_var ).c_str() );
+			return nullptr;
+		}
+		refs = BOOL( refs_var )->get();
+	}
 	std::unordered_map< std::string, var_base_t * > map_val;
 	for( size_t i = 1; i < fd.args.size(); ++i ) {
 		std::string key;
@@ -32,9 +42,14 @@ var_base_t * map_new( vm_state_t & vm, const fn_data_t & fd )
 			return nullptr;
 		}
 		if( map_val.find( key ) != map_val.end() ) var_dref( map_val[ key ] );
-		map_val[ key ] = fd.args[ ++i ]->copy( fd.src_id, fd.idx );
+		if( refs ) {
+			var_iref( fd.args[ ++i ] );
+			map_val[ key ] = fd.args[ i ];
+		} else {
+			map_val[ key ] = fd.args[ ++i ]->copy( fd.src_id, fd.idx );
+		}
 	}
-	return make< var_map_t >( map_val );
+	return make< var_map_t >( map_val, refs );
 }
 
 var_base_t * map_len( vm_state_t & vm, const fn_data_t & fd )
@@ -57,8 +72,12 @@ var_base_t * map_insert( vm_state_t & vm, const fn_data_t & fd )
 	if( map.find( key ) != map.end() ) {
 		var_dref( map[ key ] );
 	}
-	var_iref( fd.args[ 2 ] );
-	map[ key ] = fd.args[ 2 ];
+	if( MAP( fd.args[ 0 ] )->is_ref_map() ) {
+		var_iref( fd.args[ 2 ] );
+		map[ key ] = fd.args[ 2 ];
+	} else {
+		map[ key ] = fd.args[ 2 ]->copy( fd.src_id, fd.idx );
+	}
 	return fd.args[ 0 ];
 }
 
