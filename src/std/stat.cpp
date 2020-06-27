@@ -86,49 +86,49 @@ var_base_t * stat_isreg( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISREG(mode) );
+	return S_ISREG( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_isdir( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISDIR(mode) );
+	return S_ISDIR( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_ischr( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISCHR(mode) );
+	return S_ISCHR( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_isblk( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISBLK(mode) );
+	return S_ISBLK( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_isfifo( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISFIFO(mode) );
+	return S_ISFIFO( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_islnk( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISLNK(mode) );
+	return S_ISLNK( mode ) ? vm.tru : vm.fals;
 }
 
 var_base_t * stat_issock( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * st = STRUCT( fd.args[ 1 ] );
 	int mode = mpz_get_si( INT( st->attr_get( "mode" ) )->get() );
-	return make< var_bool_t >( S_ISSOCK(mode) );
+	return S_ISSOCK( mode ) ? vm.tru : vm.fals;
 }
 
 INIT_MODULE( stat )

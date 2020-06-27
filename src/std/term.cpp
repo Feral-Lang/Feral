@@ -44,7 +44,7 @@ var_base_t * term_set_attrs( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	bool done = tcsetattr( mpz_get_si( INT( fd.args[ 1 ] )->get() ), TCSAFLUSH, & TERM( fd.args[ 2 ] )->get() ) != -1;
-	return make< var_bool_t >( done );
+	return done ? vm.tru : vm.fals;
 }
 
 INIT_MODULE( term )
