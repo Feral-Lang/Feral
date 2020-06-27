@@ -67,6 +67,11 @@ var_base_t * vec_cap( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( VEC( fd.args[ 0 ] )->get().capacity() );
 }
 
+var_base_t * vec_is_ref( vm_state_t & vm, const fn_data_t & fd )
+{
+	return VEC( fd.args[ 0 ] )->is_ref_vec() ? vm.tru : vm.fals;
+}
+
 var_base_t * vec_empty( vm_state_t & vm, const fn_data_t & fd )
 {
 	return VEC( fd.args[ 0 ] )->get().size() == 0 ? vm.tru : vm.fals;
@@ -264,6 +269,7 @@ INIT_MODULE( vec )
 
 	vm.add_native_typefn< var_vec_t >(     "len",    vec_size, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(     "cap",     vec_cap, 0, src_id, idx );
+	vm.add_native_typefn< var_vec_t >(  "is_ref",  vec_is_ref, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(   "empty",   vec_empty, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(   "front",   vec_front, 0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(    "back",    vec_back, 0, src_id, idx );
