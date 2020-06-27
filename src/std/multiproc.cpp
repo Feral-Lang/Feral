@@ -11,6 +11,8 @@
 	furnished to do so.
 */
 
+#include <sys/wait.h>
+
 #include "VM/VM.hpp"
 
 #include "std/thread_type.hpp"
