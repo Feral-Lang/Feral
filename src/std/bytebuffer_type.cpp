@@ -16,7 +16,8 @@
 #include "std/bytebuffer_type.hpp"
 
 var_bytebuffer_t::var_bytebuffer_t( const size_t & buf_size, const size_t & src_id, const size_t & idx )
-	: var_base_t( type_id< var_bytebuffer_t >(), src_id, idx, false, false ), m_size( buf_size ), m_buffer( nullptr )
+	: var_base_t( type_id< var_bytebuffer_t >(), src_id, idx, false, false ), m_buffer( nullptr ),
+	  m_size( buf_size ), m_len( 0 )
 {
 	if( m_size > 0 ) m_buffer = ( char * )malloc( m_size );
 }
@@ -40,10 +41,13 @@ void var_bytebuffer_t::set( var_base_t * from )
 		m_size = 0;
 		return;
 	}
-	if( m_size == 0 ) m_buffer = ( char * )malloc( tmp->m_size );
-	else m_buffer = ( char * )realloc( m_buffer, tmp->m_size );
+	if( m_size != tmp->m_size ) {
+		if( m_size == 0 ) m_buffer = ( char * )malloc( tmp->m_size );
+		else m_buffer = ( char * )realloc( m_buffer, tmp->m_size );
+	}
 	memcpy( m_buffer, tmp->m_buffer, tmp->m_size );
 	m_size = tmp->m_size;
+	m_len = tmp->m_len;
 }
 
 void var_bytebuffer_t::resize( const size_t & new_size )
@@ -58,5 +62,7 @@ void var_bytebuffer_t::resize( const size_t & new_size )
 	m_size = new_size;
 }
 
-char *& var_bytebuffer_t::get_buf() { return m_buffer; }
-const size_t & var_bytebuffer_t::get_size() { return m_size; }
+void var_bytebuffer_t::set_len( const size_t & new_len )
+{
+	m_len = new_len;
+}
