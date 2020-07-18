@@ -13,7 +13,7 @@
 
 #include "Compiler/CodeGen/Internal.hpp"
 
-bool stmt_single_operand_stmt_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_single_operand_stmt_t::gen_code( bcode_t & bc ) const
 {
 	size_t blk_till_pos = bc.size();
 

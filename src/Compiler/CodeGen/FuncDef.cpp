@@ -15,7 +15,7 @@
 
 static std::vector< std::string > fn_args;
 
-bool stmt_fn_def_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_fn_def_t::gen_code( bcode_t & bc ) const
 {
 	size_t body_till_pos = bc.size();
 	bc.addsz( idx(), OP_BODY_TILL, 0 );
@@ -31,7 +31,7 @@ bool stmt_fn_def_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 	return true;
 }
 
-bool stmt_fn_def_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_fn_def_args_t::gen_code( bcode_t & bc ) const
 {
 	std::string arg_info;
 	arg_info += m_kwarg ? "1" : "0";

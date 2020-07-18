@@ -13,7 +13,7 @@
 
 #include "Compiler/CodeGen/Internal.hpp"
 
-bool stmt_var_decl_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_var_decl_t::gen_code( bcode_t & bc ) const
 {
 	for( auto & vd : m_decls ) {
 		if( !vd->gen_code( bc ) ) return false;
@@ -21,7 +21,7 @@ bool stmt_var_decl_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) con
 	return true;
 }
 
-bool stmt_var_decl_base_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_var_decl_base_t::gen_code( bcode_t & bc ) const
 {
 	if( !m_rhs->gen_code( bc ) ) return false;
 	if( m_in && !m_in->gen_code( bc ) ) return false;

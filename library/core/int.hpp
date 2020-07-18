@@ -70,19 +70,75 @@ var_base_t * int_##name( vm_state_t & vm, const fn_data_t & fd )							\
 ARITHI_FUNC( add )
 ARITHI_FUNC( sub )
 ARITHI_FUNC( mul )
-ARITHI_FUNC( div )
 ARITHI_FUNC( mod )
 
 ARITHI_ASSN_FUNC( add )
 ARITHI_ASSN_FUNC( sub )
 ARITHI_ASSN_FUNC( mul )
-ARITHI_ASSN_FUNC( div )
 ARITHI_ASSN_FUNC( mod )
 
 LOGICI_FUNC( lt, < )
 LOGICI_FUNC( gt, > )
 LOGICI_FUNC( le, <= )
 LOGICI_FUNC( ge, >= )
+
+var_base_t * int_div( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		// rhs == 0
+		if( mpz_get_ui( INT( fd.args[ 1 ] )->get() ) == 0 ) {
+			vm.fail( fd.src_id, fd.idx, "division by zero" );
+			return nullptr;
+		}
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_div( res->get(), res->get(), INT( fd.args[ 1 ] )->get() );
+		return res;
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		// rhs == 0
+		if( mpz_get_ui( tmp ) == 0 ) {
+			vm.fail( fd.src_id, fd.idx, "division by zero" );
+			return nullptr;
+		}
+		mpz_div( res->get(), res->get(), tmp );
+		mpz_clear( tmp );
+		return res;
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int " STRINGIFY( name ) ", found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
+var_base_t * int_assn_div( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		// rhs == 0
+		if( mpz_get_ui( INT( fd.args[ 1 ] )->get() ) == 0 ) {
+			vm.fail( fd.src_id, fd.idx, "division by zero" );
+			return nullptr;
+		}
+		mpz_div( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), INT( fd.args[ 1 ] )->get() );
+		return fd.args[ 0 ];
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		// rhs == 0
+		if( mpz_get_ui( tmp ) == 0 ) {
+			vm.fail( fd.src_id, fd.idx, "division by zero" );
+			return nullptr;
+		}
+		mpz_div( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), tmp );
+		mpz_clear( tmp );
+		return fd.args[ 0 ];
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int " STRINGIFY( name ) "-assign, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
 
 var_base_t * int_band( vm_state_t & vm, const fn_data_t & fd )
 {

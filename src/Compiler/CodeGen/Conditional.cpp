@@ -13,7 +13,7 @@
 
 #include "Compiler/CodeGen/Internal.hpp"
 
-bool stmt_conditional_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_conditional_t::gen_code( bcode_t & bc ) const
 {
 	std::vector< size_t > body_jmps;
 	for( size_t i = 0; i < m_conds.size(); ++i ) {

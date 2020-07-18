@@ -15,7 +15,7 @@
 
 std::vector< std::string > fn_call_args;
 
-bool stmt_fn_call_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_fn_call_args_t::gen_code( bcode_t & bc ) const
 {
 	fn_call_args.emplace_back();
 
@@ -32,7 +32,7 @@ bool stmt_fn_call_args_t::gen_code( bcode_t & bc, const bool f1, const bool f2 )
 	return true;
 }
 
-bool stmt_fn_assn_arg_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_fn_assn_arg_t::gen_code( bcode_t & bc ) const
 {
 	m_rhs->gen_code( bc );
 	m_lhs->gen_code( bc );
