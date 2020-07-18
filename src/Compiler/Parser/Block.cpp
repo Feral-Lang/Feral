@@ -46,8 +46,16 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 			if( parse_while( ph, stmt ) != E_OK ) goto fail;
 		} else if( ph.accept( TOK_LBRACE ) ) {
 			if( parse_block( ph, stmt ) != E_OK ) goto fail;
-		} else if( parse_expr_cols( ph, stmt ) != E_OK ) {
-			goto fail;
+		} else {
+			if( parse_expr_cols_or_rbrace( ph, stmt ) == E_OK ) {
+				if( stmt->type() != GT_EXPR ) {
+					stmt = new stmt_expr_t( stmt, nullptr, nullptr, stmt->idx() );
+				}
+				static_cast< stmt_expr_t * >( stmt )->set_with_cols( ph.peakt() != TOK_RBRACE );
+				if( ph.peakt() == TOK_COLS ) ph.next();
+			} else {
+				goto fail;
+			}
 		}
 		stmts.push_back( stmt );
 	}
@@ -59,9 +67,13 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 			goto fail;
 		}
 		ph.next();
+	} else if( ph.peakt() == TOK_RBRACE ) {
+		err::set( E_PARSE_FAIL, idx, "cannot have end braces for top level block" );
+		goto fail;
 	}
 
 	loc = new stmt_block_t( stmts, idx );
+	static_cast< stmt_block_t * >( loc )->set_no_brace( !with_brace );
 	return E_OK;
 fail:
 	for( auto & stmt : stmts ) delete stmt;

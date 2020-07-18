@@ -46,6 +46,7 @@ enum TokType
 	TOK_TRUE,
 	TOK_FALSE,
 	TOK_NIL,
+	TOK_OR,
 
 	// Operators
 	TOK_ASSN,
@@ -70,9 +71,9 @@ enum TokType
 	TOK_UADD,
 	TOK_USUB,
 	// Logic
-	TOK_AND,
-	TOK_OR,
-	TOK_NOT,
+	TOK_LAND,
+	TOK_LOR,
+	TOK_LNOT,
 	// Comparison
 	TOK_EQ,
 	TOK_LT,

@@ -50,6 +50,10 @@ enum OpCodes
 	OP_PUSH_LOOP,	// marks a loop's beginning for variable stack
 	OP_POP_LOOP,	// marks a loop's ending for variable stack
 
+	// for 'or' keyword
+	OP_PUSH_JMP,	// marks the position to jump to if 'or' exists in an expression
+	OP_POP_JMP,	// unmarks the position to jump to if 'or' exists in an expression
+
 	_OP_LAST,
 };
 

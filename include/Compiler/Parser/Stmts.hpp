@@ -49,7 +49,7 @@ public:
 
 	// flags are used when necessary
 	// f1 = flag1, f2 = flag2
-	virtual bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const = 0;
+	virtual bool gen_code( bcode_t & bc ) const = 0;
 
 	size_t idx() const;
 	GramType type() const;
@@ -63,7 +63,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const lex::tok_t * val() const;
 };
@@ -71,15 +71,19 @@ public:
 class stmt_block_t : public stmt_base_t
 {
 	std::vector< const stmt_base_t * > m_stmts;
+	bool m_no_brace;
 public:
 	stmt_block_t( const std::vector< const stmt_base_t * > & stmts, const size_t & idx );
 	~stmt_block_t();
 
+	void set_no_brace( const bool & no_brace );
+
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const std::vector< const stmt_base_t * > & stmts() const;
+	const bool & no_brace() const;
 	void clear_stmts();
 };
 
@@ -89,20 +93,27 @@ class stmt_expr_t : public stmt_base_t
 {
 	const stmt_base_t * m_lhs, * m_rhs;
 	const lex::tok_t * m_oper;
+	stmt_base_t * m_or_blk;
 	size_t m_commas;
+	bool m_with_cols;
 public:
 	stmt_expr_t( const stmt_base_t * lhs, const lex::tok_t * oper,
 		     const stmt_base_t * rhs, const size_t & idx );
 	~stmt_expr_t();
 
+	void set_or_blk( stmt_base_t * or_blk );
+	void set_with_cols( const bool & with_cols );
+
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_base_t * lhs() const;
 	const stmt_base_t * rhs() const;
 	const lex::tok_t * oper() const;
+	const stmt_base_t * or_blk() const;
 	size_t commas() const;
+	const bool & with_cols() const;
 	void commas_set( const size_t & commas );
 };
 
@@ -117,7 +128,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_simple_t * lhs() const;
 	const stmt_base_t * in() const;
@@ -136,7 +147,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const std::vector< const stmt_var_decl_base_t * > & decls() const;
 };
@@ -153,7 +164,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const std::vector< const stmt_base_t * > & args() const;
 	const stmt_simple_t * kwarg() const;
@@ -171,7 +182,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_fn_def_args_t * args() const;
 	const stmt_block_t * body() const;
@@ -187,7 +198,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_simple_t * lhs() const;
 	const stmt_base_t * rhs() const;
@@ -206,7 +217,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const std::vector< const stmt_base_t * > & args() const;
 	const std::vector< const stmt_fn_assn_arg_t * > & assn_args() const;
@@ -232,7 +243,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const lex::tok_t * sost() const;
 	const stmt_base_t * operand() const;
@@ -254,7 +265,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const std::vector< conditional_t > & conds() const;
 };
@@ -271,7 +282,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_base_t * init() const;
 	const stmt_base_t * cond() const;
@@ -291,7 +302,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const lex::tok_t * loop_var() const;
 	const stmt_base_t * expr() const;
@@ -308,7 +319,7 @@ public:
 
 	void disp( const bool has_next ) const;
 
-	bool gen_code( bcode_t & bc, const bool f1 = false, const bool f2 = false ) const;
+	bool gen_code( bcode_t & bc ) const;
 
 	const stmt_base_t * expr() const;
 	const stmt_base_t * body() const;

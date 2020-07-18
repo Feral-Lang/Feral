@@ -35,6 +35,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"true",
 	"false",
 	"nil",
+	"or",
 
 	// Operators
 	"=",
@@ -272,6 +273,7 @@ static int classify_str( const std::string & str )
 	else if( str == TokStrs[ TOK_TRUE ] ) return TOK_TRUE;
 	else if( str == TokStrs[ TOK_FALSE ] ) return TOK_FALSE;
 	else if( str == TokStrs[ TOK_NIL ] ) return TOK_NIL;
+	else if( str == TokStrs[ TOK_OR ] ) return TOK_OR;
 
 	// if string begins with dot, it's an atom (str), otherwise an identifier
 	return str[ 0 ] == '.' ? TOK_STR : TOK_IDEN;
@@ -466,7 +468,7 @@ static int get_operator( const std::string & src, size_t & i )
 		if( i < src_len - 1 ) {
 			if( NEXT( src ) == '&' || NEXT( src ) == '=' ) {
 				++i;
-				if( CURR( src ) == '&' ) op_type = TOK_AND;
+				if( CURR( src ) == '&' ) op_type = TOK_LAND;
 				else if( CURR( src ) == '=' ) op_type = TOK_BAND_ASSN;
 				break;
 			}
@@ -476,7 +478,7 @@ static int get_operator( const std::string & src, size_t & i )
 		if( i < src_len - 1 ) {
 			if( NEXT( src ) == '|' || NEXT( src ) == '=' ) {
 				++i;
-				if( CURR( src ) == '|' ) op_type = TOK_OR;
+				if( CURR( src ) == '|' ) op_type = TOK_LOR;
 				else if( CURR( src ) == '=' ) op_type = TOK_BOR_ASSN;
 				break;
 			}
@@ -541,7 +543,7 @@ static int get_operator( const std::string & src, size_t & i )
 				SET_OP_TYPE_BRK( TOK_NE );
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_NOT );
+		SET_OP_TYPE_BRK( TOK_LNOT );
 	case '^':
 		if( i < src_len - 1 ) {
 			if( NEXT( src ) == '=' ) {

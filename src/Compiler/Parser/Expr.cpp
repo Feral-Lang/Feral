@@ -33,6 +33,26 @@ fail:
 	return E_PARSE_FAIL;
 }
 
+// does NOT consume semicolon or RBRACE
+Errors parse_expr_cols_or_rbrace( phelper_t & ph, stmt_base_t * & loc )
+{
+	if( parse_expr( ph, loc ) != E_OK ) {
+		goto fail;
+	}
+	if( !ph.accept( TOK_COLS, TOK_RBRACE ) ) {
+		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected semicolon at the end of expression, found: '%s'",
+			 TokStrs[ ph.peakt() ] );
+		goto fail;
+	}
+	return E_OK;
+fail:
+	if( loc ) {
+		delete loc;
+		loc = nullptr; // ensures that the caller does not try deleting it too
+	}
+	return E_PARSE_FAIL;
+}
+
 Errors parse_expr( phelper_t & ph, stmt_base_t * & loc )
 {
 	return parse_expr_16( ph, loc );
@@ -140,6 +160,7 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 {
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
 	const lex::tok_t * oper = nullptr;
+	stmt_base_t * or_blk = nullptr;
 
 	size_t idx = ph.peak()->pos;
 
@@ -160,7 +181,21 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 		lhs = new stmt_expr_t( lhs, oper, rhs, idx );
 		rhs = nullptr;
 	}
+
+	if( ph.accept( TOK_OR ) ) {
+		ph.next();
+		if( parse_block( ph, or_blk ) != E_OK ) {
+			goto fail;
+		}
+	}
+
 	loc = lhs;
+	if( or_blk == nullptr ) return E_OK;
+
+	if( loc->type() != GT_EXPR ) {
+		loc = new stmt_expr_t( lhs, nullptr, nullptr, idx );
+	}
+	static_cast< stmt_expr_t * >( loc )->set_or_blk( or_blk );
 	return E_OK;
 fail:
 	if( lhs ) delete lhs;
@@ -181,7 +216,7 @@ Errors parse_expr_13( phelper_t & ph, stmt_base_t * & loc )
 		goto fail;
 	}
 
-	while( ph.accept( TOK_OR ) ) {
+	while( ph.accept( TOK_LOR ) ) {
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();
@@ -212,7 +247,7 @@ Errors parse_expr_12( phelper_t & ph, stmt_base_t * & loc )
 		goto fail;
 	}
 
-	while( ph.accept( TOK_AND ) ) {
+	while( ph.accept( TOK_LAND ) ) {
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();
@@ -496,7 +531,7 @@ Errors parse_expr_03( phelper_t & ph, stmt_base_t * & loc )
 	// add operators in vector in reverse order
 	while( ph.accept( TOK_XINC, TOK_XDEC ) ||
 	       ph.accept( TOK_ADD, TOK_SUB ) ||
-	       ph.accept( TOK_NOT, TOK_BNOT ) ) {
+	       ph.accept( TOK_LNOT, TOK_BNOT ) ) {
 		if( ph.peakt() == TOK_XINC ) ph.sett( TOK_INCX );
 		else if( ph.peakt() == TOK_XDEC ) ph.sett( TOK_DECX );
 		else if( ph.peakt() == TOK_ADD ) ph.sett( TOK_UADD );

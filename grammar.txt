@@ -11,13 +11,14 @@ STATEMENT = VAR_DECL
 	| EXPR_COLS
 
 EXPR_COLS = EXPR ';'
+EXPR_COLS_OR_RBRACE = EXPR [';' '}']
 EXPR = L16
 
 L16 = L15 [',' L15]*
 L15 = L14 ['=' L14]*
 L14 = L13 [['+=' '-=' '*='
 	    '/=' '%=' '<<=' '>>='
-	    '&=' '|=' '^='] L13]*
+	    '&=' '|=' '^='] L13]* ['or' BLOCK]*
 L13 = L12 ['||' L12]*
 L12 = L11 ['&&' L11]*
 L11 = L10 ['|' L10]*

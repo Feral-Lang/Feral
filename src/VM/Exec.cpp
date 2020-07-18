@@ -35,6 +35,8 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	std::vector< fn_assn_arg_t > assn_args;
 	std::unordered_map< std::string, size_t > assn_args_loc;
 
+	std::vector< size_t > jmps;
+
 	if( !custom_bcode ) vars->push_fn();
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
@@ -288,6 +290,11 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
 			if( !mem_call ) var_dref( fn_base );
+			if( jmps.size() > 0 ) {
+				i = jmps.back() - 1;
+				jmps.pop_back();
+				break;
+			}
 			goto fail;
 		}
 		case OP_ATTR: {
@@ -332,6 +339,14 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			i = op.data.sz - 1;
 			break;
 		}
+		case OP_PUSH_JMP: {
+			jmps.push_back( op.data.sz );
+			break;
+		}
+		case OP_POP_JMP: {
+			jmps.pop_back();
+			break;
+		}
 		// NOOP
 		case _OP_LAST: {
 			break;
@@ -340,6 +355,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	}
 
 done:
+	assert( jmps.size() == 0 );
 	if( !custom_bcode ) vars->pop_fn();
 	return vm.exit_code;
 fail:

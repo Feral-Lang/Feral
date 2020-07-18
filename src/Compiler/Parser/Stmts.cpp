@@ -51,16 +51,18 @@ const lex::tok_t * stmt_simple_t::val() const { return m_val; }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 stmt_block_t::stmt_block_t( const std::vector< const stmt_base_t * > & stmts, const size_t & idx )
-	: stmt_base_t( GT_BLOCK, idx ), m_stmts( stmts ) {}
+	: stmt_base_t( GT_BLOCK, idx ), m_stmts( stmts ), m_no_brace( false ) {}
 stmt_block_t::~stmt_block_t()
 {
 	for( auto & s : m_stmts ) delete s;
 }
 
+void stmt_block_t::set_no_brace( const bool & no_brace ) { m_no_brace = no_brace; }
+
 void stmt_block_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Block at: %p\n", this );
+	io::print( has_next, "Block at: %p (top level: %s)\n", this, m_no_brace ? "yes" : "no" );
 	for( size_t i = 0; i < m_stmts.size(); ++i ) {
 		m_stmts[ i ]->disp( i != m_stmts.size() - 1 );
 	}
@@ -68,6 +70,7 @@ void stmt_block_t::disp( const bool has_next ) const
 }
 
 const std::vector< const stmt_base_t * > & stmt_block_t::stmts() const { return m_stmts; }
+const bool & stmt_block_t::no_brace() const { return m_no_brace; }
 
 void stmt_block_t::clear_stmts() { m_stmts.clear(); }
 
@@ -78,24 +81,32 @@ void stmt_block_t::clear_stmts() { m_stmts.clear(); }
 stmt_expr_t::stmt_expr_t( const stmt_base_t * lhs, const lex::tok_t * oper,
 			  const stmt_base_t * rhs, const size_t & idx )
 	: stmt_base_t( GT_EXPR, idx ), m_lhs( lhs ),
-	  m_rhs( rhs ), m_oper( oper ), m_commas( 0 ) {}
+	  m_rhs( rhs ), m_oper( oper ), m_or_blk( nullptr ),
+	  m_commas( 0 ), m_with_cols( false ) {}
 
 stmt_expr_t::~stmt_expr_t()
 {
 	if( m_lhs ) delete m_lhs;
 	if( m_rhs ) delete m_rhs;
+	if( m_or_blk ) delete m_or_blk;
 }
+
+void stmt_expr_t::set_or_blk( stmt_base_t * or_blk ) { m_or_blk = or_blk; }
+void stmt_expr_t::set_with_cols( const bool & with_cols ) { m_with_cols = with_cols; }
 
 const stmt_base_t * stmt_expr_t::lhs() const { return m_lhs; }
 const stmt_base_t * stmt_expr_t::rhs() const { return m_rhs; }
 const lex::tok_t * stmt_expr_t::oper() const { return m_oper; }
+const stmt_base_t * stmt_expr_t::or_blk() const { return m_or_blk; }
 size_t stmt_expr_t::commas() const { return m_commas; }
+const bool & stmt_expr_t::with_cols() const { return m_with_cols; }
 void stmt_expr_t::commas_set( const size_t & commas ) { m_commas = commas; }
 
 void stmt_expr_t::disp( const bool has_next ) const
 {
 	io::tadd( has_next );
-	io::print( has_next, "Expression at: %p (commas: %zu)\n", this, m_commas );
+	io::print( has_next, "Expression at: %p (commas: %zu) (with semicolon: %s)\n",
+		   this, m_commas, m_with_cols ? "yes" : "no" );
 
 	io::tadd( m_lhs != nullptr || m_rhs != nullptr );
 	io::print( m_lhs != nullptr || m_rhs != nullptr,
@@ -107,12 +118,17 @@ void stmt_expr_t::disp( const bool has_next ) const
 		m_lhs->disp( false );
 		io::trem();
 	}
-	io::tadd( false );
 	if( m_rhs != nullptr ) {
-		io::print( false, "RHS:\n" );
+		io::tadd( m_or_blk != nullptr );
+		io::print( m_or_blk != nullptr, "RHS:\n" );
 		m_rhs->disp( false );
+		io::trem();
 	}
-
+	io::tadd( false );
+	if( m_or_blk != nullptr ) {
+		io::print( false, "Or Block:\n" );
+		m_or_blk->disp( false );
+	}
 	io::trem( 2 );
 }
 

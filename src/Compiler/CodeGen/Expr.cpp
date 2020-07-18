@@ -18,20 +18,23 @@
 // used for AND and OR operations - all locations from where to jump
 static std::vector< size_t > jmp_locs;
 
-// f1 is used to denote top level in a nested expression (false = it is top level)
-// f2 is true when the expression is independent (not part of condition or something)
-// this is required for ULOAD operation
-bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
+bool stmt_expr_t::gen_code( bcode_t & bc ) const
 {
 	size_t before_jmp_locs_count = jmp_locs.size();
 
-	m_lhs->gen_code( bc, m_lhs->type() == GT_EXPR );
+	size_t or_jmp_pos = 0;
+	if( m_or_blk ) {
+		or_jmp_pos = bc.size();
+		bc.addsz( m_or_blk->idx(), OP_PUSH_JMP, 0 );
+	}
+
+	m_lhs->gen_code( bc );
 
 	if( !m_oper ) goto done;
 
-	if( m_oper->type == TOK_AND || m_oper->type == TOK_OR ) {
+	if( m_oper->type == TOK_LAND || m_oper->type == TOK_LOR ) {
 		jmp_locs.push_back( bc.size() );
-		bc.addsz( m_oper->pos, m_oper->type == TOK_AND ? OP_JMPF : OP_JMPT, 0 );
+		bc.addsz( m_oper->pos, m_oper->type == TOK_LAND ? OP_JMPF : OP_JMPT, 0 );
 	}
 
 	if( m_oper->type == TOK_ADD ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
@@ -48,7 +51,7 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 
 	else if( m_oper->type == TOK_POW ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
-	else if( m_oper->type == TOK_NOT ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
+	else if( m_oper->type == TOK_LNOT ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
 	else if( m_oper->type == TOK_BAND ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 	else if( m_oper->type == TOK_BOR )  bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
@@ -85,10 +88,10 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 
 	// dot is handled in the all operators section
 	if( m_rhs && m_oper->type != TOK_DOT ) {
-		m_rhs->gen_code( bc, m_rhs->type() == GT_EXPR );
+		m_rhs->gen_code( bc );
 	}
 
-	if( m_oper->type == TOK_AND || m_oper->type == TOK_OR ) {
+	if( m_oper->type == TOK_LAND || m_oper->type == TOK_LOR ) {
 		size_t curr_sz = bc.size();
 		for( size_t i = before_jmp_locs_count; i < jmp_locs.size(); ++i ) {
 			bc.updatesz( jmp_locs[ i ], curr_sz );
@@ -116,6 +119,15 @@ bool stmt_expr_t::gen_code( bcode_t & bc, const bool f1, const bool f2 ) const
 		bc.adds( m_oper->pos, OP_MEM_FNCL, ODT_STR, m_rhs ? "00" : "0" );
 	}
 done:
-	if( f2 ) bc.add( idx(), OP_ULOAD );
+	if( m_or_blk ) {
+		bc.addsz( m_or_blk->idx(), OP_POP_JMP, 0 );
+		size_t bypass_or_blk_pos = bc.size();
+		bc.addsz( m_or_blk->idx(), OP_JMP, 0 );
+		bc.updatesz( or_jmp_pos, bc.size() );
+		m_or_blk->gen_code( bc );
+		bc.updatesz( bypass_or_blk_pos, bc.size() );
+	}
+
+	if( m_with_cols ) bc.add( idx(), OP_ULOAD );
 	return true;
 }

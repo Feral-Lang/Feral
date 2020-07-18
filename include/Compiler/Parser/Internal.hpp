@@ -20,6 +20,7 @@
 Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace = true );
 
 Errors parse_expr_cols( phelper_t & ph, stmt_base_t * & loc );
+Errors parse_expr_cols_or_rbrace( phelper_t & ph, stmt_base_t * & loc ); // consider expression done on right brace
 Errors parse_expr( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr_16( phelper_t & ph, stmt_base_t * & loc );
 Errors parse_expr_15( phelper_t & ph, stmt_base_t * & loc );

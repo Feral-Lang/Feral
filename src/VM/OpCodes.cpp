@@ -46,6 +46,10 @@ const char * OpCodeStrs[ _OP_LAST ] = {
 	// for loops
 	"PUSH_LOOP",	// marks a loop's beginning for variable stack
 	"POP_LOOP",	// marks a loop's ending for variable stack
+
+	// for 'or' keyword as of right now
+	"OP_PUSH_JMP",	// marks the position to jump to if 'or' exists in an expression
+	"OP_POP_JMP",	// unmarks the position to jump to if 'or' exists in an expression
 };
 
 const char * OpDataTypeStrs[ _ODT_LAST ] = {
