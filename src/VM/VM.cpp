@@ -25,7 +25,7 @@
 // env: FERAL_PATHS
 vm_state_t::vm_state_t( const std::string & self_bin, const std::string & self_base,
 			const std::vector< std::string > & args, const size_t & flags )
-	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
+	: exit_called( false ), exit_code( 0 ), exec_flags( flags ), except_count( 0 ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
 	  dlib( new dyn_lib_t() ), m_self_bin( self_bin ), m_self_base( self_base ),
@@ -242,14 +242,20 @@ bool vm_state_t::load_core_mods()
 	return true;
 }
 
-void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * msg, ... ) const
+void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * msg, ... )
 {
 	va_list vargs;
 	va_start( vargs, msg );
-	for( auto & src : all_srcs ) {
-		if( src.second->src()->id() == src_id ) {
-			src.second->src()->fail( idx, msg, vargs );
+	if( this->except_count == 0 ) {
+		for( auto & src : all_srcs ) {
+			if( src.second->src()->id() == src_id ) {
+				src.second->src()->fail( idx, msg, vargs );
+			}
 		}
+	} else {
+		static char err[ 4096 ];
+		vsprintf( err, msg, vargs );
+		fail_push( new var_str_t( err, src_id, idx ), false );
 	}
 	va_end( vargs );
 }

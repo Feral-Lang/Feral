@@ -1,1 +1,22 @@
+let sys = import('std/sys');
+
 assert('some string'._typestr_() == 'str');
+
+# panic
+let div = fn(x, y) {
+	if y == 0 {
+		panic('div by zero');
+	}
+	return x / y;
+};
+
+let x = div(5, 0) or e {
+	10 / 0 or e2 {
+		assert(e == 'div by zero');
+		assert(e2 == 'division by zero');
+		20 # set 20 as the value
+	}
+};
+assert(x == 20);
+assert(!sys.var_exists('e2'));
+assert(!sys.var_exists('e'));

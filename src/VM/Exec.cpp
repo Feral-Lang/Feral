@@ -281,7 +281,9 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			args.insert( args.begin(), in_base );
 			res = fn_base->call( vm, args, assn_args, assn_args_loc, op.src_id, op.idx );
 			if( !res ) {
-				vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				if( vm.except_count == 0 ) {
+					vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				}
 				goto fncall_fail;
 			}
 			if( !res->istype< var_nil_t >() ) {
@@ -299,9 +301,11 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			if( jmps.size() > 0 ) {
 				i = jmps.back().pos - 1;
 				if( jmps.back().name ) {
-					// TODO: vars->stash( jmps.back().name, <val> );
+					vars->stash( jmps.back().name, vm.fail_top() );
 				}
 				jmps.pop_back();
+				--vm.except_count;
+				vm.fail_pop();
 				break;
 			}
 			goto fail;
@@ -351,6 +355,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		case OP_PUSH_JMP: {
 			// name is set in the next instruction
 			jmps.push_back( { nullptr, op.data.sz } );
+			++vm.except_count;
 			break;
 		}
 		case OP_PUSH_JMPN: {
@@ -359,6 +364,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		}
 		case OP_POP_JMP: {
 			jmps.pop_back();
+			--vm.except_count;
 			break;
 		}
 		// NOOP
