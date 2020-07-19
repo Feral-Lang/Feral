@@ -161,6 +161,7 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
 	const lex::tok_t * oper = nullptr;
 	stmt_base_t * or_blk = nullptr;
+	const lex::tok_t * or_blk_var = nullptr;
 
 	size_t idx = ph.peak()->pos;
 
@@ -184,6 +185,10 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 
 	if( ph.accept( TOK_OR ) ) {
 		ph.next();
+		if( ph.accept( TOK_IDEN ) ) {
+			or_blk_var = ph.peak();
+			ph.next();
+		}
 		if( parse_block( ph, or_blk ) != E_OK ) {
 			goto fail;
 		}
@@ -195,7 +200,7 @@ Errors parse_expr_14( phelper_t & ph, stmt_base_t * & loc )
 	if( loc->type() != GT_EXPR ) {
 		loc = new stmt_expr_t( lhs, nullptr, nullptr, idx );
 	}
-	static_cast< stmt_expr_t * >( loc )->set_or_blk( or_blk );
+	static_cast< stmt_expr_t * >( loc )->set_or_blk( or_blk, or_blk_var );
 	return E_OK;
 fail:
 	if( lhs ) delete lhs;

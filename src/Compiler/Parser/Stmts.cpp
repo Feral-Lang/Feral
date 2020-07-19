@@ -91,13 +91,14 @@ stmt_expr_t::~stmt_expr_t()
 	if( m_or_blk ) delete m_or_blk;
 }
 
-void stmt_expr_t::set_or_blk( stmt_base_t * or_blk ) { m_or_blk = or_blk; }
+void stmt_expr_t::set_or_blk( stmt_base_t * or_blk, const lex::tok_t * or_blk_var ) { m_or_blk = or_blk; m_or_blk_var = or_blk_var; }
 void stmt_expr_t::set_with_cols( const bool & with_cols ) { m_with_cols = with_cols; }
 
 const stmt_base_t * stmt_expr_t::lhs() const { return m_lhs; }
 const stmt_base_t * stmt_expr_t::rhs() const { return m_rhs; }
 const lex::tok_t * stmt_expr_t::oper() const { return m_oper; }
 const stmt_base_t * stmt_expr_t::or_blk() const { return m_or_blk; }
+const lex::tok_t * stmt_expr_t::or_blk_var() const { return m_or_blk_var; }
 size_t stmt_expr_t::commas() const { return m_commas; }
 const bool & stmt_expr_t::with_cols() const { return m_with_cols; }
 void stmt_expr_t::commas_set( const size_t & commas ) { m_commas = commas; }
@@ -126,7 +127,7 @@ void stmt_expr_t::disp( const bool has_next ) const
 	}
 	io::tadd( false );
 	if( m_or_blk != nullptr ) {
-		io::print( false, "Or Block:\n" );
+		io::print( false, "Or Block (var: %s):\n", m_or_blk_var ? m_or_blk_var->data.c_str() : "<none>" );
 		m_or_blk->disp( false );
 	}
 	io::trem( 2 );

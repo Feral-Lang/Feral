@@ -26,6 +26,7 @@ bool stmt_expr_t::gen_code( bcode_t & bc ) const
 	if( m_or_blk ) {
 		or_jmp_pos = bc.size();
 		bc.addsz( m_or_blk->idx(), OP_PUSH_JMP, 0 );
+		if( m_or_blk_var ) bc.adds( m_or_blk->idx(), OP_PUSH_JMPN, ODT_STR, m_or_blk_var->data );
 	}
 
 	m_lhs->gen_code( bc );
