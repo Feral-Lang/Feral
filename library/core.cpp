@@ -56,6 +56,12 @@ var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 1 ];
 }
 
+var_base_t * panic( vm_state_t & vm, const fn_data_t & fd )
+{
+	vm.fail_push( fd.args[ 1 ] );
+	return nullptr;
+}
+
 var_base_t * load_module( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_base_t * mod_var = fd.args[ 1 ];
@@ -127,9 +133,10 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_str_t >(    "int", str_to_int,    0, src_id, idx );
 
 	// global required
-	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module }, src_id, idx ), false );
-	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file }, src_id, idx ), false );
-	vm.gadd( "ref",    new var_fn_t( src_name, { "" }, {}, { .native = reference }, src_id, idx ), false );
+	vm.gadd( "ref",    new var_fn_t( src_name, { "" }, {}, { .native = reference },	     src_id, idx ), false );
+	vm.gadd( "panic",  new var_fn_t( src_name, { "" }, {}, { .native = panic }, 	     src_id, idx ), false );
+	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module },    src_id, idx ), false );
+	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file },    src_id, idx ), false );
 	vm.gadd( "__ismainsrc__", new var_fn_t( src_name, {}, {}, { .native = is_main_src }, src_id, idx ), false );
 
 	// core type functions
