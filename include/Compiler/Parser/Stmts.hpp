@@ -94,6 +94,7 @@ class stmt_expr_t : public stmt_base_t
 	const stmt_base_t * m_lhs, * m_rhs;
 	const lex::tok_t * m_oper;
 	stmt_base_t * m_or_blk;
+	const lex::tok_t * m_or_blk_var;
 	size_t m_commas;
 	bool m_with_cols;
 public:
@@ -101,7 +102,7 @@ public:
 		     const stmt_base_t * rhs, const size_t & idx );
 	~stmt_expr_t();
 
-	void set_or_blk( stmt_base_t * or_blk );
+	void set_or_blk( stmt_base_t * or_blk, const lex::tok_t * or_blk_var );
 	void set_with_cols( const bool & with_cols );
 
 	void disp( const bool has_next ) const;
@@ -112,6 +113,7 @@ public:
 	const stmt_base_t * rhs() const;
 	const lex::tok_t * oper() const;
 	const stmt_base_t * or_blk() const;
+	const lex::tok_t * or_blk_var() const;
 	size_t commas() const;
 	const bool & with_cols() const;
 	void commas_set( const size_t & commas );

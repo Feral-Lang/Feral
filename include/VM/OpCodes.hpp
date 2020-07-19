@@ -52,6 +52,7 @@ enum OpCodes
 
 	// for 'or' keyword
 	OP_PUSH_JMP,	// marks the position to jump to if 'or' exists in an expression
+	OP_PUSH_JMPN,	// sets the variable name for last jump instruction (must occur after OP_PUSH_JMP)
 	OP_POP_JMP,	// unmarks the position to jump to if 'or' exists in an expression
 
 	_OP_LAST,

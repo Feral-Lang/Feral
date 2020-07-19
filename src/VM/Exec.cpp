@@ -16,6 +16,12 @@
 #include "VM/Consts.hpp"
 #include "VM/Vars.hpp"
 
+struct jump_data_t
+{
+	const char * name;
+	size_t pos;
+};
+
 namespace vm
 {
 
@@ -35,7 +41,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	std::vector< fn_assn_arg_t > assn_args;
 	std::unordered_map< std::string, size_t > assn_args_loc;
 
-	std::vector< size_t > jmps;
+	std::vector< jump_data_t > jmps;
 
 	if( !custom_bcode ) vars->push_fn();
 
@@ -291,7 +297,10 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			for( auto & arg : assn_args ) var_dref( arg.val );
 			if( !mem_call ) var_dref( fn_base );
 			if( jmps.size() > 0 ) {
-				i = jmps.back() - 1;
+				i = jmps.back().pos - 1;
+				if( jmps.back().name ) {
+					// TODO: vars->stash( jmps.back().name, <val> );
+				}
 				jmps.pop_back();
 				break;
 			}
@@ -340,7 +349,12 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			break;
 		}
 		case OP_PUSH_JMP: {
-			jmps.push_back( op.data.sz );
+			// name is set in the next instruction
+			jmps.push_back( { nullptr, op.data.sz } );
+			break;
+		}
+		case OP_PUSH_JMPN: {
+			jmps.back().name = op.data.s;
 			break;
 		}
 		case OP_POP_JMP: {

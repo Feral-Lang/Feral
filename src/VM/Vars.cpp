@@ -165,7 +165,7 @@ void vars_t::blk_add( const size_t & count )
 {
 	m_fn_vars[ m_fn_stack ]->inc_top( count );
 	for( auto & s : m_stash ) {
-		m_fn_vars[ m_fn_stack ]->add( s.first, s.second, true );
+		m_fn_vars[ m_fn_stack ]->add( s.first, s.second, false );
 	}
 	m_stash.clear();
 }
@@ -191,6 +191,7 @@ void vars_t::pop_fn()
 
 void vars_t::stash( const std::string & name, var_base_t * val )
 {
+	var_iref( val );
 	m_stash[ name ] = val;
 }
 
