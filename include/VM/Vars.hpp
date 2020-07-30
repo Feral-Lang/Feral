@@ -96,7 +96,7 @@ public:
 	void push_fn();
 	void pop_fn();
 
-	void stash( const std::string & name, var_base_t * val );
+	void stash( const std::string & name, var_base_t * val, const bool & iref = true );
 	void unstash();
 
 	inline void push_loop() { m_fn_vars[ m_fn_stack ]->push_loop(); }

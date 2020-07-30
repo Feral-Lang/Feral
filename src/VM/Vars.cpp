@@ -189,14 +189,15 @@ void vars_t::pop_fn()
 	--m_fn_stack;
 }
 
-void vars_t::stash( const std::string & name, var_base_t * val )
+void vars_t::stash( const std::string & name, var_base_t * val, const bool & iref )
 {
-	var_iref( val );
+	if( iref ) var_iref( val );
 	m_stash[ name ] = val;
 }
 
 void vars_t::unstash()
 {
+	for( auto & s : m_stash ) var_dref( s.second );
 	m_stash.clear();
 }
 

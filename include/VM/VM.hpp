@@ -22,6 +22,7 @@
 #include "SrcFile.hpp"
 #include "Vars.hpp"
 #include "VMStack.hpp"
+#include "VMFailStack.hpp"
 
 #define _STRINGIZE(x) #x
 #define STRINGIFY(x) _STRINGIZE(x)
@@ -67,7 +68,7 @@ struct vm_state_t
 	size_t exec_flags;
 
 	// vm fail stack
-	std::vector< std::deque< var_base_t * > > fails;
+	vm_failstack_t fails;
 
 	src_stack_t src_stack;
 	all_srcs_t all_srcs;

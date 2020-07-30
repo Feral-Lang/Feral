@@ -71,7 +71,7 @@ var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * panic( vm_state_t & vm, const fn_data_t & fd )
 {
-	vm.fails.back().push_back( fd.args[ 1 ] );
+	vm.fails.push( fd.args[ 1 ] );
 	return nullptr;
 }
 
