@@ -65,8 +65,9 @@ struct vm_state_t
 	bool exit_called;
 	size_t exit_code;
 	size_t exec_flags;
-	// each size_t defines if the corresponding exec function can handle vm.fail or not
-	size_t except_count;
+
+	// vm fail stack
+	std::vector< std::deque< var_base_t * > > fails;
 
 	src_stack_t src_stack;
 	all_srcs_t all_srcs;
@@ -138,11 +139,6 @@ struct vm_state_t
 	std::string type_name( const std::uintptr_t & type );
 	std::string type_name( const var_base_t * val );
 
-	// vm fail handling
-	inline void fail_push( var_base_t * obj, const bool & iref = true ) { if( iref ) var_iref( obj ); m_fail_queue.push_back( obj ); }
-	inline var_base_t * fail_top() { return m_fail_queue.front(); }
-	inline void fail_pop( const bool & dref = true ) { if( dref ) var_dref( m_fail_queue.back() ); m_fail_queue.pop_front(); }
-
 	inline const std::string & self_bin() const { return m_self_bin; }
 	inline const std::string & self_base() const { return m_self_base; }
 
@@ -165,8 +161,6 @@ private:
 	std::unordered_map< std::uintptr_t, std::string > m_typenames;
 	// all functions to call before unloading dlls
 	std::unordered_map< std::string, mod_deinit_fn_t > m_dll_deinit_fns;
-	// vm fail stack
-	std::deque< var_base_t * > m_fail_queue;
 	// path where feral binary exists (used by sys.self_bin())
 	std::string m_self_bin;
 	// parent directory of where feral binary exists (used by sys.self_base())
