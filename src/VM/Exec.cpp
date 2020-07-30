@@ -299,16 +299,15 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			if( !jmps.empty() && !vm.exit_called ) {
 				i = jmps.back().pos - 1;
 				if( jmps.back().name ) {
-					if( !vm.fails.back().empty() ) {
-						vars->stash( jmps.back().name, vm.fails.back().front() );
+					if( !vm.fails.backempty() ) {
+						vars->stash( jmps.back().name, vm.fails.pop( false ), false );
 					} else {
 						vars->stash( jmps.back().name,
 							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
 					}
 				}
 				jmps.pop_back();
-				for( auto & var : vm.fails.back() ) var_dref( var );
-				vm.fails.pop_back();
+				vm.fails.blkr();
 				break;
 			}
 			goto fail;
@@ -329,6 +328,20 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			break;
 		attr_fail:
 			var_dref( in_base );
+			if( !jmps.empty() && !vm.exit_called ) {
+				i = jmps.back().pos - 1;
+				if( jmps.back().name ) {
+					if( !vm.fails.backempty() ) {
+						vars->stash( jmps.back().name, vm.fails.pop( false ), false );
+					} else {
+						vars->stash( jmps.back().name,
+							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
+					}
+				}
+				jmps.pop_back();
+				vm.fails.blkr();
+				break;
+			}
 			goto fail;
 		}
 		case OP_RET: {
@@ -358,7 +371,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		case OP_PUSH_JMP: {
 			// name is set in the next instruction
 			jmps.push_back( { nullptr, op.data.sz } );
-			vm.fails.push_back( std::deque< var_base_t * >{} );
+			vm.fails.blka();
 			break;
 		}
 		case OP_PUSH_JMPN: {
@@ -367,8 +380,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		}
 		case OP_POP_JMP: {
 			jmps.pop_back();
-			for( auto & var : vm.fails.back() ) var_dref( var );
-			vm.fails.pop_back();
+			vm.fails.blkr();
 			break;
 		}
 		// NOOP

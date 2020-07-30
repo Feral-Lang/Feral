@@ -255,7 +255,7 @@ void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * m
 	} else {
 		static char err[ 4096 ];
 		vsprintf( err, msg, vargs );
-		fails.back().push_back( new var_str_t( err, src_id, idx ) );
+		fails.push( new var_str_t( err, src_id, idx ), false );
 	}
 	va_end( vargs );
 }
