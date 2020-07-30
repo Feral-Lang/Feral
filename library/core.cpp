@@ -56,9 +56,22 @@ var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 1 ];
 }
 
+// var_base_t * throw( vm_state_t & vm, const fn_data_t & fd )
+// {
+// 	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+// 		vm.fail( fd.src_id, fd.idx, "expected argument to be of type string, found: %s",
+// 			 vm.type_name( fd.args[ 1 ] ).c_str() );
+// 		return nullptr;
+// 	}
+// 	vm.exit_called = true;
+// 	vm.exit_code = 1;
+// 	vm.fail( fd.src_id, fd.idx, "panic: %s", STR( fd.args[ 1 ] )->get().c_str() );
+// 	return nullptr;
+// }
+
 var_base_t * panic( vm_state_t & vm, const fn_data_t & fd )
 {
-	vm.fail_push( fd.args[ 1 ] );
+	vm.fails.back().push_back( fd.args[ 1 ] );
 	return nullptr;
 }
 
@@ -134,6 +147,7 @@ INIT_MODULE( core )
 
 	// global required
 	vm.gadd( "ref",    new var_fn_t( src_name, { "" }, {}, { .native = reference },	     src_id, idx ), false );
+	// vm.gadd( "throw",  new var_fn_t( src_name, { "" }, {}, { .native = _throw }, 	     src_id, idx ), false );
 	vm.gadd( "panic",  new var_fn_t( src_name, { "" }, {}, { .native = panic }, 	     src_id, idx ), false );
 	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module },    src_id, idx ), false );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file },    src_id, idx ), false );

@@ -281,9 +281,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			args.insert( args.begin(), in_base );
 			res = fn_base->call( vm, args, assn_args, assn_args_loc, op.src_id, op.idx );
 			if( !res ) {
-				if( vm.except_count == 0 ) {
-					vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
-				}
+				vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
 				goto fncall_fail;
 			}
 			if( !res->istype< var_nil_t >() ) {
@@ -298,14 +296,19 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
 			if( !mem_call ) var_dref( fn_base );
-			if( jmps.size() > 0 ) {
+			if( !jmps.empty() && !vm.exit_called ) {
 				i = jmps.back().pos - 1;
 				if( jmps.back().name ) {
-					vars->stash( jmps.back().name, vm.fail_top() );
+					if( !vm.fails.back().empty() ) {
+						vars->stash( jmps.back().name, vm.fails.back().front() );
+					} else {
+						vars->stash( jmps.back().name,
+							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
+					}
 				}
 				jmps.pop_back();
-				--vm.except_count;
-				vm.fail_pop();
+				for( auto & var : vm.fails.back() ) var_dref( var );
+				vm.fails.pop_back();
 				break;
 			}
 			goto fail;
@@ -355,7 +358,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		case OP_PUSH_JMP: {
 			// name is set in the next instruction
 			jmps.push_back( { nullptr, op.data.sz } );
-			++vm.except_count;
+			vm.fails.push_back( std::deque< var_base_t * >{} );
 			break;
 		}
 		case OP_PUSH_JMPN: {
@@ -364,7 +367,8 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		}
 		case OP_POP_JMP: {
 			jmps.pop_back();
-			--vm.except_count;
+			for( auto & var : vm.fails.back() ) var_dref( var );
+			vm.fails.pop_back();
 			break;
 		}
 		// NOOP
