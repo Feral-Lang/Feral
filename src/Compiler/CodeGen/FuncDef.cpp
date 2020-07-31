@@ -20,6 +20,7 @@ bool stmt_fn_def_t::gen_code( bcode_t & bc ) const
 	size_t body_till_pos = bc.size();
 	bc.addsz( idx(), OP_BODY_TILL, 0 );
 	if( !m_body->gen_code( bc ) ) return false;
+	if( bc.get().back().op != OP_RET ) bc.addb( idx(), OP_RET, false );
 	bc.updatesz( body_till_pos, bc.size() );
 
 	if( m_args ) {

@@ -17,6 +17,8 @@ let x = div(5, 0) or e {
 		20 # set 20 as the value
 	}
 };
+let y = div(div(12, 0) or { 10 }, 10);
 assert(x == 20);
+assert(y == 1);
 assert(!sys.var_exists('e2'));
 assert(!sys.var_exists('e'));

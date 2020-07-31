@@ -16,6 +16,8 @@
 
 #include "Parser/Internal.hpp"
 
+// TODO: add checks for incorrect position of continue and break statements
+
 namespace parser
 {
 
