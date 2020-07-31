@@ -2,10 +2,10 @@ let sys = import('std/sys');
 
 assert('some string'._typestr_() == 'str');
 
-# panic
+# raise
 let div = fn(x, y) {
 	if y == 0 {
-		panic('div by zero');
+		raise('div by zero');
 	}
 	return x / y;
 };
