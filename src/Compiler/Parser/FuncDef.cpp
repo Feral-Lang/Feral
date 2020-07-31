@@ -51,6 +51,7 @@ rparen:
 post_args:
 	if( !ph.accept( TOK_LBRACE ) ) {
 		err::set( E_PARSE_FAIL, ph.peak()->pos, "expected left brace for body of function, found: '%s'", TokStrs[ ph.peakt() ] );
+		goto fail;
 	}
 	if( parse_block( ph, body ) != E_OK ) {
 		fprintf( stderr, "failed to parse block for function\n" );
