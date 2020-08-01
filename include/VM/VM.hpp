@@ -145,6 +145,9 @@ struct vm_state_t
 
 	void fail( const size_t & src_id, const size_t & idx, const char * msg, ... );
 
+	// msg can be nullptr
+	void fail( const size_t & src_id, const size_t & idx, var_base_t * val, const char * msg, const bool & iref = true );
+
 	bool load_core_mods();
 private:
 	// file loading function

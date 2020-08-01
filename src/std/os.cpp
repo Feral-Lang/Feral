@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/wait.h>
+#include <sys/errno.h> // errno
 
 #include "VM/VM.hpp"
 
@@ -157,6 +158,16 @@ var_base_t * os_get_name( vm_state_t & vm, const fn_data_t & fd )
 	os_str = "bsd";
 #endif
 	return make< var_str_t >( os_str );
+}
+
+var_base_t * os_strerr( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected integer argument for destination directory, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	return make< var_str_t >( strerror( mpz_get_si( INT( fd.args[ 1 ] )->get() ) ) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -326,6 +337,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "install", install, 2 );
 
 	src->add_native_fn( "os_get_name_native", os_get_name );
+	src->add_native_fn( "strerr", os_strerr, 1 );
 
 	src->add_native_fn( "get_cwd", os_get_cwd );
 	src->add_native_fn( "set_cwd", os_set_cwd, 1 );

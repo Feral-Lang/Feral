@@ -59,9 +59,10 @@ var_base_t * stat_native( vm_state_t & vm, const fn_data_t & fd )
 	struct stat _stat;
 	int res = stat( STR( fd.args[ 2 ] )->get().c_str(), & _stat );
 	if( res != 0 ) {
-		vm.fail( fd.args[ 2 ]->src_id(), fd.args[ 2 ]->idx(),
-			 "stat for '%s' failed with error: '%s'",
-			 STR( fd.args[ 2 ] )->get().c_str(), strerror( errno ) );
+		// vm.fail( fd.args[ 2 ]->src_id(), fd.args[ 2 ]->idx(),
+		// 	 "stat for '%s' failed with error: '%s'",
+		// 	 STR( fd.args[ 2 ] )->get().c_str(), strerror( errno ) );
+		vm.fail( fd.src_id, fd.idx, new var_int_t( errno, fd.src_id, fd.idx ), strerror( errno ), false );
 		return nullptr;
 	}
 
