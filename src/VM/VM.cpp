@@ -250,6 +250,7 @@ void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * m
 		for( auto & src : all_srcs ) {
 			if( src.second->src()->id() == src_id ) {
 				src.second->src()->fail( idx, msg, vargs );
+				break;
 			}
 		}
 	} else {
@@ -260,6 +261,25 @@ void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * m
 	va_end( vargs );
 }
 
+void vm_state_t::fail( const size_t & src_id, const size_t & idx, var_base_t * val, const char * msg, const bool & iref )
+{
+	if( iref ) var_iref( val );
+
+	if( fails.empty() || this->exit_called ) {
+		for( auto & src : all_srcs ) {
+			if( src.second->src()->id() == src_id ) {
+				std::string data;
+				val->to_str( * this, data, src_id, idx );
+				var_dref( val );
+				if( msg ) src.second->src()->fail( idx, "%s (%s)", msg, data.c_str() );
+				else src.second->src()->fail( idx, data.c_str() );
+				break;
+			}
+		}
+	} else {
+		fails.push( val, false );
+	}
+}
 
 const char * nmod_ext()
 {

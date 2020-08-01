@@ -71,7 +71,7 @@ var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * raise( vm_state_t & vm, const fn_data_t & fd )
 {
-	vm.fails.push( fd.args[ 1 ] );
+	vm.fail( fd.src_id, fd.idx, fd.args[ 1 ], "raised error" );
 	return nullptr;
 }
 

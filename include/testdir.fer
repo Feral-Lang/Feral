@@ -7,9 +7,21 @@ let os = import('std/os');
 let mp = import('std/multiproc');
 let vec = import('std/vec');
 let sys = import('std/sys');
+let stat = import('std/stat');
 
 if sys.args.empty() {
 	io.println('Usage: ', sys.self_bin, ' ', __SRC_PATH__, ' <directory>');
+	sys.exit(1);
+}
+
+let st = stat.stat(sys.args[0]) or err {
+	io.println('error: stat failed on directory: ', os.strerr(err));
+	sys.exit(1);
+	nil # unreachable
+};
+
+if !st.isdir() {
+	io.println('error: entered path is not a directory');
 	sys.exit(1);
 }
 
