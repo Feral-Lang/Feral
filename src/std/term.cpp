@@ -17,7 +17,7 @@
 
 #include "std/term_type.hpp"
 
-static struct termios mode_orig;
+static struct termios attrs_orig;
 
 var_base_t * term_get_attrs( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -51,20 +51,20 @@ INIT_MODULE( term )
 {
 	var_src_t * src = vm.current_source();
 
-	tcgetattr( STDIN_FILENO, & mode_orig );
+	tcgetattr( STDIN_FILENO, & attrs_orig );
 
-	struct termios mode_raw = mode_orig;
-	mode_raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
-	mode_raw.c_oflag &= ~( OPOST );
-	mode_raw.c_cflag |= ( CS8 );
-	mode_raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
-	mode_raw.c_cc[ VMIN ] = 1;
-	mode_raw.c_cc[ VTIME ] = 0;
-	src->add_native_var( "mode_orig", make_all< var_term_t >( mode_orig, src_id, idx ) );
-	src->add_native_var( "mode_raw", make_all< var_term_t >( mode_raw, src_id, idx ) );
+	struct termios attrs_raw = attrs_orig;
+	attrs_raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
+	attrs_raw.c_oflag &= ~( OPOST );
+	attrs_raw.c_cflag |= ( CS8 );
+	attrs_raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
+	attrs_raw.c_cc[ VMIN ] = 1;
+	attrs_raw.c_cc[ VTIME ] = 0;
+	src->add_native_var( "attrs_orig", make_all< var_term_t >( attrs_orig, src_id, idx ) );
+	src->add_native_var( "attrs_raw", make_all< var_term_t >( attrs_raw, src_id, idx ) );
 
-	src->add_native_fn( "get_mode", term_get_attrs, 1 );
-	src->add_native_fn( "set_mode", term_set_attrs, 2 );
+	src->add_native_fn( "get_attrs", term_get_attrs, 1 );
+	src->add_native_fn( "set_attrs", term_set_attrs, 2 );
 
 	src->add_native_var( "fd_stdin",  make_all< var_int_t >( STDIN_FILENO,  src_id, idx ) );
 	src->add_native_var( "fd_stdout", make_all< var_int_t >( STDOUT_FILENO, src_id, idx ) );

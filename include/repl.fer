@@ -14,7 +14,7 @@ let printlnflush = fn(data...) {
 };
 
 io.println('starting repl ', term.fd_stdin);
-term.set_mode(term.fd_stdin, term.mode_raw);
+term.set_attrs(term.fd_stdin, term.attrs_raw);
 io.println('running repl\r');
 
 let lines = vec.new();
@@ -56,4 +56,4 @@ while io.readch(term.fd_stdin, ch) > 0 {
 	printflush(ch);
 }
 
-term.set_mode(term.fd_stdin, term.mode_orig);
+term.set_attrs(term.fd_stdin, term.attrs_orig);

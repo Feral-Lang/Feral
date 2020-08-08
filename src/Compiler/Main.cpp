@@ -44,15 +44,16 @@ int main( int argc, char ** argv )
 	feral_bin = fs::abs_path( env::get_proc_path(), & feral_base, true );
 
 	std::string src_file = args[ "__main__" ];
+	if( src_file.empty() ) src_file = "repl";
 
-	if( src_file == "testdir" && !fs::exists( src_file ) ) {
+	if( ( src_file == "testdir" || src_file == "repl" ) && !fs::exists( src_file ) ) {
 		src_file = feral_base + "/include/feral/" + src_file + fmod_ext();
 	} else if( src_file == "install" || src_file == "build" ) {
 		if( src_file == "install" ) code_args.insert( code_args.begin(), "install" );
 		src_file = std::string( "build" ) + fmod_ext();
 	}
 
-	if( src_file.empty() ) {
+	if( src_file.empty() || flags & OPT_H ) {
 		fprintf( stderr, "usage: %s [flags] <source file>\n", argv[ 0 ] );
 		return E_FAIL;
 	}
