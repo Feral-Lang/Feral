@@ -86,8 +86,8 @@ let struct_obj3 = struct_t(b = 30); # a = 10, b = 30
 
 To install `Feral`, the following packages are required:
 * CMake (build system - for compiling the project)
-* LibGMP (with C++ support - libgmpxx)
-* LibMPFR (floating point numbers)
+* LibGMP (large integers)
+* LibMPFR (large floating point numbers)
 
 **Note**: Feral doesn't yet support Windows.
 
