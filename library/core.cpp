@@ -17,8 +17,9 @@
 #include "core/flt.hpp"
 #include "core/str.hpp"
 
-#include "core/to_str.hpp"
 #include "core/to_int.hpp"
+#include "core/to_flt.hpp"
+#include "core/to_str.hpp"
 
 #include "VM/VM.hpp"
 
@@ -55,19 +56,6 @@ var_base_t * reference( vm_state_t & vm, const fn_data_t & fd )
 	fd.args[ 1 ]->set_load_as_ref();
 	return fd.args[ 1 ];
 }
-
-// var_base_t * throw( vm_state_t & vm, const fn_data_t & fd )
-// {
-// 	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
-// 		vm.fail( fd.src_id, fd.idx, "expected argument to be of type string, found: %s",
-// 			 vm.type_name( fd.args[ 1 ] ).c_str() );
-// 		return nullptr;
-// 	}
-// 	vm.exit_called = true;
-// 	vm.exit_code = 1;
-// 	vm.fail( fd.src_id, fd.idx, "raise: %s", STR( fd.args[ 1 ] )->get().c_str() );
-// 	return nullptr;
-// }
 
 var_base_t * raise( vm_state_t & vm, const fn_data_t & fd )
 {
@@ -145,9 +133,15 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_flt_t >(    "int", flt_to_int,    0, src_id, idx );
 	vm.add_native_typefn< var_str_t >(    "int", str_to_int,    0, src_id, idx );
 
+	// to float
+	vm.add_native_typefn< var_nil_t >(  "flt", nil_to_flt,  0, src_id, idx );
+	vm.add_native_typefn< var_bool_t >( "flt", bool_to_flt, 0, src_id, idx );
+	vm.add_native_typefn< var_int_t >(  "flt", int_to_flt,  0, src_id, idx );
+	vm.add_native_typefn< var_flt_t >(  "flt", flt_to_flt,  0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(  "flt", str_to_flt,  1, src_id, idx );
+
 	// global required
 	vm.gadd( "ref",    new var_fn_t( src_name, { "" }, {}, { .native = reference },	     src_id, idx ), false );
-	// vm.gadd( "throw",  new var_fn_t( src_name, { "" }, {}, { .native = _throw }, 	     src_id, idx ), false );
 	vm.gadd( "raise",  new var_fn_t( src_name, { "" }, {}, { .native = raise }, 	     src_id, idx ), false );
 	vm.gadd( "mload",  new var_fn_t( src_name, { "" }, {}, { .native = load_module },    src_id, idx ), false );
 	vm.gadd( "import", new var_fn_t( src_name, { "" }, {}, { .native = import_file },    src_id, idx ), false );

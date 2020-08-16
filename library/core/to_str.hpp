@@ -63,9 +63,15 @@ var_base_t * flt_to_str( vm_state_t & vm, const fn_data_t & fd )
 	var_str_t * res = make< var_str_t >( "" );
 	res->get() = _res;
 	mpfr_free_str( _res );
-	if( res->get().size() > 0 ) {
+	if( res->get().empty() || expo == 0 ) return res;
+	auto last_zero_from_end = res->get().find_last_of( "123456789" );
+	if( last_zero_from_end != std::string::npos ) res->get() = res->get().erase( last_zero_from_end + 1 );
+	if( expo > 0 ) {
 		if( res->get()[ 0 ] == '-' ) ++expo;
 		res->get().insert( expo, "." );
+	} else {
+		std::string pre_zero( -expo, '0' );
+		res->get() = "0." + pre_zero + res->get();
 	}
 	return res;
 }
