@@ -1,0 +1,53 @@
+# by default, {stdclk,sysclk}_now() provide nanosecond resolution
+
+mload('std/time');
+let lang = import('std/lang');
+
+let clocks = lang.enum(
+	.STEADY,
+	.SYSTEM
+);
+
+let nano = 1.0; # equivalent to what *_now() provides
+let micro = nano / 1000;
+let milli = micro / 1000;
+let second = milli / 1000;
+let minute = second / 60;
+let hour = minute / 60;
+
+let clock = clocks.STEADY;
+let resolution = micro; # set to micro by default
+
+let set_resolution = fn(num) {
+	resolution = num;
+};
+
+let set_default_clock = fn(clock_id) {
+	clock = clock_id;
+};
+
+let steady_clock_now = fn() {
+	return steady_clock_now_native();
+};
+
+let system_clock_now = fn() {
+	return system_clock_now_native();
+};
+
+let now = fn() {
+	if clock == clocks.STEADY { return steady_clock_now().flt() * resolution; }
+	elif clock == clocks.SYSTEM { return system_clock_now().flt() * resolution; }
+	raise('invalid clock set');
+};
+
+let hours = fn(num) {
+	return num / hour;
+};
+
+let mins = fn(num) {
+	return num / minute;
+};
+
+let seconds = fn(num) {
+	return num / second;
+};

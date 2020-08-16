@@ -75,6 +75,8 @@ INIT_MODULE( bytebuffer )
 	var_src_t * src = vm.current_source();
 	src->add_native_fn( "new_native", bytebuffer_new_native, 1 );
 
+	vm.register_type< var_bytebuffer_t >( "bytebuffer", src_id, idx );
+
 	vm.add_native_typefn< var_bytebuffer_t >( "resize",  bytebuffer_resize,  1, src_id, idx );
 	vm.add_native_typefn< var_bytebuffer_t >( "set_len", bytebuffer_set_len, 1, src_id, idx );
 	vm.add_native_typefn< var_bytebuffer_t >( "cap",     bytebuffer_size,    0, src_id, idx );
