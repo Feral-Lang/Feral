@@ -8,6 +8,7 @@ let mp = import('std/multiproc');
 let vec = import('std/vec');
 let sys = import('std/sys');
 let stat = import('std/stat');
+let time = import('std/time');
 
 if sys.args.empty() {
 	io.println('Usage: ', sys.self_bin, ' ', __SRC_PATH__, ' <directory>');
@@ -29,6 +30,8 @@ let files = fs.walkdir(sys.args[0], fs.WALK_RECURSE, '(.*)\\.fer');
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
 let max_procs = mp.nproc();
+
+time.set_resolution(time.milli);
 
 let wait_procs = fn(max_procs, with_valgrind) {
 	while tpool.len() >= max_procs {
@@ -63,6 +66,8 @@ if sys.args.find('--valgrind') {
 	valgrind += ' --log-fd=1 ';
 }
 
+let time_begin = time.now();
+
 for file in files.each() {
 	wait_procs(max_procs, !valgrind.empty());
 	io.cprintln('{c}test{0}: {y}', file, '{0} ...');
@@ -71,7 +76,11 @@ for file in files.each() {
 }
 wait_procs(1, !valgrind.empty());
 
+let tot_time = time.now() - time_begin;
+
 io.cprintln('total: {y}', files.len(),
 	    '{0}, passed: {g}', passed,
-	    '{0}, failed: {r}', failed, '{0}');
+	    '{0}, failed: {r}', failed,
+	    '{0}, time: {b}', tot_time.round(),
+	    '{0} ms');
 sys.exit(failed);
