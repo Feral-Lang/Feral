@@ -154,6 +154,7 @@ bool vars_t::exists( const std::string & name )
 
 var_base_t * vars_t::get( const std::string & name )
 {
+	assert( m_fn_stack != -1 );
 	var_base_t * res = m_fn_vars[ m_fn_stack ]->get( name );
 	if( res == nullptr && m_fn_stack != 0 ) {
 		res = m_fn_vars[ 0 ]->get( name );
