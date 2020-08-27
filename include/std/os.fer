@@ -36,3 +36,30 @@ let find_exec = fn(exec) {
 let chmod = fn(dest, mode = '0755', recurse = true) {
 	return chmod_native(dest, mode, recurse);
 };
+
+# show a desktop notification
+let notify = fn(title, body = '') {
+	title = '"' + title + '"';
+	if !body.empty() { body = '"' + body + '"'; }
+	let cmd = '';
+	if name == 'linux' {
+		let notify = find_exec('notify-send');
+		if notify.empty() {
+			raise('notification requires notify-send on Linux (could not find in $PATH)');
+		}
+		cmd = notify + ' -u normal -t 5000 ' + title + ' ' + body;
+	} elif name == 'macos' {
+		let notify = find_exec('osascript');
+		if notify.empty() {
+			raise('notification requires osascript on macOS (could not find in $PATH)');
+		}
+		if body.empty() {
+			cmd = notify + ' -e \'display notification ' + title + '\'';
+		} else {
+			cmd = notify + ' -e \'display notification ' + body + ' with title ' + title + '\'';
+		}
+	} else {
+		raise('notifications unimplemented for this OS');
+	}
+	exec(cmd);
+};
