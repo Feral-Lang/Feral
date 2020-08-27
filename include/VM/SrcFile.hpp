@@ -59,17 +59,6 @@ public:
 	srcfile_t( const std::string & dir, const std::string & path, const bool is_main = false );
 
 	/**
-	 * \brief Construct a new srcfile_t object (do not call load_file() after this)
-	 *
-	 * \param dir Directory of source file
-	 * \param path Full path of source file
-	 * \param path Full path of source file
-	 * \param data this will be the data instead of reading from file
-	 * \param is_main Boolean - determins if this source is the main source file (default: false)
-	 */
-	srcfile_t( const std::string & dir, const std::string & path, const std::string & data, const bool is_main = false );
-
-	/**
 	 * \brief Loads the file at m_path
 	 *
 	 * \return Errors E_OK on success, anything else on failure

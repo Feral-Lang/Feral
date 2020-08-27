@@ -58,7 +58,7 @@ int main( int argc, char ** argv )
 		return E_FAIL;
 	}
 
-	srcfile_t * main_src = fmod_load( src_file, flags, true, err, false );
+	srcfile_t * main_src = fmod_load( src_file, flags, true, err );
 	if( err != E_OK ) {
 		return err;
 	}

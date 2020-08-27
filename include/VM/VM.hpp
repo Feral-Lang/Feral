@@ -106,6 +106,9 @@ struct vm_state_t
 	inline void set_fmod_load_fn( fmod_load_fn_t load_fn ) { m_src_load_fn = load_fn; }
 	inline void set_fmod_read_code_fn( fmod_read_code_fn_t read_code_fn ) { m_src_read_code_fn = read_code_fn; }
 
+	inline fmod_load_fn_t get_fmod_load_fn() { return m_src_load_fn; }
+	inline fmod_read_code_fn_t get_fmod_read_code_fn() { return m_src_read_code_fn; }
+
 	inline const std::vector< std::string > & inc_locs() const { return m_inc_locs; }
 	inline const std::vector< std::string > & dll_locs() const { return m_dll_locs; }
 
