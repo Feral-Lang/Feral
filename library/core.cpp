@@ -12,6 +12,7 @@
 */
 
 #include "core/nil.hpp"
+#include "core/typeid.hpp"
 #include "core/bool.hpp"
 #include "core/int.hpp"
 #include "core/flt.hpp"
@@ -25,7 +26,7 @@
 
 var_base_t * all_get_type( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_int_t >( fd.args[ 0 ]->type() );
+	return make< var_typeid_t >( fd.args[ 0 ]->type() );
 }
 
 var_base_t * all_get_typestr( vm_state_t & vm, const fn_data_t & fd )
@@ -152,6 +153,10 @@ INIT_MODULE( core )
 	// nil
 	vm.add_native_typefn< var_nil_t >( "==", nil_eq, 1, src_id, idx );
 	vm.add_native_typefn< var_nil_t >( "!=", nil_ne, 1, src_id, idx );
+
+	// typeid
+	vm.add_native_typefn< var_typeid_t >( "==", typeid_eq, 1, src_id, idx );
+	vm.add_native_typefn< var_typeid_t >( "!=", typeid_ne, 1, src_id, idx );
 
 	// bool
 	vm.add_native_typefn< var_bool_t >( "<",  bool_lt, 1, src_id, idx );
