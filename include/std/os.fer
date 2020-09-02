@@ -37,7 +37,7 @@ let chmod = fn(dest, mode = '0755', recurse = true) {
 	return chmod_native(dest, mode, recurse);
 };
 
-# show a desktop notification
+# show a notification
 let notify = fn(title, body = '') {
 	title = '"' + title + '"';
 	if !body.empty() { body = '"' + body + '"'; }
@@ -57,6 +57,15 @@ let notify = fn(title, body = '') {
 			cmd = notify + ' -e \'display notification ' + title + '\'';
 		} else {
 			cmd = notify + ' -e \'display notification ' + body + ' with title ' + title + '\'';
+		}
+	} elif name == 'android' {
+		let notify = find_exec('termux-notification');
+		if notify.empty() {
+			raise('notification requires termux-notification on Android (could not find in $PATH)');
+		}
+		cmd = notify + ' --title ' + title;
+		if !body.empty() {
+			cmd += ' --content ' + body;
 		}
 	} else {
 		raise('notifications unimplemented for this OS');
