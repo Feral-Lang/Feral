@@ -22,6 +22,7 @@ bool stmt_foreach_t::gen_code( bcode_t & bc ) const
 	bc.adds( m_expr->idx(), OP_LOAD, ODT_STR, "__" + m_loop_var->data );
 	bc.addb( m_expr->idx(), OP_CREATE, false );
 
+	size_t continue_jmp_pos = bc.size();
 	// let <loop_var> = __<loop_var>.next()
 	bc.adds( m_expr->idx(), OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
 	bc.adds( m_expr->idx(), OP_LOAD, ODT_STR, "next" );
@@ -37,25 +38,13 @@ bool stmt_foreach_t::gen_code( bcode_t & bc ) const
 	m_body->gen_code( bc );
 	size_t body_end = bc.size();
 
-	size_t continue_jmp_pos = bc.size();
-	// next element please; if next returns nil, exit loop
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, "__" + m_loop_var->data );
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_STR, "next" );
-	bc.adds( m_loop_var->pos, OP_MEM_FNCL, ODT_STR, "" );
-	// will be set later
-	size_t jmp_loop_out_loc2 = bc.size();
-	bc.addsz( m_loop_var->pos, OP_JMPN, 0 );
-	bc.adds( m_loop_var->pos, OP_LOAD, ODT_IDEN, m_loop_var->data );
-	bc.add( m_loop_var->pos, OP_STORE );
-	bc.add( m_loop_var->pos, OP_ULOAD );
-	bc.addsz( idx(), OP_JMP, body_begin );
+	bc.addsz( idx(), OP_JMP, continue_jmp_pos );
 
 	// pos where break goes
 	size_t break_jmp_loc = bc.size();
 	bc.add( idx(), OP_POP_LOOP );
 
 	bc.updatesz( jmp_loop_out_loc1, break_jmp_loc );
-	bc.updatesz( jmp_loop_out_loc2, break_jmp_loc );
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {
