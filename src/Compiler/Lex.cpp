@@ -392,11 +392,18 @@ static Errors get_const_str( const std::string & src, size_t & i, std::string & 
 	buf.clear();
 	const char quote_type = CURR( src );
 	int starting_at = i;
+	size_t continuous_backslash = 0;
 	// omit beginning quote
 	++i;
 	while( i < src_len ) {
-		if( CURR( src ) == quote_type && PREV( src ) != '\\' ) break;
+		if( CURR( src ) == '\\' ) {
+			++continuous_backslash;
+			buf.push_back( src[ i++ ] );
+			continue;
+		}
+		if( CURR( src ) == quote_type && continuous_backslash % 2 == 0 ) break;
 		buf.push_back( src[ i++ ] );
+		continuous_backslash = 0;
 	}
 	if( CURR( src ) != quote_type ) {
 		i = starting_at;
