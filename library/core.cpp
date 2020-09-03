@@ -29,6 +29,11 @@ var_base_t * all_get_type( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_typeid_t >( fd.args[ 0 ]->type() );
 }
 
+var_base_t * all_get_typefid( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_typeid_t >( fd.args[ 0 ]->typefn_id() );
+}
+
 var_base_t * all_get_typestr( vm_state_t & vm, const fn_data_t & fd )
 {
 	return make< var_str_t >( vm.type_name( fd.args[ 0 ] ) );
@@ -110,6 +115,7 @@ INIT_MODULE( core )
 
 	// fundamental functions for builtin types
 	vm.add_native_typefn< var_all_t >(    "_type_", all_get_type,	 0, src_id, idx );
+	vm.add_native_typefn< var_all_t >( "_typefid_", all_get_typefid, 0, src_id, idx );
 	vm.add_native_typefn< var_all_t >( "_typestr_", all_get_typestr, 0, src_id, idx );
 	vm.add_native_typefn< var_all_t >(        "==", all_eq,       	 1, src_id, idx );
 	vm.add_native_typefn< var_all_t >(        "!=", all_ne,       	 1, src_id, idx );

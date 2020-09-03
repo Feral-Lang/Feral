@@ -66,6 +66,34 @@ var_base_t * str_pop( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 0 ];
 }
 
+var_base_t * str_ischat( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected first argument to be of type integer for index, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	if( !fd.args[ 2 ]->istype< var_str_t >() && !fd.args[ 2 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected second argument to be of type string or integer for checking, found: %s",
+			 vm.type_name( fd.args[ 2 ] ).c_str() );
+		return nullptr;
+	}
+	size_t pos = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
+	std::string & dest = STR( fd.args[ 0 ] )->get();
+	if( pos >= dest.size() ) {
+		vm.fail( fd.src_id, fd.idx, "position %zu is not within string of length %zu",
+			 pos, dest.size() );
+		return nullptr;
+	}
+	std::string chars;
+	if( fd.args[ 2 ]->istype< var_int_t >() ) {
+		chars = mpz_get_si( INT( fd.args[ 2 ] )->get() );
+	} else if( fd.args[ 2 ]->istype< var_str_t >() ) {
+		chars = STR( fd.args[ 2 ] )->get();
+	}
+	return chars.find( dest[ pos ] ) == std::string::npos ? vm.fals : vm.tru;
+}
+
 var_base_t * str_setat( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
@@ -225,6 +253,7 @@ INIT_MODULE( str )
 	vm.add_native_typefn< var_str_t >(          "back", str_back,   0, src_id, idx );
 	vm.add_native_typefn< var_str_t >(          "push", str_push,   1, src_id, idx );
 	vm.add_native_typefn< var_str_t >(           "pop", str_pop,    0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(        "ischat", str_ischat, 2, src_id, idx );
 	vm.add_native_typefn< var_str_t >(           "set", str_setat,  2, src_id, idx );
 	vm.add_native_typefn< var_str_t >(        "insert", str_insert, 2, src_id, idx );
 	vm.add_native_typefn< var_str_t >(         "erase", str_erase,  1, src_id, idx );

@@ -47,6 +47,10 @@ Errors parse_block( phelper_t & ph, stmt_base_t * & loc, const bool with_brace )
 		} else if( ph.accept( TOK_LBRACE ) ) {
 			if( parse_block( ph, stmt ) != E_OK ) goto fail;
 		} else {
+			// TODO:
+			// this call introduces a bug:
+			// while <some> { ++i }
+			// will become valid which is incorrect
 			if( parse_expr_cols_or_rbrace( ph, stmt ) == E_OK ) {
 				if( stmt->type() != GT_EXPR ) {
 					stmt = new stmt_expr_t( stmt, nullptr, nullptr, stmt->idx() );

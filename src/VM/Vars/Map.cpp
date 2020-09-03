@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////// VAR_MAP //////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_map_t::var_map_t( const std::unordered_map< std::string, var_base_t * > & val,
+var_map_t::var_map_t( const std::map< std::string, var_base_t * > & val,
 		      const bool & refs, const size_t & src_id, const size_t & idx )
 	: var_base_t( type_id< var_map_t >(), src_id, idx, false, false ), m_val( val ),
 	  m_refs( refs )
@@ -30,7 +30,7 @@ var_map_t::~var_map_t()
 
 var_base_t * var_map_t::copy( const size_t & src_id, const size_t & idx )
 {
-	std::unordered_map< std::string, var_base_t * > new_map;
+	std::map< std::string, var_base_t * > new_map;
 	for( auto & v : m_val ) {
 		new_map[ v.first ] =  v.second->copy( src_id, idx );
 	}
@@ -50,5 +50,5 @@ void var_map_t::set( var_base_t * from )
 	m_refs = MAP( from )->m_refs;
 }
 
-std::unordered_map< std::string, var_base_t * > & var_map_t::get() { return m_val; }
+std::map< std::string, var_base_t * > & var_map_t::get() { return m_val; }
 bool var_map_t::is_ref_map() { return m_refs; }

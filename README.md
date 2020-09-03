@@ -133,10 +133,6 @@ Visual Studio Code: [Feral-Lang/Feral-VSCode](https://github.com/Feral-Lang/Fera
 
 Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
 
-# Roadmap
-
-Roadmap for Feral is available [here](https://github.com/Feral-Lang/Feral/blob/master/ROADMAP.md).
-
 # Communication
 
 Join us on Discord: [https://discord.gg/zMAjSXn](https://discord.gg/zMAjSXn)

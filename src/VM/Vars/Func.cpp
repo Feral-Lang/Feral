@@ -107,7 +107,7 @@ var_base_t * var_fn_t::call( vm_state_t & vm, const std::vector< var_base_t * > 
 		vars->stash( m_var_arg, make< var_vec_t >( vec, false ) );
 	}
 	if( !m_kw_arg.empty() ) {
-		std::unordered_map< std::string, var_base_t * > map;
+		std::map< std::string, var_base_t * > map;
 		for( auto & arg : assn_args ) {
 			var_iref( arg.val );
 			map[ arg.name ] = arg.val;
