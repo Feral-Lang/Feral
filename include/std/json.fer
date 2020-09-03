@@ -1,3 +1,23 @@
+/*
+	+===========+===========+
+	| Feral     | JSON      |
+	+===========+===========+
+	| nil       | null      |
+	+-----------+-----------+
+	| int, flt  | number    |
+	+-----------+-----------+
+	| str       | string    |
+	+-----------+-----------+
+	| true      | true      |
+	+-----------+-----------+
+	| false     | false     |
+	+-----------+-----------+
+	| vec       | array     |
+	+-----------+-----------+
+	| map       | object    |
+	+-----------+-----------+
+*/
+
 let map = import('std/map');
 let str = import('std/str');
 let vec = import('std/vec');
@@ -92,9 +112,11 @@ let tokenize = fn(data) {
 		elif data[i] == ']' { toks.push(tok_t(tok_type.RBRACK)); continue; }
 		elif data[i] == '{' { toks.push(tok_t(tok_type.LBRACE)); continue; }
 		elif data[i] == '}' { toks.push(tok_t(tok_type.RBRACE)); continue; }
-		elif data[i] >= '0' && data[i] <= '9' {
+		elif data[i] == '-' || (data[i] >= '0' && data[i] <= '9') {
 			let i_or_f = false; # false => int
-			let num = get_num(data, i_or_f, i, data_len);
+			let num = '';
+			if data[i] == '-' { num += data[i]; ++i; }
+			num += get_num(data, i_or_f, i, data_len);
 			if i_or_f { toks.push(tok_t(tok_type.FLT, num)); }
 			else { toks.push(tok_t(tok_type.INT, num)); }
 			continue;
