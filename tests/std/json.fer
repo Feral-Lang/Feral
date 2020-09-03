@@ -1,16 +1,33 @@
-let map = import('std/map');
-let vec = import('std/vec');
 let json = import('std/json');
 
-let s1 = '{"hell": {"yea": "yep"}, "hi": ["yo", "hello", 1.27, true, {"damn": "sup"}]}';
+let json_oneline = '{"first": {"one": "two"}, "second": ["a", "b", 1.27, true, {"key": null}], "third": -1.27}';
+let json_pretty =
+`{
+	"first": {
+		"one": "two"
+	},
+	"second": [
+		"a",
+		"b",
+		1.27,
+		true,
+		{
+			"key": null
+		}
+	],
+	"third": -1.27
+}`;
 
-let js = json.loads(s1);
-assert(js['hell'] == map.new('yea', 'yep'));
-assert(js['hi'][0] == 'yo');
-assert(js['hi'][1] == 'hello');
-assert(js['hi'][2] == 1.27);
-assert(js['hi'][3] == true);
-assert(js['hi'][4]['damn'] == 'sup');
+let js = json.loads(json_pretty);
+assert(js['first']['one'] == 'two');
+assert(js['second'][0] == 'a');
+assert(js['second'][1] == 'b');
+assert(js['second'][2] == 1.27);
+assert(js['second'][3] == true);
+assert(js['second'][4]['key'] == nil);
+assert(js['third'] == -1.27);
 
-let s2 = json.dumps(js);
-assert(s1 == s2);
+let json_oneline_dump = json.dumps(js);
+let json_pretty_dump = json.dumps(js, 0, '\t');
+assert(json_oneline == json_oneline_dump);
+assert(json_pretty == json_pretty_dump);
