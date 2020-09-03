@@ -1,0 +1,16 @@
+let map = import('std/map');
+let vec = import('std/vec');
+let json = import('std/json');
+
+let s1 = '{"hell": {"yea": "yep"}, "hi": ["yo", "hello", 1.27, true, {"damn": "sup"}]}';
+
+let js = json.loads(s1);
+assert(js['hell'] == map.new('yea', 'yep'));
+assert(js['hi'][0] == 'yo');
+assert(js['hi'][1] == 'hello');
+assert(js['hi'][2] == 1.27);
+assert(js['hi'][3] == true);
+assert(js['hi'][4]['damn'] == 'sup');
+
+let s2 = json.dumps(js);
+assert(s1 == s2);
