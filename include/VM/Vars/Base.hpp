@@ -17,6 +17,7 @@
 #include <cassert>
 #include <vector>
 #include <string>
+#include <map>
 #include <unordered_set>
 #include <unordered_map>
 #include <gmp.h>
@@ -241,17 +242,17 @@ public:
 
 class var_map_t : public var_base_t
 {
-	std::unordered_map< std::string, var_base_t * > m_val;
+	std::map< std::string, var_base_t * > m_val;
 	bool m_refs;
 public:
-	var_map_t( const std::unordered_map< std::string, var_base_t * > & val,
+	var_map_t( const std::map< std::string, var_base_t * > & val,
 		   const bool & refs, const size_t & src_id, const size_t & idx );
 	~var_map_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
-	std::unordered_map< std::string, var_base_t * > & get();
+	std::map< std::string, var_base_t * > & get();
 	bool is_ref_map();
 };
 #define MAP( x ) static_cast< var_map_t * >( x )

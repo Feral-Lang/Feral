@@ -13,7 +13,7 @@
 
 #include "std/thread_type.hpp"
 
-static size_t thread_id = 1;
+static size_t thread_id = 0;
 
 var_thread_t::var_thread_t( std::thread * thread, std::shared_future< int > * res,
 			    const size_t & src_id, const size_t & idx, const bool & owner )

@@ -19,7 +19,7 @@
 class var_map_iterable_t : public var_base_t
 {
 	var_map_t * m_map;
-	std::unordered_map< std::string, var_base_t * >::iterator m_curr;
+	std::map< std::string, var_base_t * >::iterator m_curr;
 public:
 	var_map_iterable_t( var_map_t * map, const size_t & src_id, const size_t & idx );
 	~var_map_iterable_t();

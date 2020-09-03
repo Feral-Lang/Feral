@@ -70,7 +70,7 @@ fail:
 var_base_t * struct_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_struct_t * data = STRUCT( fd.args[ 0 ] );
-	std::string res = vm.type_name( data ) + "{";
+	std::string res = vm.type_name( data->typefn_id() ) + "{";
 	for( auto & e : data->attrs() ) {
 		std::string str;
 		if( !e.second->to_str( vm, str, fd.src_id, fd.idx ) ) {
@@ -86,6 +86,17 @@ var_base_t * struct_to_str( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_str_t >( res );
 }
 
+var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected argument to be of type string, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	vm.set_typename( STRUCT_DEF( fd.args[ 0 ] )->typefn_id(), STR( fd.args[ 1 ] )->get() );
+	return fd.args[ 0 ];
+}
+
 INIT_MODULE( lang )
 {
 	var_src_t * src = vm.current_source();
@@ -93,5 +104,8 @@ INIT_MODULE( lang )
 	src->add_native_fn( "struct", create_struct );
 
 	vm.add_native_typefn< var_struct_t >( "str", struct_to_str, 0, src_id, idx );
+
+	vm.add_native_typefn< var_struct_def_t >( "set_typename", struct_def_set_typename, 1, src_id, idx );
+
 	return true;
 }

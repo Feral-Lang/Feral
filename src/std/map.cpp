@@ -35,7 +35,7 @@ var_base_t * map_new( vm_state_t & vm, const fn_data_t & fd )
 		}
 		refs = BOOL( refs_var )->get();
 	}
-	std::unordered_map< std::string, var_base_t * > map_val;
+	std::map< std::string, var_base_t * > map_val;
 	for( size_t i = 1; i < fd.args.size(); ++i ) {
 		std::string key;
 		if( !fd.args[ i ]->to_str( vm, key, fd.src_id, fd.idx ) ) {
@@ -69,7 +69,7 @@ var_base_t * map_empty( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * map_insert( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::unordered_map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
+	std::map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
 	std::string key;
 	if( !fd.args[ 1 ]->to_str( vm, key, fd.src_id, fd.idx ) ) {
 		return nullptr;
@@ -88,7 +88,7 @@ var_base_t * map_insert( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * map_erase( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::unordered_map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
+	std::map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
 	std::string key;
 	if( !fd.args[ 1 ]->to_str( vm, key, fd.src_id, fd.idx ) ) {
 		return nullptr;
@@ -103,7 +103,7 @@ var_base_t * map_erase( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * map_get( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::unordered_map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
+	std::map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
 	std::string key;
 	if( !fd.args[ 1 ]->to_str( vm, key, fd.src_id, fd.idx ) ) {
 		return nullptr;
@@ -116,7 +116,7 @@ var_base_t * map_get( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * map_find( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::unordered_map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
+	std::map< std::string, var_base_t * > & map = MAP( fd.args[ 0 ] )->get();
 	std::string key;
 	if( !fd.args[ 1 ]->to_str( vm, key, fd.src_id, fd.idx ) ) {
 		return nullptr;
