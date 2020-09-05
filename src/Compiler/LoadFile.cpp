@@ -88,18 +88,9 @@ end:
 	return err;
 }
 
-srcfile_t * fmod_load( const std::string & src_file, const size_t & flags, const bool is_main_src,
-		       Errors & err, const size_t & begin_idx, const size_t & end_idx )
+srcfile_t * fmod_load( const std::string & src_path, const std::string & src_dir, const size_t & flags,
+		       const bool is_main_src, Errors & err, const size_t & begin_idx, const size_t & end_idx )
 {
-	if( !fs::exists( src_file ) ) {
-		fprintf( stderr, "file load fail: file '%s' does not exist\n", src_file.c_str() );
-		err = E_FAIL;
-		return nullptr;
-	}
-	// TODO: reduce fs::abs_path() calls
-	std::string src_dir;
-	std::string src_path = fs::abs_path( src_file, & src_dir );
-
 	srcfile_t * src = new srcfile_t( src_dir, src_path, is_main_src );
 	err = src->load_file();
 	if( err != E_OK ) goto fail;

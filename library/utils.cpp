@@ -102,12 +102,12 @@ var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 			 vm.type_name( lhs_base ).c_str() );
 		return nullptr;
 	}
-	if( !rhs_base->istype< var_int_t >() ) {
+	if( rhs_base && !rhs_base->istype< var_int_t >() ) {
 		vm.fail( rhs_base->src_id(), rhs_base->idx(), "expected argument 2 to be of type int, found: %s",
 			 vm.type_name( rhs_base ).c_str() );
 		return nullptr;
 	}
-	if( !step_base->istype< var_int_t >() ) {
+	if( step_base && !step_base->istype< var_int_t >() ) {
 		vm.fail( step_base->src_id(), step_base->idx(), "expected argument 3 to be of type int, found: %s",
 			 vm.type_name( step_base ).c_str() );
 		return nullptr;

@@ -145,12 +145,12 @@ var_base_t * vm_state_t::gget( const std::string & name )
 	return m_globals[ name ];
 }
 
-bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext )
+bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext, std::string & dir )
 {
 	if( mod.front() != '~' && mod.front() != '/' && mod.front() != '.' ) {
 		for( auto & loc : locs ) {
 			if( fs::exists( loc + "/" + mod + ext ) ) {
-				mod = fs::abs_path( loc + "/" + mod + ext );
+				mod = fs::abs_path( loc + "/" + mod + ext, & dir );
 				return true;
 			}
 		}
@@ -166,7 +166,7 @@ bool vm_state_t::mod_exists( const std::vector< std::string > & locs, std::strin
 			mod = src_stack.back()->src()->dir() + mod;
 		}
 		if( fs::exists( mod + ext ) ) {
-			mod = fs::abs_path( mod + ext );
+			mod = fs::abs_path( mod + ext, & dir );
 			return true;
 		}
 	}
@@ -177,8 +177,9 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id, 
 {
 	std::string mod = mod_str.substr( mod_str.find_last_of( '/' ) + 1 );
 	std::string mod_file = mod_str;
+	std::string mod_dir;
 	mod_file.insert( mod_file.find_last_of( '/' ) + 1, "libferal" );
-	if( !mod_exists( m_dll_locs, mod_file, nmod_ext() ) ) {
+	if( !mod_exists( m_dll_locs, mod_file, nmod_ext(), mod_dir ) ) {
 		fail( src_id, idx, "module file: %s not found in locations: %s",
 		      ( mod_file + nmod_ext() ).c_str(), str::stringify( m_dll_locs ).c_str() );
 		return false;
@@ -213,7 +214,8 @@ bool vm_state_t::nmod_load( const std::string & mod_str, const size_t & src_id, 
 // updated mod_str with actual file name (full canonical path)
 int vm_state_t::fmod_load( std::string & mod_file, const size_t & src_id, const size_t & idx )
 {
-	if( !mod_exists( m_inc_locs, mod_file, fmod_ext() ) ) {
+	std::string mod_dir;
+	if( !mod_exists( m_inc_locs, mod_file, fmod_ext(), mod_dir ) ) {
 		fail( src_id, idx, "import file: %s not found in locations: %s",
 		      ( mod_file + fmod_ext() ).c_str(), str::stringify( m_inc_locs ).c_str() );
 		return E_FAIL;
@@ -221,7 +223,7 @@ int vm_state_t::fmod_load( std::string & mod_file, const size_t & src_id, const 
 	if( all_srcs.find( mod_file ) != all_srcs.end() ) return E_OK;
 
 	Errors err = E_OK;
-	srcfile_t * src = m_src_load_fn( mod_file, exec_flags, false, err, 0, -1 );
+	srcfile_t * src = m_src_load_fn( mod_file, mod_dir, exec_flags, false, err, 0, -1 );
 	if( err != E_OK ) {
 		if( src ) delete src;
 		return err;

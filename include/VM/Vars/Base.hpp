@@ -261,7 +261,6 @@ struct fn_body_span_t
 	size_t end;
 };
 
-// TODO: can the size be reduced?
 struct fn_data_t
 {
 	size_t src_id;

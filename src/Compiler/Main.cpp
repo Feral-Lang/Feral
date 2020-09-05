@@ -58,7 +58,16 @@ int main( int argc, char ** argv )
 		return E_FAIL;
 	}
 
-	srcfile_t * main_src = fmod_load( src_file, flags, true, err );
+	if( !fs::exists( src_file ) ) {
+		fprintf( stderr, "file load fail: file '%s' does not exist\n", src_file.c_str() );
+		err = E_FAIL;
+		return err;
+	}
+
+	std::string src_dir;
+	src_file = fs::abs_path( src_file, & src_dir );
+
+	srcfile_t * main_src = fmod_load( src_file, src_dir, flags, true, err );
 	if( err != E_OK ) {
 		return err;
 	}
