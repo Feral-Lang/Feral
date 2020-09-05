@@ -127,8 +127,6 @@ template< typename T > inline void var_dref( T * & var )
 	}
 }
 
-// TODO: inline all getters/setters
-
 // dummy type to denote all other types
 class var_all_t : public var_base_t
 {

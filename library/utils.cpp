@@ -91,34 +91,39 @@ bool var_int_iterable_t::next( mpz_t & val )
 	return true;
 }
 
-// TODO: type checking
-// TODO: create var_flt_iterable_t
 var_base_t * range( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_base_t * lhs_base = fd.args[ 1 ];
 	var_base_t * rhs_base = fd.args.size() > 2 ? fd.args[ 2 ] : nullptr;
 	var_base_t * step_base = fd.args.size() > 3 ? fd.args[ 3 ] : nullptr;
 
-	std::uintptr_t final_type = type_id< var_int_t >();
-
-	if( lhs_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
-	if( rhs_base && rhs_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
-	if( step_base && step_base->istype< var_flt_t >() ) final_type = type_id< var_flt_t >();
-
-	if( final_type == type_id< var_int_t >() ) {
-		mpz_t begin, end, step;
-		mpz_inits( begin, end, step, NULL );
-		if( fd.args.size() > 2 ) mpz_set( begin, INT( lhs_base )->get() );
-		else mpz_set_si( begin, 0 );
-		if( rhs_base ) mpz_set( end, INT( rhs_base )->get() );
-		else mpz_set( end, INT( lhs_base )->get() );
-		if( step_base ) mpz_set( step, INT( step_base )->get() );
-		else mpz_set_si( step, 1 );
-		var_int_iterable_t * res = make< var_int_iterable_t >( begin, end, step );
-		mpz_clears( begin, end, step, NULL );
-		return res;
+	if( !lhs_base->istype< var_int_t >() ) {
+		vm.fail( lhs_base->src_id(), lhs_base->idx(), "expected argument 1 to be of type int, found: %s",
+			 vm.type_name( lhs_base ).c_str() );
+		return nullptr;
 	}
-	return vm.nil;
+	if( !rhs_base->istype< var_int_t >() ) {
+		vm.fail( rhs_base->src_id(), rhs_base->idx(), "expected argument 2 to be of type int, found: %s",
+			 vm.type_name( rhs_base ).c_str() );
+		return nullptr;
+	}
+	if( !step_base->istype< var_int_t >() ) {
+		vm.fail( step_base->src_id(), step_base->idx(), "expected argument 3 to be of type int, found: %s",
+			 vm.type_name( step_base ).c_str() );
+		return nullptr;
+	}
+
+	mpz_t begin, end, step;
+	mpz_inits( begin, end, step, NULL );
+	if( fd.args.size() > 2 ) mpz_set( begin, INT( lhs_base )->get() );
+	else mpz_set_si( begin, 0 );
+	if( rhs_base ) mpz_set( end, INT( rhs_base )->get() );
+	else mpz_set( end, INT( lhs_base )->get() );
+	if( step_base ) mpz_set( step, INT( step_base )->get() );
+	else mpz_set_si( step, 1 );
+	var_int_iterable_t * res = make< var_int_iterable_t >( begin, end, step );
+	mpz_clears( begin, end, step, NULL );
+	return res;
 }
 
 var_base_t * assertion( vm_state_t & vm, const fn_data_t & fd )
