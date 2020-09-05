@@ -1,34 +1,52 @@
 let io = import('std/io');
 let os = import('std/os');
+let map = import('std/map');
 let vec = import('std/vec');
 let str = import('std/str');
 let sys = import('std/sys');
 let prog = import('./bf_hello_world');
 
-# TODO: optimize this out using (hash)map
-let jmp_fwd = fn(v, i) {
-	let depth = 0;
-	while i < v.len() {
-		if v[i] == '[' { ++depth; }
-		if v[i] == ']' { --depth; }
-		if depth == 0 { break; }
-		++i;
-	}
-	return i < v.len();
-};
-
-let jmp_bwd = fn(v, i) {
-	let depth = 0;
-	while i >= 0 {
-		if v[i] == ']' { --depth; }
-		if v[i] == '[' { ++depth; }
-		if depth == 0 { break; }
-		--i;
-	}
-	return i >= 0;
-};
-
 let len = prog.data.len();
+
+# remove irrelevant characters from data
+for let i = 0; i < len; ++i {
+	if !prog.data.ischat(i, '><+-.,[]') {
+		prog.data.erase(i);
+		--i;
+		--len;
+	}
+}
+
+# optimize the jumps
+let jmp_map = map.new();
+for let i = 0; i < len; ++i {
+	if jmp_map.find(i) { continue; }
+	if prog.data[i] == '[' {
+		let j = i;
+		let depth = 0;
+		while j < len {
+			if prog.data[j] == '[' { ++depth; }
+			elif prog.data[j] == ']' { --depth; }
+			if depth == 0 { break; }
+			++j;
+		}
+		if j == len { raise('no forward jump position for [ at index: ' + i.str()); }
+		jmp_map.insert(i, j);
+		jmp_map.insert(j, i);
+	} elif prog.data[i] == ']' {
+		let j = i;
+		let depth = 0;
+		while j >= 0 {
+			if prog.data[j] == ']' { --depth; }
+			if prog.data[j] == '[' { ++depth; }
+			if depth == 0 { break; }
+			--j;
+		}
+		if j < 0 { raise('no backward jump position for ] at index: ' + i.str()); }
+		jmp_map.insert(i, j);
+		jmp_map.insert(j, i);
+	}
+}
 
 # initialize data array to single element
 # (growing till DATA_UPPER_LIMIT over time)
@@ -69,19 +87,9 @@ for let i = 0; i < len; ++i {
 		data[data_ptr] = io.scan().byt();
 	} elif prog.data[i] == '[' {
 		if data[data_ptr] != 0 { continue; }
-		let i_tmp = i;
-		if !jmp_fwd(prog.data, i) {
-			io.println(`failed to find equivalent jump to ']' from position: `,
-				   i_tmp);
-			sys.exit(1);
-		}
+		i = jmp_map[i];
 	} elif prog.data[i] == ']' {
 		if data[data_ptr] == 0 { continue; }
-		let i_tmp = i;
-		if !jmp_bwd(prog.data, i) {
-			io.println(`failed to find equivalent jump to '[' from position: `,
-				   i_tmp);
-			sys.exit(1);
-		}
+		i = jmp_map[i];
 	}
 }
