@@ -35,8 +35,8 @@ typedef Errors ( * fmod_read_code_fn_t )( const std::string & data, const std::s
 					  bcode_t & bc, const size_t & flags, const bool is_main_src,
 					  const bool & expr_only, const size_t & begin_idx, const size_t & end_idx );
 
-typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const size_t & flags, const bool is_main_src,
-					  Errors & err, const size_t & begin_idx, const size_t & end_idx );
+typedef srcfile_t * ( * fmod_load_fn_t )( const std::string & src_file, const std::string & src_dir, const size_t & flags,
+					  const bool is_main_src, Errors & err, const size_t & begin_idx, const size_t & end_idx );
 
 typedef bool ( * mod_init_fn_t )( vm_state_t & vm, const size_t src_id, const size_t & idx );
 typedef void ( * mod_deinit_fn_t )();
@@ -97,7 +97,7 @@ struct vm_state_t
 	// modules & imports
 	// nmod = native module
 	// fmod = feral module
-	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext );
+	bool mod_exists( const std::vector< std::string > & locs, std::string & mod, const std::string & ext, std::string & dir );
 	bool nmod_load( const std::string & mod_str, const size_t & src_id, const size_t & idx );
 	// updated mod_str with actual file name (full canonical path)
 	int fmod_load( std::string & mod_str, const size_t & src_id, const size_t & idx );
