@@ -143,45 +143,38 @@ Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string 
 
 	size_t src_len = src.size();
 
-	bool comment_block = false;
+	int comment_block = 0; // int to handle nested comment blocks
 	bool comment_line = false;
 
 	// tokenize the input
 	size_t i = begin_idx;
 	end_idx = end_idx == -1 ? src_len : end_idx;
 	while( i < end_idx ) {
-		if( comment_line && CURR( src ) == '\n' ) {
-			comment_line = false;
+		if( comment_line ) {
+			if( CURR( src ) == '\n' ) comment_line = false;
 			++i;
 			continue;
 		}
 		if( isspace( src[ i ] ) ) { ++i; continue; }
 
-		if( !comment_line && CURR( src ) == '*' && NEXT( src ) == '/' ) {
+		if( CURR( src ) == '*' && NEXT( src ) == '/' ) {
 			if( !comment_block ) {
 				err::set( E_LEX_FAIL, i, "encountered multi line comment terminator '*/' in non commented block" );
 				break;
 			}
 			i += 2;
-			comment_block = false;
+			--comment_block;
 			continue;
 		}
 
-		if( !comment_line && CURR( src ) == '/' && NEXT( src ) == '*' ) {
+		if( CURR( src ) == '/' && NEXT( src ) == '*' ) {
 			i += 2;
-			comment_block = true;
+			++comment_block;
 			continue;
 		}
 
 		if( comment_block ) { ++i; continue; }
 
-		if( comment_line ) {
-			if( CURR( src ) == '\n' ) {
-				comment_line = false;
-			}
-			++i;
-			continue;
-		}
 		if( CURR( src ) == '#' ) { comment_line = true; ++i; continue; }
 
 		// strings
