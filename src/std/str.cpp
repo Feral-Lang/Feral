@@ -29,6 +29,12 @@ var_base_t * str_size( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( STR( fd.args[ 0 ] )->get().size() );
 }
 
+var_base_t * str_clear( vm_state_t & vm, const fn_data_t & fd )
+{
+	STR( fd.args[ 0 ] )->get().clear();
+	return vm.nil;
+}
+
 var_base_t * str_empty( vm_state_t & vm, const fn_data_t & fd )
 {
 	return STR( fd.args[ 0 ] )->get().size() == 0 ? vm.tru : vm.fals;
@@ -248,6 +254,7 @@ INIT_MODULE( str )
 	var_src_t * src = vm.current_source();
 
 	vm.add_native_typefn< var_str_t >(	     "len", str_size,   0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(         "clear", str_clear,  0, src_id, idx );
 	vm.add_native_typefn< var_str_t >(         "empty", str_empty,  0, src_id, idx );
 	vm.add_native_typefn< var_str_t >(         "front", str_front,  0, src_id, idx );
 	vm.add_native_typefn< var_str_t >(          "back", str_back,   0, src_id, idx );

@@ -1,5 +1,3 @@
-let io = import('std/io');
-let os = import('std/os');
 let vec = import('std/vec');
 let str = import('std/str');
 let sys = import('std/sys');
@@ -51,7 +49,7 @@ let name in find_lib_t = fn() {
 };
 
 let add_ext_prefix in find_lib_t = fn(ext_prefix) {
-	ext_prefixes.push(ext_prefix);
+	self.ext_prefixes.push(ext_prefix);
 	return self;
 };
 
@@ -64,7 +62,7 @@ let gen in find_lib_t = fn() {
 	let prefix_path = ' PATHS ';
 	for prefix in self.ext_prefixes.each() {
 		include_dirs += prefix + '/include ';
-		prefix_path = prefix + '/lib ';
+		prefix_path += prefix + '/lib ';
 	}
 	if !self.ext_prefixes.empty() {
 		include_dirs.pop();
