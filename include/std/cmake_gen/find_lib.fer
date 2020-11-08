@@ -7,7 +7,7 @@ let fmt = import('std/fmt');
 let lang = import('std/lang');
 
 let find_lib_base =
-`{extra}
+`include_directories({include_dirs})
 find_library({self.var_name.upper()}_LIBRARY {self.lib_name}{self.path_suffixes}{self.required}{prefix_path})
 `;
 
@@ -27,6 +27,7 @@ let find_lib_t = lang.struct(
 	required = '',
 	use_homebrew = false,
 	homebrew_name = '',
+	ext_prefixes = vec.new(),
 	feral_lib = false
 );
 
@@ -49,48 +50,34 @@ let name in find_lib_t = fn() {
 	return '${' + self.lib_name.upper() + '_LIBRARY}';
 };
 
-let use_brew in find_lib_t = fn(homebrew_name = '') {
-	if os.name != 'macos' { return self; }
-	self.use_homebrew = true;
-	if !homebrew_name.empty() { self.homebrew_name = homebrew_name; }
-	else { self.homebrew_name = self.lib_name; }
+let add_ext_prefix in find_lib_t = fn(ext_prefix) {
+	ext_prefixes.push(ext_prefix);
 	return self;
 };
 
 let make_feral_lib in find_lib_t = fn() { self.feral_lib = true; return self; };
 
-let gen_brew_info in find_lib_t = fn(prefix_path) {
-	prefix_path = '';
-	if !self.use_homebrew || os.name != 'macos' { return false; }
-	let brew = os.find_exec('brew');
-	if brew.empty() {
-		io.cprintln('{y}warn{0}: could not find \'brew\' in $PATH{0}');
-		return false;
-	}
-	let out = vec.new();
-	let res = os.exec(brew + ' --prefix ' + self.homebrew_name + ' 2>/dev/null', out);
-	if res != 0 || out.empty() { return false; }
-	prefix_path = out[0];
-	return true;
-};
-
 let gen in find_lib_t = fn() {
 	if self.var_name == '' { self.var_name = self.lib_name; }
 	if !self.path_suffixes.empty() { self.path_suffixes = ' PATH_SUFFIXES "' + self.path_suffixes + '"'; }
-	let extra = '';
-	let prefix_path = '';
-	let brew_prefix = '';
-	if self.use_homebrew && self.gen_brew_info(brew_prefix) {
-		extra = 'include_directories(' + brew_prefix + '/include)';
-		prefix_path = ' PATHS ' + brew_prefix + '/lib';
+	let include_dirs = '';
+	let prefix_path = ' PATHS ';
+	for prefix in self.ext_prefixes.each() {
+		include_dirs += prefix + '/include ';
+		prefix_path = prefix + '/lib ';
+	}
+	if !self.ext_prefixes.empty() {
+		include_dirs.pop();
 	}
 	if self.feral_lib {
-		if !self.use_homebrew { prefix_path = ' PATHS'; }
-		prefix_path += ' ' + sys.install_prefix + '/lib/feral';
+		prefix_path += sys.install_prefix + '/lib/feral ';
 		self.lib_name = 'feral' + self.lib_name;
 	}
-	if self.use_homebrew || self.feral_lib {
-		 prefix_path += ' NO_DEFAULT_PATH';
+	if prefix_path == ' PATHS ' {
+		prefix_path.clear();
+	}
+	if !prefix_path.empty() {
+		prefix_path += 'NO_DEFAULT_PATH';
 	}
 	return fmt.template(self.template);
 };
