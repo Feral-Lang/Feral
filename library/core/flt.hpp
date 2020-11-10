@@ -138,4 +138,32 @@ var_base_t * flt_round( vm_state_t & vm, const fn_data_t & fd )
 	return res;
 }
 
+var_base_t * flt_pow( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "power must be an integer, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	var_flt_t * res = make< var_flt_t >( FLT( fd.args[ 0 ] )->get() );
+	mpfr_pow_si( res->get(), FLT( fd.args[ 0 ] )->get(), mpz_get_si( INT( fd.args[ 1 ] )->get() ), MPFR_RNDN );
+	return res;
+}
+
+var_base_t * flt_root( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "root must be an integer, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	var_flt_t * res = make< var_flt_t >( FLT( fd.args[ 0 ] )->get() );
+#if MPFR_VERSION_MAJOR >= 4
+	mpfr_rootn_ui( res->get(), FLT( fd.args[ 0 ] )->get(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ), MPFR_RNDN );
+#else
+	mpfr_root( res->get(), FLT( fd.args[ 0 ] )->get(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ), MPFR_RNDN );
+#endif
+	return res;
+}
+
 #endif // LIBRARY_CORE_FLT_HPP

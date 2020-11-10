@@ -191,7 +191,8 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_int_t >( "<<=", int_lshiftassn, 1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( ">>=", int_rshiftassn, 1, src_id, idx );
 
-	vm.add_native_typefn< var_int_t >(  "**", int_pow,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "**",  int_pow,     1, src_id, idx );
+	vm.add_native_typefn< var_int_t >( "//",  int_root,    1, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "++x", int_preinc,  0, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "x++", int_postinc, 0, src_id, idx );
 	vm.add_native_typefn< var_int_t >( "--x", int_predec,  0, src_id, idx );
@@ -236,6 +237,9 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_flt_t >( "u-", flt_usub, 0, src_id, idx );
 
 	vm.add_native_typefn< var_flt_t >( "round", flt_round, 0, src_id, idx );
+
+	vm.add_native_typefn< var_flt_t >( "**", flt_pow,  1, src_id, idx );
+	vm.add_native_typefn< var_flt_t >( "//", flt_root, 1, src_id, idx );
 
 	vm.add_native_typefn< var_flt_t >( "<",  flt_lt, 1, src_id, idx );
 	vm.add_native_typefn< var_flt_t >( ">",  flt_gt, 1, src_id, idx );

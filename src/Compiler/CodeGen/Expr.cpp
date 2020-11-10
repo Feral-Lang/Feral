@@ -50,7 +50,8 @@ bool stmt_expr_t::gen_code( bcode_t & bc ) const
 	else if( m_oper->type == TOK_DIV_ASSN ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 	else if( m_oper->type == TOK_MOD_ASSN ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
-	else if( m_oper->type == TOK_POW ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
+	else if( m_oper->type == TOK_POW )  bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
+	else if( m_oper->type == TOK_ROOT ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 
 	else if( m_oper->type == TOK_LNOT ) bc.adds( m_oper->pos, OP_LOAD, ODT_STR, TokStrs[ m_oper->type ] );
 

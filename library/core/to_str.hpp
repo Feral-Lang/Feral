@@ -60,13 +60,17 @@ var_base_t * flt_to_str( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpfr_exp_t expo;
 	char * _res = mpfr_get_str( NULL, & expo, 10, 0, FLT( fd.args[ 0 ] )->get(), mpfr_get_default_rounding_mode() );
-	var_str_t * res = make< var_str_t >( "" );
-	res->get() = _res;
+	var_str_t * res = make< var_str_t >( _res );
 	mpfr_free_str( _res );
-	if( res->get().empty() || expo == 0 ) return res;
+	if( res->get().empty() || expo == 0 || expo > 25 ) return res;
 	auto last_zero_from_end = res->get().find_last_of( "123456789" );
 	if( last_zero_from_end != std::string::npos ) res->get() = res->get().erase( last_zero_from_end + 1 );
 	if( expo > 0 ) {
+		std::string & str_res = res->get();
+		size_t sz = str_res.size();
+		while( expo > sz ) {
+			str_res += '0';
+		}
 		if( res->get()[ 0 ] == '-' ) ++expo;
 		res->get().insert( expo, "." );
 	} else {
