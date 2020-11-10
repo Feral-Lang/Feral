@@ -26,6 +26,7 @@ assert((a %= b)  == 0);
 
 # others
 assert(4 ** 3 == 64);
+assert(64 // 3 == 4);
 assert(++4 == 5);
 assert(4++ == 4);
 assert(--4 == 3);

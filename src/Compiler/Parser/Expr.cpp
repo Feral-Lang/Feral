@@ -490,7 +490,7 @@ fail:
 }
 
 // Left Associative
-// / * % **
+// / * % ** //
 Errors parse_expr_04( phelper_t & ph, stmt_base_t * & loc )
 {
 	stmt_base_t * lhs = nullptr, * rhs = nullptr;
@@ -503,7 +503,7 @@ Errors parse_expr_04( phelper_t & ph, stmt_base_t * & loc )
 	}
 
 	while( ph.accept( TOK_DIV, TOK_MUL, TOK_MOD ) ||
-	       ph.accept( TOK_POW ) ) {
+	       ph.accept( TOK_POW, TOK_ROOT ) ) {
 		idx = ph.peak()->pos;
 		oper = ph.peak();
 		ph.next();

@@ -62,6 +62,7 @@ enum TokType
 	TOK_DIV_ASSN,
 	TOK_MOD_ASSN,
 	TOK_POW, // **
+	TOK_ROOT, // //
 	// Post/Pre Inc/Dec
 	TOK_XINC,
 	TOK_INCX,

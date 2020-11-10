@@ -51,6 +51,7 @@ const char * TokStrs[ _TOK_LAST ] = {
 	"/=",
 	"%=",
 	"**", // power
+	"//", // root
 	// Post/Pre Inc/Dec
 	"x++",
 	"++x",
@@ -450,9 +451,11 @@ static int get_operator( const std::string & src, size_t & i )
 		SET_OP_TYPE_BRK( TOK_MUL );
 	case '/':
 		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+			if( NEXT( src ) == '/' || NEXT( src ) == '=' ) {
 				++i;
-				SET_OP_TYPE_BRK( TOK_DIV_ASSN );
+				if( CURR( src ) == '/' ) op_type = TOK_ROOT;
+				else if( CURR( src ) == '=' ) op_type = TOK_DIV_ASSN;
+				break;
 			}
 		}
 		SET_OP_TYPE_BRK( TOK_DIV );

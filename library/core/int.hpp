@@ -339,6 +339,26 @@ var_base_t * int_pow( vm_state_t & vm, const fn_data_t & fd )
 	return nullptr;
 }
 
+var_base_t * int_root( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( fd.args[ 1 ]->istype< var_int_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_root( res->get(), res->get(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ) );
+		return res;
+	} else if( fd.args[ 1 ]->istype< var_flt_t >() ) {
+		var_int_t * res = make< var_int_t >( INT( fd.args[ 0 ] )->get() );
+		mpz_t tmp;
+		mpz_init( tmp );
+		mpfr_get_z( tmp, FLT( fd.args[ 1 ] )->get(), mpfr_get_default_rounding_mode() );
+		mpz_root( res->get(), res->get(), mpz_get_ui( tmp ) );
+		mpz_clear( tmp );
+		return res;
+	}
+	vm.fail( fd.src_id, fd.idx, "expected int or float argument for int root, found: %s",
+		 vm.type_name( fd.args[ 1 ] ).c_str() );
+	return nullptr;
+}
+
 var_base_t * int_preinc( vm_state_t & vm, const fn_data_t & fd )
 {
 	mpz_add_ui( INT( fd.args[ 0 ] )->get(), INT( fd.args[ 0 ] )->get(), 1 );
