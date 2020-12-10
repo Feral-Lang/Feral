@@ -8,3 +8,13 @@ let substr in str_t = fn(begin = 0, len = -1) {
 let split in str_t = fn(delim = ':') {
 	return self.split_native(delim);
 };
+
+let is_alpha in str_t = fn() {
+	if self.empty() { return false; }
+	return (self >= 'a' && self <= 'z') || (self >= 'A' && self <= 'Z');
+};
+
+let is_digit in str_t = fn() {
+	if self.empty() { return false; }
+	return self >= '0' && self <= '9';
+};
