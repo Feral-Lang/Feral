@@ -13,7 +13,7 @@ if sys.args.len() < 1 {
 
 let file_loc = os.get_env('NOTES_DIR');
 if file_loc.empty() { file_loc = os.get_env('HOME') + '/.notes.txt'; }
-else { file_loc += '/notes.txt'; }
+else { os.mkdir(file_loc); file_loc += '/notes.txt'; }
 
 let file = fs.fopen(file_loc, 'a+');
 file.seek(0, fs.SEEK_SET);
