@@ -8,6 +8,8 @@ assert(os.get_env('__tmp__') == 'val');
 
 # this script is probably running thanks to os.exec()
 
+# TODO: add os.system() test
+
 let insfile = '__testinsfile__';
 os.install(__SRC_PATH__, insfile);
 assert(fs.exists(insfile));

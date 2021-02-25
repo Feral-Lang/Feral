@@ -114,6 +114,21 @@ var_base_t * exec_custom( vm_state_t & vm, const fn_data_t & fd )
 	return make< var_int_t >( res );
 }
 
+var_base_t * system_custom( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected string argument for command, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+
+	std::string cmd = STR( fd.args[ 1 ] )->get();
+	int res = std::system( cmd.c_str() );
+	res = WEXITSTATUS( res );
+
+	return make< var_int_t >( res );
+}
+
 var_base_t * install( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
@@ -334,6 +349,7 @@ INIT_MODULE( os )
 	src->add_native_fn( "set_env_native", set_env, 3 );
 
 	src->add_native_fn( "exec_native", exec_custom, 2 );
+	src->add_native_fn( "system", system_custom, 1 );
 	src->add_native_fn( "install", install, 2 );
 
 	src->add_native_fn( "os_get_name_native", os_get_name );
