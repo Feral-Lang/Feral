@@ -46,8 +46,9 @@ var_base_t * flt_to_int( vm_state_t & vm, const fn_data_t & fd )
 var_base_t * str_to_int( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_int_t * res = make< var_int_t >( 0 );
-	mpz_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), 0 );
-	return res;
+	int tmp = mpz_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), 0 );
+	if( tmp == 0 ) return res;
+	return vm.nil;
 }
 
 #endif // LIBRARY_CORE_TO_INT_HPP

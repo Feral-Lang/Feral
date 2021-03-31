@@ -1,0 +1,11 @@
+mload('std/rng');
+let time = import('std/time');
+
+seed(time.now().int());
+
+# [from, to]
+let get = fn(from, to) {
+	if from > to { raise('LHS should be less or equal to RHS for random number generation'); }
+	let res = get_native(to - from + 1); # [0, to - from]
+	return res + from;
+};

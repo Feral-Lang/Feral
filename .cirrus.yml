@@ -1,9 +1,9 @@
-# LTO is disabled on ubuntu 14.04 and freebsd 10.4
-# because clang 3.4 does work correctly with it
 task:
-    name: Ubuntu 14.04 gcc 4.8.4
+    name: Ubuntu 20.04 gcc 9.3
     container:
-        image: ubuntu:14.04
+        image: ubuntu:20.04
+    env:
+        DEBIAN_FRONTEND: noninteractive
     install_script: apt-get update && apt-get install -y git libgmp-dev libmpfr-dev libmpc-dev g++ cmake make wget valgrind
     compile_script:
         - export CI=true; sh build.sh
@@ -21,16 +21,14 @@ task:
     tests_script: ${HOME}/.feral/bin/feral testdir tests && ${HOME}/.feral/bin/feral testdir tests --valgrind
 
 task:
-    name: FreeBSD 10.4 clang 3.4.1
+    name: FreeBSD 12.1
     freebsd_instance:
-        image: freebsd-10-4-release-amd64
-    env:
-        SKIP_LTO: true
+        image_family: freebsd-12-1
     install_script: pkg install -y git gmp mpfr mpc cmake wget valgrind
     compile_script:
         - export CI=true; sh build.sh
     # valgrind causes invalid KERN_PROC_PATHNAME to be set therefore manually FERAL_PATHS is set
-    tests_script: ${HOME}/.feral/bin/feral testdir tests && export FERAL_PATHS=${HOME}/.feral && ${HOME}/.feral/bin/feral testdir tests --valgrind
+    tests_script: ${HOME}/.feral/bin/feral testdir tests
 
 task:
     name: macOS Catalina Apple llvm 11.0.0

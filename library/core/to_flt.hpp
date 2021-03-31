@@ -44,8 +44,9 @@ var_base_t * str_to_flt( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	var_flt_t * res = make< var_flt_t >( 0.0 );
-	mpfr_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ), mpfr_get_default_rounding_mode() );
-	return res;
+	int tmp = mpfr_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ), mpfr_get_default_rounding_mode() );
+	if( tmp == 0 ) return res;
+	return vm.nil;
 }
 
 #endif // LIBRARY_CORE_TO_FLT_HPP
