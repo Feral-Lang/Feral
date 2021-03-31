@@ -23,6 +23,7 @@ doxygen/
 flag_cache
 book/book/
 include/Common/Config.hpp
+.cache/
 
 # Extra data #
 #######################

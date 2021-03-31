@@ -1,0 +1,12 @@
+let rng = import('std/rng');
+
+let res = rng.get(0, 5);
+assert(res >= 0 && res <= 5);
+res = rng.get(5, 7);
+assert(res >= 5 && res <= 7);
+res = rng.get(-7, -5);
+assert(res >= -7 && res <= -5);
+res = rng.get(5, 2) or {
+	0 # lower > upper so it should raise an error
+};
+assert(res == 0);
