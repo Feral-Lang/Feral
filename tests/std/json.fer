@@ -1,4 +1,5 @@
 let json = import('std/json');
+let lang = import('std/lang');
 
 let json_oneline = '{"first": {"one": "two"}, "second": ["a", "b", 1.27, true, {"key": null}], "third": -1.27}';
 let json_pretty =
@@ -31,3 +32,25 @@ let json_oneline_dump = json.dumps(js);
 let json_pretty_dump = json.dumps(js, 0, '\t');
 assert(json_oneline == json_oneline_dump);
 assert(json_pretty == json_pretty_dump);
+
+let struct_t = lang.struct(
+	name = 'name',
+	val = 5
+);
+
+let serialized_js1 = '{"val": 52, "some_field": 25}';
+let serialized_js2 = '{"val": 52}';
+let st = struct_t();
+
+let js = json.loads(serialized_js1);
+let result = true;
+json.bind(st, js) or e {
+	e == "field name 'some_field' not found";
+	result = false;
+	nil
+};
+assert(result == false);
+
+js = json.loads(serialized_js2);
+json.bind(st, js);
+assert(st.val == js['val']);
