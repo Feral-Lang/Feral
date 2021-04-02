@@ -31,8 +31,6 @@ let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
 let max_procs = mp.nproc();
 
-time.set_resolution(time.milli);
-
 let wait_procs = fn(max_procs, with_valgrind) {
 	while tpool.len() >= max_procs {
 		for let i = 0; i < tpool.len(); ++i {
@@ -81,6 +79,6 @@ let tot_time = time.now() - time_begin;
 io.cprintln('total: {y}', files.len(),
 	    '{0}, passed: {g}', passed,
 	    '{0}, failed: {r}', failed,
-	    '{0}, time: {b}', tot_time.round(),
+	    '{0}, time: {b}', time.resolve(tot_time, time.milli).round(),
 	    '{0} ms');
 sys.exit(failed);
