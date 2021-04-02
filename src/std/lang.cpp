@@ -97,6 +97,69 @@ var_base_t * struct_def_set_typename( vm_state_t & vm, const fn_data_t & fd )
 	return fd.args[ 0 ];
 }
 
+var_base_t * struct_def_get_fields( vm_state_t & vm, const fn_data_t & fd )
+{
+	std::vector< var_base_t * > vec;
+	const std::unordered_map< std::string, var_base_t * > & attrs = STRUCT_DEF( fd.args[ 0 ] )->attrs();
+	for( auto & attr : attrs ) {
+		vec.push_back( new var_str_t( attr.first, fd.src_id, fd.idx ) );
+	}
+	return make< var_vec_t >( vec, false );
+}
+
+var_base_t * struct_def_get_field_value( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected field name to be of type string, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	const std::string & attr = STR( fd.args[ 1 ] )->get();
+	const std::unordered_map< std::string, var_base_t * > & attrs = STRUCT_DEF( fd.args[ 0 ] )->attrs();
+
+	if( attrs.find( attr ) == attrs.end() ) return vm.nil;
+
+	return attrs.at( attr );
+}
+
+var_base_t * struct_get_fields( vm_state_t & vm, const fn_data_t & fd )
+{
+	std::vector< var_base_t * > vec;
+	const std::unordered_map< std::string, var_base_t * > & attrs = STRUCT( fd.args[ 0 ] )->attrs();
+	for( auto & attr : attrs ) {
+		vec.push_back( new var_str_t( attr.first, fd.src_id, fd.idx ) );
+	}
+	return make< var_vec_t >( vec, false );
+}
+
+var_base_t * struct_set_field_value( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_str_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected field name to be of type string, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	var_base_t * val = fd.args[ 2 ];
+	const std::string & attr = STR( fd.args[ 1 ] )->get();
+	const std::unordered_map< std::string, var_base_t * > & attrs = STRUCT( fd.args[ 0 ] )->attrs();
+
+	const auto & res = attrs.find( attr );
+	if( res == attrs.end() ) {
+		vm.fail( fd.src_id, fd.idx, "field name '%s' not found",
+			 attr.c_str() );
+		return nullptr;
+	}
+
+	if( res->second->type() == val->type() ) {
+		res->second->set( val );
+	} else {
+		vm.fail( fd.src_id, fd.idx, "attribute value type mismatch, provided '%s', existing '%s'",
+			 vm.type_name( val ).c_str(), vm.type_name( res->second ).c_str() );
+		return nullptr;
+	}
+	return vm.nil;
+}
+
 INIT_MODULE( lang )
 {
 	var_src_t * src = vm.current_source();
@@ -106,6 +169,11 @@ INIT_MODULE( lang )
 	vm.add_native_typefn< var_struct_t >( "str", struct_to_str, 0, src_id, idx );
 
 	vm.add_native_typefn< var_struct_def_t >( "set_typename", struct_def_set_typename, 1, src_id, idx );
+	vm.add_native_typefn< var_struct_def_t >( "get_fields", struct_def_get_fields, 0, src_id, idx );
+	vm.add_native_typefn< var_struct_def_t >( "[]", struct_def_get_field_value, 1, src_id, idx );
+
+	vm.add_native_typefn< var_struct_t >( "get_fields", struct_get_fields, 0, src_id, idx );
+	vm.add_native_typefn< var_struct_t >( "set_field", struct_set_field_value, 2, src_id, idx );
 
 	return true;
 }
