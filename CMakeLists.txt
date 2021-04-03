@@ -82,9 +82,12 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	message("-- Running in debug mode")
 endif()
 
-check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+# Generally, disabled for CI purposes
+if(NOT DEFINED DISABLE_MARCH_NATIVE_FLAG)
+	check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
+	if(COMPILER_SUPPORTS_MARCH_NATIVE)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	endif()
 endif()
 
 # Because Android has issues with dlopen()'s RTLD_GLOBAL; See:

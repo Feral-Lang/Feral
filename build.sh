@@ -64,7 +64,11 @@ trap exit_handler INT
 
 build() {
     mkdir build && cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    DISABLE_MARCH_NATIVE=""
+    if [ -n "$CI" ]; then
+        DISABLE_MARCH_NATIVE="-DDISABLE_MARCH_NATIVE_FLAG=true"
+    fi
+    cmake .. -DCMAKE_BUILD_TYPE=Release $DISABLE_MARCH_NATIVE
     if [ "$?" -ne 0 ]; then exit 1; fi
     make -j$CORES install
     if [ "$?" -ne 0 ]; then exit 1; fi

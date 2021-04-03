@@ -40,7 +40,7 @@ std::string get_proc_path()
 	char path[ MAX_PATH_CHARS ];
 	memset( path, 0, MAX_PATH_CHARS );
 #if __linux__ || __ANDROID__
-	readlink( "/proc/self/exe", path, MAX_PATH_CHARS );
+	( void )readlink( "/proc/self/exe", path, MAX_PATH_CHARS );
 #elif __FreeBSD__
 	int mib[ 4 ];
 	mib[ 0 ] = CTL_KERN;
