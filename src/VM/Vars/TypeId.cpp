@@ -26,4 +26,3 @@ void var_typeid_t::set( var_base_t * from )
 	m_val = TYPEID( from )->get();
 }
 std::uintptr_t & var_typeid_t::get() { return m_val; }
-std::uintptr_t var_typeid_t::typefn_id() const { return m_val; }

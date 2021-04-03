@@ -18,6 +18,7 @@
 #include "core/flt.hpp"
 #include "core/str.hpp"
 
+#include "core/to_bool.hpp"
 #include "core/to_int.hpp"
 #include "core/to_flt.hpp"
 #include "core/to_str.hpp"
@@ -131,6 +132,17 @@ INIT_MODULE( core )
 	vm.add_native_typefn< var_str_t >(    "str", str_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_vec_t >(    "str", vec_to_str,    0, src_id, idx );
 	vm.add_native_typefn< var_map_t >(    "str", map_to_str,    0, src_id, idx );
+
+	// to bool
+	vm.add_native_typefn< var_all_t >(    "bool", all_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_nil_t >(    "bool", nil_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_typeid_t >( "bool", typeid_to_bool, 0, src_id, idx );
+	vm.add_native_typefn< var_bool_t >(   "bool", bool_to_bool,   0, src_id, idx );
+	vm.add_native_typefn< var_int_t >(    "bool", int_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_flt_t >(    "bool", flt_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_str_t >(    "bool", str_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_vec_t >(    "bool", vec_to_bool,    0, src_id, idx );
+	vm.add_native_typefn< var_map_t >(    "bool", map_to_bool,    0, src_id, idx );
 
 	// to int
 	vm.add_native_typefn< var_nil_t >(    "int", nil_to_int,    0, src_id, idx );
