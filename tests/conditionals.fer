@@ -1,0 +1,12 @@
+let vec = import('std/vec');
+let map = import('std/map');
+
+if false { assert(false); }
+if nil { assert(false); }
+if 0 { assert(false); }
+if 0.0 { assert(false); }
+if '' { assert(false); }
+# empty vector/map = false
+if vec.new() { assert(false); }
+if map.new() { assert(false); }
+if 5._type_().bool() != true { assert(false); }

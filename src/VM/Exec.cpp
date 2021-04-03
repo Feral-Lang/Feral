@@ -117,7 +117,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				goto create_fail;
 			}
 			// if it's a function, add that to vm.typefuncs
-			vm.add_typefn( in->typefn_id(), name, val, true );
+			vm.add_typefn( in->istype< var_typeid_t >() ? TYPEID( in )->get() : in->typefn_id(), name, val, true );
 		create_done:
 			var_dref( in );
 			var_dref( val );
@@ -162,16 +162,30 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		}
 		case OP_JMPTPOP: // fallthrough
 		case OP_JMPT: {
-			assert( vms->back()->istype< var_bool_t >() );
-			bool res = static_cast< var_bool_t * >( vms->back() )->get();
+			assert( !vms->empty() );
+			var_base_t * var = vms->back();
+			bool res = false;
+			if( !var->to_bool( vm, res, op.src_id, op.idx ) ) {
+				vm.fail( op.src_id, op.idx, "'bool()' not implemented for type: %s",
+					 vm.type_name( var ).c_str() );
+				vms->pop();
+				goto handle_error;
+			}
 			if( res ) i = op.data.sz - 1;
 			if( !res || op.op == OP_JMPTPOP ) vms->pop();
 			break;
 		}
 		case OP_JMPFPOP: // fallthrough
 		case OP_JMPF: {
-			assert( vms->back()->istype< var_bool_t >() );
-			bool res = static_cast< var_bool_t * >( vms->back() )->get();
+			assert( !vms->empty() );
+			var_base_t * var = vms->back();
+			bool res = false;
+			if( !var->to_bool( vm, res, op.src_id, op.idx ) ) {
+				vm.fail( op.src_id, op.idx, "'bool()' not implemented for type: %s",
+					 vm.type_name( var ).c_str() );
+				vms->pop();
+				goto handle_error;
+			}
 			if( !res ) i = op.data.sz - 1;
 			if( res || op.op == OP_JMPFPOP ) vms->pop();
 			break;

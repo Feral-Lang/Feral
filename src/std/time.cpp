@@ -40,7 +40,7 @@ var_base_t * time_format( vm_state_t & vm, const fn_data_t & fd )
 	}
 	unsigned long val = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
 	std::chrono::nanoseconds nsval( val );
-	std::chrono::system_clock::time_point tp( ( std::chrono::nanoseconds( val ) ) );
+	std::chrono::system_clock::time_point tp( std::chrono::duration_cast< std::chrono::system_clock::duration >( nsval ) );
 	std::time_t time = std::chrono::system_clock::to_time_t( tp );
 	std::tm * t = std::localtime( & time );
 	char fmt[ 1024 ] = { 0 };

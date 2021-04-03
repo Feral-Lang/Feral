@@ -35,7 +35,7 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 	if( str_fn == nullptr ) str_fn = vm.get_typefn( this, "str" );
 
 	if( !str_fn ) {
-		vm.fail( this->src_id(), this->idx(), "no 'str' function implement for type: '%zu' or global type", this->type() );
+		vm.fail( this->src_id(), this->idx(), "no 'str' function implemented for type: '%zu' or global type", this->type() );
 		return false;
 	}
 	if( !str_fn->call( vm, { this }, {}, {}, src_id, idx ) ) {
@@ -51,6 +51,32 @@ bool var_base_t::to_str( vm_state_t & vm, std::string & data, const size_t & src
 	}
 	data = STR( str )->get();
 	var_dref( str );
+	return true;
+}
+
+bool var_base_t::to_bool( vm_state_t & vm, bool & data, const size_t & src_id, const size_t & idx )
+{
+	var_base_t * bool_fn = nullptr;
+	if( attr_based() ) bool_fn = attr_get( "bool" );
+	if( bool_fn == nullptr ) bool_fn = vm.get_typefn( this, "bool" );
+
+	if( !bool_fn ) {
+		vm.fail( this->src_id(), this->idx(), "no 'bool' function implemented for type: '%zu' or global type", this->type() );
+		return false;
+	}
+	if( !bool_fn->call( vm, { this }, {}, {}, src_id, idx ) ) {
+		vm.fail( this->src_id(), this->idx(), "function call 'bool' for type: %zu failed", this->type() );
+		return false;
+	}
+	var_base_t * b = vm.vm_stack->pop( false );
+	if( !b->istype< var_bool_t >() ) {
+		vm.fail( this->src_id(), this->idx(), "expected string return type from 'bool' function, received: %s",
+			 vm.type_name( b ).c_str() );
+		var_dref( b );
+		return false;
+	}
+	data = BOOL( b )->get();
+	var_dref( b );
 	return true;
 }
 

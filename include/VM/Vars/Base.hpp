@@ -73,6 +73,7 @@ public:
 	virtual void set( var_base_t * from ) = 0;
 
 	bool to_str( vm_state_t & vm, std::string & data, const size_t & src_id, const size_t & idx );
+	bool to_bool( vm_state_t & vm, bool & data, const size_t & src_id, const size_t & idx );
 
 	inline void set_src_id_idx( const size_t & src_id, const size_t & idx ) { m_src_id = src_id; m_idx = idx; }
 
@@ -157,7 +158,6 @@ public:
 	void set( var_base_t * from );
 
 	std::uintptr_t & get();
-	std::uintptr_t typefn_id() const;
 };
 #define TYPEID( x ) static_cast< var_typeid_t * >( x )
 
