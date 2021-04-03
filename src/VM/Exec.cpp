@@ -60,7 +60,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				var_base_t * res = consts::get( vm, op.dtype, op.data, op.src_id, op.idx );
 				if( res == nullptr ) {
 					vm.fail( op.src_id, op.idx, "invalid data received as const" );
-					goto fail;
+					goto handle_error;
 				}
 				vms->push( res );
 			} else {
@@ -69,7 +69,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 					res = vm.gget( op.data.s );
 					if( res == nullptr ) {
 						vm.fail( op.src_id, op.idx, "variable '%s' does not exist", op.data.s );
-						goto fail;
+						goto handle_error;
 					}
 				}
 				vms->push( res, true );
@@ -125,9 +125,14 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 		create_fail:
 			var_dref( in );
 			var_dref( val );
-			goto fail;
+			goto handle_error;
 		}
 		case OP_STORE: {
+			if( vms->size() < 2 ) {
+				vm.fail( op.src_id, op.idx, "virtual machine stack has %zu item(s), required 2 for store operation",
+					 vms->size() );
+				goto handle_error;
+			}
 			var_base_t * var = vms->pop( false );
 			var_base_t * val = vms->pop( false );
 			if( var->type() != val->type() ) {
@@ -136,7 +141,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 					 vm.type_name( var ).c_str(), vm.type_name( val ).c_str() );
 				var_dref( val );
 				var_dref( var );
-				goto fail;
+				goto handle_error;
 			}
 			var->set( val );
 			vms->push( var, false );
@@ -296,21 +301,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			for( auto & arg : args ) var_dref( arg );
 			for( auto & arg : assn_args ) var_dref( arg.val );
 			if( !mem_call ) var_dref( fn_base );
-			if( !jmps.empty() && !vm.exit_called ) {
-				i = jmps.back().pos - 1;
-				if( jmps.back().name ) {
-					if( !vm.fails.backempty() ) {
-						vars->stash( jmps.back().name, vm.fails.pop( false ), false );
-					} else {
-						vars->stash( jmps.back().name,
-							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
-					}
-				}
-				jmps.pop_back();
-				vm.fails.blkr();
-				break;
-			}
-			goto fail;
+			goto handle_error;
 		}
 		case OP_ATTR: {
 			const std::string attr = op.data.s;
@@ -328,21 +319,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			break;
 		attr_fail:
 			var_dref( in_base );
-			if( !jmps.empty() && !vm.exit_called ) {
-				i = jmps.back().pos - 1;
-				if( jmps.back().name ) {
-					if( !vm.fails.backempty() ) {
-						vars->stash( jmps.back().name, vm.fails.pop( false ), false );
-					} else {
-						vars->stash( jmps.back().name,
-							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
-					}
-				}
-				jmps.pop_back();
-				vm.fails.blkr();
-				break;
-			}
-			goto fail;
+			goto handle_error;
 		}
 		case OP_RET: {
 			if( !op.data.b ) {
@@ -383,9 +360,25 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			vm.fails.blkr();
 			break;
 		}
-		// NOOP
+		// NOOP - only exists for completeness sake + for handle_error
 		case _OP_LAST: {
-			break;
+			assert( false ); // flow should never come here
+		handle_error:
+			if( !jmps.empty() && !vm.exit_called ) {
+				i = jmps.back().pos - 1;
+				if( jmps.back().name ) {
+					if( !vm.fails.backempty() ) {
+						vars->stash( jmps.back().name, vm.fails.pop( false ), false );
+					} else {
+						vars->stash( jmps.back().name,
+							     make_all< var_str_t >( "unknown failure", op.src_id, op.idx ) );
+					}
+				}
+				jmps.pop_back();
+				vm.fails.blkr();
+				break;
+			}
+			goto fail;
 		}
 		}
 	}
