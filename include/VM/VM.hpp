@@ -78,7 +78,6 @@ struct vm_state_t
 	var_base_t * tru;
 	var_base_t * fals;
 	var_base_t * nil;
-	var_base_t * args;
 
 	// this is a pointer since it must be explicitly deleted after everything else
 	dyn_lib_t * dlib;
@@ -87,7 +86,7 @@ struct vm_state_t
 	var_base_t * src_args;
 
 	vm_state_t( const std::string & self_bin, const std::string & self_base,
-		   const std::vector< std::string > & args, const size_t & flags );
+		   const std::vector< std::string > & args, const size_t & flags, const bool & is_thread_copy = false );
 	~vm_state_t();
 
 	void push_src( srcfile_t * src, const size_t & idx );
@@ -128,12 +127,13 @@ struct vm_state_t
 
 	void add_typefn( const std::uintptr_t & type, const std::string & name, var_base_t * fn, const bool iref );
 	template< typename ... T > void add_native_typefn( const std::string & name, nativefnptr_t fn, const size_t & args_count,
-							   const size_t & src_id, const size_t & idx )
+							   const size_t & src_id, const size_t & idx, const bool & is_va = false )
 	{
 		add_typefn( type_id< T ... >(), name,
 			    new var_fn_t( src_stack.back()->src()->path(),
+					  "", is_va ? "." : "",
 					  std::vector< std::string >( args_count, "" ),
-					  {}, { .native = fn }, src_id, idx ),
+					  {}, { .native = fn }, true, src_id, idx ),
 			    false );
 	}
 	var_base_t * get_typefn( var_base_t * var, const std::string & name );
@@ -152,6 +152,10 @@ struct vm_state_t
 	void fail( const size_t & src_id, const size_t & idx, var_base_t * val, const char * msg, const bool & iref = true );
 
 	bool load_core_mods();
+
+	vm_state_t * thread_copy( const size_t & src_id, const size_t & idx );
+
+	inline bool is_thread_copy() { return m_is_thread_copy; }
 private:
 	// file loading function
 	fmod_load_fn_t m_src_load_fn;
@@ -172,6 +176,8 @@ private:
 	std::string m_self_bin;
 	// parent directory of where feral binary exists (used by sys.self_base())
 	std::string m_self_base;
+	// is this vm instance a thread copy
+	bool m_is_thread_copy;
 };
 
 const char * nmod_ext();

@@ -11,7 +11,11 @@
 	furnished to do so.
 */
 
+#include <mutex>
+
 #include "VM/Memory.hpp"
+
+static std::mutex mem_mtx;
 
 namespace mem
 {
@@ -66,6 +70,7 @@ mem_mgr_t & mem_mgr_t::instance()
 void * mem_mgr_t::alloc( size_t sz )
 {
 	if( sz == 0 ) return nullptr;
+	std::lock_guard< std::mutex > mtx_lock( mem_mtx );
 #ifdef MEM_PROFILE
 	tot_alloc_nopool += sz;
 	++tot_alloc_req;
@@ -115,6 +120,7 @@ void * mem_mgr_t::alloc( size_t sz )
 void mem_mgr_t::free( void * ptr, size_t sz )
 {
 	if( ptr == nullptr || sz == 0 ) return;
+	std::lock_guard< std::mutex > mtx_lock( mem_mtx );
 	if( sz > POOL_SIZE ) {
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf( stdout, "Deleting manually ... %zu\n", sz );

@@ -127,6 +127,15 @@ template< typename T > inline void var_dref( T * & var )
 		var = nullptr;
 	}
 }
+// used in std/threads library
+template< typename T > inline void var_dref_const( T * const var )
+{
+	if( var == nullptr ) return;
+	var->dref();
+	if( var->ref() == 0 ) {
+		delete var;
+	}
+}
 
 // dummy type to denote all other types
 class var_all_t : public var_base_t
@@ -323,11 +332,13 @@ class var_src_t : public var_base_t
 	srcfile_t * m_src;
 	vars_t * m_vars;
 	bool m_owner;
+	bool m_is_thread_copy;
 public:
-	var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner = true );
+	var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner = true, const bool is_thread_copy = false );
 	~var_src_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
+	var_base_t * thread_copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
 	bool attr_exists( const std::string & name ) const;

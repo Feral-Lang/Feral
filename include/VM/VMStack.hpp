@@ -36,6 +36,8 @@ public:
 	inline size_t size() const { return m_vec.size(); }
 
 	inline bool empty() const { return m_vec.empty(); }
+
+	vm_stack_t * thread_copy();
 };
 
 #endif // VM_VM_STACK_HPP
