@@ -48,7 +48,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
 #ifdef DEBUG_MODE
-		fprintf( stdout, "%s [%zu]: %*s: ", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
+		fprintf( stdout, "InThread(%s) %s [%zu]: %*s: ", vm.is_thread_copy() ? "yes" : "no", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
 		for( auto & e : vms->get() ) {
 			fprintf( stdout, "%s ", vm.type_name( e ).c_str() );
 		}

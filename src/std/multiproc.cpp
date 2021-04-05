@@ -1,7 +1,7 @@
 /*
 	MIT License
 
-	Copyright (c) 2020 Feral Language repositories
+	Copyright (c) 2021 Feral Language repositories
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -15,7 +15,7 @@
 
 #include "VM/VM.hpp"
 
-#include "std/thread_type.hpp"
+#include "std/multiproc_type.hpp"
 
 int exec_command( const std::string & cmd );
 
@@ -37,24 +37,24 @@ var_base_t * multiproc_new( vm_state_t & vm, const fn_data_t & fd )
 	}
 	std::packaged_task< int( std::string ) > task( exec_command );
 	std::shared_future< int > * fut = new std::shared_future< int >( task.get_future() );
-	return make< var_thread_t >( new std::thread( std::move( task ), STR( fd.args[ 1 ] )->get() ), fut );
+	return make< var_multiproc_t >( new std::thread( std::move( task ), STR( fd.args[ 1 ] )->get() ), fut );
 }
 
 var_base_t * multiproc_get_id( vm_state_t & vm, const fn_data_t & fd )
 {
-	return make< var_int_t >( THREAD( fd.args[ 0 ] )->get_id() );
+	return make< var_int_t >( MULTIPROC( fd.args[ 0 ] )->get_id() );
 }
 
 var_base_t * multiproc_is_done( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::shared_future< int > * fut = THREAD( fd.args[ 0 ] )->get_future();
+	std::shared_future< int > *& fut = MULTIPROC( fd.args[ 0 ] )->get_future();
 	if( !fut->valid() ) return vm.fals;
 	return fut->wait_for( std::chrono::seconds( 0 ) ) == std::future_status::ready ? vm.tru : vm.fals;
 }
 
 var_base_t * multiproc_get_res( vm_state_t & vm, const fn_data_t & fd )
 {
-	std::shared_future< int > * fut = THREAD( fd.args[ 0 ] )->get_future();
+	std::shared_future< int > *& fut = MULTIPROC( fd.args[ 0 ] )->get_future();
 	if( !fut->valid() || fut->wait_for( std::chrono::seconds( 0 ) ) != std::future_status::ready ) return vm.nil;
 	return make< var_int_t >( fut->get() );
 }
@@ -66,9 +66,9 @@ INIT_MODULE( multiproc )
 	src->add_native_fn( "nproc", multiproc_nproc, 0 );
 	src->add_native_fn(   "new", multiproc_new,   1 );
 
-	vm.add_native_typefn< var_thread_t >(   "id", multiproc_get_id,  0, src_id, idx );
-	vm.add_native_typefn< var_thread_t >( "done", multiproc_is_done, 0, src_id, idx );
-	vm.add_native_typefn< var_thread_t >(  "res", multiproc_get_res, 0, src_id, idx );
+	vm.add_native_typefn< var_multiproc_t >(   "id", multiproc_get_id,  0, src_id, idx );
+	vm.add_native_typefn< var_multiproc_t >( "done", multiproc_is_done, 0, src_id, idx );
+	vm.add_native_typefn< var_multiproc_t >(  "res", multiproc_get_res, 0, src_id, idx );
 	return true;
 }
 

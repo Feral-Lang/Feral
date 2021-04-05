@@ -24,13 +24,17 @@
 
 // env: FERAL_PATHS
 vm_state_t::vm_state_t( const std::string & self_bin, const std::string & self_base,
-			const std::vector< std::string > & args, const size_t & flags )
+			const std::vector< std::string > & args, const size_t & flags,
+			const bool & is_thread_copy )
 	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
-	  dlib( new dyn_lib_t() ), m_self_bin( self_bin ), m_self_base( self_base ),
-	  m_src_load_fn( nullptr ), m_src_read_code_fn( nullptr )
+	  dlib( is_thread_copy ? nullptr : new dyn_lib_t() ), src_args( nullptr ),
+	  m_self_bin( self_bin ), m_self_base( self_base ), m_src_load_fn( nullptr ),
+	  m_src_read_code_fn( nullptr ), m_is_thread_copy( is_thread_copy )
 {
+	if( m_is_thread_copy ) return;
+
 	init_typenames( * this );
 
 	std::vector< var_base_t * > src_args_vec;
@@ -54,7 +58,7 @@ vm_state_t::vm_state_t( const std::string & self_bin, const std::string & self_b
 vm_state_t::~vm_state_t()
 {
 	delete vm_stack;
-	for( auto & typefn : m_typefns ) delete typefn.second;
+	if( !m_is_thread_copy ) for( auto & typefn : m_typefns ) delete typefn.second;
 	for( auto & g : m_globals ) var_dref( g.second );
 	for( auto & src : all_srcs ) var_dref( src.second );
 	var_dref( nil );
@@ -64,6 +68,7 @@ vm_state_t::~vm_state_t()
 	for( auto & deinit_fn : m_dll_deinit_fns ) {
 		deinit_fn.second();
 	}
+	if( m_is_thread_copy ) return;
 	delete dlib;
 }
 
@@ -235,15 +240,6 @@ int vm_state_t::fmod_load( std::string & mod_file, const size_t & src_id, const 
 	return res;
 }
 
-bool vm_state_t::load_core_mods()
-{
-	std::vector< std::string > mods = { "core", "utils" };
-	for( auto & mod : mods ) {
-		if( !nmod_load( mod, 0, 0 ) ) return false;
-	}
-	return true;
-}
-
 void vm_state_t::fail( const size_t & src_id, const size_t & idx, const char * msg, ... )
 {
 	va_list vargs;
@@ -281,6 +277,41 @@ void vm_state_t::fail( const size_t & src_id, const size_t & idx, var_base_t * v
 	} else {
 		fails.push( val, false );
 	}
+}
+
+bool vm_state_t::load_core_mods()
+{
+	std::vector< std::string > mods = { "core", "utils" };
+	for( auto & mod : mods ) {
+		if( !nmod_load( mod, 0, 0 ) ) return false;
+	}
+	return true;
+}
+
+vm_state_t * vm_state_t::thread_copy( const size_t & src_id, const size_t & idx )
+{
+	vm_state_t * vm = new vm_state_t( m_self_bin, m_self_base, {}, exec_flags, true );
+	for( auto & s : all_srcs ) {
+		vm->all_srcs[ s.first ] = static_cast< var_src_t * >( s.second->thread_copy( src_id, idx ) );
+	}
+	for( auto & s : src_stack ) {
+		vm->src_stack.push_back( vm->all_srcs[ s->src()->path() ] );
+	}
+	vm->dlib = dlib; // don't delete in destructor
+	var_iref( src_args );
+	vm->src_args = src_args;
+	vm->m_src_load_fn = m_src_load_fn;
+	vm->m_src_read_code_fn = m_src_read_code_fn;
+	vm->m_inc_locs = m_inc_locs;
+	vm->m_dll_locs = m_dll_locs;
+	vm->m_globals = m_globals;
+	for( auto & glob : vm->m_globals ) {
+		var_iref( glob.second );
+	}
+	vm->m_typefns = m_typefns; // do not delete in destructor
+	vm->m_typenames = m_typenames;
+	// don't copy m_dll_deinit_fns as that will be called by the main thread
+	return vm;
 }
 
 const char * nmod_ext()

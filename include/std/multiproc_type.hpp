@@ -11,42 +11,34 @@
 	furnished to do so.
 */
 
-#ifndef THREAD_TYPE_HPP
-#define THREAD_TYPE_HPP
+#ifndef MULTIPROC_TYPE_HPP
+#define MULTIPROC_TYPE_HPP
 
 #include <thread>
 #include <future>
 
 #include "../VM/VM.hpp"
 
-struct thread_res_t
-{
-	var_base_t * err;
-	var_base_t * res;
-};
-
-class var_thread_t : public var_base_t
+class var_multiproc_t : public var_base_t
 {
 	std::thread * m_thread;
-	var_fn_t * m_fn;
-	std::shared_future< thread_res_t > * m_res;
+	std::shared_future< int > * m_res;
 	size_t m_id;
 	bool m_owner;
 public:
-	var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
+	var_multiproc_t( std::thread * thread, std::shared_future< int > * res,
 		      const size_t & src_id, const size_t & idx, const bool & owner = true );
-	var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
-		      const size_t & id, const size_t & src_id, const size_t & idx, const bool & owner = true );
-	~var_thread_t();
+	var_multiproc_t( std::thread * thread, std::shared_future< int > * res, const size_t & id,
+		      const size_t & src_id, const size_t & idx, const bool & owner = true );
+	~var_multiproc_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
 	inline std::thread *& get_thread() { return m_thread; }
-	inline var_fn_t *& get_fn() { return m_fn; }
-	inline std::shared_future< thread_res_t > *& get_future() { return m_res; }
+	inline std::shared_future< int > *& get_future() { return m_res; }
 	inline size_t get_id() { return m_id; }
 };
-#define THREAD( x ) static_cast< var_thread_t * >( x )
+#define MULTIPROC( x ) static_cast< var_multiproc_t * >( x )
 
-#endif // THREAD_TYPE_HPP
+#endif // MULTIPROC_TYPE_HPP

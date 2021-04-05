@@ -50,6 +50,15 @@ void vars_frame_t::operator delete( void * ptr, size_t sz )
 	mem::free( ptr, sz );
 }
 
+vars_frame_t * vars_frame_t::thread_copy( const size_t & src_id, const size_t & idx )
+{
+	vars_frame_t * f = new vars_frame_t;
+	for( auto & var : m_vars ) {
+		f->m_vars[ var.first ] = var.second->copy( src_id, idx );
+	}
+	return f;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -134,6 +143,17 @@ void vars_stack_t::rem( const std::string & name, const bool dec_ref )
 	}
 }
 
+vars_stack_t * vars_stack_t::thread_copy( const size_t & src_id, const size_t & idx )
+{
+	vars_stack_t * s = new vars_stack_t;
+	s->m_loops_from = m_loops_from;
+	s->m_top = m_top;
+	for( auto & f : m_stack ) {
+		s->m_stack.push_back( f->thread_copy( src_id,  idx ) );
+	}
+	return s;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -215,4 +235,18 @@ void vars_t::addm( const std::string & name, var_base_t * val, const bool inc_re
 void vars_t::rem( const std::string & name, const bool dec_ref )
 {
 	m_fn_vars[ m_fn_stack ]->rem( name, dec_ref );
+}
+
+vars_t * vars_t::thread_copy( const size_t & src_id, const size_t & idx )
+{
+	vars_t * v = new vars_t;
+	delete v->m_fn_vars[ 0 ];
+	v->m_fn_stack = m_fn_stack;
+	for( auto & s : m_stash ) {
+		v->m_stash[ s.first ] = s.second->copy( src_id, idx );
+	}
+	for( auto & fv : m_fn_vars ) {
+		v->m_fn_vars[ fv.first ] = fv.second->thread_copy( src_id, idx );
+	}
+	return v;
 }

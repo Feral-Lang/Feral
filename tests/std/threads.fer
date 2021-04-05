@@ -1,0 +1,34 @@
+let threads = import('std/threads');
+
+let thread_func1 = fn(a = 2, b = 5) {
+	for let i = 0; i < 250; ++i {
+		assert(a == 2);
+		assert(b == 5);
+	}
+};
+
+let thread_func2 = fn(x, a = 2, b = 5) {
+	for let i = 0; i < 250; ++i {
+		assert(a == 12);
+		assert(b == 5);
+	}
+	return x = a + b;
+};
+
+let t1 = threads.new(thread_func1);
+let t2 = threads.new(thread_func2);
+
+let x = 0; # passed as reference to thread_func2
+
+t1.start();
+t2.start(x, 12);
+
+for let i = 0; i < 250; ++i {
+	assert(true);
+}
+
+let r1 = t1.join(), r2 = t2.join();
+
+assert(r1 == nil);
+assert(r2 == 17);
+assert(x == 17);

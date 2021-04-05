@@ -37,3 +37,13 @@ var_base_t * vm_stack_t::pop( const bool dref )
 	if( dref ) var_dref( back );
 	return back;
 }
+
+
+vm_stack_t * vm_stack_t::thread_copy()
+{
+	vm_stack_t * newstack = new vm_stack_t;
+	for( auto & item : m_vec ) {
+		newstack->m_vec.push_back( item->copy( item->src_id(), item->idx() ) );
+	}
+	return newstack;
+}

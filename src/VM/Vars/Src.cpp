@@ -18,20 +18,25 @@
 ////////////////////////////////////////////////////////////// VAR_MOD /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_src_t::var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner )
-	: var_base_t( type_id< var_src_t >(), src_id, idx, false, true ), m_src( src ), m_vars( vars ), m_owner( owner )
+var_src_t::var_src_t( srcfile_t * src, vars_t * vars, const size_t & src_id, const size_t & idx, const bool owner, const bool is_thread_copy )
+	: var_base_t( type_id< var_src_t >(), src_id, idx, false, true ), m_src( src ), m_vars( vars ), m_owner( owner ), m_is_thread_copy( is_thread_copy )
 {}
 var_src_t::~var_src_t()
 {
 	if( m_owner ) {
 		if( m_vars ) delete m_vars;
-		if( m_src ) delete m_src;
+		if( !m_is_thread_copy && m_src ) delete m_src;
 	}
 }
 
 var_base_t * var_src_t::copy( const size_t & src_id, const size_t & idx )
 {
 	return new var_src_t( m_src, m_vars, src_id, idx, false );
+}
+
+var_base_t * var_src_t::thread_copy( const size_t & src_id, const size_t & idx )
+{
+	return new var_src_t( m_src, m_vars->thread_copy( src_id, idx ), src_id, idx, true, true );
 }
 
 void var_src_t::set( var_base_t * from )

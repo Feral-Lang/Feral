@@ -37,6 +37,8 @@ public:
 
 	static void * operator new( size_t sz );
 	static void operator delete( void * ptr, size_t sz );
+
+	vars_frame_t * thread_copy( const size_t & src_id, const size_t & idx );
 };
 
 class vars_stack_t
@@ -66,6 +68,8 @@ public:
 
 	void add( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );
+
+	vars_stack_t * thread_copy( const size_t & src_id, const size_t & idx );
 };
 
 /*
@@ -107,6 +111,8 @@ public:
 	// add variable to module level unconditionally (for vm.register_new_type())
 	void addm( const std::string & name, var_base_t * val, const bool inc_ref );
 	void rem( const std::string & name, const bool dec_ref );
+
+	vars_t * thread_copy( const size_t & src_id, const size_t & idx );
 };
 
 #endif // VM_VARS_HPP
