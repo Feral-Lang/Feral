@@ -18,11 +18,11 @@ static size_t thread_id = 0;
 var_thread_t::var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
 			    const size_t & src_id, const size_t & idx, const bool & owner )
 	: var_base_t( type_id< var_thread_t >(), src_id, idx, false, false ),
-	  m_thread( thread ), m_fn( fn ), m_res( res ), m_id( thread_id++ ), m_owner( owner ) {}
+	  m_thread( thread ), m_fn( fn ), m_res( res ), m_id( thread_id++ ), m_owner( owner ) { var_iref( m_fn ); }
 var_thread_t::var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
 			    const size_t & id, const size_t & src_id, const size_t & idx, const bool & owner )
 	: var_base_t( type_id< var_thread_t >(), src_id, idx, false, false ),
-	  m_thread( thread ), m_fn( fn ), m_res( res ), m_id( id ), m_owner( owner ) {}
+	  m_thread( thread ), m_fn( fn ), m_res( res ), m_id( id ), m_owner( owner ) { var_iref( m_fn ); }
 var_thread_t::~var_thread_t()
 {
 	if( m_owner ) {
@@ -34,6 +34,7 @@ var_thread_t::~var_thread_t()
 			delete m_res;
 		}
 	}
+	var_dref( m_fn );
 }
 
 var_base_t * var_thread_t::copy( const size_t & src_id, const size_t & idx )
@@ -45,6 +46,9 @@ void var_thread_t::set( var_base_t * from )
 	var_thread_t * t = THREAD( from );
 	m_owner = false;
 	m_thread = t->m_thread;
+	var_dref( m_fn );
+	var_iref( t->m_fn );
+	m_fn = t->m_fn;
 	m_res = t->m_res;
 	m_id = t->m_id;
 }

@@ -136,9 +136,8 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			var_base_t * var = vms->pop( false );
 			var_base_t * val = vms->pop( false );
 			if( var->type() != val->type() ) {
-				vm.fail( op.src_id, op.idx, "assignment requires type of lhs and rhs to be same, found lhs: %s, rhs: %s"
-					 "; to redeclare a variable using another type, use the 'let' statement",
-					 vm.type_name( var ).c_str(), vm.type_name( val ).c_str() );
+				vm.fail( op.src_id, op.idx, "type mismatch for assignment: %s cannot be assigned to variable of type: %s",
+					 vm.type_name( val ).c_str(), vm.type_name( var ).c_str() );
 				var_dref( val );
 				var_dref( var );
 				goto handle_error;

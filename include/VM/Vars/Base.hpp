@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <gmp.h>
 #include <mpfr.h>
+#include <mutex>
 
 #include "../SrcFile.hpp"
 
@@ -44,6 +45,7 @@ enum VARINFO
 struct vm_state_t;
 class var_base_t
 {
+	std::mutex m_mtx; // yes i know this is very large (40 bytes actually), but i am looking for a better way for this to work with threads
 	std::uintptr_t m_type;
 	size_t m_src_id;
 	size_t m_idx;
@@ -84,8 +86,8 @@ public:
 	inline size_t src_id() const { return m_src_id; }
 	inline size_t idx() const { return m_idx; }
 
-	inline void iref() { ++m_ref; }
-	inline size_t dref() { assert( m_ref > 0 ); --m_ref; return m_ref; }
+	inline void iref() { std::lock_guard< std::mutex > lock( m_mtx ); ++m_ref; }
+	inline size_t dref() { std::lock_guard< std::mutex > lock( m_mtx ); assert( m_ref > 0 ); --m_ref; return m_ref; }
 	inline size_t ref() const { return m_ref; }
 
 	inline bool callable() { return m_info & VI_CALLABLE; }
