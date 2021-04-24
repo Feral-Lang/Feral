@@ -39,6 +39,11 @@ thread_res_t thread_exec( vm_state_t * vm, var_fn_t *& fn, std::vector< var_base
 	return res;
 }
 
+var_base_t * threads_max( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( std::thread::hardware_concurrency() );
+}
+
 var_base_t * threads_new( vm_state_t & vm, const fn_data_t & fd )
 {
 	if( !fd.args[ 1 ]->istype< var_fn_t >() ) {
@@ -96,6 +101,7 @@ INIT_MODULE( threads )
 {
 	var_src_t * src = vm.current_source();
 
+	src->add_native_fn( "max", threads_max, 0 );
 	src->add_native_fn( "new", threads_new, 1 );
 
 	vm.add_native_typefn< var_thread_t >( "start",   thread_start, 0, src_id, idx, true );
