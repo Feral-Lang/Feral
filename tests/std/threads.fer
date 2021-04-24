@@ -1,5 +1,7 @@
 let threads = import('std/threads');
 
+assert(threads.max() > 0);
+
 let thread_func1 = fn(a = 2, b = 5) {
 	for let i = 0; i < 250; ++i {
 		assert(a == 2);
