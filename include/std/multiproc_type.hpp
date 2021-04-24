@@ -27,9 +27,9 @@ class var_multiproc_t : public var_base_t
 	bool m_owner;
 public:
 	var_multiproc_t( std::thread * thread, std::shared_future< int > * res,
-		      const size_t & src_id, const size_t & idx, const bool & owner = true );
+		         const size_t & src_id, const size_t & idx, const bool & owner = true );
 	var_multiproc_t( std::thread * thread, std::shared_future< int > * res, const size_t & id,
-		      const size_t & src_id, const size_t & idx, const bool & owner = true );
+		         const size_t & src_id, const size_t & idx, const bool & owner = true );
 	~var_multiproc_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );

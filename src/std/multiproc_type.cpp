@@ -16,11 +16,11 @@
 static size_t thread_id = 0;
 
 var_multiproc_t::var_multiproc_t( std::thread * thread, std::shared_future< int > * res,
-			    const size_t & src_id, const size_t & idx, const bool & owner )
+				  const size_t & src_id, const size_t & idx, const bool & owner )
 	: var_base_t( type_id< var_multiproc_t >(), src_id, idx, false, false ),
 	  m_thread( thread ), m_res( res ), m_id( thread_id++ ), m_owner( owner ) {}
 var_multiproc_t::var_multiproc_t( std::thread * thread, std::shared_future< int > * res, const size_t & id,
-			    const size_t & src_id, const size_t & idx, const bool & owner )
+				  const size_t & src_id, const size_t & idx, const bool & owner )
 	: var_base_t( type_id< var_multiproc_t >(), src_id, idx, false, false ),
 	  m_thread( thread ), m_res( res ), m_id( id ), m_owner( owner ) {}
 var_multiproc_t::~var_multiproc_t()
