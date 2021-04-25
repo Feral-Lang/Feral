@@ -54,7 +54,8 @@ vars_frame_t * vars_frame_t::thread_copy( const size_t & src_id, const size_t & 
 {
 	vars_frame_t * f = new vars_frame_t;
 	for( auto & var : m_vars ) {
-		f->m_vars[ var.first ] = var.second->copy( src_id, idx );
+		var_iref( var.second );
+		f->m_vars[ var.first ] = var.second;
 	}
 	return f;
 }
@@ -243,7 +244,8 @@ vars_t * vars_t::thread_copy( const size_t & src_id, const size_t & idx )
 	delete v->m_fn_vars[ 0 ];
 	v->m_fn_stack = m_fn_stack;
 	for( auto & s : m_stash ) {
-		v->m_stash[ s.first ] = s.second->copy( src_id, idx );
+		var_iref( s.second );
+		v->m_stash[ s.first ] = s.second;
 	}
 	for( auto & fv : m_fn_vars ) {
 		v->m_fn_vars[ fv.first ] = fv.second->thread_copy( src_id, idx );

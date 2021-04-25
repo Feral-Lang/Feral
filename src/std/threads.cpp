@@ -52,7 +52,7 @@ var_base_t * threads_new( vm_state_t & vm, const fn_data_t & fd )
 		return nullptr;
 	}
 	var_fn_t * fn = FN( fd.args[ 1 ] );
-	return make< var_thread_t >( nullptr, fn, nullptr );
+	return make< var_thread_t >( nullptr, fn, nullptr, true );
 }
 
 var_base_t * thread_start( vm_state_t & vm, const fn_data_t & fd )
@@ -64,6 +64,7 @@ var_base_t * thread_start( vm_state_t & vm, const fn_data_t & fd )
 		args.push_back( fd.args[ i ] );
 	}
 	var_thread_t * t = THREAD( fd.args[ 0 ] );
+	if( t->get_id() == -1 ) t->init_id();
 	var_fn_t *& fn = t->get_fn();
 	std::packaged_task<
 		thread_res_t( vm_state_t *, var_fn_t *&, std::vector< var_base_t * >, const size_t, const size_t )
@@ -76,6 +77,7 @@ var_base_t * thread_start( vm_state_t & vm, const fn_data_t & fd )
 
 var_base_t * thread_get_id( vm_state_t & vm, const fn_data_t & fd )
 {
+	if( THREAD( fd.args[ 0 ] )->get_id() == -1 ) THREAD( fd.args[ 0 ] )->init_id();
 	return make< var_int_t >( THREAD( fd.args[ 0 ] )->get_id() );
 }
 

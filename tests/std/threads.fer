@@ -25,7 +25,7 @@ let x = 0; # passed as reference to thread_func2
 t1.start();
 t2.start(x, 12);
 
-let t3 = t2;
+let t3 = ref(t2);
 
 for let i = 0; i < 250; ++i {
 	assert(true);
