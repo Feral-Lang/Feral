@@ -41,15 +41,11 @@ var_thread_t::~var_thread_t()
 
 var_base_t * var_thread_t::copy( const size_t & src_id, const size_t & idx )
 {
-	return new var_thread_t( nullptr, m_fn, nullptr, false, src_id, idx );
+	return new var_thread_t( nullptr, m_fn, nullptr, true, src_id, idx );
 }
 void var_thread_t::set( var_base_t * from )
 {
 	var_thread_t * t = THREAD( from );
-	m_owner = false;
-	m_fn = t->m_fn;
-	var_dref( m_fn );
-	var_iref( t->m_fn );
 	if( m_owner ) {
 		if( m_thread ) { m_thread->join(); delete m_thread; }
 		if( m_res ) {
@@ -59,6 +55,10 @@ void var_thread_t::set( var_base_t * from )
 			delete m_res;
 		}
 	}
+	m_owner = false;
+	m_fn = t->m_fn;
+	var_dref( m_fn );
+	var_iref( t->m_fn );
 	m_id = t->m_id;
 	m_thread = t->m_thread;
 	m_res = t->m_res;

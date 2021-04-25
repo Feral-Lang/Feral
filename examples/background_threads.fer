@@ -16,17 +16,22 @@ let threads = import('std/threads');
 
 let thread_count = threads.max() / 2;
 
-let m = mutex.new();
+let io_mtx = mutex.new();
 
 let thread_func = fn(id, v, mtx) {
 	io.println('started thread: ', id);
 	while true {
 		mtx.lock();
-		if v.empty() { mtx.unlock(); os.sleep(5); continue; }
-		m.lock();
-		io.println('received number in thread ', id, ': ', v.back());
-		m.unlock();
-		v.pop();
+		if v.empty() {
+			mtx.unlock();
+			os.sleep(100);
+			mtx.lock();
+			if v.empty() { break; }
+		}
+		io_mtx.lock();
+		io.println('received number in thread ', id, ': ', v.front());
+		io_mtx.unlock();
+		v.erase(0);
 		mtx.unlock();
 		os.sleep(thread_count);
 	}
@@ -35,7 +40,7 @@ let thread_func = fn(id, v, mtx) {
 let thread_t = lang.struct(
 	v = vec.new(),
 	mtx = mutex.new(),
-	thread = threads.new(thread_func, templ = true)
+	thread = threads.new(thread_func)
 );
 
 let all_threads = vec.new(refs = true);
@@ -53,9 +58,9 @@ while true {
 			t.mtx.lock();
 			if t.v.len() < 5 {
 				t.v.push(n);
-				m.lock();
+				io_mtx.lock();
 				io.println('passed number: ', n, ' to thread id: ', t.thread.id());
-				m.unlock();
+				io_mtx.unlock();
 				n = 0;
 				t.mtx.unlock();
 				break;

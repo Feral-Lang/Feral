@@ -1,4 +1,1 @@
 mload('std/threads');
-
-# this library does NOT allow for global variables to be shared as of now.
-# a variable can, however, be used in the threaded function by providing as parameter.
