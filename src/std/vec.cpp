@@ -77,11 +77,6 @@ var_base_t * vec_empty( vm_state_t & vm, const fn_data_t & fd )
 	return VEC( fd.args[ 0 ] )->get().size() == 0 ? vm.tru : vm.fals;
 }
 
-var_base_t * vec_each( vm_state_t & vm, const fn_data_t & fd )
-{
-	return make< var_vec_iterable_t >( VEC( fd.args[ 0 ] ) );
-}
-
 var_base_t * vec_front( vm_state_t & vm, const fn_data_t & fd )
 {
 	std::vector< var_base_t * > & vec = VEC( fd.args[ 0 ] )->get();
@@ -202,11 +197,17 @@ var_base_t * vec_at( vm_state_t & vm, const fn_data_t & fd )
 	return vec[ pos ];
 }
 
+var_base_t * vec_each( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_vec_iterable_t >( VEC( fd.args[ 0 ] ) );
+}
+
 var_base_t * vec_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 {
 	var_vec_iterable_t * it = VEC_ITERABLE( fd.args[ 0 ] );
 	var_base_t * res = nullptr;
 	if( !it->next( res ) ) return vm.nil;
+	res->set_load_as_ref();
 	return res;
 }
 

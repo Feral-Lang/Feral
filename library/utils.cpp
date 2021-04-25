@@ -148,6 +148,7 @@ var_base_t * int_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	if( !it->next( _res ) ) return vm.nil;
 	var_int_t * res = make< var_int_t >( _res );
 	mpz_clear( _res );
+	res->set_load_as_ref();
 	return res;
 }
 

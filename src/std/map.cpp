@@ -134,6 +134,7 @@ var_base_t * map_iterable_next( vm_state_t & vm, const fn_data_t & fd )
 	var_map_iterable_t * it = MAP_ITERABLE( fd.args[ 0 ] );
 	var_base_t * res = nullptr;
 	if( !it->next( res, fd.src_id, fd.idx ) ) return vm.nil;
+	res->set_load_as_ref();
 	return res;
 }
 
