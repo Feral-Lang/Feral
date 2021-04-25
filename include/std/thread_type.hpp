@@ -34,18 +34,20 @@ class var_thread_t : public var_base_t
 	bool m_owner;
 public:
 	var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
-		      const size_t & src_id, const size_t & idx, const bool & owner = true );
+		      const bool & owner, const size_t & src_id, const size_t & idx );
 	var_thread_t( std::thread * thread, var_fn_t * fn, std::shared_future< thread_res_t > * res,
-		      const size_t & id, const size_t & src_id, const size_t & idx, const bool & owner = true );
+		      const bool & owner, const size_t & id, const size_t & src_id, const size_t & idx );
 	~var_thread_t();
 
 	var_base_t * copy( const size_t & src_id, const size_t & idx );
 	void set( var_base_t * from );
 
+	void init_id();
+
 	inline std::thread *& get_thread() { return m_thread; }
 	inline var_fn_t *& get_fn() { return m_fn; }
 	inline std::shared_future< thread_res_t > *& get_future() { return m_res; }
-	inline size_t get_id() { return m_id; }
+	inline size_t & get_id() { return m_id; }
 };
 #define THREAD( x ) static_cast< var_thread_t * >( x )
 
