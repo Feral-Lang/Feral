@@ -1,3 +1,10 @@
+# this program is a single-producer multi-consumer threaded implementation.
+# the main thread generates random numbers and passes it to whichever thread
+# in the thread pool has available space (vector size < 5).
+# this is a never ending program, the threads are never killed.
+# it's a proof of concept for reusing threads when the task implementation is same
+# since creating new threads all the time is expensive (VM has to be copied).
+
 let io = import('std/io');
 let os = import('std/os');
 let map = import('std/map');

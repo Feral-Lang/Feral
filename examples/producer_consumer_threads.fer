@@ -1,3 +1,8 @@
+# this program is a simple producer-consumer program in which
+# the producer and consumer functions are ran in independent threads
+# and the data is a shared vector of numbers (v).
+# it uses mutex (mtx) to ensure the vector isn't corrupted.
+
 let io = import('std/io');
 let rng = import('std/rng');
 let vec = import('std/vec');
@@ -8,7 +13,7 @@ let prod_fn = fn(v, mtx) {
 	let i = 0;
 	while true {
 		mtx.lock();
-		if v.len() > 500 { mtx.unlock(); continue; } # we don't want a backlog of more than 500 for production
+		if v.len() > 50 { mtx.unlock(); continue; } # we don't want a backlog of more than 50 for production
 		v.push(rng.get(1, 1000));
 		io.println('produced ', i++, ' data: ', v.back());
 		mtx.unlock();
