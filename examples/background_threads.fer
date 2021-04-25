@@ -1,0 +1,64 @@
+let io = import('std/io');
+let os = import('std/os');
+let map = import('std/map');
+let rng = import('std/rng');
+let vec = import('std/vec');
+let lang = import('std/lang');
+let mutex = import('std/mutex');
+let threads = import('std/threads');
+
+let thread_count = threads.max() / 2;
+
+let m = mutex.new();
+
+let thread_func = fn(id, v, mtx) {
+	io.println('started thread: ', id);
+	while true {
+		mtx.lock();
+		if v.empty() { mtx.unlock(); os.sleep(5); continue; }
+		m.lock();
+		io.println('received number in thread ', id, ': ', v.back());
+		m.unlock();
+		v.pop();
+		mtx.unlock();
+		os.sleep(thread_count);
+	}
+};
+
+let thread_t = lang.struct(
+	v = vec.new(),
+	mtx = mutex.new(),
+	thread = threads.new(thread_func, templ = true)
+);
+
+let all_threads = vec.new(refs = true);
+for i in range(0, thread_count) {
+	all_threads.push(thread_t());
+	let obj = ref(all_threads.back());
+	obj.thread.start(obj.thread.id(), obj.v, obj.mtx);
+}
+
+while true {
+	let n = rng.get(1, 1000);
+	while n != 0 {
+		let i = 0;
+		for t in all_threads.each() {
+			t.mtx.lock();
+			if t.v.len() < 5 {
+				t.v.push(n);
+				m.lock();
+				io.println('passed number: ', n, ' to thread id: ', t.thread.id());
+				m.unlock();
+				n = 0;
+				t.mtx.unlock();
+				break;
+			}
+			++i;
+			t.mtx.unlock();
+		}
+	}
+}
+
+for t in all_threads.each() {
+	t.thread.join();
+}
