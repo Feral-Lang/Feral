@@ -37,8 +37,8 @@ bool stmt_while_t::gen_code( bcode_t & bc ) const
 
 	// update all continue and break calls
 	for( size_t i = body_begin; i < body_end; ++i ) {
-		if( bc.at( i ) == OP_CONTINUE ) bc.updatesz( i, begin_loop );
-		if( bc.at( i ) == OP_BREAK ) bc.updatesz( i, break_jmp_loc );
+		if( bc.at( i ) == OP_CONTINUE && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, begin_loop );
+		if( bc.at( i ) == OP_BREAK && bc.get()[ i ].data.sz == 0 ) bc.updatesz( i, break_jmp_loc );
 	}
 	return true;
 }
