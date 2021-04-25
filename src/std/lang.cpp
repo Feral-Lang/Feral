@@ -29,7 +29,8 @@ var_base_t * create_struct( vm_state_t & vm, const fn_data_t & fd )
 	for( size_t i = 0; i < fd.assn_args.size(); ++i ) {
 		auto & arg = fd.assn_args[ i ];
 		attr_order.push_back( arg.name );
-		attrs[ arg.name ] = arg.val->copy( src_id, fd.idx );
+		var_iref( arg.val );
+		attrs[ arg.name ] = arg.val;
 	}
 	return make< var_struct_def_t >( gen_struct_enum_id(), attr_order, attrs );
 }
