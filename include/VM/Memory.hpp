@@ -14,6 +14,7 @@
 #ifndef VM_MEMORY_HPP
 #define VM_MEMORY_HPP
 
+#include <cstddef>
 #include <vector>
 #include <map>
 #include <list>
