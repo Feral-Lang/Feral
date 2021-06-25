@@ -1,0 +1,40 @@
+let sys = import('std/sys');
+
+let f = fn() {
+	++i;
+	f();
+};
+
+let expect_err1 = "exceeded call stack size, currently: " + sys.get_call_stack_max().str();
+
+let i = 1; # first element in function call (execution) stack is the global scope itself
+
+f() or err {
+	assert(err == expect_err1);
+};
+
+assert(i == sys.get_call_stack_max() - 1); # 1 to max - 1 = max (since 1 is included)
+
+sys.set_call_stack_max(1000);
+assert(sys.get_call_stack_max() == 1000);
+
+let expect_err2 = "exceeded call stack size, currently: 1000";
+
+i = 1;
+
+f() or err {
+	assert(err == expect_err2);
+};
+
+assert(i == sys.get_call_stack_max() - 1); # 1 to max - 1 = max (since 1 is included)
+
+# reset call stack max to default
+sys.set_call_stack_max();
+
+i = 1;
+
+f() or err {
+	assert(err == expect_err1);
+};
+
+assert(i == sys.get_call_stack_max() - 1); # 1 to max - 1 = max (since 1 is included)

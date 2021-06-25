@@ -28,6 +28,7 @@ namespace vm
 // declared in VM.hpp
 int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, const size_t & end )
 {
+	++vm.exec_stack_count;
 	var_src_t * src = vm.current_source();
 	vars_t * vars = src->vars();
 	srcfile_t * src_file = src->src();
@@ -47,6 +48,12 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 
 	for( size_t i = begin; i < bc_sz; ++i ) {
 		const op_t & op = bc[ i ];
+		if( vm.exec_stack_count >= vm.exec_stack_max ) {
+			vm.fail( bc[ i ].src_id, bc[ i ].idx, "exceeded call stack size, currently: %zu", vm.exec_stack_count );
+			vm.exec_stack_count_exceeded = true;
+			goto handle_error;
+		}
+
 #ifdef DEBUG_MODE
 		fprintf( stdout, "InThread(%s) %s [%zu]: %*s: ", vm.is_thread_copy() ? "yes" : "no", src_file->path().c_str(), i, 12, OpCodeStrs[ op.op ] );
 		for( auto & e : vms->get() ) {
@@ -298,8 +305,12 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 			}
 			args.insert( args.begin(), in_base );
 			res = fn_base->call( vm, args, assn_args, assn_args_loc, op.src_id, op.idx );
+			// don't show the following failure when exec stack count is exceeded or
+			// there'll be a GIANT stack trace
 			if( !res ) {
-				vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				if( !vm.exec_stack_count_exceeded ) {
+					vm.fail( op.src_id, op.idx, "%s call failed, look at error above", vm.type_name( fn_base ).c_str() );
+				}
 				goto fncall_fail;
 			}
 			if( !res->istype< var_nil_t >() ) {
@@ -389,6 +400,7 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 				}
 				jmps.pop_back();
 				vm.fails.blkr();
+				vm.exec_stack_count_exceeded = false;
 				break;
 			}
 			goto fail;
@@ -399,9 +411,11 @@ int exec( vm_state_t & vm, const bcode_t * custom_bcode, const size_t & begin, c
 done:
 	assert( jmps.size() == 0 );
 	if( !custom_bcode ) vars->pop_fn();
+	--vm.exec_stack_count;
 	return vm.exit_code;
 fail:
 	if( !custom_bcode ) vars->pop_fn();
+	--vm.exec_stack_count;
 	return E_EXEC_FAIL;
 }
 
