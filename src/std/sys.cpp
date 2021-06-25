@@ -36,12 +36,30 @@ var_base_t * var_exists( vm_state_t & vm, const fn_data_t & fd )
 	return vm.current_source()->vars()->get( STR( fd.args[ 1 ] )->get() ) != nullptr ? vm.tru : vm.fals;
 }
 
+var_base_t * set_call_stack_max( vm_state_t & vm, const fn_data_t & fd )
+{
+	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
+		vm.fail( fd.src_id, fd.idx, "expected int argument for max count, found: %s",
+			 vm.type_name( fd.args[ 1 ] ).c_str() );
+		return nullptr;
+	}
+	vm.exec_stack_max = mpz_get_ui( INT( fd.args[ 1 ] )->get() );
+	return vm.nil;
+}
+
+var_base_t * get_call_stack_max( vm_state_t & vm, const fn_data_t & fd )
+{
+	return make< var_int_t >( vm.exec_stack_max );
+}
+
 INIT_MODULE( sys )
 {
 	var_src_t * src = vm.current_source();
 
 	src->add_native_fn( "exit_native", _exit, 1 );
 	src->add_native_fn( "var_exists", var_exists, 1 );
+	src->add_native_fn( "set_call_stack_max_native", set_call_stack_max, 1 );
+	src->add_native_fn( "get_call_stack_max", get_call_stack_max, 0 );
 
 	src->add_native_var( "args", vm.src_args );
 
@@ -56,5 +74,7 @@ INIT_MODULE( sys )
 
 	src->add_native_var( "build_date", make_all< var_str_t >( BUILD_DATE, src_id, idx ) );
 	src->add_native_var( "build_compiler", make_all< var_str_t >( BUILD_CXX_COMPILER, src_id, idx ) );
+
+	src->add_native_var( "CALL_STACK_MAX_DEFAULT", make_all< var_int_t >( EXEC_STACK_MAX_DEFAULT, src_id, idx ) );
 	return true;
 }

@@ -31,6 +31,8 @@ typedef std::vector< var_src_t * > src_stack_t;
 
 typedef std::unordered_map< std::string, var_src_t * > all_srcs_t;
 
+#define EXEC_STACK_MAX_DEFAULT 2000
+
 typedef Errors ( * fmod_read_code_fn_t )( const std::string & data, const std::string & src_dir, const std::string & src_path,
 					  bcode_t & bc, const size_t & flags, const bool is_main_src,
 					  const bool & expr_only, const size_t & begin_idx, const size_t & end_idx );
@@ -64,8 +66,11 @@ template< typename T, typename ... Args > T * make_all( Args... args )
 struct vm_state_t
 {
 	bool exit_called;
+	bool exec_stack_count_exceeded;
 	size_t exit_code;
 	size_t exec_flags;
+	size_t exec_stack_count;
+	size_t exec_stack_max;
 
 	// vm fail stack
 	vm_failstack_t fails;

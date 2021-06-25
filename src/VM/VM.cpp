@@ -26,7 +26,8 @@
 vm_state_t::vm_state_t( const std::string & self_bin, const std::string & self_base,
 			const std::vector< std::string > & args, const size_t & flags,
 			const bool & is_thread_copy )
-	: exit_called( false ), exit_code( 0 ), exec_flags( flags ),
+	: exit_called( false ), exec_stack_count_exceeded( false ), exit_code( 0 ),
+	  exec_flags( flags ), exec_stack_max( EXEC_STACK_MAX_DEFAULT ), exec_stack_count( 0 ),
 	  tru( new var_bool_t( true, 0, 0 ) ), fals( new var_bool_t( false, 0, 0 ) ),
 	  nil( new var_nil_t( 0, 0 ) ), vm_stack( new vm_stack_t() ),
 	  dlib( is_thread_copy ? nullptr : new dyn_lib_t() ), src_args( nullptr ),

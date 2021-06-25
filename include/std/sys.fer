@@ -3,3 +3,7 @@ mload('std/sys');
 let exit = fn(code = 0) {
 	return exit_native(code);
 };
+
+let set_call_stack_max = fn(size = CALL_STACK_MAX_DEFAULT) {
+	set_call_stack_max_native(size);
+};
