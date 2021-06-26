@@ -253,21 +253,21 @@ static std::string get_name( const std::string & src, size_t & i )
 
 static int classify_str( const std::string & str )
 {
-	if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
-	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
-	else if( str == TokStrs[ TOK_IF ] ) return TOK_IF;
-	else if( str == TokStrs[ TOK_ELIF ] ) return TOK_ELIF;
-	else if( str == TokStrs[ TOK_ELSE ] ) return TOK_ELSE;
-	else if( str == TokStrs[ TOK_FOR ] ) return TOK_FOR;
-	else if( str == TokStrs[ TOK_IN ] ) return TOK_IN;
-	else if( str == TokStrs[ TOK_WHILE ] ) return TOK_WHILE;
-	else if( str == TokStrs[ TOK_RETURN ] ) return TOK_RETURN;
+	if     ( str == TokStrs[ TOK_LET      ] ) return TOK_LET     ;
+	else if( str == TokStrs[ TOK_FN       ] ) return TOK_FN      ;
+	else if( str == TokStrs[ TOK_IF       ] ) return TOK_IF      ;
+	else if( str == TokStrs[ TOK_ELIF     ] ) return TOK_ELIF    ;
+	else if( str == TokStrs[ TOK_ELSE     ] ) return TOK_ELSE    ;
+	else if( str == TokStrs[ TOK_FOR      ] ) return TOK_FOR     ;
+	else if( str == TokStrs[ TOK_IN       ] ) return TOK_IN      ;
+	else if( str == TokStrs[ TOK_WHILE    ] ) return TOK_WHILE   ;
+	else if( str == TokStrs[ TOK_RETURN   ] ) return TOK_RETURN  ;
 	else if( str == TokStrs[ TOK_CONTINUE ] ) return TOK_CONTINUE;
-	else if( str == TokStrs[ TOK_BREAK ] ) return TOK_BREAK;
-	else if( str == TokStrs[ TOK_TRUE ] ) return TOK_TRUE;
-	else if( str == TokStrs[ TOK_FALSE ] ) return TOK_FALSE;
-	else if( str == TokStrs[ TOK_NIL ] ) return TOK_NIL;
-	else if( str == TokStrs[ TOK_OR ] ) return TOK_OR;
+	else if( str == TokStrs[ TOK_BREAK    ] ) return TOK_BREAK   ;
+	else if( str == TokStrs[ TOK_TRUE     ] ) return TOK_TRUE    ;
+	else if( str == TokStrs[ TOK_FALSE    ] ) return TOK_FALSE   ;
+	else if( str == TokStrs[ TOK_NIL      ] ) return TOK_NIL     ;
+	else if( str == TokStrs[ TOK_OR       ] ) return TOK_OR      ;
 
 	// if string begins with dot, it's an atom (str), otherwise an identifier
 	return str[ 0 ] == '.' ? TOK_STR : TOK_IDEN;
@@ -609,7 +609,7 @@ static void remove_back_slash( std::string & s )
 		if( * it == '\\' ) {
 			if( it + 1 >= s.end() ) continue;
 			it = s.erase( it );
-			if( * it == 'a' ) * it = '\a';
+			if     ( * it == 'a' ) * it = '\a';
 			else if( * it == 'b' ) * it = '\b';
 			else if( * it == 'f' ) * it = '\f';
 			else if( * it == 'n' ) * it = '\n';
