@@ -15,10 +15,8 @@
 
 namespace gen
 {
-
-bool generate( const ptree_t * ptree, bcode_t & bc )
+bool generate(const ptree_t *ptree, bcode_t &bc)
 {
-	return ptree->gen_code( bc );
+	return ptree->gen_code(bc);
 }
-
-}
+} // namespace gen

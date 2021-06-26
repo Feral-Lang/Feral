@@ -18,9 +18,7 @@
 
 namespace gen
 {
-
-bool generate( const ptree_t * ptree, bcode_t & bc );
-
+bool generate(const ptree_t *ptree, bcode_t &bc);
 }
 
 #endif // COMPILER_CODE_GEN_HPP

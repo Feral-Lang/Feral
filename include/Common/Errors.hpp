@@ -36,14 +36,12 @@ enum Errors
 
 namespace err
 {
-
-size_t & code();
-size_t & val();
-std::string & str();
+size_t &code();
+size_t &val();
+std::string &str();
 
 // err_val is for things like idx, etc.
-void set( const size_t & err_code, const size_t & err_val, const char * msg, ... );
-
-}
+void set(const size_t &err_code, const size_t &err_val, const char *msg, ...);
+} // namespace err
 
 #endif // COMMON_ERRORS_HPP

@@ -18,18 +18,19 @@
 
 class var_ptr_t : public var_base_t
 {
-	var_base_t * m_val;
+	var_base_t *m_val;
+
 public:
-	var_ptr_t( var_base_t * val, const size_t & src_id, const size_t & idx );
+	var_ptr_t(var_base_t *val, const size_t &src_id, const size_t &idx);
 	~var_ptr_t();
 
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
+	var_base_t *copy(const size_t &src_id, const size_t &idx);
+	void set(var_base_t *from);
 
-	void update( var_base_t * with );
+	void update(var_base_t *with);
 
-	var_base_t * get();
+	var_base_t *get();
 };
-#define PTR( x ) static_cast< var_ptr_t * >( x )
+#define PTR(x) static_cast<var_ptr_t *>(x)
 
 #endif // PTR_TYPE_HPP

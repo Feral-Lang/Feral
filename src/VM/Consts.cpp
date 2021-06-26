@@ -11,22 +11,18 @@
 
 namespace consts
 {
-
-var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & src_id, const size_t & idx )
+var_base_t *get(vm_state_t &vm, const OpDataType type, const op_data_t &opd, const size_t &src_id,
+		const size_t &idx)
 {
-	if( type == ODT_BOOL ) {
-		return opd.b ? vm.tru : vm.fals;
+	switch(type) {
+	case ODT_BOOL: return opd.b ? vm.tru : vm.fals;
+	case ODT_NIL: return vm.nil;
+	case ODT_INT: return make_all<var_int_t>(opd.s, src_id, idx);
+	case ODT_FLT: return make_all<var_flt_t>(opd.s, src_id, idx);
+	case ODT_STR: return make_all<var_str_t>(opd.s, src_id, idx);
+	default: break;
 	}
-
-	if( type == ODT_NIL ) {
-		return vm.nil;
-	}
-
-	if( type == ODT_INT ) return make_all< var_int_t >( opd.s, src_id, idx );
-	else if( type == ODT_FLT ) return make_all< var_flt_t >( opd.s, src_id, idx );
-	else if( type == ODT_STR ) return make_all< var_str_t >( opd.s, src_id, idx );
-
 	return nullptr;
 }
 
-}
+} // namespace consts

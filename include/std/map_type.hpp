@@ -18,17 +18,18 @@
 
 class var_map_iterable_t : public var_base_t
 {
-	var_map_t * m_map;
-	std::map< std::string, var_base_t * >::iterator m_curr;
+	var_map_t *m_map;
+	std::map<std::string, var_base_t *>::iterator m_curr;
+
 public:
-	var_map_iterable_t( var_map_t * map, const size_t & src_id, const size_t & idx );
+	var_map_iterable_t(var_map_t *map, const size_t &src_id, const size_t &idx);
 	~var_map_iterable_t();
 
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
+	var_base_t *copy(const size_t &src_id, const size_t &idx);
+	void set(var_base_t *from);
 
-	bool next( var_base_t * & val, const size_t & src_id, const size_t & idx );
+	bool next(var_base_t *&val, const size_t &src_id, const size_t &idx);
 };
-#define MAP_ITERABLE( x ) static_cast< var_map_iterable_t * >( x )
+#define MAP_ITERABLE(x) static_cast<var_map_iterable_t *>(x)
 
 #endif // MAP_TYPE_HPP

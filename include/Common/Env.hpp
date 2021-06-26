@@ -18,11 +18,10 @@
 
 namespace env
 {
-
-std::string get( const std::string & key );
+std::string get(const std::string &key);
 
 std::string get_proc_path();
 
-}
+} // namespace env
 
 #endif // COMMON_ENV_HPP

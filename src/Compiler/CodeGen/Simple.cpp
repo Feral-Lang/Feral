@@ -13,16 +13,20 @@
 
 #include "Compiler/CodeGen/Internal.hpp"
 
-bool stmt_simple_t::gen_code( bcode_t & bc ) const
+bool stmt_simple_t::gen_code(bcode_t &bc) const
 {
-	if( !m_val ) return true;
+	if(!m_val) return true;
 
-	if( m_val->type == TOK_INT ) bc.adds( m_val->pos, OP_LOAD, ODT_INT, m_val->data );
-	else if( m_val->type == TOK_FLT ) bc.adds( m_val->pos, OP_LOAD, ODT_FLT, m_val->data );
-	else if( m_val->type == TOK_STR ) bc.adds( m_val->pos, OP_LOAD, ODT_STR, m_val->data );
-	else if( m_val->type == TOK_IDEN ) bc.adds( m_val->pos, OP_LOAD, ODT_IDEN, m_val->data );
-	else if( m_val->type == TOK_TRUE || m_val->type == TOK_FALSE ) bc.addb( m_val->pos, OP_LOAD, m_val->type == TOK_TRUE );
-	else if( m_val->type == TOK_NIL ) bc.add( m_val->pos, OP_LOAD );
+	switch(m_val->type) {
+	case TOK_INT: bc.adds(m_val->pos, OP_LOAD, ODT_INT, m_val->data); break;
+	case TOK_FLT: bc.adds(m_val->pos, OP_LOAD, ODT_FLT, m_val->data); break;
+	case TOK_STR: bc.adds(m_val->pos, OP_LOAD, ODT_STR, m_val->data); break;
+	case TOK_IDEN: bc.adds(m_val->pos, OP_LOAD, ODT_IDEN, m_val->data); break;
+	case TOK_TRUE: // fallthrough
+	case TOK_FALSE: bc.addb(m_val->pos, OP_LOAD, m_val->type == TOK_TRUE); break;
+	case TOK_NIL: bc.add(m_val->pos, OP_LOAD); break;
+	default: return false;
+	}
 
 	return true;
 }

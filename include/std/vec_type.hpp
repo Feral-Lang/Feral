@@ -18,17 +18,18 @@
 
 class var_vec_iterable_t : public var_base_t
 {
-	var_vec_t * m_vec;
+	var_vec_t *m_vec;
 	size_t m_curr;
+
 public:
-	var_vec_iterable_t( var_vec_t * vec, const size_t & src_id, const size_t & idx );
+	var_vec_iterable_t(var_vec_t *vec, const size_t &src_id, const size_t &idx);
 	~var_vec_iterable_t();
 
-	var_base_t * copy( const size_t & src_id, const size_t & idx );
-	void set( var_base_t * from );
+	var_base_t *copy(const size_t &src_id, const size_t &idx);
+	void set(var_base_t *from);
 
-	bool next( var_base_t * & val );
+	bool next(var_base_t *&val);
 };
-#define VEC_ITERABLE( x ) static_cast< var_vec_iterable_t * >( x )
+#define VEC_ITERABLE(x) static_cast<var_vec_iterable_t *>(x)
 
 #endif // VEC_TYPE_HPP

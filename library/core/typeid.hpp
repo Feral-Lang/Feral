@@ -18,20 +18,20 @@
 
 // logical functions
 
-var_base_t * typeid_eq( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *typeid_eq(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_typeid_t >() ) {
+	if(!fd.args[1]->istype<var_typeid_t>()) {
 		return vm.fals;
 	}
-	return TYPEID( fd.args[ 0 ] )->get() == TYPEID( fd.args[ 1 ] )->get() ? vm.tru : vm.fals;
+	return TYPEID(fd.args[0])->get() == TYPEID(fd.args[1])->get() ? vm.tru : vm.fals;
 }
 
-var_base_t * typeid_ne( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *typeid_ne(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_typeid_t >() ) {
+	if(!fd.args[1]->istype<var_typeid_t>()) {
 		return vm.tru;
 	}
-	return TYPEID( fd.args[ 0 ] )->get() != TYPEID( fd.args[ 1 ] )->get() ? vm.tru : vm.fals;
+	return TYPEID(fd.args[0])->get() != TYPEID(fd.args[1])->get() ? vm.tru : vm.fals;
 }
 
 #endif // LIBRARY_CORE_TYPEID_HPP

@@ -14,8 +14,8 @@
 #ifndef COMPILER_LEX_HPP
 #define COMPILER_LEX_HPP
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "../Common/Errors.hpp"
 #include "../VM/SrcFile.hpp"
@@ -31,7 +31,7 @@ enum TokType
 	TOK_STR,
 	TOK_IDEN,
 
-	//Keywords
+	// Keywords
 	TOK_LET,
 	TOK_FN,
 	TOK_IF,
@@ -61,7 +61,7 @@ enum TokType
 	TOK_MUL_ASSN,
 	TOK_DIV_ASSN,
 	TOK_MOD_ASSN,
-	TOK_POW, // **
+	TOK_POW,  // **
 	TOK_ROOT, // //
 	// Post/Pre Inc/Dec
 	TOK_XINC,
@@ -136,11 +136,10 @@ enum TokType
 /**
  * \brief String value of each of the lexical tokens
  */
-extern const char * TokStrs[ _TOK_LAST ];
+extern const char *TokStrs[_TOK_LAST];
 
 namespace lex
 {
-
 /**
  * \brief Describes line number, column number,
  * 	  token type, and string data of a token
@@ -151,14 +150,15 @@ struct tok_t
 	TokType type;
 	std::string data;
 
-	tok_t( size_t _pos, int _type, std::string _data ) :
-	       pos( _pos ), type( ( TokType )_type ), data( _data ) {}
+	tok_t(const size_t &_pos, const int &_type, const std::string &_data)
+		: pos(_pos), type((TokType)_type), data(_data)
+	{}
 };
 
 /**
  * \brief A list of tokens
  */
-typedef std::vector< tok_t > toks_t;
+typedef std::vector<tok_t> toks_t;
 
 /**
  * \brief Tokenizing function which is called for generating
@@ -173,8 +173,8 @@ typedef std::vector< tok_t > toks_t;
  * \param end_idx Optionally, position till where the content should be read
  * \return Errors Status of tokenizing operation
  */
-Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string & src_dir,
-		 const std::string & src_path, const size_t & begin_idx = 0, size_t end_idx = -1 );
+Errors tokenize(const std::string &src, lex::toks_t &toks, const std::string &src_dir,
+		const std::string &src_path, const size_t &begin_idx = 0, size_t end_idx = -1);
 
 /**
  * \brief Check if the given type (int) is a variable data
@@ -184,12 +184,10 @@ Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string 
  * \param type From enum TokType
  * \return true If the type is one of variable data tokens, false if it isn't
  */
-inline bool tok_type_is_data( const int type )
+inline bool tok_type_is_data(const int type)
 {
-	return type == TOK_INT || type == TOK_FLT ||
-	       type == TOK_STR || type == TOK_IDEN ||
-	       type == TOK_TRUE || type == TOK_FALSE ||
-	       type == TOK_NIL || type == TOK_TDOT;
+	return type == TOK_INT || type == TOK_FLT || type == TOK_STR || type == TOK_IDEN ||
+	       type == TOK_TRUE || type == TOK_FALSE || type == TOK_NIL || type == TOK_TDOT;
 }
 
 /**
@@ -198,7 +196,7 @@ inline bool tok_type_is_data( const int type )
  * \param type - From enum TokType
  * \return true If the type is one of possible operators, false if it isn't
  */
-inline bool tok_type_is_oper( const int type )
+inline bool tok_type_is_oper(const int type)
 {
 	return type >= TOK_ASSN && type <= TOK_RBRACK;
 }
@@ -209,21 +207,12 @@ inline bool tok_type_is_oper( const int type )
  * \param type - From enum TokType
  * \return true If the type is one of possible assignment operators, false if it isn't
  */
-inline bool tok_type_is_assign( const int type )
+inline bool tok_type_is_assign(const int type)
 {
-	return ( type == TOK_ASSN ||
-		 type == TOK_ADD_ASSN ||
-		 type == TOK_SUB_ASSN ||
-		 type == TOK_MUL_ASSN ||
-		 type == TOK_DIV_ASSN ||
-		 type == TOK_MOD_ASSN ||
-		 type == TOK_BAND_ASSN ||
-		 type == TOK_BOR_ASSN ||
-		 type == TOK_BNOT_ASSN ||
-		 type == TOK_BXOR_ASSN ||
-		 type == TOK_LSHIFT_ASSN ||
-		 type == TOK_RSHIFT_ASSN
-	);
+	return (type == TOK_ASSN || type == TOK_ADD_ASSN || type == TOK_SUB_ASSN ||
+		type == TOK_MUL_ASSN || type == TOK_DIV_ASSN || type == TOK_MOD_ASSN ||
+		type == TOK_BAND_ASSN || type == TOK_BOR_ASSN || type == TOK_BNOT_ASSN ||
+		type == TOK_BXOR_ASSN || type == TOK_LSHIFT_ASSN || type == TOK_RSHIFT_ASSN);
 }
 
 /**
@@ -236,9 +225,9 @@ inline bool tok_type_is_assign( const int type )
  * \param tok Pointer to a tok_t
  * \return true If the type is one of variable data tokens, false if it isn't
  */
-inline bool tok_is_data( const tok_t * tok )
+inline bool tok_is_data(const tok_t *tok)
 {
-	return tok_type_is_data( tok->type );
+	return tok_type_is_data(tok->type);
 }
 
 /**
@@ -249,9 +238,9 @@ inline bool tok_is_data( const tok_t * tok )
  * \param tok Pointer to a tok_t
  * \return true If the type is one of operator tokens, false if it isn't
  */
-inline bool tok_is_oper( const tok_t * tok )
+inline bool tok_is_oper(const tok_t *tok)
 {
-	return tok_type_is_oper( tok->type );
+	return tok_type_is_oper(tok->type);
 }
 
 /**
@@ -262,11 +251,11 @@ inline bool tok_is_oper( const tok_t * tok )
  * \param tok Pointer to a tok_t
  * \return true If the type is one of assignment operator tokens, false if it isn't
  */
-inline bool tok_is_assign( const tok_t * tok )
+inline bool tok_is_assign(const tok_t *tok)
 {
-	return tok_type_is_assign( tok->type );
+	return tok_type_is_assign(tok->type);
 }
 
-}
+} // namespace lex
 
 #endif // COMPILER_LEX_HPP
