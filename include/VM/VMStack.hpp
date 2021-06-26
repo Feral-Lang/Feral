@@ -20,24 +20,37 @@
 
 class vm_stack_t
 {
-	std::vector< var_base_t * > m_vec;
+	std::vector<var_base_t *> m_vec;
+
 public:
 	vm_stack_t();
 	~vm_stack_t();
 
-	void push( var_base_t * val, const bool iref = true );
+	void push(var_base_t *val, const bool iref = true);
 
-	var_base_t * pop( const bool dref = true );
+	var_base_t *pop(const bool dref = true);
 
-	inline var_base_t * & back() { return m_vec.back(); }
+	inline var_base_t *&back()
+	{
+		return m_vec.back();
+	}
 
-	inline std::vector< var_base_t * > & get() { return m_vec; }
+	inline std::vector<var_base_t *> &get()
+	{
+		return m_vec;
+	}
 
-	inline size_t size() const { return m_vec.size(); }
+	inline size_t size() const
+	{
+		return m_vec.size();
+	}
 
-	inline bool empty() const { return m_vec.empty(); }
+	inline bool empty() const
+	{
+		return m_vec.empty();
+	}
 
-	vm_stack_t * thread_copy();
+	vm_stack_t *thread_copy();
 };
 
 #endif // VM_VM_STACK_HPP

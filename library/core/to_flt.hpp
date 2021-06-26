@@ -16,36 +16,38 @@
 
 #include "VM/VM.hpp"
 
-var_base_t * nil_to_flt( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *nil_to_flt(vm_state_t &vm, const fn_data_t &fd)
 {
-	return make< var_flt_t >( 0.0 );
+	return make<var_flt_t>(0.0);
 }
 
-var_base_t * bool_to_flt( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *bool_to_flt(vm_state_t &vm, const fn_data_t &fd)
 {
-	return make< var_flt_t >( BOOL( fd.args[ 0 ] )->get() ? 1.0 : 0.0 );
+	return make<var_flt_t>(BOOL(fd.args[0])->get() ? 1.0 : 0.0);
 }
 
-var_base_t * int_to_flt( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *int_to_flt(vm_state_t &vm, const fn_data_t &fd)
 {
-	return make< var_flt_t >( INT( fd.args[ 0 ] )->get() );
+	return make<var_flt_t>(INT(fd.args[0])->get());
 }
 
-var_base_t * flt_to_flt( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *flt_to_flt(vm_state_t &vm, const fn_data_t &fd)
 {
-	return fd.args[ 0 ];
+	return fd.args[0];
 }
 
-var_base_t * str_to_flt( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *str_to_flt(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "base must be an integer, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_int_t>()) {
+		vm.fail(fd.src_id, fd.idx, "base must be an integer, found: %s",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	var_flt_t * res = make< var_flt_t >( 0.0 );
-	int tmp = mpfr_set_str( res->get(), STR( fd.args[ 0 ] )->get().c_str(), mpz_get_ui( INT( fd.args[ 1 ] )->get() ), mpfr_get_default_rounding_mode() );
-	if( tmp == 0 ) return res;
+	var_flt_t *res = make<var_flt_t>(0.0);
+	int tmp =
+	mpfr_set_str(res->get(), STR(fd.args[0])->get().c_str(), mpz_get_ui(INT(fd.args[1])->get()),
+		     mpfr_get_default_rounding_mode());
+	if(tmp == 0) return res;
 	return vm.nil;
 }
 

@@ -11,9 +11,9 @@
 	furnished to do so.
 */
 
-#include <cstring>
-
 #include "Compiler/Args.hpp"
+
+#include <cstring>
 
 const size_t OPT_A = 1 << 0;
 const size_t OPT_B = 1 << 1; // show byte code
@@ -34,60 +34,59 @@ const size_t OPT_1 = 1 << 15;
 
 namespace args
 {
-
-size_t parse( const int argc, const char ** argv,
-	      std::unordered_map< std::string, std::string > & args,
-	      std::vector< std::string > & code_args )
+size_t parse(const int argc, const char **argv, std::unordered_map<std::string, std::string> &args,
+	     std::vector<std::string> &code_args)
 {
 	bool main_done = false;
-	size_t flags = 0;
+	size_t flags   = 0;
 	char prev_flag = '\0';
 
-	for( int i = 1; i < argc; ++i ) {
-		if( main_done ) {
-			code_args.push_back( argv[ i ] );
+	for(int i = 1; i < argc; ++i) {
+		if(main_done) {
+			code_args.push_back(argv[i]);
 			continue;
 		}
 
-		size_t len = strlen( argv[ i ] );
+		size_t len = strlen(argv[i]);
 
-		if( len > 2 && argv[ i ][ 0 ] == '-' && argv[ i ][ 1 ] == '-' ) {
-			args.emplace( "__long_opt__", argv[ i ] );
+		if(len > 2 && argv[i][0] == '-' && argv[i][1] == '-') {
+			args.emplace("__long_opt__", argv[i]);
 			continue;
 		}
 
-		if( argv[ i ][ 0 ] != '-' ) {
-			args.emplace( "__main__", argv[ i ] );
+		if(argv[i][0] != '-') {
+			args.emplace("__main__", argv[i]);
 			main_done = true;
 			continue;
 		}
 
-		for( size_t j = 1; j < len; ++j ) {
-			if( argv[ i ][ j ] == 'a' ) flags |= OPT_A;
-			else if( argv[ i ][ j ] == 'b' ) flags |= OPT_B;
-			else if( argv[ i ][ j ] == 'c' ) flags |= OPT_C;
-			else if( argv[ i ][ j ] == 'd' ) flags |= OPT_D;
-			else if( argv[ i ][ j ] == 'e' ) flags |= OPT_E;
-			else if( argv[ i ][ j ] == 'f' ) flags |= OPT_F;
-			else if( argv[ i ][ j ] == 'g' ) flags |= OPT_G;
-			else if( argv[ i ][ j ] == 'h' ) flags |= OPT_H;
-			else if( argv[ i ][ j ] == 'i' ) flags |= OPT_I;
-			else if( argv[ i ][ j ] == 'l' ) flags |= OPT_L;
-			else if( argv[ i ][ j ] == 'p' ) flags |= OPT_P;
-			else if( argv[ i ][ j ] == 'r' ) flags |= OPT_R;
-			else if( argv[ i ][ j ] == 's' ) flags |= OPT_S;
-			else if( argv[ i ][ j ] == 't' ) flags |= OPT_T;
-			else if( argv[ i ][ j ] == 'v' ) flags |= OPT_V;
-			else if( argv[ i ][ j ] == '1' ) flags |= OPT_1;
-
-			prev_flag = argv[ i ][ j ];
+		for(size_t j = 1; j < len; ++j) {
+			switch(argv[i][j]) {
+			case 'a': flags |= OPT_A; break;
+			case 'b': flags |= OPT_B; break;
+			case 'c': flags |= OPT_C; break;
+			case 'd': flags |= OPT_D; break;
+			case 'e': flags |= OPT_E; break;
+			case 'f': flags |= OPT_F; break;
+			case 'g': flags |= OPT_G; break;
+			case 'h': flags |= OPT_H; break;
+			case 'i': flags |= OPT_I; break;
+			case 'l': flags |= OPT_L; break;
+			case 'p': flags |= OPT_P; break;
+			case 'r': flags |= OPT_R; break;
+			case 's': flags |= OPT_S; break;
+			case 't': flags |= OPT_T; break;
+			case 'v': flags |= OPT_V; break;
+			case '1': flags |= OPT_1; break;
+			}
+			prev_flag = argv[i][j];
 		}
 	}
 
 	// dry run if compiled flag exists (no actual execution of program)
-	if( flags & OPT_C ) flags |= OPT_D;
+	if(flags & OPT_C) flags |= OPT_D;
 
 	return flags;
 }
 
-}
+} // namespace args

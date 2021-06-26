@@ -17,43 +17,47 @@
 
 gmp_randstate_t rngstate;
 
-var_base_t * rng_seed( vm_state_t & vm, const fn_data_t & fd )
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// Functions ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+var_base_t *rng_seed(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "expected seed value to be integer, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_int_t>()) {
+		vm.fail(fd.src_id, fd.idx, "expected seed value to be integer, found: %s",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	gmp_randseed( rngstate, INT( fd.args[ 1 ] )->get() );
+	gmp_randseed(rngstate, INT(fd.args[1])->get());
 	return vm.nil;
 }
 
 // [0, to)
-var_base_t * rng_get( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *rng_get(vm_state_t &vm, const fn_data_t &fd)
 {
-	if( !fd.args[ 1 ]->istype< var_int_t >() ) {
-		vm.fail( fd.src_id, fd.idx, "expected upper bound to be an integer, found: %s",
-			 vm.type_name( fd.args[ 1 ] ).c_str() );
+	if(!fd.args[1]->istype<var_int_t>()) {
+		vm.fail(fd.src_id, fd.idx, "expected upper bound to be an integer, found: %s",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
-	var_int_t * res = make< var_int_t >( 0 );
-	mpz_urandomm( res->get(), rngstate, INT( fd.args[ 1 ] )->get() );
+	var_int_t *res = make<var_int_t>(0);
+	mpz_urandomm(res->get(), rngstate, INT(fd.args[1])->get());
 	return res;
 }
 
-INIT_MODULE( rng )
+INIT_MODULE(rng)
 {
-	gmp_randinit_default( rngstate );
+	gmp_randinit_default(rngstate);
 
-	var_src_t * src = vm.current_source();
+	var_src_t *src = vm.current_source();
 
-	src->add_native_fn( "seed", rng_seed, 1 );
-	src->add_native_fn( "get_native", rng_get, 1 );
+	src->add_native_fn("seed", rng_seed, 1);
+	src->add_native_fn("get_native", rng_get, 1);
 
 	return true;
 }
 
-DEINIT_MODULE( rng )
+DEINIT_MODULE(rng)
 {
-	gmp_randclear( rngstate );
+	gmp_randclear(rngstate);
 }

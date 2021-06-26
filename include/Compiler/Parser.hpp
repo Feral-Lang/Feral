@@ -20,9 +20,7 @@
 
 namespace parser
 {
-
-Errors parse( phelper_t & ph, lex::toks_t & toks, ptree_t * & ptree, const size_t begin = 0 );
-
+Errors parse(phelper_t &ph, lex::toks_t &toks, ptree_t *&ptree, const size_t begin = 0);
 }
 
 #endif // COMPILER_PARSER_HPP

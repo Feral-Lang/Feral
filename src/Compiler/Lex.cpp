@@ -13,134 +13,134 @@
 
 #include "Compiler/Lex.hpp"
 
-const char * TokStrs[ _TOK_LAST ] = {
-	"INT",
-	"FLT",
+const char *TokStrs[_TOK_LAST] = {
+"INT",
+"FLT",
 
-	"STR",
-	"IDEN",
+"STR",
+"IDEN",
 
-	//Keywords
-	"let",
-	"fn",
-	"if",
-	"elif",
-	"else",
-	"for",
-	"in",
-	"while",
-	"return",
-	"continue",
-	"break",
-	"true",
-	"false",
-	"nil",
-	"or",
+// Keywords
+"let",
+"fn",
+"if",
+"elif",
+"else",
+"for",
+"in",
+"while",
+"return",
+"continue",
+"break",
+"true",
+"false",
+"nil",
+"or",
 
-	// Operators
-	"=",
-	// Arithmetic
-	"+",
-	"-",
-	"*",
-	"/",
-	"%",
-	"+=",
-	"-=",
-	"*=",
-	"/=",
-	"%=",
-	"**", // power
-	"//", // root
-	// Post/Pre Inc/Dec
-	"x++",
-	"++x",
-	"x--",
-	"--x",
-	// Unary (used by parser (in Expression.cpp))
-	"u+",
-	"u-",
-	// Logic
-	"&&",
-	"||",
-	"!",
-	// Comparison
-	"==",
-	"<",
-	">",
-	"<=",
-	">=",
-	"!=",
-	// Bitwise
-	"&",
-	"|",
-	"~",
-	"^",
-	"&=",
-	"|=",
-	"~=",
-	"^=",
-	// Others
-	"<<",
-	">>",
-	"<<=",
-	">>=",
+// Operators
+"=",
+// Arithmetic
+"+",
+"-",
+"*",
+"/",
+"%",
+"+=",
+"-=",
+"*=",
+"/=",
+"%=",
+"**", // power
+"//", // root
+// Post/Pre Inc/Dec
+"x++",
+"++x",
+"x--",
+"--x",
+// Unary (used by parser (in Expression.cpp))
+"u+",
+"u-",
+// Logic
+"&&",
+"||",
+"!",
+// Comparison
+"==",
+"<",
+">",
+"<=",
+">=",
+"!=",
+// Bitwise
+"&",
+"|",
+"~",
+"^",
+"&=",
+"|=",
+"~=",
+"^=",
+// Others
+"<<",
+">>",
+"<<=",
+">>=",
 
-	// Functions
-	"()", // func
-	".()", // member func
+// Functions
+"()",  // func
+".()", // member func
 
-	// Dummy
-	".x()", // attribute - member func
+// Dummy
+".x()", // attribute - member func
 
-	// Subscript
-	"[]",
+// Subscript
+"[]",
 
-	// Varargs
-	"...",
+// Varargs
+"...",
 
-	// Separators
-	".",
-	":",
-	",",
-	"@",
-	"SPC",
-	"TAB",
-	"NEWL",
-	";",
-	// Parenthesis, Braces, Brackets
-	"(",
-	")",
-	"{",
-	"}",
-	"[",
-	"]",
+// Separators
+".",
+":",
+",",
+"@",
+"SPC",
+"TAB",
+"NEWL",
+";",
+// Parenthesis, Braces, Brackets
+"(",
+")",
+"{",
+"}",
+"[",
+"]",
 
-	"<EOF>",
-	"<INVALID>",
+"<EOF>",
+"<INVALID>",
 };
 
-#define CURR( src ) ( src[ i ] )
-#define NEXT( src ) ( i + 1 < src_len ? src[ i + 1 ] : 0 )
-#define PREV( src ) ( src_len > 0 && i > 0 ? src[ i - 1 ] : 0 )
-#define SET_OP_TYPE_BRK( type ) op_type = type; break
+#define CURR(src) (src[i])
+#define NEXT(src) (i + 1 < src_len ? src[i + 1] : 0)
+#define PREV(src) (src_len > 0 && i > 0 ? src[i - 1] : 0)
+#define SET_OP_TYPE_BRK(type) \
+	op_type = type;       \
+	break
 
-
-static std::string get_name( const std::string & src, size_t & i );
-static int classify_str( const std::string & str );
-static std::string get_num( const std::string & src, size_t & i, int & num_type );
-static Errors get_const_str( const std::string & src, size_t & i, std::string & buf );
-static int get_operator( const std::string & src, size_t & i );
-static inline bool is_valid_num_char( const char c );
-static void remove_back_slash( std::string & s );
+static std::string get_name(const std::string &src, size_t &i);
+static int classify_str(const std::string &str);
+static std::string get_num(const std::string &src, size_t &i, int &num_type);
+static Errors get_const_str(const std::string &src, size_t &i, std::string &buf);
+static int get_operator(const std::string &src, size_t &i);
+static inline bool is_valid_num_char(const char c);
+static void remove_back_slash(std::string &s);
 
 namespace lex
 {
-
-Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string & src_dir,
-		 const std::string & src_path, const size_t & begin_idx, size_t end_idx )
+Errors tokenize(const std::string &src, lex::toks_t &toks, const std::string &src_dir,
+		const std::string &src_path, const size_t &begin_idx, size_t end_idx)
 {
-	if( src.empty() ) return E_OK;
+	if(src.empty()) return E_OK;
 
 	size_t src_len = src.size();
 
@@ -149,18 +149,23 @@ Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string 
 
 	// tokenize the input
 	size_t i = begin_idx;
-	end_idx = end_idx == -1 ? src_len : end_idx;
-	while( i < end_idx ) {
-		if( comment_line ) {
-			if( CURR( src ) == '\n' ) comment_line = false;
+	end_idx	 = end_idx == -1 ? src_len : end_idx;
+	while(i < end_idx) {
+		if(comment_line) {
+			if(CURR(src) == '\n') comment_line = false;
 			++i;
 			continue;
 		}
-		if( isspace( src[ i ] ) ) { ++i; continue; }
+		if(isspace(src[i])) {
+			++i;
+			continue;
+		}
 
-		if( CURR( src ) == '*' && NEXT( src ) == '/' ) {
-			if( !comment_block ) {
-				err::set( E_LEX_FAIL, i, "encountered multi line comment terminator '*/' in non commented block" );
+		if(CURR(src) == '*' && NEXT(src) == '/') {
+			if(!comment_block) {
+				err::set(E_LEX_FAIL, i,
+					 "encountered multi line comment terminator '*/' in non "
+					 "commented block");
 				break;
 			}
 			i += 2;
@@ -168,131 +173,140 @@ Errors tokenize( const std::string & src, lex::toks_t & toks, const std::string 
 			continue;
 		}
 
-		if( CURR( src ) == '/' && NEXT( src ) == '*' ) {
+		if(CURR(src) == '/' && NEXT(src) == '*') {
 			i += 2;
 			++comment_block;
 			continue;
 		}
 
-		if( comment_block ) { ++i; continue; }
+		if(comment_block) {
+			++i;
+			continue;
+		}
 
-		if( CURR( src ) == '#' ) { comment_line = true; ++i; continue; }
+		if(CURR(src) == '#') {
+			comment_line = true;
+			++i;
+			continue;
+		}
 
 		// strings
-		if( ( CURR( src ) == '.' && ( isalpha( NEXT( src ) ) || NEXT( src ) == '_' ) && !isalnum( PREV( src ) ) && PREV( src ) != '_' &&
-		      PREV( src ) != ')' && PREV( src ) != ']' && PREV( src ) != '\'' && PREV( src ) != '"' ) ||
-		    isalpha( CURR( src ) ) || CURR( src ) == '_' ) {
-			std::string str = get_name( src, i );
+		if((CURR(src) == '.' && (isalpha(NEXT(src)) || NEXT(src) == '_') &&
+		    !isalnum(PREV(src)) && PREV(src) != '_' && PREV(src) != ')' &&
+		    PREV(src) != ']' && PREV(src) != '\'' && PREV(src) != '"') ||
+		   isalpha(CURR(src)) || CURR(src) == '_')
+		{
+			std::string str = get_name(src, i);
 			// check if string is a keyword
-			int str_class = classify_str( str );
-			if( str == "__SRC_DIR__" || str == "__SRC_PATH__" ) {
-				if( str == "__SRC_DIR__" ) str = src_dir;
-				if( str == "__SRC_PATH__" ) str = src_path;
+			int str_class = classify_str(str);
+			if(str == "__SRC_DIR__" || str == "__SRC_PATH__") {
+				if(str == "__SRC_DIR__") str = src_dir;
+				if(str == "__SRC_PATH__") str = src_path;
 				str_class = TOK_STR;
 			}
-			if( str[ 0 ] == '.' ) str.erase( str.begin() );
-			toks.emplace_back( i - str.size(), str_class, str );
+			if(str[0] == '.') str.erase(str.begin());
+			toks.emplace_back(i - str.size(), str_class, str);
 			continue;
 		}
 
 		// numbers
-		if( isdigit( CURR( src ) ) ) {
-			int num_type = TOK_INT;
-			std::string num = get_num( src, i, num_type );
-			if( num.empty() ) {
+		if(isdigit(CURR(src))) {
+			int num_type	= TOK_INT;
+			std::string num = get_num(src, i, num_type);
+			if(num.empty()) {
 				err::code() = E_LEX_FAIL;
 				break;
 			}
-			toks.emplace_back( i - num.size(), num_type, num );
+			toks.emplace_back(i - num.size(), num_type, num);
 			continue;
 		}
 
 		// const strings
-		if( CURR( src ) == '\"' || CURR( src ) == '\'' || CURR( src ) == '`' ) {
+		if(CURR(src) == '\"' || CURR(src) == '\'' || CURR(src) == '`') {
 			std::string str;
-			Errors res = get_const_str( src, i, str );
-			if( res != E_OK ) {
+			Errors res = get_const_str(src, i, str);
+			if(res != E_OK) {
 				err::code() = res;
 				break;
 			}
-			toks.emplace_back( i - str.size(), TOK_STR, str );
+			toks.emplace_back(i - str.size(), TOK_STR, str);
 			continue;
 		}
 
 		// operators
-		int op_type = get_operator( src, i );
-		if( op_type < 0 ) {
+		int op_type = get_operator(src, i);
+		if(op_type < 0) {
 			err::code() = E_LEX_FAIL;
 			break;
 		}
-		if( op_type == TOK_TDOT ) {
-			toks.emplace_back( i - 3, op_type, TokStrs[ op_type ] );
+		if(op_type == TOK_TDOT) {
+			toks.emplace_back(i - 3, op_type, TokStrs[op_type]);
 		} else {
-			toks.emplace_back( i - 1, op_type, "" );
+			toks.emplace_back(i - 1, op_type, "");
 		}
 	}
 
-	return ( Errors )err::code();
+	return (Errors)err::code();
 }
 
-}
+} // namespace lex
 
-static std::string get_name( const std::string & src, size_t & i )
+static std::string get_name(const std::string &src, size_t &i)
 {
 	size_t src_len = src.size();
 	std::string buf;
-	buf.push_back( src[ i++ ] );
-	while( i < src_len ) {
-		if( !isalnum( CURR( src ) ) && CURR( src ) != '_' ) break;
-		buf.push_back( src[ i++ ] );
+	buf.push_back(src[i++]);
+	while(i < src_len) {
+		if(!isalnum(CURR(src)) && CURR(src) != '_') break;
+		buf.push_back(src[i++]);
 	}
-	if( i < src_len && CURR( src ) == '?' ) buf.push_back( src[ i++ ] );
+	if(i < src_len && CURR(src) == '?') buf.push_back(src[i++]);
 
 	return buf;
 }
 
-static int classify_str( const std::string & str )
+static int classify_str(const std::string &str)
 {
-	if( str == TokStrs[ TOK_LET ] ) return TOK_LET;
-	else if( str == TokStrs[ TOK_FN ] ) return TOK_FN;
-	else if( str == TokStrs[ TOK_IF ] ) return TOK_IF;
-	else if( str == TokStrs[ TOK_ELIF ] ) return TOK_ELIF;
-	else if( str == TokStrs[ TOK_ELSE ] ) return TOK_ELSE;
-	else if( str == TokStrs[ TOK_FOR ] ) return TOK_FOR;
-	else if( str == TokStrs[ TOK_IN ] ) return TOK_IN;
-	else if( str == TokStrs[ TOK_WHILE ] ) return TOK_WHILE;
-	else if( str == TokStrs[ TOK_RETURN ] ) return TOK_RETURN;
-	else if( str == TokStrs[ TOK_CONTINUE ] ) return TOK_CONTINUE;
-	else if( str == TokStrs[ TOK_BREAK ] ) return TOK_BREAK;
-	else if( str == TokStrs[ TOK_TRUE ] ) return TOK_TRUE;
-	else if( str == TokStrs[ TOK_FALSE ] ) return TOK_FALSE;
-	else if( str == TokStrs[ TOK_NIL ] ) return TOK_NIL;
-	else if( str == TokStrs[ TOK_OR ] ) return TOK_OR;
+	if(str == TokStrs[TOK_LET]) return TOK_LET;
+	if(str == TokStrs[TOK_FN]) return TOK_FN;
+	if(str == TokStrs[TOK_IF]) return TOK_IF;
+	if(str == TokStrs[TOK_ELIF]) return TOK_ELIF;
+	if(str == TokStrs[TOK_ELSE]) return TOK_ELSE;
+	if(str == TokStrs[TOK_FOR]) return TOK_FOR;
+	if(str == TokStrs[TOK_IN]) return TOK_IN;
+	if(str == TokStrs[TOK_WHILE]) return TOK_WHILE;
+	if(str == TokStrs[TOK_RETURN]) return TOK_RETURN;
+	if(str == TokStrs[TOK_CONTINUE]) return TOK_CONTINUE;
+	if(str == TokStrs[TOK_BREAK]) return TOK_BREAK;
+	if(str == TokStrs[TOK_TRUE]) return TOK_TRUE;
+	if(str == TokStrs[TOK_FALSE]) return TOK_FALSE;
+	if(str == TokStrs[TOK_NIL]) return TOK_NIL;
+	if(str == TokStrs[TOK_OR]) return TOK_OR;
 
 	// if string begins with dot, it's an atom (str), otherwise an identifier
-	return str[ 0 ] == '.' ? TOK_STR : TOK_IDEN;
+	return str[0] == '.' ? TOK_STR : TOK_IDEN;
 }
 
-static std::string get_num( const std::string & src, size_t & i, int & num_type )
+static std::string get_num(const std::string &src, size_t &i, int &num_type)
 {
 	size_t src_len = src.size();
 	std::string buf;
 	size_t first_digit_at = i;
 
-	err::code() = E_OK;
+	err::code()	    = E_OK;
 	int dot_encountered = -1;
-	int base = 10;
+	int base	    = 10;
 
 	bool read_base = false;
 
-	while( i < src_len ) {
-		const char c = CURR( src );
-		const char next = NEXT( src );
-		switch( c ) {
+	while(i < src_len) {
+		const char c	= CURR(src);
+		const char next = NEXT(src);
+		switch(c) {
 		case 'x':
 		case 'X': {
-			if( read_base ) {
-				base = 16;
+			if(read_base) {
+				base	  = 16;
 				read_base = false;
 				break;
 			}
@@ -308,20 +322,20 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 		case 'C':
 		case 'b':
 		case 'B': {
-			if( read_base ) {
-				base = 2;
+			if(read_base) {
+				base	  = 2;
 				read_base = false;
 				break;
 			}
 		}
 		case 'a':
 		case 'A': {
-			if( base >= 16 ) break;
+			if(base >= 16) break;
 			goto fail;
 		}
 		case '9':
 		case '8':
-			if( base > 8 ) break;
+			if(base > 8) break;
 			goto fail;
 		case '7':
 		case '6':
@@ -329,190 +343,197 @@ static std::string get_num( const std::string & src, size_t & i, int & num_type 
 		case '4':
 		case '3':
 		case '2':
-			if( base > 2 ) break;
+			if(base > 2) break;
 			goto fail;
-		case '1':
-			read_base = false;
-			break;
+		case '1': read_base = false; break;
 		case '0': {
-			if( i == first_digit_at ) {
+			if(i == first_digit_at) {
 				read_base = true;
-				base = 8;
+				base	  = 8;
 				break;
 			}
 			read_base = false;
 			break;
 		}
 		case '.':
-			if( !read_base && base != 10 ) {
-				err::set( E_LEX_FAIL, i, "encountered dot (.) character when base is not 10 (%d)", base );
-			} else if( dot_encountered == -1 ) {
-				if( next >= '0' && next <= '9' ) {
+			if(!read_base && base != 10) {
+				err::set(E_LEX_FAIL, i,
+					 "encountered dot (.) character when base is not 10 (%d)",
+					 base);
+			} else if(dot_encountered == -1) {
+				if(next >= '0' && next <= '9') {
 					dot_encountered = i;
-					num_type = TOK_FLT;
+					num_type	= TOK_FLT;
 				} else {
 					return buf;
 				}
 			} else {
-				err::set( E_LEX_FAIL, i, "encountered dot (.) character "
-					  "when the number being retrieved (from column %zu) "
-					  "already had one at column %d",
-					  first_digit_at + 1, dot_encountered + 1 );
+				err::set(E_LEX_FAIL, i,
+					 "encountered dot (.) character "
+					 "when the number being retrieved (from column %zu) "
+					 "already had one at column %d",
+					 first_digit_at + 1, dot_encountered + 1);
 			}
 			read_base = false;
-			base = 10;
+			base	  = 10;
 			break;
 		default:
-fail:
-			if( isalnum( c ) ) {
-				err::set( E_LEX_FAIL, i, "encountered invalid character '%c' "
-					  "while retrieving a number of base %d", c, base );
+		fail:
+			if(isalnum(c)) {
+				err::set(E_LEX_FAIL, i,
+					 "encountered invalid character '%c' "
+					 "while retrieving a number of base %d",
+					 c, base);
 			} else {
 				return buf;
 			}
-
 		}
-		if( err::code() != E_OK ) {
+		if(err::code() != E_OK) {
 			return "";
 		}
-		buf.push_back( c ); ++i;
+		buf.push_back(c);
+		++i;
 	}
 	return buf;
 }
 
-static Errors get_const_str( const std::string & src, size_t & i, std::string & buf )
+static Errors get_const_str(const std::string &src, size_t &i, std::string &buf)
 {
 	size_t src_len = src.size();
 	buf.clear();
-	const char quote_type = CURR( src );
-	int starting_at = i;
+	const char quote_type	    = CURR(src);
+	int starting_at		    = i;
 	size_t continuous_backslash = 0;
 	// omit beginning quote
 	++i;
-	while( i < src_len ) {
-		if( CURR( src ) == '\\' ) {
+	while(i < src_len) {
+		if(CURR(src) == '\\') {
 			++continuous_backslash;
-			buf.push_back( src[ i++ ] );
+			buf.push_back(src[i++]);
 			continue;
 		}
-		if( CURR( src ) == quote_type && continuous_backslash % 2 == 0 ) break;
-		buf.push_back( src[ i++ ] );
+		if(CURR(src) == quote_type && continuous_backslash % 2 == 0) break;
+		buf.push_back(src[i++]);
 		continuous_backslash = 0;
 	}
-	if( CURR( src ) != quote_type ) {
+	if(CURR(src) != quote_type) {
 		i = starting_at;
-		err::set( E_LEX_FAIL, i, "no matching quote for '%c' found", quote_type );
-		return ( Errors )err::code();
+		err::set(E_LEX_FAIL, i, "no matching quote for '%c' found", quote_type);
+		return (Errors)err::code();
 	}
 	// omit ending quote
 	++i;
-	remove_back_slash( buf );
+	remove_back_slash(buf);
 	return E_OK;
 }
 
-static int get_operator( const std::string & src, size_t & i )
+static int get_operator(const std::string &src, size_t &i)
 {
 	size_t src_len = src.size();
-	int op_type = -1;
-	switch( CURR( src ) ) {
+	int op_type    = -1;
+	switch(CURR(src)) {
 	case '+':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_ADD_ASSN );
+				SET_OP_TYPE_BRK(TOK_ADD_ASSN);
 			}
-			if( NEXT( src ) == '+' ) {
+			if(NEXT(src) == '+') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_XINC );
+				SET_OP_TYPE_BRK(TOK_XINC);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_ADD );
+		SET_OP_TYPE_BRK(TOK_ADD);
 	case '-':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_SUB_ASSN );
+				SET_OP_TYPE_BRK(TOK_SUB_ASSN);
 			}
-			if( NEXT( src ) == '-' ) {
+			if(NEXT(src) == '-') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_XDEC );
+				SET_OP_TYPE_BRK(TOK_XDEC);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_SUB );
+		SET_OP_TYPE_BRK(TOK_SUB);
 	case '*':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '*' || NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '*' || NEXT(src) == '=') {
 				++i;
-				if( CURR( src ) == '*' ) op_type = TOK_POW;
-				else if( CURR( src ) == '=' ) op_type = TOK_MUL_ASSN;
+				if(CURR(src) == '*') op_type = TOK_POW;
+				else if(CURR(src) == '=')
+					op_type = TOK_MUL_ASSN;
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_MUL );
+		SET_OP_TYPE_BRK(TOK_MUL);
 	case '/':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '/' || NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '/' || NEXT(src) == '=') {
 				++i;
-				if( CURR( src ) == '/' ) op_type = TOK_ROOT;
-				else if( CURR( src ) == '=' ) op_type = TOK_DIV_ASSN;
+				if(CURR(src) == '/') op_type = TOK_ROOT;
+				else if(CURR(src) == '=')
+					op_type = TOK_DIV_ASSN;
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_DIV );
+		SET_OP_TYPE_BRK(TOK_DIV);
 	case '%':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_MOD_ASSN );
+				SET_OP_TYPE_BRK(TOK_MOD_ASSN);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_MOD );
+		SET_OP_TYPE_BRK(TOK_MOD);
 	case '&':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '&' || NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '&' || NEXT(src) == '=') {
 				++i;
-				if( CURR( src ) == '&' ) op_type = TOK_LAND;
-				else if( CURR( src ) == '=' ) op_type = TOK_BAND_ASSN;
+				if(CURR(src) == '&') op_type = TOK_LAND;
+				else if(CURR(src) == '=')
+					op_type = TOK_BAND_ASSN;
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_BAND );
+		SET_OP_TYPE_BRK(TOK_BAND);
 	case '|':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '|' || NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '|' || NEXT(src) == '=') {
 				++i;
-				if( CURR( src ) == '|' ) op_type = TOK_LOR;
-				else if( CURR( src ) == '=' ) op_type = TOK_BOR_ASSN;
+				if(CURR(src) == '|') op_type = TOK_LOR;
+				else if(CURR(src) == '=')
+					op_type = TOK_BOR_ASSN;
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_BOR );
+		SET_OP_TYPE_BRK(TOK_BOR);
 	case '~':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_BNOT_ASSN );
+				SET_OP_TYPE_BRK(TOK_BNOT_ASSN);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_BNOT );
+		SET_OP_TYPE_BRK(TOK_BNOT);
 	case '=':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_EQ );
+				SET_OP_TYPE_BRK(TOK_EQ);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_ASSN );
+		SET_OP_TYPE_BRK(TOK_ASSN);
 	case '<':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' || NEXT( src ) == '<' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=' || NEXT(src) == '<') {
 				++i;
-				if( CURR( src ) == '=' ) op_type = TOK_LE;
-				else if( CURR( src ) == '<' ) {
-					if( i < src_len - 1 ) {
-						if( NEXT( src ) == '=' ) {
+				if(CURR(src) == '=') op_type = TOK_LE;
+				else if(CURR(src) == '<') {
+					if(i < src_len - 1) {
+						if(NEXT(src) == '=') {
 							++i;
-							SET_OP_TYPE_BRK( TOK_LSHIFT_ASSN );
+							SET_OP_TYPE_BRK(TOK_LSHIFT_ASSN);
 						}
 					}
 					op_type = TOK_LSHIFT;
@@ -520,17 +541,17 @@ static int get_operator( const std::string & src, size_t & i )
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_LT );
+		SET_OP_TYPE_BRK(TOK_LT);
 	case '>':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' || NEXT( src ) == '>' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=' || NEXT(src) == '>') {
 				++i;
-				if( CURR( src ) == '=' ) op_type = TOK_GE;
-				else if( CURR( src ) == '>' ) {
-					if( i < src_len - 1 ) {
-						if( NEXT( src ) == '=' ) {
+				if(CURR(src) == '=') op_type = TOK_GE;
+				else if(CURR(src) == '>') {
+					if(i < src_len - 1) {
+						if(NEXT(src) == '=') {
 							++i;
-							SET_OP_TYPE_BRK( TOK_RSHIFT_ASSN );
+							SET_OP_TYPE_BRK(TOK_RSHIFT_ASSN);
 						}
 					}
 					op_type = TOK_RSHIFT;
@@ -538,84 +559,71 @@ static int get_operator( const std::string & src, size_t & i )
 				break;
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_GT );
+		SET_OP_TYPE_BRK(TOK_GT);
 	case '!':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_NE );
+				SET_OP_TYPE_BRK(TOK_NE);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_LNOT );
+		SET_OP_TYPE_BRK(TOK_LNOT);
 	case '^':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '=' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '=') {
 				++i;
-				SET_OP_TYPE_BRK( TOK_BXOR_ASSN );
+				SET_OP_TYPE_BRK(TOK_BXOR_ASSN);
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_BXOR );
-	case ' ':
-		SET_OP_TYPE_BRK( TOK_SPC );
-	case '\t':
-		SET_OP_TYPE_BRK( TOK_TAB );
-	case '\n':
-		SET_OP_TYPE_BRK( TOK_NEWL );
+		SET_OP_TYPE_BRK(TOK_BXOR);
+	case ' ': SET_OP_TYPE_BRK(TOK_SPC);
+	case '\t': SET_OP_TYPE_BRK(TOK_TAB);
+	case '\n': SET_OP_TYPE_BRK(TOK_NEWL);
 	case '.':
-		if( i < src_len - 1 ) {
-			if( NEXT( src ) == '.' ) {
+		if(i < src_len - 1) {
+			if(NEXT(src) == '.') {
 				++i;
-				if( i < src_len - 1 ) {
-					if( NEXT( src ) == '.' ) {
+				if(i < src_len - 1) {
+					if(NEXT(src) == '.') {
 						++i;
-						SET_OP_TYPE_BRK( TOK_TDOT );
+						SET_OP_TYPE_BRK(TOK_TDOT);
 					}
 				}
 			}
 		}
-		SET_OP_TYPE_BRK( TOK_DOT );
-	case ':':
-		SET_OP_TYPE_BRK( TOK_SCOPE );
-	case ',':
-		SET_OP_TYPE_BRK( TOK_COMMA );
-	case ';':
-		SET_OP_TYPE_BRK( TOK_COLS );
-	case '@':
-		SET_OP_TYPE_BRK( TOK_AT );
-	case '(':
-		SET_OP_TYPE_BRK( TOK_LPAREN );
-	case '[':
-		SET_OP_TYPE_BRK( TOK_LBRACK );
-	case '{':
-		SET_OP_TYPE_BRK( TOK_LBRACE );
-	case ')':
-		SET_OP_TYPE_BRK( TOK_RPAREN );
-	case ']':
-		SET_OP_TYPE_BRK( TOK_RBRACK );
-	case '}':
-		SET_OP_TYPE_BRK( TOK_RBRACE );
-	default:
-		err::set( E_LEX_FAIL, i, "unknown operator '%c' found", CURR( src ) );
-		op_type = -1;
+		SET_OP_TYPE_BRK(TOK_DOT);
+	case ':': SET_OP_TYPE_BRK(TOK_SCOPE);
+	case ',': SET_OP_TYPE_BRK(TOK_COMMA);
+	case ';': SET_OP_TYPE_BRK(TOK_COLS);
+	case '@': SET_OP_TYPE_BRK(TOK_AT);
+	case '(': SET_OP_TYPE_BRK(TOK_LPAREN);
+	case '[': SET_OP_TYPE_BRK(TOK_LBRACK);
+	case '{': SET_OP_TYPE_BRK(TOK_LBRACE);
+	case ')': SET_OP_TYPE_BRK(TOK_RPAREN);
+	case ']': SET_OP_TYPE_BRK(TOK_RBRACK);
+	case '}': SET_OP_TYPE_BRK(TOK_RBRACE);
+	default: err::set(E_LEX_FAIL, i, "unknown operator '%c' found", CURR(src)); op_type = -1;
 	}
 
 	++i;
 	return op_type;
 }
 
-static void remove_back_slash( std::string & s )
+static void remove_back_slash(std::string &s)
 {
-	for( auto it = s.begin(); it != s.end(); ++it ) {
-		if( * it == '\\' ) {
-			if( it + 1 >= s.end() ) continue;
-			it = s.erase( it );
-			if( * it == 'a' ) * it = '\a';
-			else if( * it == 'b' ) * it = '\b';
-			else if( * it == 'f' ) * it = '\f';
-			else if( * it == 'n' ) * it = '\n';
-			else if( * it == 'r' ) * it = '\r';
-			else if( * it == 't' ) * it = '\t';
-			else if( * it == 'v' ) * it = '\v';
+	for(auto it = s.begin(); it != s.end(); ++it) {
+		if(*it == '\\') {
+			if(it + 1 >= s.end()) continue;
+			it = s.erase(it);
+			switch(*it) {
+			case 'a': *it = '\a'; break;
+			case 'b': *it = '\b'; break;
+			case 'f': *it = '\f'; break;
+			case 'n': *it = '\n'; break;
+			case 'r': *it = '\r'; break;
+			case 't': *it = '\t'; break;
+			case 'v': *it = '\v'; break;
+			}
 		}
 	}
 }

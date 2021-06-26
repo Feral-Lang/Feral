@@ -133,6 +133,10 @@ Visual Studio Code: [Feral-Lang/Feral-VSCode](https://github.com/Feral-Lang/Fera
 
 Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
 
+# For Developers
+
+The `.clang-format` style file is present in the repository: [https://github.com/Electrux/cpp-format](https://github.com/Electrux/cpp-format)
+
 # Communication
 
 Join us on Discord: [https://discord.gg/zMAjSXn](https://discord.gg/zMAjSXn)

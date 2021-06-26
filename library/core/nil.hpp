@@ -16,14 +16,14 @@
 
 #include "VM/VM.hpp"
 
-var_base_t * nil_eq( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *nil_eq(vm_state_t &vm, const fn_data_t &fd)
 {
-	return fd.args[ 1 ]->istype< var_nil_t >() ? vm.tru : vm.fals;
+	return fd.args[1]->istype<var_nil_t>() ? vm.tru : vm.fals;
 }
 
-var_base_t * nil_ne( vm_state_t & vm, const fn_data_t & fd )
+var_base_t *nil_ne(vm_state_t &vm, const fn_data_t &fd)
 {
-	return !fd.args[ 1 ]->istype< var_nil_t >() ? vm.tru : vm.fals;
+	return !fd.args[1]->istype<var_nil_t>() ? vm.tru : vm.fals;
 }
 
 #endif // LIBRARY_CORE_NIL_HPP

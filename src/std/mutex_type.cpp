@@ -13,14 +13,15 @@
 
 #include "std/mutex_type.hpp"
 
-var_mutex_t::var_mutex_t( const size_t & src_id, const size_t & idx )
-	: var_base_t( type_id< var_mutex_t >(), src_id, idx, false, false ) {}
+var_mutex_t::var_mutex_t(const size_t &src_id, const size_t &idx)
+	: var_base_t(type_id<var_mutex_t>(), src_id, idx, false, false)
+{}
 
-var_base_t * var_mutex_t::copy( const size_t & src_id, const size_t & idx )
+var_base_t *var_mutex_t::copy(const size_t &src_id, const size_t &idx)
 {
-	return new var_mutex_t( src_id, idx );
+	return new var_mutex_t(src_id, idx);
 }
-void var_mutex_t::set( var_base_t * from )
+void var_mutex_t::set(var_base_t *from)
 {
 	// nothing to reassign in a mutex
 }

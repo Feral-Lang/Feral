@@ -13,20 +13,20 @@
 
 #include "Compiler/CodeGen/Internal.hpp"
 
-bool stmt_var_decl_t::gen_code( bcode_t & bc ) const
+bool stmt_var_decl_t::gen_code(bcode_t &bc) const
 {
-	for( auto & vd : m_decls ) {
-		if( !vd->gen_code( bc ) ) return false;
+	for(auto &vd : m_decls) {
+		if(!vd->gen_code(bc)) return false;
 	}
 	return true;
 }
 
-bool stmt_var_decl_base_t::gen_code( bcode_t & bc ) const
+bool stmt_var_decl_base_t::gen_code(bcode_t &bc) const
 {
-	if( !m_rhs->gen_code( bc ) ) return false;
-	if( m_in && !m_in->gen_code( bc ) ) return false;
-	if( !m_lhs->gen_code( bc ) ) return false;
+	if(!m_rhs->gen_code(bc)) return false;
+	if(m_in && !m_in->gen_code(bc)) return false;
+	if(!m_lhs->gen_code(bc)) return false;
 
-	bc.addb( idx(), OP_CREATE, m_in );
+	bc.addb(idx(), OP_CREATE, m_in);
 	return true;
 }

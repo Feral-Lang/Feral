@@ -19,11 +19,13 @@
 #include "../Common/Errors.hpp"
 #include "../VM/SrcFile.hpp"
 
-Errors fmod_read_code( const std::string & data, const std::string & src_dir, const std::string & src_path,
-		       bcode_t & bc, const size_t & flags, const bool is_main_src,
-		       const bool & expr_only, const size_t & begin_idx = 0, const size_t & end_idx = -1 );
+Errors fmod_read_code(const std::string &data, const std::string &src_dir,
+		      const std::string &src_path, bcode_t &bc, const size_t &flags,
+		      const bool is_main_src, const bool &expr_only, const size_t &begin_idx = 0,
+		      const size_t &end_idx = -1);
 
-srcfile_t * fmod_load( const std::string & src_file, const std::string & src_dir, const size_t & flags,
-		       const bool is_main_src, Errors & err, const size_t & begin_idx = 0, const size_t & end_idx = -1 );
+srcfile_t *fmod_load(const std::string &src_file, const std::string &src_dir, const size_t &flags,
+		     const bool is_main_src, Errors &err, const size_t &begin_idx = 0,
+		     const size_t &end_idx = -1);
 
 #endif // COMPILER_LOAD_FILE_HPP

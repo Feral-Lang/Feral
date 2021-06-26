@@ -20,14 +20,18 @@
 /* Wrapper class for dlfcn.h library */
 class dyn_lib_t
 {
-	std::unordered_map< std::string, void * > m_handles;
+	std::unordered_map<std::string, void *> m_handles;
+
 public:
 	dyn_lib_t();
 	~dyn_lib_t();
-	void * load( const std::string & file );
-	void unload( const std::string & file );
-	void * get( const std::string & file, const std::string & sym );
-	inline bool fexists( const std::string & file ) { return m_handles.find( file ) != m_handles.end(); }
+	void *load(const std::string &file);
+	void unload(const std::string &file);
+	void *get(const std::string &file, const std::string &sym);
+	inline bool fexists(const std::string &file)
+	{
+		return m_handles.find(file) != m_handles.end();
+	}
 };
 
 #endif // VM_DYN_LIB_HPP

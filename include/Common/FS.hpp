@@ -14,23 +14,21 @@
 #ifndef COMMON_FS_HPP
 #define COMMON_FS_HPP
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #define MAX_PATH_CHARS 4096
 
 namespace fs
 {
+bool exists(const std::string &loc);
 
-bool exists( const std::string & loc );
-
-std::string abs_path( const std::string & loc, std::string * dir = nullptr,
-		      const bool & dir_add_double_dot = false );
+std::string abs_path(const std::string &loc, std::string *dir = nullptr,
+		     const bool &dir_add_double_dot = false);
 
 std::string cwd();
 
 std::string home();
-
-}
+} // namespace fs
 
 #endif // COMMON_FS_HPP

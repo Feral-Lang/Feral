@@ -14,9 +14,9 @@
 #ifndef COMPILER_ARGS_HPP
 #define COMPILER_ARGS_HPP
 
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 // Option bit masks
 extern const size_t OPT_A;
@@ -38,11 +38,8 @@ extern const size_t OPT_1;
 
 namespace args
 {
-
-size_t parse( const int argc, const char ** argv,
-	      std::unordered_map< std::string, std::string > & args,
-	      std::vector< std::string > & code_args );
-
+size_t parse(const int argc, const char **argv, std::unordered_map<std::string, std::string> &args,
+	     std::vector<std::string> &code_args);
 }
 
 #endif // COMPILER_ARGS_HPP

@@ -14,15 +14,14 @@
 #ifndef VM_CONSTS_HPP
 #define VM_CONSTS_HPP
 
-#include "Vars/Base.hpp"
 #include "OpCodes.hpp"
+#include "Vars/Base.hpp"
 #include "VM.hpp"
 
 namespace consts
 {
-
-var_base_t * get( vm_state_t & vm, const OpDataType type, const op_data_t & opd, const size_t & src_id, const size_t & idx );
-
+var_base_t *get(vm_state_t &vm, const OpDataType type, const op_data_t &opd, const size_t &src_id,
+		const size_t &idx);
 }
 
 #endif // VM_CONSTS_HPP

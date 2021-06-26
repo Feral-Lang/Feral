@@ -14,27 +14,44 @@
 #ifndef VM_VM_FAIL_STACK_HPP
 #define VM_VM_FAIL_STACK_HPP
 
-#include <vector>
 #include <deque>
+#include <vector>
 
 #include "Vars/Base.hpp"
 
 class vm_failstack_t
 {
-	std::vector< std::deque< var_base_t * > > m_stack;
+	std::vector<std::deque<var_base_t *>> m_stack;
+
 public:
 	vm_failstack_t();
 	~vm_failstack_t();
 
-	inline void blka() { m_stack.push_back( std::deque< var_base_t * >{} ); }
-	inline void blkr() { for( auto & e : m_stack.back() ) var_dref( e ); m_stack.pop_back(); }
+	inline void blka()
+	{
+		m_stack.push_back(std::deque<var_base_t *>{});
+	}
+	inline void blkr()
+	{
+		for(auto &e : m_stack.back()) var_dref(e);
+		m_stack.pop_back();
+	}
 
-	void push( var_base_t * val, const bool iref = true );
-	var_base_t * pop( const bool dref = true );
+	void push(var_base_t *val, const bool iref = true);
+	var_base_t *pop(const bool dref = true);
 
-	inline size_t size() const { return m_stack.size(); }
-	inline bool empty() const { return m_stack.empty(); }
-	inline bool backempty() const { return m_stack.back().empty(); }
+	inline size_t size() const
+	{
+		return m_stack.size();
+	}
+	inline bool empty() const
+	{
+		return m_stack.empty();
+	}
+	inline bool backempty() const
+	{
+		return m_stack.back().empty();
+	}
 };
 
 #endif // VM_VM_FAIL_STACK_HPP
