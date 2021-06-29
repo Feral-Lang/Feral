@@ -37,7 +37,6 @@ let loads = fn(data) {
 };
 
 let bind = fn(struct_instance, json_obj) {
-	let fields = struct_instance.get_fields();
 	for f in json_obj.each() {
 		struct_instance.set_field(f.0, f.1);
 	}
