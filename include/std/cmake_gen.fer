@@ -47,11 +47,39 @@ let gen in core_t = fn(ret = false) {
 		binaries_str += bin.gen() + '\n';
 	}
 	let data = fmt.template(cmake_base.template_base);
-	if ret {
-		return data;
+	if ret { return data; }
+	{ # this is inside a block as file must be closed before it is used
+		let file = fs.fopen(os.get_cwd() + '/CMakeLists.txt', 'w+');
+		io.fprintln(file, data);
 	}
-	let file = fs.fopen(os.get_cwd() + '/CMakeLists.txt', 'w+');
-	io.fprintln(file, data);
+	let buildtype = '';
+	if sys.args.len() > 1 && sys.args[1] == '--debug' {
+		buildtype = 'Debug';
+	} else {
+		buildtype = 'Release';
+	}
+	let cwd = os.get_cwd();
+	let changed = false;
+	if !fs.exists('build/CMakeCache.txt') {
+		os.mkdir('build');
+		changed = true;
+	} elif os.exec('grep CMAKE_BUILD_TYPE build/CMakeCache.txt | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
+		os.rm('build');
+		os.mkdir('build');
+		changed = true;
+	}
+	os.set_cwd('build');
+	if changed && os.exec('cmake .. -DCMAKE_BUILD_TYPE=' + buildtype) != 0 {
+		raise('failed to execute cmake');
+	}
+	let ins = '';
+	if sys.args.len() > 0 && sys.args[0] == 'install' {
+		ins = ' install';
+	}
+	if os.exec('make -j' + ins) != 0 {
+		raise('failed to execute make');
+	}
+	os.set_cwd(cwd);
 	return nil;
 };
 

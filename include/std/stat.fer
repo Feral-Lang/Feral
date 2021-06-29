@@ -17,6 +17,8 @@ let stat_t = lang.struct(
 	blocks = 0
 );
 
+stat_t.set_typename('stat_t');
+
 let isreg  in stat_t = fn() { return isreg_native(self);  };
 let isdir  in stat_t = fn() { return isdir_native(self);  };
 let ischr  in stat_t = fn() { return ischr_native(self);  };
