@@ -1,4 +1,5 @@
 mload('std/fs');
+let stat = import('std/stat');
 
 let fopen = fn(file, mode = 'r') {
 	return fopen_native(file, mode);
@@ -14,4 +15,9 @@ let walkdir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
 
 let open = fn(name, mode = O_RDONLY) {
 	return open_native(name, mode);
+};
+
+let dir_exists = fn(name) {
+	if !exists(name) { return false; }
+	return stat.stat(name).isdir();
 };
