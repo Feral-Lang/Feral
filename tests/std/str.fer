@@ -12,6 +12,8 @@ assert(s.pop() == '12345');
 assert(s.set(0, '0') == '02345');
 assert(s.insert(1, '1') == '012345');
 assert(s.erase(0) == '12345');
+assert(s.find('123') >= 0);
+assert(s.find('0') < 0);
 assert(s.lastidx() == 4);
 
 let a = '\n\t  ' + s + ' \t';
@@ -20,6 +22,9 @@ a = 'abcde';
 assert(a.upper() == 'ABCDE');
 
 assert(s.split('3') == vec.new('12', '45'));
+
+assert(s.starts_with('12'));
+assert(s.ends_with('45'));
 
 assert('A'.byt() == 65);
 assert(66.chr() == 'B');
