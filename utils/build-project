@@ -1,0 +1,42 @@
+#!/usr/bin/env feral
+
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let str = import('std/str');
+let sys = import('std/sys');
+
+let PROJ_DIR = os.get_env('PROJ_DIR');
+let PROJ_BUILD_DIR = PROJ_DIR + '/build';
+
+if PROJ_DIR.empty() {
+	io.println('PROJ_DIR env variable does not exist');
+	sys.exit(1);
+}
+
+if !fs.exists(PROJ_DIR) {
+	io.println('directory ', PROJ_DIR, ' does not exist');
+	sys.exit(1);
+}
+
+os.set_cwd(PROJ_DIR);
+
+let buildinfo = import(os.get_cwd() + '/.buildinfo');
+
+if !fs.exists(PROJ_BUILD_DIR) {
+	os.mkdir(PROJ_BUILD_DIR);
+}
+os.set_cwd(PROJ_BUILD_DIR);
+
+let debugrelease = 'd';
+
+if sys.args.len() > 0 && sys.args[0] == 'r' {
+	debugrelease = 'r';
+}
+if !fs.exists('CMakeCache.txt') {
+	# TODO: decide debug or release
+	let res = os.system(buildinfo.cmake);
+	if res != 0 { sys.exit(res); }
+}
+let res = os.system(buildinfo.make);
+sys.exit(res);
