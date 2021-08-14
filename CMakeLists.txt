@@ -695,3 +695,10 @@ install(TARGETS ${mod}
 	  DESTINATION lib/feral/std
 	  COMPONENT Libraries
 )
+
+# Utility Scripts
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/utils/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+	USE_SOURCE_PERMISSIONS
+	PATTERN "*"
+)
