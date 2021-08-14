@@ -250,6 +250,35 @@ var_base_t *str_split(vm_state_t &vm, const fn_data_t &fd)
 	return make<var_vec_t>(res_vec, false);
 }
 
+var_base_t *str_starts_with(vm_state_t &vm, const fn_data_t &fd)
+{
+	if(!fd.args[1]->istype<var_str_t>()) {
+		vm.fail(
+		fd.src_id, fd.idx,
+		"expected argument to be of type string for string.starts_with(), found: %s",
+		vm.type_name(fd.args[1]).c_str());
+		return nullptr;
+	}
+	const std::string &str = STR(fd.args[0])->get();
+	std::string &with = STR(fd.args[1])->get();
+	return make<var_bool_t>(str.rfind(with, 0) == 0);
+}
+
+var_base_t *str_ends_with(vm_state_t &vm, const fn_data_t &fd)
+{
+	if(!fd.args[1]->istype<var_str_t>()) {
+		vm.fail(
+		fd.src_id, fd.idx,
+		"expected argument to be of type string for string.ends_with(), found: %s",
+		vm.type_name(fd.args[1]).c_str());
+		return nullptr;
+	}
+	const std::string &str = STR(fd.args[0])->get();
+	std::string &with = STR(fd.args[1])->get();
+	size_t pos = str.rfind(with);
+	return make<var_bool_t>(pos != std::string::npos && pos + with.size() == str.size());
+}
+
 // character (str[0]) to its ASCII (int)
 var_base_t *byt(vm_state_t &vm, const fn_data_t &fd)
 {
@@ -285,6 +314,8 @@ INIT_MODULE(str)
 	vm.add_native_typefn<var_str_t>("trim", str_trim, 0, src_id, idx);
 	vm.add_native_typefn<var_str_t>("upper", str_upper, 0, src_id, idx);
 	vm.add_native_typefn<var_str_t>("split_native", str_split, 1, src_id, idx);
+	vm.add_native_typefn<var_str_t>("starts_with", str_starts_with, 1, src_id, idx);
+	vm.add_native_typefn<var_str_t>("ends_with", str_ends_with, 1, src_id, idx);
 
 	vm.add_native_typefn<var_str_t>("byt", byt, 0, src_id, idx);
 	vm.add_native_typefn<var_int_t>("chr", chr, 0, src_id, idx);
