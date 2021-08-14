@@ -17,8 +17,8 @@
 #if __APPLE__
 	#include <mach-o/dyld.h> // for _NSGetExecutablePath()
 #elif __FreeBSD__
-	#include <sys/sysctl.h> // for sysctl()
 	#include <sys/types.h>
+	#include <sys/sysctl.h> // for sysctl()
 #else
 	#include <unistd.h> // for readlink()
 #endif
