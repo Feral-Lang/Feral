@@ -49,7 +49,7 @@ Errors parse_single_operand_stmt(phelper_t &ph, stmt_base_t *&loc)
 	}
 
 	if(!ph.accept(TOK_COLS)) {
-		err::set(E_PARSE_FAIL, ph.peak()->pos,
+		err::set(E_PARSE_FAIL, ph.peak(-1)->pos,
 			 "expected semicolon to denote end of statement '%s', but found: '%s'",
 			 TokStrs[sost->type], TokStrs[ph.peakt()]);
 		goto fail;

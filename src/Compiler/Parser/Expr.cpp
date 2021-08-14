@@ -19,7 +19,7 @@ Errors parse_expr_cols(phelper_t &ph, stmt_base_t *&loc)
 		goto fail;
 	}
 	if(!ph.accept(TOK_COLS)) {
-		err::set(E_PARSE_FAIL, ph.peak()->pos,
+		err::set(E_PARSE_FAIL, ph.peak(-1)->pos,
 			 "expected semicolon at the end of expression, found: '%s'",
 			 TokStrs[ph.peakt()]);
 		goto fail;
@@ -41,7 +41,7 @@ Errors parse_expr_cols_or_rbrace(phelper_t &ph, stmt_base_t *&loc)
 		goto fail;
 	}
 	if(!ph.accept(TOK_COLS, TOK_RBRACE)) {
-		err::set(E_PARSE_FAIL, ph.peak()->pos,
+		err::set(E_PARSE_FAIL, ph.peak(-1)->pos,
 			 "expected semicolon at the end of expression, found: '%s'",
 			 TokStrs[ph.peakt()]);
 		goto fail;

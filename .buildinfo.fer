@@ -1,2 +1,4 @@
 let cmake = 'cmake ..';
 let make = 'make -j install';
+let test = 'feral testdir ../tests';
+let compcommands = true;
