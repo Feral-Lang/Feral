@@ -28,15 +28,72 @@ if !fs.exists(PROJ_BUILD_DIR) {
 }
 os.set_cwd(PROJ_BUILD_DIR);
 
-let debugrelease = 'd';
+let debugrelease = '';
+let testing = false;
 
-if sys.args.len() > 0 && sys.args[0] == 'r' {
-	debugrelease = 'r';
+if sys.args.len() > 0 {
+	if sys.args[0] == 'r' {
+		debugrelease = 'r';
+	} elif sys.args[0] == 'd' {
+		debugrelease = 'd';
+	} elif sys.args[0] == 't' {
+		testing = true;
+	}
 }
+let exec_cmake = false;
 if !fs.exists('CMakeCache.txt') {
 	# TODO: decide debug or release
+	exec_cmake = true;
+} elif !testing {
+	let f = fs.fopen('CMakeCache.txt', 'r');
+	let newdebugrelease = '';
+
+	for line in f.each_line() {
+		if !line.starts_with('CMAKE_BUILD_TYPE') { continue; }
+		let eqpos = line.find('=');
+		if eqpos < 0 { continue; }
+		let buildtype = line.substr(eqpos + 1);
+		if buildtype == 'Release' { newdebugrelease = 'r'; }
+		elif buildtype == 'Debug' { newdebugrelease = 'd'; }
+		break;
+	}
+
+	# if release/debug is not provided explicitly, don't bother calling cmake again
+	if debugrelease.empty() { debugrelease = newdebugrelease; }
+	exec_cmake = debugrelease != newdebugrelease;
+}
+
+# cmake
+if exec_cmake {
+	if debugrelease == 'r' {
+		buildinfo.cmake += ' -DCMAKE_BUILD_TYPE=Release';
+	} elif debugrelease == 'd' {
+		buildinfo.cmake += ' -DCMAKE_BUILD_TYPE=Debug';
+	} else {
+		io.println('invalid build type (must be either release (r) or debug (d)');
+		sys.exit(1);
+	}
+	os.set_cwd(PROJ_DIR);
+	os.rm('build');
+	os.mkdir(PROJ_BUILD_DIR);
+	os.set_cwd(PROJ_BUILD_DIR);
+	if buildinfo.compcommands {
+		buildinfo.cmake += ' -DCMAKE_EXPORT_COMPILE_COMMANDS=1';
+	}
 	let res = os.system(buildinfo.cmake);
 	if res != 0 { sys.exit(res); }
+	if buildinfo.compcommands {
+		os.cp('compile_commands.json', '../');
+	}
 }
-let res = os.system(buildinfo.make);
-sys.exit(res);
+
+# build
+if exec_cmake || !testing {
+	let res = os.system(buildinfo.make);
+	if res != 0 { sys.exit(res); }
+}
+
+# test
+if !testing { sys.exit(0); }
+let res = os.system(buildinfo.test);
+if res != 0 { sys.exit(res); }

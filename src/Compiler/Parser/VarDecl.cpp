@@ -39,7 +39,7 @@ begin:
 	}
 
 	if(!ph.accept(TOK_COLS)) {
-		err::set(E_PARSE_FAIL, ph.peak()->pos,
+		err::set(E_PARSE_FAIL, ph.peak(-1)->pos,
 			 "expected semicolon after variable declaration, found: '%s'",
 			 TokStrs[ph.peakt()]);
 		goto fail;
