@@ -18,3 +18,7 @@ let is_digit in str_t = fn() {
 	if self.empty() { return false; }
 	return self >= '0' && self <= '9';
 };
+
+let getUTF8CharFromHexString in str_t = fn() {
+	return self.getBinStrFromHexStr().getUTF8CharFromBinStr();
+};

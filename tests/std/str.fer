@@ -26,5 +26,13 @@ assert(s.split('3') == vec.new('12', '45'));
 assert(s.starts_with('12'));
 assert(s.ends_with('45'));
 
+assert('025AF'.getBinStrFromHexStr() == '10010110101111');
+assert('2665'.getBinStrFromHexStr() == '10011001100101');
+let heart = '2665'.getUTF8CharFromHexString();
+assert(heart.len() == 3);
+assert(heart[0].byt() == 226);
+assert(heart[1].byt() == 153);
+assert(heart[2].byt() == 165);
+
 assert('A'.byt() == 65);
 assert(66.chr() == 'B');
