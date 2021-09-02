@@ -20,6 +20,9 @@ std::vector<var_base_t *> _str_split(const std::string &data, const char delim,
 
 static inline void trim(std::string &s);
 
+size_t size_t_pow(size_t base, int exp);
+size_t str_to_bin(const std::string &str);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,23 +263,95 @@ var_base_t *str_starts_with(vm_state_t &vm, const fn_data_t &fd)
 		return nullptr;
 	}
 	const std::string &str = STR(fd.args[0])->get();
-	std::string &with = STR(fd.args[1])->get();
+	std::string &with      = STR(fd.args[1])->get();
 	return make<var_bool_t>(str.rfind(with, 0) == 0);
 }
 
 var_base_t *str_ends_with(vm_state_t &vm, const fn_data_t &fd)
 {
 	if(!fd.args[1]->istype<var_str_t>()) {
-		vm.fail(
-		fd.src_id, fd.idx,
-		"expected argument to be of type string for string.ends_with(), found: %s",
-		vm.type_name(fd.args[1]).c_str());
+		vm.fail(fd.src_id, fd.idx,
+			"expected argument to be of type string for string.ends_with(), found: %s",
+			vm.type_name(fd.args[1]).c_str());
 		return nullptr;
 	}
 	const std::string &str = STR(fd.args[0])->get();
-	std::string &with = STR(fd.args[1])->get();
-	size_t pos = str.rfind(with);
+	std::string &with      = STR(fd.args[1])->get();
+	size_t pos	       = str.rfind(with);
 	return make<var_bool_t>(pos != std::string::npos && pos + with.size() == str.size());
+}
+
+var_base_t *hex_str_to_bin_str(vm_state_t &vm, const fn_data_t &fd)
+{
+	static std::unordered_map<char, const char *> hextobin = {
+	{'0', "0000"}, {'1', "0001"}, {'2', "0010"}, {'3', "0011"}, {'4', "0100"}, {'5', "0101"},
+	{'6', "0110"}, {'7', "0111"}, {'8', "1000"}, {'9', "1001"}, {'a', "1010"}, {'b', "1011"},
+	{'c', "1100"}, {'d', "1101"}, {'e', "1110"}, {'f', "1111"},
+	};
+
+	const std::string &str = STR(fd.args[0])->get();
+	std::string bin;
+	for(auto &ch : str) {
+		char c = tolower(ch);
+		if((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
+			vm.fail(fd.src_id, fd.idx, "expected hex string, found character: %c", c);
+			return nullptr;
+		}
+		bin += hextobin[c];
+	}
+	while(!bin.empty() && bin.front() == '0') bin.erase(bin.begin());
+	return make<var_str_t>(bin);
+}
+
+var_base_t *utf8_char_from_bin_str(vm_state_t &vm, const fn_data_t &fd)
+{
+	std::string str = STR(fd.args[0])->get();
+	if(str.empty()) return make<var_str_t>("");
+
+	// reference: https://en.wikipedia.org/wiki/UTF-8#Encoding
+	if(str.size() > 21) {
+		vm.fail(fd.src_id, fd.idx, "UTF-8 cannot be more than 21 bytes, found bytes: %zu",
+			str.size());
+		return nullptr;
+	}
+
+	for(auto &c : str) {
+		if(c == '0' || c == '1') continue;
+		vm.fail(fd.src_id, fd.idx, "expected bin string, found character: %c", c);
+		return nullptr;
+	}
+
+	var_str_t *res = make<var_str_t>("");
+	std::string &r = STR(res)->get();
+	if(str.size() <= 7) {
+		while(str.size() < 7) {
+			str.insert(str.begin(), '0');
+		}
+		r = str_to_bin("0" + str);
+	} else if(str.size() <= 11) {
+		while(str.size() < 11) {
+			str.insert(str.begin(), '0');
+		}
+		r = str_to_bin("110" + str.substr(0, 5));
+		r += str_to_bin("10" + str.substr(5));
+	} else if(str.size() <= 16) {
+		while(str.size() < 16) {
+			str.insert(str.begin(), '0');
+		}
+		r = str_to_bin("1110" + str.substr(0, 4));
+		r += str_to_bin("10" + str.substr(4, 6));
+		r += str_to_bin("10" + str.substr(10));
+	} else { // str.size() <= 21
+		while(str.size() < 21) {
+			str.insert(str.begin(), '0');
+		}
+		r = str_to_bin("11110" + str.substr(0, 3));
+		r += str_to_bin("10" + str.substr(3, 6));
+		r += str_to_bin("10" + str.substr(9, 6));
+		r += str_to_bin("10" + str.substr(15));
+	}
+
+	return res;
 }
 
 // character (str[0]) to its ASCII (int)
@@ -284,13 +359,13 @@ var_base_t *byt(vm_state_t &vm, const fn_data_t &fd)
 {
 	const std::string &str = STR(fd.args[0])->get();
 	if(str.empty()) return make<var_int_t>(0);
-	return make<var_int_t>(str[0]);
+	return make<var_int_t>((unsigned char)str[0]);
 }
 
 // ASCII (int) to character (str)
 var_base_t *chr(vm_state_t &vm, const fn_data_t &fd)
 {
-	return make<var_str_t>(std::string(1, (char)mpz_get_si(INT(fd.args[0])->get())));
+	return make<var_str_t>(std::string(1, (unsigned char)mpz_get_si(INT(fd.args[0])->get())));
 }
 
 INIT_MODULE(str)
@@ -316,6 +391,9 @@ INIT_MODULE(str)
 	vm.add_native_typefn<var_str_t>("split_native", str_split, 1, src_id, idx);
 	vm.add_native_typefn<var_str_t>("starts_with", str_starts_with, 1, src_id, idx);
 	vm.add_native_typefn<var_str_t>("ends_with", str_ends_with, 1, src_id, idx);
+	vm.add_native_typefn<var_str_t>("getBinStrFromHexStr", hex_str_to_bin_str, 0, src_id, idx);
+	vm.add_native_typefn<var_str_t>("getUTF8CharFromBinStr", utf8_char_from_bin_str, 0, src_id,
+					idx);
 
 	vm.add_native_typefn<var_str_t>("byt", byt, 0, src_id, idx);
 	vm.add_native_typefn<var_int_t>("chr", chr, 0, src_id, idx);
@@ -363,4 +441,28 @@ static inline void trim(std::string &s)
 {
 	ltrim(s);
 	rtrim(s);
+}
+
+size_t size_t_pow(size_t base, int exp)
+{
+	size_t result = 1;
+	while(exp) {
+		if(exp % 2) result *= base;
+		exp /= 2;
+		base *= base;
+	}
+	return result;
+}
+
+size_t str_to_bin(const std::string &str)
+{
+	size_t exp = size_t_pow(2, str.size() - 1);
+	size_t bin = 0;
+	for(auto &c : str) {
+		if(c == '1') {
+			bin += exp;
+		}
+		exp /= 2;
+	}
+	return bin;
 }
