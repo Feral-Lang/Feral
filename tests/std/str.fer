@@ -36,3 +36,5 @@ assert(heart[2].byt() == 165);
 
 assert('A'.byt() == 65);
 assert(66.chr() == 'B');
+assert(' '.is_space());
+assert(!'5'.is_space());
