@@ -29,7 +29,7 @@ assert(js['second'][4]['key'] == nil);
 assert(js['third'] == -1.27);
 
 let json_oneline_dump = json.dumps(js);
-let json_pretty_dump = json.dumps(js, 0, '\t');
+let json_pretty_dump = json.dumps(js, true, '\t');
 assert(json_oneline == json_oneline_dump);
 assert(json_pretty == json_pretty_dump);
 

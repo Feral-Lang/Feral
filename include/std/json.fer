@@ -23,7 +23,9 @@ let str = import('std/str');
 let vec = import('std/vec');
 let lang = import('std/lang');
 
-let dumps = fn(obj, indent = -1, indent_char = ' ') {
+let dumps = fn(obj, indentation = false, indent_char = ' ') {
+	let indent = -1;
+	if indentation { indent = 0; }
 	let js = obj.to_json(indent, indent_char);
 	if js.empty() {
 		raise('type ' + obj._typestr_() + ' does not implement JSON serialization');
