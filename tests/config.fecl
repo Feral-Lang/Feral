@@ -1,0 +1,3 @@
+file_pattern = '(.*)\.fer';
+exec_cmd = '$s $p';
+clean_cmd = '';
