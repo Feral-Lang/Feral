@@ -43,8 +43,7 @@ void var_bytebuffer_t::set(var_base_t *from)
 	}
 	if(m_size != tmp->m_size) {
 		if(m_size == 0) m_buffer = (char *)malloc(tmp->m_size);
-		else
-			m_buffer = (char *)realloc(m_buffer, tmp->m_size);
+		else m_buffer = (char *)realloc(m_buffer, tmp->m_size);
 	}
 	memcpy(m_buffer, tmp->m_buffer, tmp->m_size);
 	m_size = tmp->m_size;
@@ -59,8 +58,7 @@ void var_bytebuffer_t::resize(const size_t &new_size)
 		return;
 	}
 	if(m_size == 0) m_buffer = (char *)malloc(new_size);
-	else
-		m_buffer = (char *)realloc(m_buffer, new_size);
+	else m_buffer = (char *)realloc(m_buffer, new_size);
 	m_size = new_size;
 }
 

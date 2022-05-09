@@ -279,8 +279,7 @@ void vm_state_t::fail(const size_t &src_id, const size_t &idx, var_base_t *val, 
 				val->to_str(*this, data, src_id, idx);
 				var_dref(val);
 				if(msg) src.second->src()->fail(idx, "%s (%s)", msg, data.c_str());
-				else
-					src.second->src()->fail(idx, data.c_str());
+				else src.second->src()->fail(idx, data.c_str());
 				break;
 			}
 		}

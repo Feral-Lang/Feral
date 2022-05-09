@@ -27,12 +27,10 @@ static void _tab_apply(const bool has_next)
 	for(size_t i = 0; i < _tab().size(); ++i) {
 		if(i == _tab().size() - 1) {
 			if(has_next) fprintf(stdout, "  ├─");
-			else
-				fprintf(stdout, "  └─");
+			else fprintf(stdout, "  └─");
 		} else {
 			if(_tab()[i]) fprintf(stdout, "  │");
-			else
-				fprintf(stdout, "   ");
+			else fprintf(stdout, "   ");
 		}
 	}
 }

@@ -461,8 +461,7 @@ static int get_operator(const std::string &src, size_t &i)
 			if(NEXT(src) == '*' || NEXT(src) == '=') {
 				++i;
 				if(CURR(src) == '*') op_type = TOK_POW;
-				else if(CURR(src) == '=')
-					op_type = TOK_MUL_ASSN;
+				else if(CURR(src) == '=') op_type = TOK_MUL_ASSN;
 				break;
 			}
 		}
@@ -472,8 +471,7 @@ static int get_operator(const std::string &src, size_t &i)
 			if(NEXT(src) == '/' || NEXT(src) == '=') {
 				++i;
 				if(CURR(src) == '/') op_type = TOK_ROOT;
-				else if(CURR(src) == '=')
-					op_type = TOK_DIV_ASSN;
+				else if(CURR(src) == '=') op_type = TOK_DIV_ASSN;
 				break;
 			}
 		}
@@ -491,8 +489,7 @@ static int get_operator(const std::string &src, size_t &i)
 			if(NEXT(src) == '&' || NEXT(src) == '=') {
 				++i;
 				if(CURR(src) == '&') op_type = TOK_LAND;
-				else if(CURR(src) == '=')
-					op_type = TOK_BAND_ASSN;
+				else if(CURR(src) == '=') op_type = TOK_BAND_ASSN;
 				break;
 			}
 		}
@@ -502,8 +499,7 @@ static int get_operator(const std::string &src, size_t &i)
 			if(NEXT(src) == '|' || NEXT(src) == '=') {
 				++i;
 				if(CURR(src) == '|') op_type = TOK_LOR;
-				else if(CURR(src) == '=')
-					op_type = TOK_BOR_ASSN;
+				else if(CURR(src) == '=') op_type = TOK_BOR_ASSN;
 				break;
 			}
 		}

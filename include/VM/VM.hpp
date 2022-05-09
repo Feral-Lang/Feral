@@ -158,8 +158,7 @@ struct vm_state_t
 		set_typename(type_id<T...>(), name);
 		var_typeid_t *type_var = make_all<var_typeid_t>(type_id<T...>(), src_id, idx);
 		if(src_stack.empty()) gadd(name + "_t", type_var);
-		else
-			src_stack.back()->add_native_var(name + "_t", type_var, true, true);
+		else src_stack.back()->add_native_var(name + "_t", type_var, true, true);
 	}
 
 	void add_typefn(const std::uintptr_t &type, const std::string &name, var_base_t *fn,

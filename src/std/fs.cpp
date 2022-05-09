@@ -205,8 +205,7 @@ var_base_t *fs_file_read_blocks(vm_state_t &vm, const fn_data_t &fd)
 			if(pos == std::string::npos) continue;
 			inside_block = true;
 			if(pos + begin.size() > line.size()) continue;
-			else
-				line = line.substr(pos + begin.size());
+			else line = line.substr(pos + begin.size());
 			goto begin_fetch;
 		}
 		size_t pos = line.find(end);
@@ -216,8 +215,7 @@ var_base_t *fs_file_read_blocks(vm_state_t &vm, const fn_data_t &fd)
 		}
 		block_content += line.substr(0, pos);
 		if(pos + end.size() <= line.size()) line = line.substr(pos + end.size());
-		else
-			line.clear();
+		else line.clear();
 		inside_block = false;
 		blocks.push_back(new var_str_t(block_content, fd.src_id, fd.idx));
 		block_content.clear();
