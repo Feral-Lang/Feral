@@ -1,5 +1,5 @@
 task:
-    name: Debian 10 gcc 9.3
+    name: Debian 10 GCC 9.3
     container:
         image: gcc:9
     env:
@@ -10,7 +10,7 @@ task:
     tests_script: ${HOME}/.feral/bin/feral testdir tests && ${HOME}/.feral/bin/feral testdir tests --valgrind
 
 task:
-    name: Debian 8 gcc 6.5.0
+    name: Debian 8 GCC 6.5.0
     container:
         image: gcc:6
     env:
@@ -31,9 +31,9 @@ task:
     tests_script: ${HOME}/.feral/bin/feral testdir tests
 
 task:
-    name: macOS Catalina Apple llvm 11.0.0
+    name: macOS Monterey Apple LLVM 13.0.0
     osx_instance:
-        image: catalina-base
+        image: monterey-base
     install_script: brew install git gmp mpfr libmpc cmake make
     compile_script:
         - export CI=true; sh build.sh
