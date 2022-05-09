@@ -192,6 +192,23 @@ var_base_t *str_find(vm_state_t &vm, const fn_data_t &fd)
 	return make<var_int_t>(pos);
 }
 
+var_base_t *str_rfind(vm_state_t &vm, const fn_data_t &fd)
+{
+	if(!fd.args[1]->istype<var_str_t>()) {
+		vm.fail(fd.src_id, fd.idx,
+			"expected argument to be of type str for string.find(), found: %s",
+			vm.type_name(fd.args[1]).c_str());
+		return nullptr;
+	}
+	std::string &str  = STR(fd.args[0])->get();
+	std::string &what = STR(fd.args[1])->get();
+	size_t pos	  = str.rfind(what);
+	if(pos == std::string::npos) {
+		return make<var_int_t>(-1);
+	}
+	return make<var_int_t>(pos);
+}
+
 var_base_t *str_substr(vm_state_t &vm, const fn_data_t &fd)
 {
 	if(!fd.args[1]->istype<var_int_t>()) {
@@ -384,6 +401,7 @@ INIT_MODULE(str)
 	vm.add_native_typefn<var_str_t>("insert", str_insert, 2, src_id, idx);
 	vm.add_native_typefn<var_str_t>("erase", str_erase, 1, src_id, idx);
 	vm.add_native_typefn<var_str_t>("find", str_find, 1, src_id, idx);
+	vm.add_native_typefn<var_str_t>("rfind", str_rfind, 1, src_id, idx);
 	vm.add_native_typefn<var_str_t>("substr_native", str_substr, 2, src_id, idx);
 	vm.add_native_typefn<var_str_t>("lastidx", str_last, 0, src_id, idx);
 	vm.add_native_typefn<var_str_t>("trim", str_trim, 0, src_id, idx);
