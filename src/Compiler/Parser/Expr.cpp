@@ -538,12 +538,9 @@ Errors parse_expr_03(phelper_t &ph, stmt_base_t *&loc)
 	while(ph.accept(TOK_XINC, TOK_XDEC) || ph.accept(TOK_ADD, TOK_SUB) ||
 	      ph.accept(TOK_LNOT, TOK_BNOT)) {
 		if(ph.peakt() == TOK_XINC) ph.sett(TOK_INCX);
-		else if(ph.peakt() == TOK_XDEC)
-			ph.sett(TOK_DECX);
-		else if(ph.peakt() == TOK_ADD)
-			ph.sett(TOK_UADD);
-		else if(ph.peakt() == TOK_SUB)
-			ph.sett(TOK_USUB);
+		else if(ph.peakt() == TOK_XDEC) ph.sett(TOK_DECX);
+		else if(ph.peakt() == TOK_ADD) ph.sett(TOK_UADD);
+		else if(ph.peakt() == TOK_SUB) ph.sett(TOK_USUB);
 
 		opers.insert(opers.begin(), ph.peak());
 		ph.next();

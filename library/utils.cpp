@@ -120,14 +120,11 @@ var_base_t *range(vm_state_t &vm, const fn_data_t &fd)
 	mpz_t begin, end, step;
 	mpz_inits(begin, end, step, NULL);
 	if(fd.args.size() > 2) mpz_set(begin, INT(lhs_base)->get());
-	else
-		mpz_set_si(begin, 0);
+	else mpz_set_si(begin, 0);
 	if(rhs_base) mpz_set(end, INT(rhs_base)->get());
-	else
-		mpz_set(end, INT(lhs_base)->get());
+	else mpz_set(end, INT(lhs_base)->get());
 	if(step_base) mpz_set(step, INT(step_base)->get());
-	else
-		mpz_set_si(step, 1);
+	else mpz_set_si(step, 1);
 	var_int_iterable_t *res = make<var_int_iterable_t>(begin, end, step);
 	mpz_clears(begin, end, step, NULL);
 	return res;

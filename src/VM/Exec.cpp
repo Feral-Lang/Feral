@@ -305,8 +305,7 @@ int exec(vm_state_t &vm, const bcode_t *custom_bcode, const size_t &begin, const
 					vm.fail(op.src_id, op.idx,
 						"callable '%s' does not exist for %s",
 						fn_name.c_str(), vm.type_name(in_base).c_str());
-				else
-					vm.fail(op.src_id, op.idx, "this function does not exist");
+				else vm.fail(op.src_id, op.idx, "this function does not exist");
 				var_dref(in_base);
 				goto fncall_fail;
 			}

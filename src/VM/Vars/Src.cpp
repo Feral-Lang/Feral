@@ -79,8 +79,7 @@ void var_src_t::add_native_var(const std::string &name, var_base_t *val, const b
 			       const bool module_level)
 {
 	if(module_level) m_vars->addm(name, val, iref);
-	else
-		m_vars->add(name, val, iref);
+	else m_vars->add(name, val, iref);
 }
 
 srcfile_t *var_src_t::src()
