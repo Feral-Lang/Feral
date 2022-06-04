@@ -111,7 +111,12 @@ let getType in Toks = fn(idx) {
 let Tokenize = fn(data) {
 	let toks = Toks();
 	let len = data.len();
+	let comment = false;
 	for let i = 0; i < len; ++i {
+		if comment {
+			if data[i] == '\n' { comment = false; }
+			continue;
+		}
 		if data[i] == '\'' || data[i] == '"' {
 			let s = GetConstStr(data, i, len);
 			toks.push(Tok(TokType.STR, s));
@@ -137,6 +142,10 @@ let Tokenize = fn(data) {
 		if data[i].is_alpha() || data[i] == '_' {
 			let iden = GetIden(data, i, len);
 			toks.push(Tok(TokType.IDEN, iden));
+			continue;
+		}
+		if data[i] == '#' {
+			comment = true;
 			continue;
 		}
 		raise('invalid character encountered: ' + data[i]);

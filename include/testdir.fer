@@ -130,7 +130,7 @@ if !fs.exists(cfgname) {
 let cfgfile = fs.fopen(cfgname);
 let cfgstr = '';
 for line in cfgfile.each_line() {
-	cfgstr += line;
+	cfgstr += line + '\n';
 }
 let cfg = fecl.loads(cfgstr);
 let file_pattern = cfg['file_pattern'];
