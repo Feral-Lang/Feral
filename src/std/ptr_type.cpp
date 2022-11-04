@@ -18,10 +18,7 @@ var_ptr_t::var_ptr_t(var_base_t *val, const size_t &src_id, const size_t &idx)
 {
 	var_iref(m_val);
 }
-var_ptr_t::~var_ptr_t()
-{
-	var_dref(m_val);
-}
+var_ptr_t::~var_ptr_t() { var_dref(m_val); }
 
 var_base_t *var_ptr_t::copy(const size_t &src_id, const size_t &idx)
 {
@@ -41,7 +38,4 @@ void var_ptr_t::update(var_base_t *with)
 	var_iref(m_val);
 }
 
-var_base_t *var_ptr_t::get()
-{
-	return m_val;
-}
+var_base_t *var_ptr_t::get() { return m_val; }

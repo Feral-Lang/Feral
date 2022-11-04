@@ -19,10 +19,7 @@ var_vec_iterable_t::var_vec_iterable_t(var_vec_t *vec, const size_t &src_id, con
 {
 	var_iref(m_vec);
 }
-var_vec_iterable_t::~var_vec_iterable_t()
-{
-	var_dref(m_vec);
-}
+var_vec_iterable_t::~var_vec_iterable_t() { var_dref(m_vec); }
 
 var_base_t *var_vec_iterable_t::copy(const size_t &src_id, const size_t &idx)
 {

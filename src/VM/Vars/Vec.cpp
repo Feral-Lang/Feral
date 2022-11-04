@@ -41,14 +41,8 @@ var_base_t *var_vec_t::copy(const size_t &src_id, const size_t &idx)
 	}
 	return new var_vec_t(new_vec, m_refs, src_id, idx);
 }
-std::vector<var_base_t *> &var_vec_t::get()
-{
-	return m_val;
-}
-bool var_vec_t::is_ref_vec()
-{
-	return m_refs;
-}
+std::vector<var_base_t *> &var_vec_t::get() { return m_val; }
+bool var_vec_t::is_ref_vec() { return m_refs; }
 void var_vec_t::set(var_base_t *from)
 {
 	for(auto &v : m_val) {

@@ -25,11 +25,5 @@ var_base_t *var_typeid_t::copy(const size_t &src_id, const size_t &idx)
 {
 	return new var_typeid_t(m_val, src_id, idx);
 }
-void var_typeid_t::set(var_base_t *from)
-{
-	m_val = TYPEID(from)->get();
-}
-std::uintptr_t &var_typeid_t::get()
-{
-	return m_val;
-}
+void var_typeid_t::set(var_base_t *from) { m_val = TYPEID(from)->get(); }
+std::uintptr_t &var_typeid_t::get() { return m_val; }

@@ -62,7 +62,4 @@ void var_bytebuffer_t::resize(const size_t &new_size)
 	m_size = new_size;
 }
 
-void var_bytebuffer_t::set_len(const size_t &new_len)
-{
-	m_len = new_len;
-}
+void var_bytebuffer_t::set_len(const size_t &new_len) { m_len = new_len; }

@@ -42,14 +42,8 @@ void vars_frame_t::rem(const std::string &name, const bool dec_ref)
 	m_vars.erase(name);
 }
 
-void *vars_frame_t::operator new(size_t sz)
-{
-	return mem::alloc(sz);
-}
-void vars_frame_t::operator delete(void *ptr, size_t sz)
-{
-	mem::free(ptr, sz);
-}
+void *vars_frame_t::operator new(size_t sz) { return mem::alloc(sz); }
+void vars_frame_t::operator delete(void *ptr, size_t sz) { mem::free(ptr, sz); }
 
 vars_frame_t *vars_frame_t::thread_copy(const size_t &src_id, const size_t &idx)
 {
@@ -64,10 +58,7 @@ vars_frame_t *vars_frame_t::thread_copy(const size_t &src_id, const size_t &idx)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-vars_stack_t::vars_stack_t() : m_top(0)
-{
-	m_stack.push_back(new vars_frame_t());
-}
+vars_stack_t::vars_stack_t() : m_top(0) { m_stack.push_back(new vars_frame_t()); }
 vars_stack_t::~vars_stack_t()
 {
 	for(auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer) {
@@ -75,10 +66,7 @@ vars_stack_t::~vars_stack_t()
 	}
 }
 
-bool vars_stack_t::exists(const std::string &name)
-{
-	return m_stack.back()->exists(name);
-}
+bool vars_stack_t::exists(const std::string &name) { return m_stack.back()->exists(name); }
 
 var_base_t *vars_stack_t::get(const std::string &name)
 {
@@ -158,20 +146,14 @@ vars_stack_t *vars_stack_t::thread_copy(const size_t &src_id, const size_t &idx)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-vars_t::vars_t() : m_fn_stack(-1)
-{
-	m_fn_vars[0] = new vars_stack_t;
-}
+vars_t::vars_t() : m_fn_stack(-1) { m_fn_vars[0] = new vars_stack_t; }
 vars_t::~vars_t()
 {
 	assert(m_fn_stack == 0 || m_fn_stack == -1);
 	delete m_fn_vars[0];
 }
 
-bool vars_t::exists(const std::string &name)
-{
-	return m_fn_vars[m_fn_stack]->exists(name);
-}
+bool vars_t::exists(const std::string &name) { return m_fn_vars[m_fn_stack]->exists(name); }
 
 var_base_t *vars_t::get(const std::string &name)
 {
@@ -192,10 +174,7 @@ void vars_t::blk_add(const size_t &count)
 	m_stash.clear();
 }
 
-void vars_t::blk_rem(const size_t &count)
-{
-	m_fn_vars[m_fn_stack]->dec_top(count);
-}
+void vars_t::blk_rem(const size_t &count) { m_fn_vars[m_fn_stack]->dec_top(count); }
 
 void vars_t::push_fn()
 {

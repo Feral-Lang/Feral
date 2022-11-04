@@ -30,10 +30,7 @@ var_base_t *ptr_set(vm_state_t &vm, const fn_data_t &fd)
 	return fd.args[0];
 }
 
-var_base_t *ptr_get(vm_state_t &vm, const fn_data_t &fd)
-{
-	return PTR(fd.args[0])->get();
-}
+var_base_t *ptr_get(vm_state_t &vm, const fn_data_t &fd) { return PTR(fd.args[0])->get(); }
 
 INIT_MODULE(ptr)
 {

@@ -64,7 +64,8 @@ var_base_t *var_struct_def_t::call(vm_state_t &vm, const std::vector<var_base_t 
 {
 	for(auto &aa : assn_args) {
 		if(std::find(m_attr_order.begin(), m_attr_order.end(), aa.name) ==
-		   m_attr_order.end()) {
+		   m_attr_order.end())
+		{
 			vm.fail(aa.src_id, aa.idx,
 				"no attribute named '%s' in the structure definition",
 				aa.name.c_str());
@@ -145,18 +146,12 @@ var_base_t *var_struct_def_t::attr_get(const std::string &name)
 	return m_attrs[name];
 }
 
-const std::vector<std::string> &var_struct_def_t::attr_order() const
-{
-	return m_attr_order;
-}
+const std::vector<std::string> &var_struct_def_t::attr_order() const { return m_attr_order; }
 const std::unordered_map<std::string, var_base_t *> &var_struct_def_t::attrs() const
 {
 	return m_attrs;
 }
-std::uintptr_t var_struct_def_t::typefn_id() const
-{
-	return m_id;
-}
+std::uintptr_t var_struct_def_t::typefn_id() const { return m_id; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VAR_STRUCT ///////////////////////////////////////////
@@ -179,10 +174,7 @@ var_struct_t::~var_struct_t()
 	var_dref(m_base);
 }
 
-std::uintptr_t var_struct_t::typefn_id() const
-{
-	return m_id;
-}
+std::uintptr_t var_struct_t::typefn_id() const { return m_id; }
 
 var_base_t *var_struct_t::copy(const size_t &src_id, const size_t &idx)
 {
@@ -233,7 +225,4 @@ var_base_t *var_struct_t::attr_get(const std::string &name)
 	return m_attrs[name];
 }
 
-const std::unordered_map<std::string, var_base_t *> &var_struct_t::attrs() const
-{
-	return m_attrs;
-}
+const std::unordered_map<std::string, var_base_t *> &var_struct_t::attrs() const { return m_attrs; }

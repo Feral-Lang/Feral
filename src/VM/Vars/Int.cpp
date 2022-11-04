@@ -38,20 +38,11 @@ var_int_t::var_int_t(const char *val, const size_t &src_id, const size_t &idx)
 {
 	mpz_init_set_str(m_val, val, 0);
 }
-var_int_t::~var_int_t()
-{
-	mpz_clear(m_val);
-}
+var_int_t::~var_int_t() { mpz_clear(m_val); }
 
 var_base_t *var_int_t::copy(const size_t &src_id, const size_t &idx)
 {
 	return new var_int_t(m_val, src_id, idx);
 }
-mpz_t &var_int_t::get()
-{
-	return m_val;
-}
-void var_int_t::set(var_base_t *from)
-{
-	mpz_set(m_val, INT(from)->get());
-}
+mpz_t &var_int_t::get() { return m_val; }
+void var_int_t::set(var_base_t *from) { mpz_set(m_val, INT(from)->get()); }

@@ -35,10 +35,7 @@ static void _tab_apply(const bool has_next)
 	}
 }
 
-void io::tadd(const bool show)
-{
-	_tab().push_back(show);
-}
+void io::tadd(const bool show) { _tab().push_back(show); }
 
 void io::trem(const size_t num)
 {

@@ -196,10 +196,7 @@ inline bool tok_type_is_data(const int type)
  * \param type - From enum TokType
  * \return true If the type is one of possible operators, false if it isn't
  */
-inline bool tok_type_is_oper(const int type)
-{
-	return type >= TOK_ASSN && type <= TOK_RBRACK;
-}
+inline bool tok_type_is_oper(const int type) { return type >= TOK_ASSN && type <= TOK_RBRACK; }
 
 /**
  * \brief Check if the given type (int) is an assignment operator
@@ -225,10 +222,7 @@ inline bool tok_type_is_assign(const int type)
  * \param tok Pointer to a tok_t
  * \return true If the type is one of variable data tokens, false if it isn't
  */
-inline bool tok_is_data(const tok_t *tok)
-{
-	return tok_type_is_data(tok->type);
-}
+inline bool tok_is_data(const tok_t *tok) { return tok_type_is_data(tok->type); }
 
 /**
  * \brief Check if the given token pointer's type is an operator
@@ -238,10 +232,7 @@ inline bool tok_is_data(const tok_t *tok)
  * \param tok Pointer to a tok_t
  * \return true If the type is one of operator tokens, false if it isn't
  */
-inline bool tok_is_oper(const tok_t *tok)
-{
-	return tok_type_is_oper(tok->type);
-}
+inline bool tok_is_oper(const tok_t *tok) { return tok_type_is_oper(tok->type); }
 
 /**
  * \brief Check if the given token pointer's type is an assignment operator
@@ -251,10 +242,7 @@ inline bool tok_is_oper(const tok_t *tok)
  * \param tok Pointer to a tok_t
  * \return true If the type is one of assignment operator tokens, false if it isn't
  */
-inline bool tok_is_assign(const tok_t *tok)
-{
-	return tok_type_is_assign(tok->type);
-}
+inline bool tok_is_assign(const tok_t *tok) { return tok_type_is_assign(tok->type); }
 
 } // namespace lex
 

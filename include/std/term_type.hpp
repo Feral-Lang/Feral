@@ -28,10 +28,7 @@ public:
 	var_base_t *copy(const size_t &src_id, const size_t &idx);
 	void set(var_base_t *from);
 
-	inline struct termios &get()
-	{
-		return m_term;
-	}
+	inline struct termios &get() { return m_term; }
 };
 #define TERM(x) static_cast<var_term_t *>(x)
 

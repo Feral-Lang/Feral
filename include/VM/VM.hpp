@@ -108,46 +108,22 @@ struct vm_state_t
 	bool nmod_load(const std::string &mod_str, const size_t &src_id, const size_t &idx);
 	// updated mod_str with actual file name (full canonical path)
 	int fmod_load(std::string &mod_str, const size_t &src_id, const size_t &idx);
-	inline fmod_read_code_fn_t fmod_read_code_fn()
-	{
-		return m_src_read_code_fn;
-	}
+	inline fmod_read_code_fn_t fmod_read_code_fn() { return m_src_read_code_fn; }
 
-	inline void set_fmod_load_fn(fmod_load_fn_t load_fn)
-	{
-		m_src_load_fn = load_fn;
-	}
+	inline void set_fmod_load_fn(fmod_load_fn_t load_fn) { m_src_load_fn = load_fn; }
 	inline void set_fmod_read_code_fn(fmod_read_code_fn_t read_code_fn)
 	{
 		m_src_read_code_fn = read_code_fn;
 	}
 
-	inline fmod_load_fn_t get_fmod_load_fn()
-	{
-		return m_src_load_fn;
-	}
-	inline fmod_read_code_fn_t get_fmod_read_code_fn()
-	{
-		return m_src_read_code_fn;
-	}
+	inline fmod_load_fn_t get_fmod_load_fn() { return m_src_load_fn; }
+	inline fmod_read_code_fn_t get_fmod_read_code_fn() { return m_src_read_code_fn; }
 
-	inline const std::vector<std::string> &inc_locs() const
-	{
-		return m_inc_locs;
-	}
-	inline const std::vector<std::string> &dll_locs() const
-	{
-		return m_dll_locs;
-	}
+	inline const std::vector<std::string> &inc_locs() const { return m_inc_locs; }
+	inline const std::vector<std::string> &dll_locs() const { return m_dll_locs; }
 
-	inline var_src_t *current_source() const
-	{
-		return src_stack.back();
-	}
-	inline srcfile_t *current_source_file() const
-	{
-		return src_stack.back()->src();
-	}
+	inline var_src_t *current_source() const { return src_stack.back(); }
+	inline srcfile_t *current_source_file() const { return src_stack.back()->src(); }
 
 	void gadd(const std::string &name, var_base_t *val, const bool iref = true);
 	var_base_t *gget(const std::string &name);
@@ -180,14 +156,8 @@ struct vm_state_t
 	std::string type_name(const std::uintptr_t &type);
 	std::string type_name(const var_base_t *val);
 
-	inline const std::string &self_bin() const
-	{
-		return m_self_bin;
-	}
-	inline const std::string &self_base() const
-	{
-		return m_self_base;
-	}
+	inline const std::string &self_bin() const { return m_self_bin; }
+	inline const std::string &self_base() const { return m_self_base; }
 
 	void fail(const size_t &src_id, const size_t &idx, const char *msg, ...);
 
@@ -199,10 +169,7 @@ struct vm_state_t
 
 	vm_state_t *thread_copy(const size_t &src_id, const size_t &idx);
 
-	inline bool is_thread_copy()
-	{
-		return m_is_thread_copy;
-	}
+	inline bool is_thread_copy() { return m_is_thread_copy; }
 
 private:
 	// file loading function

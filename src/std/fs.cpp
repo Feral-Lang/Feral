@@ -426,7 +426,8 @@ void get_entries_internal(const std::string &dir_str, std::vector<var_base_t *> 
 		if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
 		std::string entry = dir_str + ent->d_name;
 		if((!(flags & WalkEntry::RECURSE) || ent->d_type != DT_DIR) &&
-		   !std::regex_match(entry, regex)) {
+		   !std::regex_match(entry, regex))
+		{
 			continue;
 		}
 		if(ent->d_type == DT_DIR) {

@@ -29,10 +29,7 @@ var_base_t::var_base_t(const std::uintptr_t &type, const size_t &src_id, const s
 }
 var_base_t::~var_base_t() {}
 
-std::uintptr_t var_base_t::typefn_id() const
-{
-	return m_type;
-}
+std::uintptr_t var_base_t::typefn_id() const { return m_type; }
 
 bool var_base_t::to_str(vm_state_t &vm, std::string &data, const size_t &src_id, const size_t &idx)
 {
@@ -102,24 +99,12 @@ var_base_t *var_base_t::call(vm_state_t &vm, const std::vector<var_base_t *> &ar
 	return nullptr;
 }
 
-bool var_base_t::attr_exists(const std::string &name) const
-{
-	return false;
-}
+bool var_base_t::attr_exists(const std::string &name) const { return false; }
 void var_base_t::attr_set(const std::string &name, var_base_t *val, const bool iref) {}
-var_base_t *var_base_t::attr_get(const std::string &name)
-{
-	return nullptr;
-}
+var_base_t *var_base_t::attr_get(const std::string &name) { return nullptr; }
 
-void *var_base_t::operator new(size_t sz)
-{
-	return mem::alloc(sz);
-}
-void var_base_t::operator delete(void *ptr, size_t sz)
-{
-	mem::free(ptr, sz);
-}
+void *var_base_t::operator new(size_t sz) { return mem::alloc(sz); }
+void var_base_t::operator delete(void *ptr, size_t sz) { mem::free(ptr, sz); }
 
 void init_typenames(vm_state_t &vm)
 {

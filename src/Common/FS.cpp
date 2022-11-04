@@ -23,10 +23,7 @@
 
 namespace fs
 {
-bool exists(const std::string &loc)
-{
-	return access(loc.c_str(), F_OK) != -1;
-}
+bool exists(const std::string &loc) { return access(loc.c_str(), F_OK) != -1; }
 
 std::string abs_path(const std::string &loc, std::string *dir, const bool &dir_add_double_dot)
 {

@@ -47,34 +47,13 @@ var_base_t *var_fn_t::copy(const size_t &src_id, const size_t &idx)
 			    m_is_native, src_id, idx);
 }
 
-std::string &var_fn_t::src_name()
-{
-	return m_src_name;
-}
-std::string &var_fn_t::kw_arg()
-{
-	return m_kw_arg;
-}
-std::string &var_fn_t::var_arg()
-{
-	return m_var_arg;
-}
-std::vector<std::string> &var_fn_t::args()
-{
-	return m_args;
-}
-std::unordered_map<std::string, var_base_t *> &var_fn_t::assn_args()
-{
-	return m_assn_args;
-}
-fn_body_t &var_fn_t::body()
-{
-	return m_body;
-}
-bool var_fn_t::is_native()
-{
-	return m_is_native;
-}
+std::string &var_fn_t::src_name() { return m_src_name; }
+std::string &var_fn_t::kw_arg() { return m_kw_arg; }
+std::string &var_fn_t::var_arg() { return m_var_arg; }
+std::vector<std::string> &var_fn_t::args() { return m_args; }
+std::unordered_map<std::string, var_base_t *> &var_fn_t::assn_args() { return m_assn_args; }
+fn_body_t &var_fn_t::body() { return m_body; }
+bool var_fn_t::is_native() { return m_is_native; }
 
 var_base_t *var_fn_t::call(vm_state_t &vm, const std::vector<var_base_t *> &args,
 			   const std::vector<fn_assn_arg_t> &assn_args,

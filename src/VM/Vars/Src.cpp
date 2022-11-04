@@ -50,20 +50,14 @@ void var_src_t::set(var_base_t *from)
 	f->m_owner = false;
 }
 
-bool var_src_t::attr_exists(const std::string &name) const
-{
-	return m_vars->exists(name);
-}
+bool var_src_t::attr_exists(const std::string &name) const { return m_vars->exists(name); }
 
 void var_src_t::attr_set(const std::string &name, var_base_t *val, const bool iref)
 {
 	m_vars->add(name, val, iref);
 }
 
-var_base_t *var_src_t::attr_get(const std::string &name)
-{
-	return m_vars->get(name);
-}
+var_base_t *var_src_t::attr_get(const std::string &name) { return m_vars->get(name); }
 
 void var_src_t::add_native_fn(const std::string &name, nativefnptr_t body, const size_t &args_count,
 			      const bool is_va)
@@ -82,11 +76,5 @@ void var_src_t::add_native_var(const std::string &name, var_base_t *val, const b
 	else m_vars->add(name, val, iref);
 }
 
-srcfile_t *var_src_t::src()
-{
-	return m_src;
-}
-vars_t *var_src_t::vars()
-{
-	return m_vars;
-}
+srcfile_t *var_src_t::src() { return m_src; }
+vars_t *var_src_t::vars() { return m_vars; }

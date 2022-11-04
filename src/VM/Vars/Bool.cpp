@@ -25,11 +25,5 @@ var_base_t *var_bool_t::copy(const size_t &src_id, const size_t &idx)
 {
 	return new var_bool_t(m_val, src_id, idx);
 }
-bool &var_bool_t::get()
-{
-	return m_val;
-}
-void var_bool_t::set(var_base_t *from)
-{
-	m_val = BOOL(from)->get();
-}
+bool &var_bool_t::get() { return m_val; }
+void var_bool_t::set(var_base_t *from) { m_val = BOOL(from)->get(); }

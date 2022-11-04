@@ -41,10 +41,7 @@ var_int_iterable_t::var_int_iterable_t(const mpz_t begin, const mpz_t end, const
 	mpz_init_set(m_step, step);
 	mpz_init_set(m_curr, begin);
 }
-var_int_iterable_t::~var_int_iterable_t()
-{
-	mpz_clears(m_begin, m_end, m_step, m_curr, NULL);
-}
+var_int_iterable_t::~var_int_iterable_t() { mpz_clears(m_begin, m_end, m_step, m_curr, NULL); }
 
 var_base_t *var_int_iterable_t::copy(const size_t &src_id, const size_t &idx)
 {

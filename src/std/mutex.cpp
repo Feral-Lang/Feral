@@ -20,10 +20,7 @@ int exec_command(const std::string &cmd);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-var_base_t *mutex_new(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_mutex_t>();
-}
+var_base_t *mutex_new(vm_state_t &vm, const fn_data_t &fd) { return make<var_mutex_t>(); }
 
 var_base_t *mutex_lock(vm_state_t &vm, const fn_data_t &fd)
 {
