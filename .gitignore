@@ -22,7 +22,7 @@ CMakeFiles/
 doxygen/
 flag_cache
 book/book/
-include/Common/Config.hpp
+include/Config.hpp
 .cache/
 
 # Extra data #

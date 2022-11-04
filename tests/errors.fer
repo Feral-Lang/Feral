@@ -1,9 +1,0 @@
-let x = 5;
-x = y or e {
-	assert(e == "variable 'y' does not exist");
-	1
-};
-
-(x = y or e {}) or e {
-	assert(e == "virtual machine stack has 1 item(s), required 2 for store operation");
-};

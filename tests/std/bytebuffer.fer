@@ -1,9 +1,0 @@
-let bytebuffer = import('std/bytebuffer');
-
-let bbuf = bytebuffer.new();
-
-assert(bbuf.cap() == 0);
-bbuf.resize(250);
-assert(bbuf.cap() == 250);
-bbuf.resize(0);
-assert(bbuf.cap() == 0);

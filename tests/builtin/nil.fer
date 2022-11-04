@@ -1,2 +1,0 @@
-assert(nil == nil);
-assert(1 != nil);
