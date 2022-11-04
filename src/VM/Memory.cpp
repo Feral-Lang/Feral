@@ -19,10 +19,7 @@ static std::mutex mem_mtx;
 
 namespace mem
 {
-size_t mult8_roundup(size_t sz)
-{
-	return (sz > 512) ? sz : (sz + 7) & ~7;
-}
+size_t mult8_roundup(size_t sz) { return (sz > 512) ? sz : (sz + 7) & ~7; }
 } // namespace mem
 
 #ifdef MEM_PROFILE
@@ -40,10 +37,7 @@ void mem_mgr_t::alloc_pool()
 	m_pools.push_back({alloc, alloc});
 }
 
-mem_mgr_t::mem_mgr_t()
-{
-	alloc_pool();
-}
+mem_mgr_t::mem_mgr_t() { alloc_pool(); }
 mem_mgr_t::~mem_mgr_t()
 {
 	for(auto &c : m_free_chunks) {
@@ -130,7 +124,7 @@ void mem_mgr_t::free(void *ptr, size_t sz)
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf(stdout, "Deleting manually ... %zu\n", sz);
 #endif
-		delete[](u8 *) ptr;
+		delete[](u8 *)ptr;
 		return;
 	}
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)

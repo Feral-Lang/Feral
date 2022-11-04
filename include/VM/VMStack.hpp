@@ -30,25 +30,13 @@ public:
 
 	var_base_t *pop(const bool dref = true);
 
-	inline var_base_t *&back()
-	{
-		return m_vec.back();
-	}
+	inline var_base_t *&back() { return m_vec.back(); }
 
-	inline std::vector<var_base_t *> &get()
-	{
-		return m_vec;
-	}
+	inline std::vector<var_base_t *> &get() { return m_vec; }
 
-	inline size_t size() const
-	{
-		return m_vec.size();
-	}
+	inline size_t size() const { return m_vec.size(); }
 
-	inline bool empty() const
-	{
-		return m_vec.empty();
-	}
+	inline bool empty() const { return m_vec.empty(); }
 
 	vm_stack_t *thread_copy();
 };

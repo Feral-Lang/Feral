@@ -45,22 +45,10 @@ public:
 
 	void init_id();
 
-	inline std::thread *&get_thread()
-	{
-		return m_thread;
-	}
-	inline var_fn_t *&get_fn()
-	{
-		return m_fn;
-	}
-	inline std::shared_future<thread_res_t> *&get_future()
-	{
-		return m_res;
-	}
-	inline size_t &get_id()
-	{
-		return m_id;
-	}
+	inline std::thread *&get_thread() { return m_thread; }
+	inline var_fn_t *&get_fn() { return m_fn; }
+	inline std::shared_future<thread_res_t> *&get_future() { return m_res; }
+	inline size_t &get_id() { return m_id; }
 };
 #define THREAD(x) static_cast<var_thread_t *>(x)
 

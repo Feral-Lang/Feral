@@ -48,10 +48,7 @@ var_file_iterable_t::var_file_iterable_t(var_file_t *file, const size_t &src_id,
 {
 	var_iref(m_file);
 }
-var_file_iterable_t::~var_file_iterable_t()
-{
-	var_dref(m_file);
-}
+var_file_iterable_t::~var_file_iterable_t() { var_dref(m_file); }
 
 var_base_t *var_file_iterable_t::copy(const size_t &src_id, const size_t &idx)
 {

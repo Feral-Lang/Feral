@@ -26,10 +26,7 @@ var_base_t *all_to_str(vm_state_t &vm, const fn_data_t &fd)
 	return make<var_str_t>(res);
 }
 
-var_base_t *nil_to_str(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_str_t>("(nil)");
-}
+var_base_t *nil_to_str(vm_state_t &vm, const fn_data_t &fd) { return make<var_str_t>("(nil)"); }
 
 var_base_t *bool_to_str(vm_state_t &vm, const fn_data_t &fd)
 {
@@ -82,10 +79,7 @@ var_base_t *flt_to_str(vm_state_t &vm, const fn_data_t &fd)
 	return res;
 }
 
-var_base_t *str_to_str(vm_state_t &vm, const fn_data_t &fd)
-{
-	return fd.args[0];
-}
+var_base_t *str_to_str(vm_state_t &vm, const fn_data_t &fd) { return fd.args[0]; }
 
 var_base_t *vec_to_str(vm_state_t &vm, const fn_data_t &fd)
 {

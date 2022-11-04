@@ -32,18 +32,9 @@ public:
 	void resize(const size_t &new_size);
 	void set_len(const size_t &new_len);
 
-	inline char *&get_buf()
-	{
-		return m_buffer;
-	}
-	inline const size_t &get_size()
-	{
-		return m_size;
-	}
-	inline const size_t &get_len()
-	{
-		return m_len;
-	}
+	inline char *&get_buf() { return m_buffer; }
+	inline const size_t &get_size() { return m_size; }
+	inline const size_t &get_len() { return m_len; }
 };
 #define BYTEBUFFER(x) static_cast<var_bytebuffer_t *>(x)
 

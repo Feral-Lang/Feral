@@ -140,10 +140,7 @@ std::string vm_state_t::type_name(const std::uintptr_t &type)
 	}
 	return "typeid<" + std::to_string(type) + ">";
 }
-std::string vm_state_t::type_name(const var_base_t *val)
-{
-	return type_name(val->type());
-}
+std::string vm_state_t::type_name(const var_base_t *val) { return type_name(val->type()); }
 void vm_state_t::gadd(const std::string &name, var_base_t *val, const bool iref)
 {
 	if(m_globals.find(name) != m_globals.end()) return;

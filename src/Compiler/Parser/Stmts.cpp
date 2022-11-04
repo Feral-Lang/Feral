@@ -20,14 +20,8 @@
 stmt_base_t::stmt_base_t(const GramType type, const size_t &idx) : m_idx(idx), m_type(type) {}
 stmt_base_t::~stmt_base_t() {}
 
-size_t stmt_base_t::idx() const
-{
-	return m_idx;
-}
-GramType stmt_base_t::type() const
-{
-	return m_type;
-}
+size_t stmt_base_t::idx() const { return m_idx; }
+GramType stmt_base_t::type() const { return m_type; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// SIMPLE /////////////////////////////////////////////
@@ -49,10 +43,7 @@ void stmt_simple_t::disp(const bool has_next) const
 	io::trem(2);
 }
 
-const lex::tok_t *stmt_simple_t::val() const
-{
-	return m_val;
-}
+const lex::tok_t *stmt_simple_t::val() const { return m_val; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////// BLOCK /////////////////////////////////////////////
@@ -66,10 +57,7 @@ stmt_block_t::~stmt_block_t()
 	for(auto &s : m_stmts) delete s;
 }
 
-void stmt_block_t::set_no_brace(const bool &no_brace)
-{
-	m_no_brace = no_brace;
-}
+void stmt_block_t::set_no_brace(const bool &no_brace) { m_no_brace = no_brace; }
 
 void stmt_block_t::disp(const bool has_next) const
 {
@@ -81,19 +69,10 @@ void stmt_block_t::disp(const bool has_next) const
 	io::trem();
 }
 
-const std::vector<const stmt_base_t *> &stmt_block_t::stmts() const
-{
-	return m_stmts;
-}
-const bool &stmt_block_t::no_brace() const
-{
-	return m_no_brace;
-}
+const std::vector<const stmt_base_t *> &stmt_block_t::stmts() const { return m_stmts; }
+const bool &stmt_block_t::no_brace() const { return m_no_brace; }
 
-void stmt_block_t::clear_stmts()
-{
-	m_stmts.clear();
-}
+void stmt_block_t::clear_stmts() { m_stmts.clear(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////// EXPR //////////////////////////////////////////////
@@ -117,43 +96,16 @@ void stmt_expr_t::set_or_blk(stmt_base_t *or_blk, const lex::tok_t *or_blk_var)
 	m_or_blk     = or_blk;
 	m_or_blk_var = or_blk_var;
 }
-void stmt_expr_t::set_with_cols(const bool &with_cols)
-{
-	m_with_cols = with_cols;
-}
+void stmt_expr_t::set_with_cols(const bool &with_cols) { m_with_cols = with_cols; }
 
-const stmt_base_t *stmt_expr_t::lhs() const
-{
-	return m_lhs;
-}
-const stmt_base_t *stmt_expr_t::rhs() const
-{
-	return m_rhs;
-}
-const lex::tok_t *stmt_expr_t::oper() const
-{
-	return m_oper;
-}
-const stmt_base_t *stmt_expr_t::or_blk() const
-{
-	return m_or_blk;
-}
-const lex::tok_t *stmt_expr_t::or_blk_var() const
-{
-	return m_or_blk_var;
-}
-size_t stmt_expr_t::commas() const
-{
-	return m_commas;
-}
-const bool &stmt_expr_t::with_cols() const
-{
-	return m_with_cols;
-}
-void stmt_expr_t::commas_set(const size_t &commas)
-{
-	m_commas = commas;
-}
+const stmt_base_t *stmt_expr_t::lhs() const { return m_lhs; }
+const stmt_base_t *stmt_expr_t::rhs() const { return m_rhs; }
+const lex::tok_t *stmt_expr_t::oper() const { return m_oper; }
+const stmt_base_t *stmt_expr_t::or_blk() const { return m_or_blk; }
+const lex::tok_t *stmt_expr_t::or_blk_var() const { return m_or_blk_var; }
+size_t stmt_expr_t::commas() const { return m_commas; }
+const bool &stmt_expr_t::with_cols() const { return m_with_cols; }
+void stmt_expr_t::commas_set(const size_t &commas) { m_commas = commas; }
 
 void stmt_expr_t::disp(const bool has_next) const
 {
@@ -222,23 +174,11 @@ void stmt_var_decl_base_t::disp(const bool has_next) const
 	io::trem(2);
 }
 
-const stmt_simple_t *stmt_var_decl_base_t::lhs() const
-{
-	return m_lhs;
-}
-const stmt_base_t *stmt_var_decl_base_t::in() const
-{
-	return m_in;
-}
-const stmt_base_t *stmt_var_decl_base_t::rhs() const
-{
-	return m_rhs;
-}
+const stmt_simple_t *stmt_var_decl_base_t::lhs() const { return m_lhs; }
+const stmt_base_t *stmt_var_decl_base_t::in() const { return m_in; }
+const stmt_base_t *stmt_var_decl_base_t::rhs() const { return m_rhs; }
 
-bool stmt_var_decl_base_t::has_in() const
-{
-	return m_in != nullptr;
-}
+bool stmt_var_decl_base_t::has_in() const { return m_in != nullptr; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// VAR_DECL ///////////////////////////////////////////
@@ -264,10 +204,7 @@ void stmt_var_decl_t::disp(const bool has_next) const
 	io::trem();
 }
 
-const std::vector<const stmt_var_decl_base_t *> &stmt_var_decl_t::decls() const
-{
-	return m_decls;
-}
+const std::vector<const stmt_var_decl_base_t *> &stmt_var_decl_t::decls() const { return m_decls; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNC_ASSN_ARG ///////////////////////////////////////////
@@ -299,14 +236,8 @@ void stmt_fn_assn_arg_t::disp(const bool has_next) const
 	io::trem();
 }
 
-const stmt_simple_t *stmt_fn_assn_arg_t::lhs() const
-{
-	return m_lhs;
-}
-const stmt_base_t *stmt_fn_assn_arg_t::rhs() const
-{
-	return m_rhs;
-}
+const stmt_simple_t *stmt_fn_assn_arg_t::lhs() const { return m_lhs; }
+const stmt_base_t *stmt_fn_assn_arg_t::rhs() const { return m_rhs; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// FUNC_DEF_ARGS ///////////////////////////////////////////
@@ -345,18 +276,9 @@ void stmt_fn_def_args_t::disp(const bool has_next) const
 	}
 	io::trem();
 }
-const std::vector<const stmt_base_t *> &stmt_fn_def_args_t::args() const
-{
-	return m_args;
-}
-const stmt_simple_t *stmt_fn_def_args_t::kwarg() const
-{
-	return m_kwarg;
-}
-const stmt_simple_t *stmt_fn_def_args_t::vaarg() const
-{
-	return m_vaarg;
-}
+const std::vector<const stmt_base_t *> &stmt_fn_def_args_t::args() const { return m_args; }
+const stmt_simple_t *stmt_fn_def_args_t::kwarg() const { return m_kwarg; }
+const stmt_simple_t *stmt_fn_def_args_t::vaarg() const { return m_vaarg; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// FUNC_DEF ////////////////////////////////////////////
@@ -382,14 +304,8 @@ void stmt_fn_def_t::disp(const bool has_next) const
 	m_body->disp(false);
 	io::trem();
 }
-const stmt_fn_def_args_t *stmt_fn_def_t::args() const
-{
-	return m_args;
-}
-const stmt_block_t *stmt_fn_def_t::body() const
-{
-	return m_body;
-}
+const stmt_fn_def_args_t *stmt_fn_def_t::args() const { return m_args; }
+const stmt_block_t *stmt_fn_def_t::body() const { return m_body; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// FUNC_CALL_ARGS ///////////////////////////////////////////
@@ -418,18 +334,12 @@ void stmt_fn_call_args_t::disp(const bool has_next) const
 	}
 	io::trem();
 }
-const std::vector<const stmt_base_t *> &stmt_fn_call_args_t::args() const
-{
-	return m_args;
-}
+const std::vector<const stmt_base_t *> &stmt_fn_call_args_t::args() const { return m_args; }
 const std::vector<const stmt_fn_assn_arg_t *> &stmt_fn_call_args_t::assn_args() const
 {
 	return m_assn_args;
 }
-const bool &stmt_fn_call_args_t::va_unpack() const
-{
-	return m_va_unpack;
-}
+const bool &stmt_fn_call_args_t::va_unpack() const { return m_va_unpack; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// SINGLE_EXPR_STMT //////////////////////////////////////////
@@ -457,14 +367,8 @@ void stmt_single_operand_stmt_t::disp(const bool has_next) const
 	io::trem();
 }
 
-const lex::tok_t *stmt_single_operand_stmt_t::sost() const
-{
-	return m_sost;
-}
-const stmt_base_t *stmt_single_operand_stmt_t::operand() const
-{
-	return m_operand;
-}
+const lex::tok_t *stmt_single_operand_stmt_t::sost() const { return m_sost; }
+const stmt_base_t *stmt_single_operand_stmt_t::operand() const { return m_operand; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// CONDITIONAL_STMT //////////////////////////////////////////
@@ -503,10 +407,7 @@ void stmt_conditional_t::disp(const bool has_next) const
 	io::trem();
 }
 
-const std::vector<conditional_t> &stmt_conditional_t::conds() const
-{
-	return m_conds;
-}
+const std::vector<conditional_t> &stmt_conditional_t::conds() const { return m_conds; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// FOR_STMT ////////////////////////////////////////////
@@ -558,22 +459,10 @@ void stmt_for_t::disp(const bool has_next) const
 	io::trem(2);
 }
 
-const stmt_base_t *stmt_for_t::init() const
-{
-	return m_init;
-}
-const stmt_base_t *stmt_for_t::cond() const
-{
-	return m_cond;
-}
-const stmt_base_t *stmt_for_t::incr() const
-{
-	return m_incr;
-}
-const stmt_base_t *stmt_for_t::body() const
-{
-	return m_body;
-}
+const stmt_base_t *stmt_for_t::init() const { return m_init; }
+const stmt_base_t *stmt_for_t::cond() const { return m_cond; }
+const stmt_base_t *stmt_for_t::incr() const { return m_incr; }
+const stmt_base_t *stmt_for_t::body() const { return m_body; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// FOREACH_STMT //////////////////////////////////////////
@@ -611,18 +500,9 @@ void stmt_foreach_t::disp(const bool has_next) const
 	io::trem(2);
 }
 
-const lex::tok_t *stmt_foreach_t::loop_var() const
-{
-	return m_loop_var;
-}
-const stmt_base_t *stmt_foreach_t::expr() const
-{
-	return m_expr;
-}
-const stmt_base_t *stmt_foreach_t::body() const
-{
-	return m_body;
-}
+const lex::tok_t *stmt_foreach_t::loop_var() const { return m_loop_var; }
+const stmt_base_t *stmt_foreach_t::expr() const { return m_expr; }
+const stmt_base_t *stmt_foreach_t::body() const { return m_body; }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// WHILE_STMT ///////////////////////////////////////////
@@ -653,11 +533,5 @@ void stmt_while_t::disp(const bool has_next) const
 	io::trem(2);
 }
 
-const stmt_base_t *stmt_while_t::expr() const
-{
-	return m_expr;
-}
-const stmt_base_t *stmt_while_t::body() const
-{
-	return m_body;
-}
+const stmt_base_t *stmt_while_t::expr() const { return m_expr; }
+const stmt_base_t *stmt_while_t::body() const { return m_body; }

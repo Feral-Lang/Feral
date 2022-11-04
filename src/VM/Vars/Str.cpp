@@ -25,11 +25,5 @@ var_base_t *var_str_t::copy(const size_t &src_id, const size_t &idx)
 {
 	return new var_str_t(m_val, src_id, idx);
 }
-std::string &var_str_t::get()
-{
-	return m_val;
-}
-void var_str_t::set(var_base_t *from)
-{
-	m_val = STR(from)->get();
-}
+std::string &var_str_t::get() { return m_val; }
+void var_str_t::set(var_base_t *from) { m_val = STR(from)->get(); }

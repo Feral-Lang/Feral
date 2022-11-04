@@ -36,18 +36,9 @@ public:
 	var_base_t *copy(const size_t &src_id, const size_t &idx);
 	void set(var_base_t *from);
 
-	inline std::thread *&get_thread()
-	{
-		return m_thread;
-	}
-	inline std::shared_future<int> *&get_future()
-	{
-		return m_res;
-	}
-	inline size_t get_id()
-	{
-		return m_id;
-	}
+	inline std::thread *&get_thread() { return m_thread; }
+	inline std::shared_future<int> *&get_future() { return m_res; }
+	inline size_t get_id() { return m_id; }
 };
 #define MULTIPROC(x) static_cast<var_multiproc_t *>(x)
 

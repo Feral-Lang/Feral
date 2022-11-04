@@ -21,10 +21,7 @@ var_map_iterable_t::var_map_iterable_t(var_map_t *map, const size_t &src_id, con
 {
 	var_iref(m_map);
 }
-var_map_iterable_t::~var_map_iterable_t()
-{
-	var_dref(m_map);
-}
+var_map_iterable_t::~var_map_iterable_t() { var_dref(m_map); }
 
 var_base_t *var_map_iterable_t::copy(const size_t &src_id, const size_t &idx)
 {

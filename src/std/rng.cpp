@@ -57,7 +57,4 @@ INIT_MODULE(rng)
 	return true;
 }
 
-DEINIT_MODULE(rng)
-{
-	gmp_randclear(rngstate);
-}
+DEINIT_MODULE(rng) { gmp_randclear(rngstate); }

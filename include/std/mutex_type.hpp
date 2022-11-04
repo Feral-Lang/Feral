@@ -28,10 +28,7 @@ public:
 	var_base_t *copy(const size_t &src_id, const size_t &idx);
 	void set(var_base_t *from);
 
-	inline std::mutex &get()
-	{
-		return m_mtx;
-	}
+	inline std::mutex &get() { return m_mtx; }
 };
 #define MUTEX(x) static_cast<var_mutex_t *>(x)
 

@@ -48,11 +48,5 @@ void var_map_t::set(var_base_t *from)
 	m_refs = MAP(from)->m_refs;
 }
 
-std::map<std::string, var_base_t *> &var_map_t::get()
-{
-	return m_val;
-}
-bool var_map_t::is_ref_map()
-{
-	return m_refs;
-}
+std::map<std::string, var_base_t *> &var_map_t::get() { return m_val; }
+bool var_map_t::is_ref_map() { return m_refs; }

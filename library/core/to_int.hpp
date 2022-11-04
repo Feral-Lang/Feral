@@ -16,10 +16,7 @@
 
 #include "VM/VM.hpp"
 
-var_base_t *nil_to_int(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_int_t>(0);
-}
+var_base_t *nil_to_int(vm_state_t &vm, const fn_data_t &fd) { return make<var_int_t>(0); }
 
 var_base_t *bool_to_int(vm_state_t &vm, const fn_data_t &fd)
 {
@@ -31,10 +28,7 @@ var_base_t *typeid_to_int(vm_state_t &vm, const fn_data_t &fd)
 	return make<var_int_t>(TYPEID(fd.args[0])->get());
 }
 
-var_base_t *int_to_int(vm_state_t &vm, const fn_data_t &fd)
-{
-	return fd.args[0];
-}
+var_base_t *int_to_int(vm_state_t &vm, const fn_data_t &fd) { return fd.args[0]; }
 
 var_base_t *flt_to_int(vm_state_t &vm, const fn_data_t &fd)
 {

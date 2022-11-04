@@ -28,15 +28,9 @@ public:
 	vars_frame_t();
 	~vars_frame_t();
 
-	inline const std::unordered_map<std::string, var_base_t *> &all() const
-	{
-		return m_vars;
-	}
+	inline const std::unordered_map<std::string, var_base_t *> &all() const { return m_vars; }
 
-	inline bool exists(const std::string &name)
-	{
-		return m_vars.find(name) != m_vars.end();
-	}
+	inline bool exists(const std::string &name) { return m_vars.find(name) != m_vars.end(); }
 	var_base_t *get(const std::string &name);
 
 	void add(const std::string &name, var_base_t *val, const bool inc_ref);
@@ -112,18 +106,9 @@ public:
 	void stash(const std::string &name, var_base_t *val, const bool &iref = true);
 	void unstash();
 
-	inline void push_loop()
-	{
-		m_fn_vars[m_fn_stack]->push_loop();
-	}
-	inline void pop_loop()
-	{
-		m_fn_vars[m_fn_stack]->pop_loop();
-	}
-	inline void loop_continue()
-	{
-		m_fn_vars[m_fn_stack]->loop_continue();
-	}
+	inline void push_loop() { m_fn_vars[m_fn_stack]->push_loop(); }
+	inline void pop_loop() { m_fn_vars[m_fn_stack]->pop_loop(); }
+	inline void loop_continue() { m_fn_vars[m_fn_stack]->loop_continue(); }
 
 	void add(const std::string &name, var_base_t *val, const bool inc_ref);
 	// add variable to module level unconditionally (for vm.register_new_type())

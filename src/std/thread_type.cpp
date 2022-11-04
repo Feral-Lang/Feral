@@ -75,7 +75,4 @@ void var_thread_t::set(var_base_t *from)
 	m_res	 = t->m_res;
 }
 
-void var_thread_t::init_id()
-{
-	m_id = thread_id++;
-}
+void var_thread_t::init_id() { m_id = thread_id++; }

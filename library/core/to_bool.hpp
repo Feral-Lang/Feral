@@ -16,25 +16,13 @@
 
 #include "VM/VM.hpp"
 
-var_base_t *all_to_bool(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_bool_t>(false);
-}
+var_base_t *all_to_bool(vm_state_t &vm, const fn_data_t &fd) { return make<var_bool_t>(false); }
 
-var_base_t *nil_to_bool(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_bool_t>(false);
-}
+var_base_t *nil_to_bool(vm_state_t &vm, const fn_data_t &fd) { return make<var_bool_t>(false); }
 
-var_base_t *bool_to_bool(vm_state_t &vm, const fn_data_t &fd)
-{
-	return fd.args[0];
-}
+var_base_t *bool_to_bool(vm_state_t &vm, const fn_data_t &fd) { return fd.args[0]; }
 
-var_base_t *typeid_to_bool(vm_state_t &vm, const fn_data_t &fd)
-{
-	return make<var_bool_t>(true);
-}
+var_base_t *typeid_to_bool(vm_state_t &vm, const fn_data_t &fd) { return make<var_bool_t>(true); }
 
 var_base_t *int_to_bool(vm_state_t &vm, const fn_data_t &fd)
 {

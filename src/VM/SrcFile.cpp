@@ -62,10 +62,7 @@ Errors srcfile_t::load_file()
 	return E_OK;
 }
 
-void srcfile_t::add_data(const std::string &data)
-{
-	m_data += data;
-}
+void srcfile_t::add_data(const std::string &data) { m_data += data; }
 void srcfile_t::add_cols(const std::vector<src_col_range_t> &cols)
 {
 	m_cols.insert(m_cols.end(), cols.begin(), cols.end());

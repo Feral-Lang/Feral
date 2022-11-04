@@ -15,10 +15,7 @@
 
 vm_failstack_t::vm_failstack_t() {}
 
-vm_failstack_t::~vm_failstack_t()
-{
-	assert(m_stack.size() == 0);
-}
+vm_failstack_t::~vm_failstack_t() { assert(m_stack.size() == 0); }
 
 void vm_failstack_t::push(var_base_t *val, const bool iref)
 {

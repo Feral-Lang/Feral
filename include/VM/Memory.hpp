@@ -55,15 +55,9 @@ namespace mem
 {
 size_t mult8_roundup(size_t sz);
 
-inline void *alloc(size_t sz)
-{
-	return mem_mgr_t::instance().alloc(sz);
-}
+inline void *alloc(size_t sz) { return mem_mgr_t::instance().alloc(sz); }
 
-inline void free(void *ptr, size_t sz)
-{
-	return mem_mgr_t::instance().free(ptr, sz);
-}
+inline void free(void *ptr, size_t sz) { return mem_mgr_t::instance().free(ptr, sz); }
 } // namespace mem
 
 #endif // VM_MEMORY_HPP

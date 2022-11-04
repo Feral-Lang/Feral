@@ -70,10 +70,7 @@ public:
 		   const bool &callable, const bool &attr_based);
 	virtual ~var_base_t();
 
-	template<typename T> bool istype() const
-	{
-		return m_type == var_base_t::_type_id<T>();
-	}
+	template<typename T> bool istype() const { return m_type == var_base_t::_type_id<T>(); }
 
 	// must always be overridden
 	virtual var_base_t *copy(const size_t &src_id, const size_t &idx) = 0;
@@ -88,21 +85,12 @@ public:
 		m_idx	 = idx;
 	}
 
-	inline std::uintptr_t type() const
-	{
-		return m_type;
-	}
+	inline std::uintptr_t type() const { return m_type; }
 	// used for denoting things like structs in typefns
 	virtual std::uintptr_t typefn_id() const;
 
-	inline size_t src_id() const
-	{
-		return m_src_id;
-	}
-	inline size_t idx() const
-	{
-		return m_idx;
-	}
+	inline size_t src_id() const { return m_src_id; }
+	inline size_t idx() const { return m_idx; }
 
 	inline void iref()
 	{
@@ -116,32 +104,14 @@ public:
 		--m_ref;
 		return m_ref;
 	}
-	inline size_t ref() const
-	{
-		return m_ref;
-	}
+	inline size_t ref() const { return m_ref; }
 
-	inline bool callable()
-	{
-		return m_info & VI_CALLABLE;
-	}
-	inline bool attr_based()
-	{
-		return m_info & VI_ATTR_BASED;
-	}
+	inline bool callable() { return m_info & VI_CALLABLE; }
+	inline bool attr_based() { return m_info & VI_ATTR_BASED; }
 
-	inline void set_load_as_ref()
-	{
-		m_info |= VI_LOAD_AS_REF;
-	}
-	inline void unset_load_as_ref()
-	{
-		m_info &= ~VI_LOAD_AS_REF;
-	}
-	inline bool load_as_ref()
-	{
-		return m_info & VI_LOAD_AS_REF;
-	}
+	inline void set_load_as_ref() { m_info |= VI_LOAD_AS_REF; }
+	inline void unset_load_as_ref() { m_info &= ~VI_LOAD_AS_REF; }
+	inline bool load_as_ref() { return m_info & VI_LOAD_AS_REF; }
 
 	virtual var_base_t *call(vm_state_t &vm, const std::vector<var_base_t *> &args,
 				 const std::vector<fn_assn_arg_t> &assn_args,
@@ -156,10 +126,7 @@ public:
 	static void operator delete(void *ptr, size_t sz);
 };
 
-template<typename T> std::uintptr_t type_id()
-{
-	return var_base_t::_type_id<T>();
-}
+template<typename T> std::uintptr_t type_id() { return var_base_t::_type_id<T>(); }
 
 template<typename T> inline void var_iref(T *var)
 {

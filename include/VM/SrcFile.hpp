@@ -85,60 +85,42 @@ public:
 	 *
 	 * \return size_t id of instance
 	 */
-	inline size_t id() const
-	{
-		return m_id;
-	}
+	inline size_t id() const { return m_id; }
 
 	/**
 	 * \brief Return the directory part of the source file
 	 *
 	 * \return string directory part of source file
 	 */
-	inline const std::string &dir() const
-	{
-		return m_dir;
-	}
+	inline const std::string &dir() const { return m_dir; }
 
 	/**
 	 * \brief Return the full path of the source file
 	 *
 	 * \return string path of source file
 	 */
-	inline const std::string &path() const
-	{
-		return m_path;
-	}
+	inline const std::string &path() const { return m_path; }
 
 	/**
 	 * \brief Get the data object
 	 *
 	 * \return const std::string& Returns the data object with const qualifier
 	 */
-	inline const std::string &data() const
-	{
-		return m_data;
-	}
+	inline const std::string &data() const { return m_data; }
 
 	/**
 	 * \brief Get the bcode_t
 	 *
 	 * \return bcode_t& Returns the bcode_t object
 	 */
-	bcode_t &bcode()
-	{
-		return m_bcode;
-	}
+	bcode_t &bcode() { return m_bcode; }
 
 	/**
 	 * \brief Check if the source is main src
 	 *
 	 * \return bool is main source
 	 */
-	inline bool is_main() const
-	{
-		return m_is_main;
-	}
+	inline bool is_main() const { return m_is_main; }
 
 	/**
 	 * \brief Print a proper message on code failure

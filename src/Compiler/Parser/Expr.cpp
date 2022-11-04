@@ -55,10 +55,7 @@ fail:
 	return E_PARSE_FAIL;
 }
 
-Errors parse_expr(phelper_t &ph, stmt_base_t *&loc)
-{
-	return parse_expr_16(ph, loc);
-}
+Errors parse_expr(phelper_t &ph, stmt_base_t *&loc) { return parse_expr_16(ph, loc); }
 
 // Left Associative
 // ,
@@ -536,7 +533,8 @@ Errors parse_expr_03(phelper_t &ph, stmt_base_t *&loc)
 
 	// add operators in vector in reverse order
 	while(ph.accept(TOK_XINC, TOK_XDEC) || ph.accept(TOK_ADD, TOK_SUB) ||
-	      ph.accept(TOK_LNOT, TOK_BNOT)) {
+	      ph.accept(TOK_LNOT, TOK_BNOT))
+	{
 		if(ph.peakt() == TOK_XINC) ph.sett(TOK_INCX);
 		else if(ph.peakt() == TOK_XDEC) ph.sett(TOK_DECX);
 		else if(ph.peakt() == TOK_ADD) ph.sett(TOK_UADD);
