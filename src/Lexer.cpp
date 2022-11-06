@@ -30,21 +30,7 @@ const char *TokStrs[_LAST] = {
 "true",
 "false",
 "nil",
-"any",
-"type",
-"i1",
-"i8",
-"i16",
-"i32",
-"i64",
-"u8",
-"u16",
-"u32",
-"u64",
-"f32",
-"f64",
 "or",
-"static",
 "const",
 "defer",
 
@@ -412,21 +398,7 @@ TokType Tokenizer::classifyStr(StringRef str)
 	if(str == TokStrs[TRUE]) return TRUE;
 	if(str == TokStrs[FALSE]) return FALSE;
 	if(str == TokStrs[NIL]) return NIL;
-	if(str == TokStrs[ANY]) return ANY;
-	if(str == TokStrs[TYPE]) return TYPE;
-	if(str == TokStrs[I1]) return I1;
-	if(str == TokStrs[I8]) return I8;
-	if(str == TokStrs[I16]) return I16;
-	if(str == TokStrs[I32]) return I32;
-	if(str == TokStrs[I64]) return I64;
-	if(str == TokStrs[U8]) return U8;
-	if(str == TokStrs[U16]) return U16;
-	if(str == TokStrs[U32]) return U32;
-	if(str == TokStrs[U64]) return U64;
-	if(str == TokStrs[F32]) return F32;
-	if(str == TokStrs[F64]) return F64;
 	if(str == TokStrs[OR]) return OR;
-	if(str == TokStrs[STATIC]) return STATIC;
 	if(str == TokStrs[CONST]) return CONST;
 	if(str == TokStrs[DEFER]) return DEFER;
 

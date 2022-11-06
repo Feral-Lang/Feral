@@ -14,6 +14,15 @@ Context::~Context()
 #ifdef MEM_COUNT
 	size_t s1 = 0, l1 = 0, s2 = 0, t1 = 0, v1 = 0;
 	for(auto &s : stringmem) ++s1;
+#endif
+	for(auto &s : stmtmem) {
+#ifdef MEM_COUNT
+		++s2;
+#endif
+		delete s;
+	}
+
+#ifdef MEM_COUNT
 	printf("Total deallocation:\nStrings: %zu\nModLocs:"
 	       " %zu\nStmts: %zu\nTypes: %zu\nVals: %zu\n",
 	       s1, l1, s2, t1, v1);

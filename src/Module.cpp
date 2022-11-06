@@ -1,6 +1,7 @@
 #include "Module.hpp"
 
 #include "Lexer.hpp"
+#include "Parser/Parse.hpp"
 #include "Parser/Passes/Base.hpp"
 
 namespace fer
@@ -18,10 +19,9 @@ bool Module::tokenize()
 }
 bool Module::parseTokens()
 {
-	// ParseHelper p(ctx, this, tokens);
-	// Parsing parsing(ctx);
-	// return parsing.parse_block(p, (StmtBlock *&)ptree, false);
-	return true;
+	ParseHelper p(ctx, this, tokens);
+	Parser parser(ctx);
+	return parser.parseBlock(p, (StmtBlock *&)ptree, false);
 }
 bool Module::executeParseTreePasses(ParserPassManager &pm) { return pm.visit(ptree); }
 void Module::dumpTokens() const
@@ -34,7 +34,7 @@ void Module::dumpTokens() const
 void Module::dumpParseTree() const
 {
 	std::cout << "Source: " << path << "\n";
-	// ptree->disp(false);
+	ptree->disp(false);
 }
 
 ModuleLoc::ModuleLoc(Module *mod, size_t line, size_t col) : mod(mod), line(line), col(col) {}

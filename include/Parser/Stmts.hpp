@@ -147,15 +147,17 @@ public:
 class StmtVar : public Stmt
 {
 	lex::Lexeme name;
-	Stmt *val; // either of expr, funcdef, enumdef, or structdef
-	bool is_in;
+	StmtSimple *in;
+	Stmt *val; // expr or simple
+	bool is_const;
 
 public:
-	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *val);
+	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
+		bool is_const);
 	~StmtVar();
 	// at least one of type or val must be present
 	static StmtVar *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name,
-			       Stmt *val);
+			       StmtSimple *in, Stmt *val, bool is_const);
 
 	void disp(bool has_next);
 
@@ -163,28 +165,31 @@ public:
 
 	inline lex::Lexeme &getName() { return name; }
 	inline Stmt *&getVal() { return val; }
+	inline StmtSimple *getIn() { return in; }
+	inline bool isConst() { return is_const; }
 };
 
 class StmtFnSig : public Stmt
 {
-	// StmtVar contains only type here, no val
-	Vector<StmtSimple *> args;
+	// StmtVar contains constness, name, and optionally val
+	Vector<StmtVar *> args;
+	Vector<bool> argconsts;
 	bool is_variadic;
 
 public:
-	StmtFnSig(const ModuleLoc *loc, Vector<StmtSimple *> &args, bool is_variadic);
+	StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, bool is_variadic);
 	~StmtFnSig();
-	static StmtFnSig *create(Context &c, const ModuleLoc *loc, Vector<StmtSimple *> &args,
+	static StmtFnSig *create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
 				 bool is_variadic);
 
 	void disp(bool has_next);
 
-	inline void insertArg(StmtSimple *arg) { args.push_back(arg); }
-	inline void insertArg(size_t pos, StmtSimple *arg) { args.insert(args.begin() + pos, arg); }
+	inline void insertArg(StmtVar *arg) { args.push_back(arg); }
+	inline void insertArg(size_t pos, StmtVar *arg) { args.insert(args.begin() + pos, arg); }
 	inline void setVariadic(bool va) { is_variadic = va; }
 
-	inline StmtSimple *&getArg(size_t idx) { return args[idx]; }
-	inline Vector<StmtSimple *> &getArgs() { return args; }
+	inline StmtVar *&getArg(size_t idx) { return args[idx]; }
+	inline Vector<StmtVar *> &getArgs() { return args; }
 	inline bool isVariadic() const { return is_variadic; }
 };
 
@@ -205,8 +210,8 @@ public:
 	inline StmtFnSig *&getSig() { return sig; }
 	inline StmtBlock *&getBlk() { return blk; }
 
-	inline StmtSimple *&getSigArg(size_t idx) { return sig->getArg(idx); }
-	inline const Vector<StmtSimple *> &getSigArgs() const { return sig->getArgs(); }
+	inline StmtVar *&getSigArg(size_t idx) { return sig->getArg(idx); }
+	inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
 	inline bool isSigVariadic() const { return sig->isVariadic(); }
 };
 

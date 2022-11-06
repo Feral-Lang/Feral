@@ -161,19 +161,29 @@ void StmtExpr::disp(bool has_next)
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *val)
-	: Stmt(VAR, loc), name(name), val(val)
+StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
+		 bool is_const)
+	: Stmt(VAR, loc), name(name), in(in), val(val), is_const(is_const)
 {}
 StmtVar::~StmtVar() {}
-StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, Stmt *val)
+StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in,
+			 Stmt *val, bool is_const)
 {
-	return c.allocStmt<StmtVar>(loc, name, val);
+	return c.allocStmt<StmtVar>(loc, name, in, val, is_const);
 }
 
 void StmtVar::disp(bool has_next)
 {
 	tio::taba(has_next);
-	tio::print(has_next, {"Variable: ", name.getDataStr(), "\n"});
+	String instr;
+	if(in) {
+		instr += " [";
+		instr += "in: ";
+		instr += in->getLexValue().getDataStr();
+		instr += "]";
+	}
+	tio::print(has_next, {"Variable [is const = ", is_const ? "yes" : "no", "]", instr, ": ",
+			      name.getDataStr(), "\n"});
 	if(val) {
 		tio::taba(false);
 		tio::print(false, {"Value:\n"});
@@ -187,11 +197,11 @@ void StmtVar::disp(bool has_next)
 //////////////////////////////////////////// StmtFnSig ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnSig::StmtFnSig(const ModuleLoc *loc, Vector<StmtSimple *> &args, bool is_variadic)
+StmtFnSig::StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, bool is_variadic)
 	: Stmt(FNSIG, loc), args(args), is_variadic(is_variadic)
 {}
 StmtFnSig::~StmtFnSig() {}
-StmtFnSig *StmtFnSig::create(Context &c, const ModuleLoc *loc, Vector<StmtSimple *> &args,
+StmtFnSig *StmtFnSig::create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
 			     bool is_variadic)
 {
 	return c.allocStmt<StmtFnSig>(loc, args, is_variadic);

@@ -30,21 +30,7 @@ enum TokType
 	TRUE,
 	FALSE,
 	NIL,
-	ANY,  // type: any
-	TYPE, // type: type
-	I1,
-	I8,
-	I16,
-	I32,
-	I64,
-	U8,
-	U16,
-	U32,
-	U64,
-	F32,
-	F64,
 	OR,
-	STATIC,
 	CONST,
 	DEFER,
 
@@ -146,10 +132,7 @@ public:
 	inline bool isData() const
 	{
 		return val == INT || val == FLT || val == CHAR || val == STR || val == IDEN ||
-		       val == VOID || val == TRUE || val == FALSE || val == NIL || val == ANY ||
-		       val == TYPE || val == I1 || val == I8 || val == I16 || val == I32 ||
-		       val == I64 || val == U8 || val == U16 || val == U32 || val == U64 ||
-		       val == F32 || val == F64;
+		       val == VOID || val == TRUE || val == FALSE || val == NIL;
 	}
 	inline bool isLiteral() const
 	{
@@ -212,7 +195,7 @@ class Lexeme
 	Data data;
 
 public:
-	Lexeme(const ModuleLoc *loc);
+	Lexeme(const ModuleLoc *loc = nullptr);
 	explicit Lexeme(const ModuleLoc *loc, TokType type);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, StringRef _data);
 	explicit Lexeme(const ModuleLoc *loc, int64_t _data);

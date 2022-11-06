@@ -49,27 +49,4 @@ Module *RAIIParser::getModule(StringRef path)
 	return nullptr;
 }
 
-void RAIIParser::dumpTokens(bool force)
-{
-	if(!args.has("tokens") && !force) return;
-
-	printf("-------------------------------------------------- Token(s) "
-	       "--------------------------------------------------\n");
-	for(auto file = modulestack.rbegin(); file != modulestack.rend(); ++file) {
-		printf("\n\n");
-		modules[*file]->dumpTokens();
-	}
-}
-void RAIIParser::dumpParseTree(bool force)
-{
-	if(!args.has("parse") && !args.has("semantic") && !force) return;
-
-	printf("-------------------------------------------------- Parse Tree(s) "
-	       "--------------------------------------------------\n");
-	for(auto file = modulestack.rbegin(); file != modulestack.rend(); ++file) {
-		printf("\n\n");
-		modules[*file]->dumpParseTree();
-	}
-}
-
 } // namespace fer

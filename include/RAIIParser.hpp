@@ -37,10 +37,6 @@ public:
 
 	Module *getModule(StringRef path);
 
-	// force ignores arg parser
-	void dumpTokens(bool force);
-	void dumpParseTree(bool force);
-
 	inline bool hasModule(StringRef path) { return modules.find(path) != modules.end(); }
 	inline const Vector<StringRef> &getModuleStack() { return modulestack; }
 	inline ArgParser &getCommandArgs() { return args; }
