@@ -84,8 +84,8 @@ bool ArgParser::parse()
 
 void ArgParser::printHelp(OStream &os)
 {
-	os << PROJECT_NAME << " compiler " << COMPILER_MAJOR << "." << COMPILER_MINOR << "."
-	   << COMPILER_PATCH << "\n";
+	os << PROJECT_NAME << " compiler " << VERSION_MAJOR << "." << VERSION_MINOR << "."
+	   << VERSION_PATCH << "\n";
 
 	os << "usage: " << argv[0];
 	for(auto &arg : arg_defs) {

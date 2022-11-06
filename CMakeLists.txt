@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24.3)
 
 project(Feral C CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -11,21 +11,21 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 	set(CMAKE_INSTALL_MESSAGE LAZY)
 endif()
 
-if(DEFINED ENV{PREFIX_DIR} AND NOT "$ENV{PREFIX_DIR}" STREQUAL "")
-	set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
-else()
-	set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.feral-new")
+if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
+	set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral-new")
 endif()
-set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
+set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
+
+set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 
 # add cmake_modules path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
 
-set(CODE_VERSION_MAJOR 0)
-set(CODE_VERSION_MINOR 0)
-set(CODE_VERSION_PATCH 1)
+set(SOURCE_VERSION_MAJOR 0)
+set(SOURCE_VERSION_MINOR 0)
+set(SOURCE_VERSION_PATCH 1)
 
 execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND git config --get remote.origin.url OUTPUT_VARIABLE REPO_URL OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -116,15 +116,36 @@ configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_D
 
 # Install C++ Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/native/core"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/compiler"
 	FILES_MATCHING PATTERN "*.hpp"
+)
+
+# Feral VM
+file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
+file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
+
+list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
+
+add_executable(feralvm "${PROJECT_SOURCE_DIR}/src/VMMain.cpp" ${SRCS} ${INCS})
+target_include_directories(feralvm PRIVATE ${PROJECT_SOURCE_DIR}/include)
+set_target_properties(feralvm
+	PROPERTIES
+	OUTPUT_NAME feralvm
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS feralvm
+	RUNTIME
+	  DESTINATION bin
+	  COMPONENT Binaries
 )
 
 # Feral Compiler
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 
-list(REMOVE_ITEM SRCS "src/Main.cpp")
+list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
 
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp" ${SRCS} ${INCS})
 target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)

@@ -23,6 +23,8 @@ bool Module::parseTokens()
 	Parser parser(ctx);
 	return parser.parseBlock(p, (StmtBlock *&)ptree, false);
 }
+bool Module::genCode() { return ptree->genCode(bc); }
+// this is not inline because Parser/Passes/Base.hpp is required here
 bool Module::executeParseTreePasses(ParserPassManager &pm) { return pm.visit(ptree); }
 void Module::dumpTokens() const
 {
@@ -35,6 +37,11 @@ void Module::dumpParseTree() const
 {
 	std::cout << "Source: " << path << "\n";
 	ptree->disp(false);
+}
+void Module::dumpCode() const
+{
+	std::cout << "Source: " << path << "\n";
+	bc.dump(std::cout);
 }
 
 ModuleLoc::ModuleLoc(Module *mod, size_t line, size_t col) : mod(mod), line(line), col(col) {}

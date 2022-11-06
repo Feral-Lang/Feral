@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Bytecode.hpp"
 #include "Context.hpp"
 #include "Core.hpp"
 
@@ -9,6 +10,7 @@ namespace lex
 {
 class Lexeme;
 }
+class Bytecode;
 class ParserPassManager;
 
 class Module
@@ -18,6 +20,7 @@ class Module
 	StringRef path;
 	StringRef code;
 	Vector<lex::Lexeme> tokens;
+	Bytecode bc;
 	Stmt *ptree;
 	bool is_main_module;
 
@@ -27,6 +30,7 @@ public:
 
 	bool tokenize();
 	bool parseTokens();
+	bool genCode(); // generate bytecode
 	bool executeParseTreePasses(ParserPassManager &pm);
 
 	inline StringRef getID() const { return id; }
@@ -38,6 +42,7 @@ public:
 
 	void dumpTokens() const;
 	void dumpParseTree() const;
+	void dumpCode() const;
 };
 
 class ModuleLoc

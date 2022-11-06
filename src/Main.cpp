@@ -27,8 +27,8 @@ int main(int argc, char **argv)
 	}
 
 	if(args.has("version")) {
-		std::cout << PROJECT_NAME << " " << COMPILER_MAJOR << "." << COMPILER_MINOR << "."
-			  << COMPILER_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " "
+		std::cout << PROJECT_NAME << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
+			  << VERSION_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " "
 			  << TREE_STATUS << "\nBuilt with " << BUILD_CXX_COMPILER << "\nOn "
 			  << BUILD_DATE << "\n";
 		return 0;
@@ -65,6 +65,8 @@ int compileAndRun(RAIIParser &parser, const String &file)
 		return 1;
 	}
 	if(args.has("optparse")) mod->dumpParseTree();
+	if(!mod->genCode()) return 1;
+	if(args.has("ir")) mod->dumpCode();
 
 	// convert to bytecode
 	// apply bytecode passes
@@ -75,8 +77,8 @@ int compileAndRun(RAIIParser &parser, const String &file)
 
 int execInteractive(ArgParser &cmdargs)
 {
-	std::cout << PROJECT_NAME << " compiler " << COMPILER_MAJOR << "." << COMPILER_MINOR << "."
-		  << COMPILER_PATCH << "(" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
+	std::cout << PROJECT_NAME << " compiler " << VERSION_MAJOR << "." << VERSION_MINOR << "."
+		  << VERSION_PATCH << "(" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
 		  << "\nBuilt with " << BUILD_CXX_COMPILER << "\nOn " << BUILD_DATE << "\n";
 	// TODO:
 	return 0;

@@ -170,13 +170,13 @@ public:
 	const char *getOperCStr() const;
 	const char *getUnaryNoCharCStr() const;
 
-	inline bool operator==(const Tok &other) const { return val == other.val; }
+	inline bool operator==(Tok other) const { return val == other.val; }
 
 	inline TokType getVal() const { return val; }
 
-	inline void setVal(const TokType &v) { val = v; }
+	inline void setVal(TokType v) { val = v; }
 
-	inline bool isType(const TokType &other) const { return val == other; }
+	inline bool isType(TokType other) const { return val == other; }
 };
 
 struct Data
