@@ -1,0 +1,5 @@
+let x = 5;
+let y = 2.5;
+let z = 0x225;
+let a = "string";
+let b = 'c';

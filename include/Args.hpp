@@ -4,8 +4,7 @@
 
 namespace fer
 {
-namespace args
-{
+
 class ArgInfo
 {
 	StringRef shrt, lng; // short and long names
@@ -74,5 +73,5 @@ public:
 	inline Vector<StringRef> getCodeExecArgs(size_t idx) { return args; }
 	inline const Vector<StringRef> &getArgv() const { return argv; }
 };
-} // namespace args
+
 } // namespace fer

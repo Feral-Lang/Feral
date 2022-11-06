@@ -5,8 +5,7 @@
 
 namespace fer
 {
-namespace args
-{
+
 ArgInfo::ArgInfo() : reqd(false), val_reqd(false) {}
 
 ArgParser::ArgParser(int argc, const char **argv)
@@ -71,12 +70,12 @@ bool ArgParser::parse()
 		else args.push_back(arg);
 	}
 	if(expect_val) {
-		// err::out(nullptr, {"Expected value to be provided for argument: ", expect_key});
+		err::out({"Expected value to be provided for argument: ", expect_key});
 		return false;
 	}
 	for(auto &a : arg_defs) {
 		if(a.second.reqd && opts.find(a.first) == opts.end()) {
-			// err::out(nullptr, {"Required argument: ", a.first, " was not provided"});
+			err::out({"Required argument: ", a.first, " was not provided"});
 			return false;
 		}
 	}
@@ -104,5 +103,5 @@ void ArgParser::printHelp(OStream &os)
 		}
 	}
 }
-} // namespace args
+
 } // namespace fer
