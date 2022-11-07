@@ -9,6 +9,8 @@ namespace fer
 
 class SimplifyParserPass : public ParserPass
 {
+	Stmt *applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper);
+
 public:
 	SimplifyParserPass(Context &ctx);
 	~SimplifyParserPass() override;

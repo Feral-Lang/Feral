@@ -31,6 +31,9 @@ Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, long double data)
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, char data)
 	: data{.c = data}, loc(loc), dtype(DataType::CHR), opcode(opcode)
 {}
+Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, bool data)
+	: data{.b = data}, loc(loc), dtype(DataType::BOOL), opcode(opcode)
+{}
 
 Bytecode::Bytecode() {}
 Bytecode::~Bytecode() {}
@@ -40,10 +43,11 @@ void Bytecode::dump(OStream &os) const
 	for(size_t idx = 0; idx < code.size(); ++idx) {
 		auto &i = code[idx];
 		os << idx << "\t" << getOpcodeStr(i.getOpcode()) << "\t";
-		if(i.isInt()) os << "[int] " << i.getDataInt() << "\n";
-		if(i.isFlt()) os << "[flt] " << i.getDataFlt() << "\n";
-		if(i.isChr()) os << "[chr] " << i.getDataChr() << "\n";
-		if(i.isStr()) os << "[str] " << i.getDataStr() << "\n";
+		if(i.isInt()) os << "[int]  " << i.getDataInt() << "\n";
+		if(i.isFlt()) os << "[flt]  " << i.getDataFlt() << "\n";
+		if(i.isChr()) os << "[chr]  " << i.getDataChr() << "\n";
+		if(i.isStr()) os << "[str]  " << i.getDataStr() << "\n";
+		if(i.isBool()) os << "[bool] " << (i.getDataBool() ? "true" : "false") << "\n";
 	}
 }
 

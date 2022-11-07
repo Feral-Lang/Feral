@@ -136,7 +136,8 @@ public:
 	}
 	inline bool isLiteral() const
 	{
-		return val == INT || val == FLT || val == CHAR || val == STR;
+		return val == INT || val == FLT || val == CHAR || val == STR || val == TRUE ||
+		       val == FALSE;
 	}
 
 	inline bool isOper() const { return val >= ASSN && val <= RBRACK; }

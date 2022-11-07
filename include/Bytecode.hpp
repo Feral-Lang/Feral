@@ -27,10 +27,12 @@ union Data
 	int64_t i;
 	long double d;
 	char c;
+	bool b;
 };
 
 enum class DataType : uint8_t
 {
+	BOOL,
 	INT,
 	FLT,
 	CHR,
@@ -49,9 +51,11 @@ public:
 	Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, char data);
+	Instruction(Opcode opcode, const ModuleLoc *loc, bool data);
 
 #define isDataX(X, ENUMVAL) \
 	inline bool is##X() const { return dtype == DataType::ENUMVAL; }
+	isDataX(Bool, BOOL);
 	isDataX(Chr, CHR);
 	isDataX(Int, INT);
 	isDataX(Flt, FLT);
@@ -68,6 +72,7 @@ public:
 	inline int64_t getDataInt() const { return data.i; }
 	inline long double getDataFlt() const { return data.d; }
 	inline char getDataChr() const { return data.c; }
+	inline bool getDataBool() const { return data.b; }
 
 	inline DataType getDataType() const { return dtype; }
 	inline Opcode getOpcode() const { return opcode; }
@@ -94,6 +99,10 @@ public:
 		code.emplace_back(opcode, loc, data);
 	}
 	inline void addInstrChr(Opcode opcode, const ModuleLoc *loc, char data)
+	{
+		code.emplace_back(opcode, loc, data);
+	}
+	inline void addInstrBool(Opcode opcode, const ModuleLoc *loc, bool data)
 	{
 		code.emplace_back(opcode, loc, data);
 	}

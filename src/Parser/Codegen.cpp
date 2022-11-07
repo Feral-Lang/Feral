@@ -27,11 +27,13 @@ bool StmtBlock::genCode(Bytecode &bc)
 
 bool StmtSimple::genCode(Bytecode &bc)
 {
-	switch(val.getTok().getVal()) {
+	switch(val.getTokVal()) {
 	case lex::STR: bc.addInstrStr(Opcode::LOAD_CONST, loc, val.getDataStr()); return true;
 	case lex::INT: bc.addInstrInt(Opcode::LOAD_CONST, loc, val.getDataInt()); return true;
 	case lex::FLT: bc.addInstrFlt(Opcode::LOAD_CONST, loc, val.getDataFlt()); return true;
 	case lex::CHAR: bc.addInstrChr(Opcode::LOAD_CONST, loc, val.getDataInt()); return true;
+	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_CONST, loc, true); return true;
+	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_CONST, loc, false); return true;
 	default: break;
 	}
 	err::out(loc, {"unable to generate bytecode - unknown simple type: ", val.getTok().cStr()});

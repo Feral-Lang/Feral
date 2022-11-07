@@ -82,9 +82,24 @@ bool SimplifyParserPass::visit(StmtExpr *stmt, Stmt **source)
 		err::out(stmt, {"failed to apply simplify pass on LHS in expression"});
 		return false;
 	}
+
+	// constant folding
+	if(!lhs->isSimple()) return true;
+	if(rhs && !rhs->isSimple()) return true;
+	StmtSimple *l = as<StmtSimple>(lhs);
+	StmtSimple *r = rhs ? as<StmtSimple>(rhs) : nullptr;
+	if(Stmt *res = applyConstantFolding(l, r, oper)) *source = res;
 	return true;
 }
-bool SimplifyParserPass::visit(StmtVar *stmt, Stmt **source) { return true; }
+bool SimplifyParserPass::visit(StmtVar *stmt, Stmt **source)
+{
+	if(!visit(stmt->getVal(), asStmt(&stmt->getVal()))) {
+		err::out(stmt,
+			 {"failed to apply simplify pass on var: ", stmt->getName().getDataStr()});
+		return false;
+	}
+	return true;
+}
 bool SimplifyParserPass::visit(StmtFnSig *stmt, Stmt **source)
 {
 	auto &args = stmt->getArgs();

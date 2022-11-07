@@ -179,7 +179,7 @@ void StmtVar::disp(bool has_next)
 	if(in) {
 		instr += " [";
 		instr += "in: ";
-		instr += in->getLexValue().getDataStr();
+		instr += in->getLexDataStr();
 		instr += "]";
 	}
 	tio::print(has_next, {"Variable [is const = ", is_const ? "yes" : "no", "]", instr, ": ",

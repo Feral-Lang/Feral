@@ -100,6 +100,10 @@ public:
 
 	inline void updateLexDataStr(StringRef newdata) { val.setDataStr(newdata); }
 	inline lex::Lexeme &getLexValue() { return val; }
+
+	inline StringRef getLexDataStr() const { return val.getDataStr(); }
+	inline long double getLexDataFlt() const { return val.getDataFlt(); }
+	inline int64_t getLexDataInt() const { return val.getDataInt(); }
 };
 
 class StmtFnArgs : public Stmt
