@@ -36,6 +36,8 @@ public:
 		return passid == ParserPass::passID<T>();
 	}
 
+	inline bool visitTree(Stmt *&stmt) { return visit(stmt, &stmt); }
+
 	virtual bool visit(Stmt *stmt, Stmt **source) = 0;
 
 	virtual bool visit(StmtBlock *stmt, Stmt **source)    = 0;
@@ -57,22 +59,5 @@ public:
 };
 
 template<typename T> T *as(ParserPass *t) { return static_cast<T *>(t); }
-
-class ParserPassManager
-{
-	Context &ctx;
-	Vector<ParserPass *> passes;
-
-public:
-	ParserPassManager(Context &ctx);
-	ParserPassManager(const ParserPassManager &pm) = delete;
-	~ParserPassManager();
-	template<class T, typename... Args>
-	typename std::enable_if<std::is_base_of<ParserPass, T>::value, void>::type add(Args... args)
-	{
-		passes.push_back(new T(ctx, args...));
-	}
-	bool visit(Stmt *&ptree);
-};
 
 } // namespace fer

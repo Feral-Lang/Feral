@@ -1,23 +1,51 @@
+#include "Parser/Passes/Codegen.hpp"
+
 #include "Error.hpp"
-#include "Parser/Stmts.hpp"
 
 namespace fer
 {
+
+CodegenParserPass::CodegenParserPass(Context &ctx, Bytecode &bc)
+	: ParserPass(ParserPass::genPassID<CodegenParserPass>(), ctx), bc(bc)
+{}
+CodegenParserPass::~CodegenParserPass() {}
+
+bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
+{
+	switch(stmt->getStmtType()) {
+	case BLOCK: return visit(as<StmtBlock>(stmt), source);
+	case SIMPLE: return visit(as<StmtSimple>(stmt), source);
+	case EXPR: return visit(as<StmtExpr>(stmt), source);
+	case FNARGS: return visit(as<StmtFnArgs>(stmt), source);
+	case VAR: return visit(as<StmtVar>(stmt), source);
+	case FNSIG: return visit(as<StmtFnSig>(stmt), source);
+	case FNDEF: return visit(as<StmtFnDef>(stmt), source);
+	case VARDECL: return visit(as<StmtVarDecl>(stmt), source);
+	case COND: return visit(as<StmtCond>(stmt), source);
+	case FOR: return visit(as<StmtFor>(stmt), source);
+	case RET: return visit(as<StmtRet>(stmt), source);
+	case CONTINUE: return visit(as<StmtContinue>(stmt), source);
+	case BREAK: return visit(as<StmtBreak>(stmt), source);
+	case DEFER: return visit(as<StmtDefer>(stmt), source);
+	}
+	err::out(stmt, {"invalid statement found for codegen pass: ", stmt->getStmtTypeCString()});
+	return false;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtBlock ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtBlock::genCode(Bytecode &bc)
+bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 {
-	if(!is_top) bc.addInstrInt(Opcode::PUSH_LAYER, loc, 1);
-	for(auto &s : stmts) {
-		if(!s->genCode(bc)) {
-			err::out(loc, {"failed to generate bytecode for block"});
+	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_LAYER, stmt->getLoc(), 1);
+	for(auto &s : stmt->getStmts()) {
+		if(!visit(s, &s)) {
+			err::out(stmt->getLoc(), {"failed to generate bytecode for block"});
 			return false;
 		}
 	}
-	if(!is_top) bc.addInstrInt(Opcode::POP_LAYER, loc, 1);
+	if(!stmt->isTop()) bc.addInstrInt(Opcode::POP_LAYER, stmt->getLoc(), 1);
 	return true;
 }
 
@@ -25,18 +53,28 @@ bool StmtBlock::genCode(Bytecode &bc)
 ////////////////////////////////////////// StmtSimple /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtSimple::genCode(Bytecode &bc)
+bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 {
+	const lex::Lexeme &val = stmt->getLexValue();
 	switch(val.getTokVal()) {
-	case lex::STR: bc.addInstrStr(Opcode::LOAD_CONST, loc, val.getDataStr()); return true;
-	case lex::INT: bc.addInstrInt(Opcode::LOAD_CONST, loc, val.getDataInt()); return true;
-	case lex::FLT: bc.addInstrFlt(Opcode::LOAD_CONST, loc, val.getDataFlt()); return true;
-	case lex::CHAR: bc.addInstrChr(Opcode::LOAD_CONST, loc, val.getDataInt()); return true;
-	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_CONST, loc, true); return true;
-	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_CONST, loc, false); return true;
+	case lex::STR:
+		bc.addInstrStr(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataStr());
+		return true;
+	case lex::INT:
+		bc.addInstrInt(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataInt());
+		return true;
+	case lex::FLT:
+		bc.addInstrFlt(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataFlt());
+		return true;
+	case lex::CHAR:
+		bc.addInstrChr(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataInt());
+		return true;
+	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), true); return true;
+	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), false); return true;
 	default: break;
 	}
-	err::out(loc, {"unable to generate bytecode - unknown simple type: ", val.getTok().cStr()});
+	err::out(stmt->getLoc(),
+		 {"unable to generate bytecode - unknown simple type: ", val.getTok().cStr()});
 	return false;
 }
 
@@ -44,32 +82,35 @@ bool StmtSimple::genCode(Bytecode &bc)
 ////////////////////////////////////////// StmtFnArgs /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtFnArgs::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtExpr /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtExpr::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtVar::genCode(Bytecode &bc)
+bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 {
+	Stmt *&val		= stmt->getVal();
+	const lex::Lexeme &name = stmt->getName();
 	if(!val) {
-		err::out(loc, {"cannot generate bytecode of"
-			       " a variable with no value: ",
-			       name.getDataStr()});
+		err::out(stmt->getLoc(), {"cannot generate bytecode of"
+					  " a variable with no value: ",
+					  name.getDataStr()});
 		return false;
 	}
-	if(!val->genCode(bc)) {
-		err::out(loc, {"failed to generate bytecode of variable val: ", name.getDataStr()});
+	if(!visit(val, &val)) {
+		err::out(stmt->getLoc(),
+			 {"failed to generate bytecode of variable val: ", name.getDataStr()});
 		return false;
 	}
-	if(is_const) bc.addInstrStr(Opcode::CREATE_CONST, loc, name.getDataStr());
-	else bc.addInstrStr(Opcode::CREATE_VAR, loc, name.getDataStr());
+	if(stmt->isConst()) bc.addInstrStr(Opcode::CREATE_CONST, stmt->getLoc(), name.getDataStr());
+	else bc.addInstrStr(Opcode::CREATE_VAR, stmt->getLoc(), name.getDataStr());
 	return true;
 }
 
@@ -77,22 +118,22 @@ bool StmtVar::genCode(Bytecode &bc)
 //////////////////////////////////////////// StmtFnSig ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtFnSig::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtFnDef ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtFnDef::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// StmtVarDecl /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtVarDecl::genCode(Bytecode &bc)
+bool CodegenParserPass::visit(StmtVarDecl *stmt, Stmt **source)
 {
-	for(auto &d : decls) {
-		if(!d->genCode(bc)) return false;
+	for(auto &d : stmt->getDecls()) {
+		if(!visit(d, asStmt(&d))) return false;
 	}
 	return true;
 }
@@ -101,36 +142,36 @@ bool StmtVarDecl::genCode(Bytecode &bc)
 //////////////////////////////////////////// StmtCond /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtCond::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtCond *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtFor //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtFor::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtRet //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtRet::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// StmtContinue ///////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtContinue::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtBreak ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtBreak::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source) { return true; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// StmtDefer ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool StmtDefer::genCode(Bytecode &bc) { return true; }
+bool CodegenParserPass::visit(StmtDefer *stmt, Stmt **source) { return true; }
 
 } // namespace fer

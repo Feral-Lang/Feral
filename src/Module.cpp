@@ -3,6 +3,8 @@
 #include "Lexer.hpp"
 #include "Parser/Parse.hpp"
 #include "Parser/Passes/Base.hpp"
+#include "Parser/Passes/Codegen.hpp"
+#include "Parser/Passes/Simplify.hpp"
 
 namespace fer
 {
@@ -23,9 +25,13 @@ bool Module::parseTokens()
 	Parser parser(ctx);
 	return parser.parseBlock(p, (StmtBlock *&)ptree, false);
 }
-bool Module::genCode() { return ptree->genCode(bc); }
-// this is not inline because Parser/Passes/Base.hpp is required here
-bool Module::executeParseTreePasses(ParserPassManager &pm) { return pm.visit(ptree); }
+bool Module::executeDefaultParserPasses()
+{
+	SimplifyParserPass p(ctx);
+	if(!executeParserPass<SimplifyParserPass>()) return false;
+	return true;
+}
+bool Module::genCode() { return executeParserPass<CodegenParserPass>(bc); }
 void Module::dumpTokens() const
 {
 	std::cout << "Source: " << path << "\n";

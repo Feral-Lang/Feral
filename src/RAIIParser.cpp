@@ -6,7 +6,6 @@
 #include "Error.hpp"
 #include "FS.hpp"
 #include "Parser/Passes/Base.hpp"
-#include "Parser/Passes/Simplify.hpp"
 #include "Utils.hpp"
 
 namespace fer
@@ -16,10 +15,7 @@ namespace fer
 ////////////////////////////////////////// RAIIParser /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-RAIIParser::RAIIParser(ArgParser &args) : args(args), ctx(), defaultparserpm(ctx)
-{
-	defaultparserpm.add<SimplifyParserPass>();
-}
+RAIIParser::RAIIParser(ArgParser &args) : args(args), ctx() {}
 RAIIParser::~RAIIParser()
 {
 	for(auto &m : modules) delete m.second;

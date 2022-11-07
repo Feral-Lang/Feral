@@ -36,8 +36,7 @@ public:
 	Stmt(Stmts stmt_type, const ModuleLoc *loc);
 	virtual ~Stmt();
 
-	virtual void disp(bool has_next)   = 0;
-	virtual bool genCode(Bytecode &bc) = 0;
+	virtual void disp(bool has_next) = 0;
 
 	const char *getStmtTypeCString() const;
 	inline const Stmts &getStmtType() const { return stype; }
@@ -80,7 +79,6 @@ public:
 				 bool is_top);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Vector<Stmt *> &getStmts() { return stmts; }
 	inline bool isTop() const { return is_top; }
@@ -96,7 +94,6 @@ public:
 	static StmtSimple *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &val);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void updateLexDataStr(StringRef newdata) { val.setDataStr(newdata); }
 	inline lex::Lexeme &getLexValue() { return val; }
@@ -116,7 +113,6 @@ public:
 	static StmtFnArgs *create(Context &c, const ModuleLoc *loc, const Vector<Stmt *> &args);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void setArg(size_t idx, Stmt *a) { args[idx] = a; }
 	inline Vector<Stmt *> &getArgs() { return args; }
@@ -139,7 +135,6 @@ public:
 				const lex::Lexeme &oper, Stmt *rhs);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void setOr(StmtBlock *blk, const lex::Lexeme &blk_var)
 	{
@@ -170,7 +165,6 @@ public:
 			       StmtSimple *in, Stmt *val, bool is_const);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void setVal(Stmt *val) { val = val; }
 
@@ -194,7 +188,6 @@ public:
 				 bool is_variadic);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void insertArg(StmtVar *arg) { args.push_back(arg); }
 	inline void insertArg(size_t pos, StmtVar *arg) { args.insert(args.begin() + pos, arg); }
@@ -216,7 +209,6 @@ public:
 	static StmtFnDef *create(Context &c, const ModuleLoc *loc, StmtFnSig *sig, StmtBlock *blk);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline void setBlk(StmtBlock *_blk) { blk = _blk; }
 
@@ -240,7 +232,6 @@ public:
 				   const Vector<StmtVar *> &decls);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Vector<StmtVar *> &getDecls() { return decls; }
 };
@@ -276,7 +267,6 @@ public:
 	static StmtCond *create(Context &c, const ModuleLoc *loc, const Vector<Conditional> &conds);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Vector<Conditional> &getConditionals() { return conds; }
 };
@@ -296,7 +286,6 @@ public:
 			       StmtBlock *blk);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Stmt *&getInit() { return init; }
 	inline Stmt *&getCond() { return cond; }
@@ -314,7 +303,6 @@ public:
 	static StmtRet *create(Context &c, const ModuleLoc *loc, Stmt *val);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Stmt *&getRetVal() { return val; }
 };
@@ -326,7 +314,6 @@ public:
 	static StmtContinue *create(Context &c, const ModuleLoc *loc);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 };
 
 class StmtBreak : public Stmt
@@ -336,7 +323,6 @@ public:
 	static StmtBreak *create(Context &c, const ModuleLoc *loc);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 };
 
 class StmtDefer : public Stmt
@@ -349,7 +335,6 @@ public:
 	static StmtDefer *create(Context &c, const ModuleLoc *loc, Stmt *val);
 
 	void disp(bool has_next);
-	bool genCode(Bytecode &bc);
 
 	inline Stmt *&getDeferVal() { return val; }
 };

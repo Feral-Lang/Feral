@@ -99,7 +99,7 @@ StmtFnArgs *StmtFnArgs::create(Context &c, const ModuleLoc *loc, const Vector<St
 void StmtFnArgs::disp(bool has_next)
 {
 	tio::taba(has_next);
-	tio::print(has_next, {"Function Call Info: ", args.empty() ? "(empty)" : "", "\n"});
+	tio::print(has_next, {"Function Args: ", args.empty() ? "(empty)" : "", "\n"});
 	if(!args.empty()) {
 		tio::taba(false);
 		tio::print(false, {"Args:\n"});

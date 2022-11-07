@@ -11,7 +11,6 @@ namespace lex
 class Lexeme;
 }
 class Bytecode;
-class ParserPassManager;
 
 class Module
 {
@@ -30,8 +29,16 @@ public:
 
 	bool tokenize();
 	bool parseTokens();
+	bool executeDefaultParserPasses();
 	bool genCode(); // generate bytecode
-	bool executeParseTreePasses(ParserPassManager &pm);
+
+	template<class T, typename... Args>
+	typename std::enable_if<std::is_base_of<ParserPass, T>::value, bool>::type
+	executeParserPass(Args &...args)
+	{
+		T pass(ctx, args...);
+		return pass.visitTree(ptree);
+	}
 
 	inline StringRef getID() const { return id; }
 	inline StringRef getPath() const { return path; }

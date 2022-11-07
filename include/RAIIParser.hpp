@@ -12,8 +12,6 @@ class RAIIParser
 	ArgParser &args;
 	Context ctx;
 
-	ParserPassManager defaultparserpm;
-
 	// as new sources are imported, they'll be pushed back
 	Vector<StringRef> modulestack;
 
@@ -28,12 +26,6 @@ public:
 	~RAIIParser();
 
 	Module *createModule(const String &path, bool main_module);
-
-	// generate the default set of passes to be run on the parse tree
-	inline bool applyDefaultParserPasses(Module *mod)
-	{
-		return mod->executeParseTreePasses(defaultparserpm);
-	}
 
 	Module *getModule(StringRef path);
 

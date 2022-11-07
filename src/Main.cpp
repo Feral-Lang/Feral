@@ -60,8 +60,8 @@ int compileAndRun(RAIIParser &parser, const String &file)
 	if(args.has("lex")) mod->dumpTokens();
 	if(!mod->parseTokens()) return 1;
 	if(args.has("parse")) mod->dumpParseTree();
-	if(!parser.applyDefaultParserPasses(mod)) {
-		err::out({"Failed to apply parser passes on module: ", mod->getPath()});
+	if(!mod->executeDefaultParserPasses()) {
+		err::out({"Failed to apply default parser passes on module: ", mod->getPath()});
 		return 1;
 	}
 	if(args.has("optparse")) mod->dumpParseTree();

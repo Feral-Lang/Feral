@@ -1,0 +1,6 @@
+let a = "ab" + "bc";
+let b = "abc" * 10;
+let c = "aa" == "bb";
+let p = 5 + ++5;
+let q = 5 - 2 + 4 / 8 * 22;
+let n = true;
