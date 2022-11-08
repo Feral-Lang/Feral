@@ -298,7 +298,7 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			++i;
 			continue;
 		}
-		if(CURR == '/' && NEXT == '/') {
+		if((CURR == '/' && NEXT == '/') || CURR == '#') {
 			comment_line = true;
 			++i;
 			continue;

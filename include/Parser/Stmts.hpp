@@ -47,7 +47,7 @@ public:
 	isStmtX(Block, BLOCK);
 	isStmtX(Simple, SIMPLE);
 	isStmtX(Expr, EXPR);
-	isStmtX(FnCallInfo, FNARGS);
+	isStmtX(FnArgs, FNARGS);
 	isStmtX(Var, VAR);
 	isStmtX(FnSig, FNSIG);
 	isStmtX(FnDef, FNDEF);
@@ -116,7 +116,7 @@ public:
 
 	inline void setArg(size_t idx, Stmt *a) { args[idx] = a; }
 	inline Vector<Stmt *> &getArgs() { return args; }
-	inline Stmt *getArg(size_t idx) { return args[idx]; }
+	inline Stmt *&getArg(size_t idx) { return args[idx]; }
 };
 
 class StmtExpr : public Stmt
@@ -145,6 +145,7 @@ public:
 	inline Stmt *&getLHS() { return lhs; }
 	inline Stmt *&getRHS() { return rhs; }
 	inline lex::Lexeme &getOper() { return oper; }
+	inline lex::Tok &getOperTok() { return oper.getTok(); }
 	inline StmtBlock *&getOrBlk() { return or_blk; }
 	inline lex::Lexeme &getOrBlkVar() { return or_blk_var; }
 };
@@ -178,7 +179,6 @@ class StmtFnSig : public Stmt
 {
 	// StmtVar contains constness, name, and optionally val
 	Vector<StmtVar *> args;
-	Vector<bool> argconsts;
 	bool is_variadic;
 
 public:
@@ -269,6 +269,8 @@ public:
 	void disp(bool has_next);
 
 	inline Vector<Conditional> &getConditionals() { return conds; }
+	inline Stmt *&getCond(size_t idx) { return conds[idx].getCond(); }
+	inline StmtBlock *&getBlk(size_t idx) { return conds[idx].getBlk(); }
 };
 
 class StmtFor : public Stmt

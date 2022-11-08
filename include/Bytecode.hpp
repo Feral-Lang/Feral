@@ -9,14 +9,78 @@ class ModuleLoc;
 
 enum class Opcode : uint8_t
 {
-	LOAD_CONST,   // laod a const int/float/char/string from operand on the stack
-	UNLOAD,	      // unload from stack; operand = count of unloads to perform
-	CREATE_VAR,   // create a variable with name as operand, value present in stack
-	CREATE_CONST, // create a const variable with name as operand, value present in stack
-	PUSH_LAYER,   // push a layer for variables on stack; operand = count of layers to push
-	POP_LAYER,    // pop a layer of variables from stack; operand = count of layers to pop
+	LOAD_CONST,    // laod a const int/float/char/string from operand on the stack
+	UNLOAD,	       // unload from stack; operand = count of unloads to perform
+	CREATE_VAR,    // create a variable with name as operand, value present in stack
+	CREATE_CONST,  // create a const variable with name as operand, value present in stack
+	PUSH_LAYER,    // push a layer for variables on stack; operand = count of layers to push
+	POP_LAYER,     // pop a layer of variables from stack; operand = count of layers to pop
+	LOAD_ARG,      // load a funtion arg by index (to create func args in body); operand = index
+		       // of arg to be fetched
+	RETURN,	       // self explanatory; operand = true if a val exists, false for void
+	BLOCK_TILL,    // create a block (for function); operand = index till which block exists
+	CREATE_FN,     // self explanatory; operand = first char boolean -> true if variadic,
+		       // second char -> number of args (char itself is the number)
+		       // also loads the block from stack (created via BLOCK_TILL)
+	CONTINUE,      // self explanatory; no operand
+	BREAK,	       // self explanatory, no operand
+	JMP,	       // jump unconditionally; operand = index in bytecode to jump to
+	JMP_TRUE,      // jump if true; operand = index in bytecode to jump to
+	JMP_FALSE,     // jump if false; operand = index in bytecode to jump to
+	JMP_POP,       // jump unconditionally; operand = index in bytecode to jump to
+	JMP_TRUE_POP,  // jump if true; operand = index in bytecode to jump to
+	JMP_FALSE_POP, // jump if false; operand = index in bytecode to jump to
 
-	_LAST,
+	// Operators
+	// None of the operators have an operand
+	ASSN,
+	// Arithmetic
+	ADD,
+	SUB,
+	MUL,
+	DIV,
+	MOD,
+	ADD_ASSN,
+	SUB_ASSN,
+	MUL_ASSN,
+	DIV_ASSN,
+	MOD_ASSN,
+	// Post/Pre Inc/Dec
+	XINC,
+	INCX,
+	XDEC,
+	DECX,
+	// Unary
+	UADD,
+	USUB,
+	UAND, // address of
+	UMUL, // dereference
+	// Logic (LAND and LOR are handled using jmps)
+	LNOT,
+	// Comparison
+	EQ,
+	LT,
+	GT,
+	LE,
+	GE,
+	NE,
+	// Bitwise
+	BAND,
+	BOR,
+	BNOT,
+	BXOR,
+	BAND_ASSN,
+	BOR_ASSN,
+	BNOT_ASSN,
+	BXOR_ASSN,
+	// Others
+	LSHIFT,
+	RSHIFT,
+	LSHIFT_ASSN,
+	RSHIFT_ASSN,
+	SUBS,
+	DOT,	// attribute operation
+	FNCALL, // operand = count of args
 };
 
 StringRef getOpcodeStr(Opcode opcode);
@@ -38,6 +102,9 @@ enum class DataType : uint8_t
 	CHR,
 	STR,
 };
+
+inline int64_t addVariadicFlag(int64_t arginfo) { return arginfo |= (int64_t)1 << 63; }
+inline bool hasVariadicFlag(int64_t arginfo) { return arginfo & ((int64_t)1 << 63); }
 
 class Instruction
 {
@@ -66,6 +133,8 @@ public:
 	isX(LoadConst, LOAD_CONST);
 	isX(Unload, UNLOAD);
 	isX(CreateVar, CREATE_VAR);
+
+	inline void setInt(int64_t dat) { data.i = dat; }
 
 	inline const ModuleLoc *getLoc() const { return loc; }
 	inline StringRef getDataStr() const { return data.s; }
@@ -106,6 +175,8 @@ public:
 	{
 		code.emplace_back(opcode, loc, data);
 	}
+
+	inline void updateInstrInt(size_t instr_idx, int64_t data) { code[instr_idx].setInt(data); }
 
 	inline void pop() { code.pop_back(); }
 	inline void erase(size_t idx) { code.erase(code.begin() + idx); }

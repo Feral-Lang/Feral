@@ -1,15 +1,30 @@
 #pragma once
 
 // Implements the basic parse tree simplification - including constant folding
+// After this pass, StmtDefer will not be found in the code
 
 #include "Parser/Passes/Base.hpp"
 
 namespace fer
 {
 
+class DeferStack
+{
+	Vector<Vector<Stmt *>> deferstack;
+
+public:
+	inline void pushLayer() { deferstack.push_back({}); }
+	inline void popLayer() { deferstack.pop_back(); }
+	inline void pushLoop() { deferstack.push_back({nullptr}); }
+	bool popLoop(const ModuleLoc *loc);
+	inline void addStmt(Stmt *stmt) { deferstack.back().push_back(stmt); }
+	void applyDefers(Vector<Stmt *> &stmts);
+};
+
 class SimplifyParserPass : public ParserPass
 {
 	Stmt *applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper);
+	DeferStack defers;
 
 public:
 	SimplifyParserPass(Context &ctx);

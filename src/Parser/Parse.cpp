@@ -834,7 +834,9 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 		err::out(name, {"invalid variable declaration - no value set"});
 		return false;
 	}
-	if(!parseExpr16(p, val, false)) {
+	if(p.accept(lex::FN)) {
+		if(!parseFnDef(p, val)) return false;
+	} else if(!parseExpr16(p, val, false)) {
 		return false;
 	}
 
@@ -872,12 +874,14 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 
 	// args
 	while(true) {
+		bool is_const = p.acceptn(lex::CONST);
 		if(argnames.find(p.peek().getDataStr()) != argnames.end()) {
 			err::out(p.peek(), {"this argument name is already used "
 					    "before in this function signature"});
 			return false;
 		}
 		argnames.insert(p.peek().getDataStr());
+		if(is_const) p.setPos(p.getPos() - 1);
 		if(!parseVar(p, arg, true)) {
 			err::out(p.peek(), {"failed to parse function definition parameter"});
 			return false;

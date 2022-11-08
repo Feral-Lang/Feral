@@ -175,14 +175,14 @@ StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &na
 void StmtVar::disp(bool has_next)
 {
 	tio::taba(has_next);
-	String instr;
+	String in_str;
 	if(in) {
-		instr += " [";
-		instr += "in: ";
-		instr += in->getLexDataStr();
-		instr += "]";
+		in_str += " [";
+		in_str += "in: ";
+		in_str += in->getLexDataStr();
+		in_str += "]";
 	}
-	tio::print(has_next, {"Variable [is const = ", is_const ? "yes" : "no", "]", instr, ": ",
+	tio::print(has_next, {"Variable [is const = ", is_const ? "yes" : "no", "]", in_str, ": ",
 			      name.getDataStr(), "\n"});
 	if(val) {
 		tio::taba(false);
@@ -214,7 +214,7 @@ void StmtFnSig::disp(bool has_next)
 		   {"Function signature [variadic = ", is_variadic ? "yes" : "no", "]\n"});
 	if(args.size() > 0) {
 		tio::taba(false);
-		tio::print(false, {"Parameters:\n"});
+		tio::print(false, {"Parameters\n"});
 		for(size_t i = 0; i < args.size(); ++i) {
 			args[i]->disp(i != args.size() - 1);
 		}
