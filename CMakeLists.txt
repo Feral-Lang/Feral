@@ -54,6 +54,12 @@ if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	include_directories(/usr/local/include)
 endif()
 
+find_library(GMP_LIBRARY gmp REQUIRED)
+find_package(MPFR REQUIRED)
+if(NOT MPFR_FOUND)
+	message(FATAL_ERROR "MPFR library is required but missing")
+endif()
+
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
