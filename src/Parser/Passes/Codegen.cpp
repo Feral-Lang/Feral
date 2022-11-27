@@ -85,6 +85,7 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 		return true;
 	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), true); return true;
 	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), false); return true;
+	case lex::NIL: bc.addInstrNil(Opcode::LOAD_CONST, stmt->getLoc()); return true;
 	default: break;
 	}
 	err::out(stmt,

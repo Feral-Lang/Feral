@@ -70,7 +70,7 @@ public:
 	}
 	inline StringRef getSource() { return source; }
 	inline void setSource(StringRef src) { source = src; }
-	inline Vector<StringRef> getCodeExecArgs(size_t idx) { return args; }
+	inline Vector<StringRef> &getCodeExecArgs() { return args; }
 	inline const Vector<StringRef> &getArgv() const { return argv; }
 };
 

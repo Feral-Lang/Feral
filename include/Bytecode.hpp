@@ -97,6 +97,7 @@ union Data
 enum class DataType : uint8_t
 {
 	BOOL,
+	NIL,
 	INT,
 	FLT,
 	CHR,
@@ -119,10 +120,12 @@ public:
 	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, char data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, bool data);
+	Instruction(Opcode opcode, const ModuleLoc *loc); // for nil
 
 #define isDataX(X, ENUMVAL) \
 	inline bool is##X() const { return dtype == DataType::ENUMVAL; }
 	isDataX(Bool, BOOL);
+	isDataX(Nil, NIL);
 	isDataX(Chr, CHR);
 	isDataX(Int, INT);
 	isDataX(Flt, FLT);
@@ -174,6 +177,10 @@ public:
 	inline void addInstrBool(Opcode opcode, const ModuleLoc *loc, bool data)
 	{
 		code.emplace_back(opcode, loc, data);
+	}
+	inline void addInstrNil(Opcode opcode, const ModuleLoc *loc)
+	{
+		code.emplace_back(opcode, loc);
 	}
 
 	inline void updateInstrInt(size_t instr_idx, int64_t data) { code[instr_idx].setInt(data); }
