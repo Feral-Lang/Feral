@@ -87,13 +87,14 @@ void StmtSimple::disp(bool has_next)
 ////////////////////////////////////////// StmtFnArgs /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnArgs::StmtFnArgs(const ModuleLoc *loc, const Vector<Stmt *> &args)
-	: Stmt(FNARGS, loc), args(args)
+StmtFnArgs::StmtFnArgs(const ModuleLoc *loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector)
+	: Stmt(FNARGS, loc), args(args), unpack_vector(unpack_vector)
 {}
 StmtFnArgs::~StmtFnArgs() {}
-StmtFnArgs *StmtFnArgs::create(Context &c, const ModuleLoc *loc, const Vector<Stmt *> &args)
+StmtFnArgs *StmtFnArgs::create(Context &c, const ModuleLoc *loc, Vector<Stmt *> &&args,
+			       Vector<bool> &&unpack_vector)
 {
-	return c.allocStmt<StmtFnArgs>(loc, args);
+	return c.allocStmt<StmtFnArgs>(loc, std::move(args), std::move(unpack_vector));
 }
 
 void StmtFnArgs::disp(bool has_next)
@@ -102,9 +103,12 @@ void StmtFnArgs::disp(bool has_next)
 	tio::print(has_next, {"Function Args: ", args.empty() ? "(empty)" : "", "\n"});
 	if(!args.empty()) {
 		tio::taba(false);
-		tio::print(false, {"Args:\n"});
 		for(size_t i = 0; i < args.size(); ++i) {
+			tio::print(i != args.size() - 1,
+				   {"Arg: [unpack = ", unpackArg(i) ? "true" : "false", "]\n"});
+			tio::taba(i != args.size() - 1);
 			args[i]->disp(i != args.size() - 1);
+			tio::tabr();
 		}
 		tio::tabr();
 	}
@@ -162,14 +166,14 @@ void StmtExpr::disp(bool has_next)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
-		 bool is_const)
-	: Stmt(VAR, loc), name(name), in(in), val(val), is_const(is_const)
+		 bool is_arg)
+	: Stmt(VAR, loc), name(name), in(in), val(val), is_arg(is_arg)
 {}
 StmtVar::~StmtVar() {}
 StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in,
-			 Stmt *val, bool is_const)
+			 Stmt *val, bool is_arg)
 {
-	return c.allocStmt<StmtVar>(loc, name, in, val, is_const);
+	return c.allocStmt<StmtVar>(loc, name, in, val, is_arg);
 }
 
 void StmtVar::disp(bool has_next)
@@ -182,8 +186,8 @@ void StmtVar::disp(bool has_next)
 		in_str += in->getLexDataStr();
 		in_str += "]";
 	}
-	tio::print(has_next, {"Variable [is const = ", is_const ? "yes" : "no", "]", in_str, ": ",
-			      name.getDataStr(), "\n"});
+	tio::print(has_next,
+		   {is_arg ? "Argument" : "Variable", in_str, ": ", name.getDataStr(), "\n"});
 	if(val) {
 		tio::taba(false);
 		tio::print(false, {"Value:\n"});
@@ -197,21 +201,33 @@ void StmtVar::disp(bool has_next)
 //////////////////////////////////////////// StmtFnSig ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnSig::StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, bool is_variadic)
-	: Stmt(FNSIG, loc), args(args), is_variadic(is_variadic)
+StmtFnSig::StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
+		     StmtSimple *vaarg)
+	: Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg)
 {}
 StmtFnSig::~StmtFnSig() {}
 StmtFnSig *StmtFnSig::create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
-			     bool is_variadic)
+			     StmtSimple *kwarg, StmtSimple *vaarg)
 {
-	return c.allocStmt<StmtFnSig>(loc, args, is_variadic);
+	return c.allocStmt<StmtFnSig>(loc, args, kwarg, vaarg);
 }
 
 void StmtFnSig::disp(bool has_next)
 {
 	tio::taba(has_next);
-	tio::print(has_next,
-		   {"Function signature [variadic = ", is_variadic ? "yes" : "no", "]\n"});
+	tio::print(has_next, {"Function signature\n"});
+	if(kwarg) {
+		tio::taba(true);
+		tio::print(vaarg || args.size() > 0, {"Keyword Argument:\n"});
+		kwarg->disp(vaarg || args.size() > 0);
+		tio::tabr();
+	}
+	if(vaarg) {
+		tio::taba(true);
+		tio::print(args.size() > 0, {"Variadic Argument:\n"});
+		vaarg->disp(args.size() > 0);
+		tio::tabr();
+	}
 	if(args.size() > 0) {
 		tio::taba(false);
 		tio::print(false, {"Parameters\n"});

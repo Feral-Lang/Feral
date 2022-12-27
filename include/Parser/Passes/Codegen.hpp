@@ -9,6 +9,12 @@ namespace fer
 
 class CodegenParserPass : public ParserPass
 {
+	// argument info string for function definitions
+	// needs to be propagated between function signature and definition
+	Vector<StringRef> fndefarginfo;
+	// argument info string for function call
+	// needs to be propagated between function call args and expression
+	Vector<StringRef> fncallarginfo;
 	Bytecode &bc;
 
 public:

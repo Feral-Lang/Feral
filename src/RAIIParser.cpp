@@ -30,10 +30,11 @@ Module *RAIIParser::createModule(const String &_path, bool main_module)
 		err::out({"Failed to read source file: ", _path});
 		return nullptr;
 	}
-	StringRef code = ctx.moveStr(std::move(_code));
-	StringRef id   = ctx.strFrom(modulestack.size());
-	StringRef path = ctx.strFrom(_path);
-	Module *mod    = new Module(ctx, id, path, code, main_module);
+	StringRef code	 = ctx.moveStr(std::move(_code));
+	StringRef id	 = ctx.strFrom(modulestack.size());
+	StringRef path	 = ctx.strFrom(_path);
+	StringRef parent = fs::parentDir(path);
+	Module *mod	 = new Module(ctx, id, path, parent, code, main_module);
 	modulestack.push_back(path);
 	modules[path] = mod;
 	return mod;

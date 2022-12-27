@@ -113,7 +113,7 @@ bool Parser::parsePrefixedSuffixedLiteral(ParseHelper &p, Stmt *&expr)
 
 	StmtSimple *arg	  = StmtSimple::create(ctx, lit.getLoc(), lit);
 	StmtSimple *fn	  = StmtSimple::create(ctx, iden.getLoc(), iden);
-	StmtFnArgs *finfo = StmtFnArgs::create(ctx, arg->getLoc(), {arg});
+	StmtFnArgs *finfo = StmtFnArgs::create(ctx, arg->getLoc(), {arg}, {false});
 	expr		  = StmtExpr::create(ctx, lit.getLoc(), fn, oper, finfo);
 
 	return true;
@@ -669,7 +669,7 @@ bool Parser::parseExpr02(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	}
 
 	if(p.accept(lex::XINC, lex::XDEC, lex::PreVA)) {
-		if(p.peekt() == lex::PreVA) p.sett(lex::PostVA);
+		if(p.accept(lex::PreVA)) p.sett(lex::PostVA);
 		lhs = StmtExpr::create(ctx, p.peek().getLoc(), lhs, p.peek(), nullptr);
 		p.next();
 	}
@@ -687,7 +687,9 @@ bool Parser::parseExpr01(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	Stmt *lhs = nullptr;
 	Stmt *rhs = nullptr;
 	Vector<Stmt *> args;
-	Stmt *arg	  = nullptr;
+	Stmt *arg = nullptr;
+	Vector<bool> unpack_vector; // works for variadic as well
+	bool unpack_arg	  = false;
 	bool is_intrinsic = false;
 
 	// prefixed/suffixed literals
@@ -764,9 +766,27 @@ begin_brack:
 		}
 		// parse arguments
 		while(true) {
-			if(!parseExpr16(p, arg, false)) return false;
+			if(p.accept(lex::STR) && p.peekt(1) == lex::ASSN) {
+				// assn args (begins with <STR> '=')
+				lex::Lexeme &name = p.peek();
+				p.next();
+				p.next();
+				if(!parseExpr16(p, arg, false)) return false;
+				arg = StmtVar::create(ctx, name.getLoc(), name, nullptr, arg, true);
+			} else if(p.accept(lex::IDEN) && p.peekt(1) == lex::PreVA) {
+				// variadic unpack
+				arg = StmtSimple::create(ctx, p.peek().getLoc(), p.peek());
+				p.next();
+				p.sett(lex::PostVA);
+				p.next();
+				unpack_arg = true;
+			} else if(!parseExpr16(p, arg, false)) { // normal arg
+				return false;
+			}
 			args.push_back(arg);
-			arg = nullptr;
+			unpack_vector.push_back(unpack_arg);
+			arg	   = nullptr;
+			unpack_arg = false;
 			if(!p.acceptn(lex::COMMA)) break;
 		}
 		if(!p.acceptn(fncall ? lex::RPAREN : lex::RBRACE)) {
@@ -776,7 +796,8 @@ begin_brack:
 			return false;
 		}
 	post_args:
-		rhs  = StmtFnArgs::create(ctx, oper.getLoc(), args);
+		rhs =
+		StmtFnArgs::create(ctx, oper.getLoc(), std::move(args), std::move(unpack_vector));
 		lhs  = StmtExpr::create(ctx, oper.getLoc(), lhs, oper, rhs);
 		rhs  = nullptr;
 		args = {};
@@ -808,9 +829,6 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 {
 	var = nullptr;
 
-	bool is_const = false;
-	if(p.acceptn(lex::CONST)) is_const = true;
-
 	if(!p.accept(lex::IDEN)) {
 		err::out(p.peek(), {"expected identifier for variable name, found: ",
 				    p.peek().getTok().cStr()});
@@ -821,7 +839,7 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	Stmt *val      = nullptr;
 	StmtSimple *in = nullptr;
 
-	if(p.acceptn(lex::IN)) {
+	if(p.acceptn(lex::IN) && !is_fn_arg) {
 		if(!parseSimple(p, (Stmt *&)in)) {
 			err::out(p.peek(),
 				 {"failed to parse in-type for variable: ", name.getDataStr()});
@@ -846,7 +864,7 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	}
 
 end:
-	var = StmtVar::create(ctx, name.getLoc(), name, in, val, is_const);
+	var = StmtVar::create(ctx, name.getLoc(), name, in, val, is_fn_arg);
 	return true;
 }
 
@@ -857,7 +875,7 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 	Vector<StmtVar *> args;
 	StmtVar *arg = nullptr;
 	Set<StringRef> argnames;
-	bool found_va	   = false;
+	StmtSimple *kwarg = nullptr, *vaarg = nullptr;
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::FN)) {
@@ -874,23 +892,46 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 
 	// args
 	while(true) {
-		bool is_const = p.acceptn(lex::CONST);
+		bool attempt_kw = false;
+		if(p.acceptn(lex::DOT)) attempt_kw = true;
+		if(!p.accept(lex::IDEN)) {
+			err::out(p.peek(), {"expected identifier for argument, found: ",
+					    p.peek().getTok().cStr()});
+			return false;
+		}
 		if(argnames.find(p.peek().getDataStr()) != argnames.end()) {
 			err::out(p.peek(), {"this argument name is already used "
 					    "before in this function signature"});
 			return false;
 		}
 		argnames.insert(p.peek().getDataStr());
-		if(is_const) p.setPos(p.getPos() - 1);
-		if(!parseVar(p, arg, true)) {
-			err::out(p.peek(), {"failed to parse function definition parameter"});
-			return false;
+		// this is a keyword arg
+		if(attempt_kw) {
+			if(kwarg) {
+				err::out(p.peek(), {"function cannot have multiple"
+						    " keyword arguments (previous: ",
+						    kwarg->getLexDataStr(), ")"});
+				return false;
+			}
+			kwarg = StmtSimple::create(ctx, p.peek().getLoc(), p.peek());
+			p.next();
+		} else if(p.peekt(1) == lex::PreVA) {
+			p.peek(1).getTok().setVal(lex::PostVA);
+			// no check for multiple variadic as no arg can exist after a variadic
+			vaarg = StmtSimple::create(ctx, p.peek().getLoc(), p.peek());
+			p.next();
+			p.next();
+		} else {
+			if(!parseVar(p, arg, true)) {
+				err::out(p.peek(),
+					 {"failed to parse function definition parameter"});
+				return false;
+			}
+			args.push_back(arg);
+			arg = nullptr;
 		}
-		if(p.acceptn(lex::PostVA)) found_va = true;
-		args.push_back(arg);
-		arg = nullptr;
 		if(!p.acceptn(lex::COMMA)) break;
-		if(found_va) {
+		if(vaarg) {
 			err::out(p.peek(), {"no parameter can exist after variadic"});
 			return false;
 		}
@@ -903,7 +944,7 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 	}
 
 post_args:
-	fsig = StmtFnSig::create(ctx, start.getLoc(), args, found_va);
+	fsig = StmtFnSig::create(ctx, start.getLoc(), args, kwarg, vaarg);
 	return true;
 }
 bool Parser::parseFnDef(ParseHelper &p, Stmt *&fndef)
@@ -1056,7 +1097,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	iter_interm.setDataStr(ctx.strFrom({"_", iter_interm.getDataStr()}));
 
 	StmtVar *in_interm_var =
-	StmtVar::create(ctx, in_interm.getLoc(), in_interm, nullptr, in, 0);
+	StmtVar::create(ctx, in_interm.getLoc(), in_interm, nullptr, in, false);
 	// block statement 1:
 	StmtVarDecl *in_interm_vardecl = StmtVarDecl::create(ctx, loc, {in_interm_var});
 
@@ -1065,10 +1106,10 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	StmtSimple *init_lhs	   = StmtSimple::create(ctx, loc, in_interm);
 	StmtSimple *init_rhs	   = StmtSimple::create(ctx, loc, lexbegin);
 	StmtExpr *init_dot_expr	   = StmtExpr::create(ctx, loc, init_lhs, dot_op, init_rhs);
-	StmtFnArgs *init_call_info = StmtFnArgs::create(ctx, loc, {});
+	StmtFnArgs *init_call_info = StmtFnArgs::create(ctx, loc, {}, {});
 	StmtExpr *init_expr = StmtExpr::create(ctx, loc, init_dot_expr, call_op, init_call_info);
 	StmtVar *init_iter_interm_var =
-	StmtVar::create(ctx, iter_interm.getLoc(), iter_interm, nullptr, init_expr, 0);
+	StmtVar::create(ctx, iter_interm.getLoc(), iter_interm, nullptr, init_expr, false);
 	StmtVarDecl *init = StmtVarDecl::create(ctx, iter_interm.getLoc(), {init_iter_interm_var});
 
 	// cond:
@@ -1076,7 +1117,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	StmtSimple *cond_rhs_lhs   = StmtSimple::create(ctx, loc, in_interm);
 	StmtSimple *cond_rhs_rhs   = StmtSimple::create(ctx, loc, lexend);
 	StmtExpr *cond_dot_expr	   = StmtExpr::create(ctx, loc, cond_rhs_lhs, dot_op, cond_rhs_rhs);
-	StmtFnArgs *cond_call_info = StmtFnArgs::create(ctx, loc, {});
+	StmtFnArgs *cond_call_info = StmtFnArgs::create(ctx, loc, {}, {});
 	StmtExpr *cond_rhs   = StmtExpr::create(ctx, loc, cond_dot_expr, call_op, cond_call_info);
 	StmtSimple *cond_lhs = StmtSimple::create(ctx, iter_interm.getLoc(), iter_interm);
 	StmtExpr *cond	     = StmtExpr::create(ctx, loc, cond_lhs, ne_op, cond_rhs);
@@ -1087,7 +1128,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	StmtSimple *incr_lhs_rhs   = StmtSimple::create(ctx, loc, lexnext);
 	StmtExpr *incr_dot_expr	   = StmtExpr::create(ctx, loc, incr_lhs_lhs, dot_op, incr_lhs_rhs);
 	StmtSimple *incr_call_arg  = StmtSimple::create(ctx, loc, iter_interm);
-	StmtFnArgs *incr_call_info = StmtFnArgs::create(ctx, loc, {incr_call_arg});
+	StmtFnArgs *incr_call_info = StmtFnArgs::create(ctx, loc, {incr_call_arg}, {false});
 	StmtExpr *incr_lhs   = StmtExpr::create(ctx, loc, incr_dot_expr, call_op, incr_call_info);
 	StmtSimple *incr_rhs = StmtSimple::create(ctx, iter_interm.getLoc(), iter_interm);
 	StmtExpr *incr	     = StmtExpr::create(ctx, loc, incr_lhs, assn_op, incr_rhs);
@@ -1098,11 +1139,12 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	StmtSimple *loop_var_val_rhs = StmtSimple::create(ctx, loc, lexat);
 	StmtExpr *loop_var_val_dot_expr =
 	StmtExpr::create(ctx, loc, loop_var_val_lhs, dot_op, loop_var_val_rhs);
-	StmtSimple *loop_var_val_call_arg  = StmtSimple::create(ctx, loc, iter_interm);
-	StmtFnArgs *loop_var_val_call_info = StmtFnArgs::create(ctx, loc, {loop_var_val_call_arg});
+	StmtSimple *loop_var_val_call_arg = StmtSimple::create(ctx, loc, iter_interm);
+	StmtFnArgs *loop_var_val_call_info =
+	StmtFnArgs::create(ctx, loc, {loop_var_val_call_arg}, {false});
 	StmtExpr *loop_var_val =
 	StmtExpr::create(ctx, loc, loop_var_val_dot_expr, call_op, loop_var_val_call_info);
-	StmtVar *loop_var	  = StmtVar::create(ctx, loc, iter, nullptr, loop_var_val, 0);
+	StmtVar *loop_var	  = StmtVar::create(ctx, loc, iter, nullptr, loop_var_val, false);
 	StmtVarDecl *loop_vardecl = StmtVarDecl::create(ctx, loc, {loop_var});
 	blk->getStmts().insert(blk->getStmts().begin(), loop_vardecl);
 

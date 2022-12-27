@@ -106,17 +106,20 @@ public:
 class StmtFnArgs : public Stmt
 {
 	Vector<Stmt *> args;
+	Vector<bool> unpack_vector; // works for variadic as well since variadic is a vector
 
 public:
-	StmtFnArgs(const ModuleLoc *loc, const Vector<Stmt *> &args);
+	StmtFnArgs(const ModuleLoc *loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector);
 	~StmtFnArgs();
-	static StmtFnArgs *create(Context &c, const ModuleLoc *loc, const Vector<Stmt *> &args);
+	static StmtFnArgs *create(Context &c, const ModuleLoc *loc, Vector<Stmt *> &&args,
+				  Vector<bool> &&unpack_vector);
 
 	void disp(bool has_next);
 
 	inline void setArg(size_t idx, Stmt *a) { args[idx] = a; }
 	inline Vector<Stmt *> &getArgs() { return args; }
 	inline Stmt *&getArg(size_t idx) { return args[idx]; }
+	inline bool unpackArg(size_t idx) { return unpack_vector[idx]; }
 };
 
 class StmtExpr : public Stmt
@@ -152,18 +155,18 @@ public:
 
 class StmtVar : public Stmt
 {
-	lex::Lexeme name;
+	lex::Lexeme name; // can be STR in case of assn args
 	StmtSimple *in;
-	Stmt *val; // expr or simple
-	bool is_const;
+	Stmt *val;   // expr or simple
+	bool is_arg; // fndef param / fncall arg or not
 
 public:
 	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
-		bool is_const);
+		bool is_arg);
 	~StmtVar();
 	// at least one of type or val must be present
 	static StmtVar *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name,
-			       StmtSimple *in, Stmt *val, bool is_const);
+			       StmtSimple *in, Stmt *val, bool is_arg);
 
 	void disp(bool has_next);
 
@@ -171,31 +174,32 @@ public:
 
 	inline lex::Lexeme &getName() { return name; }
 	inline Stmt *&getVal() { return val; }
-	inline StmtSimple *getIn() { return in; }
-	inline bool isConst() { return is_const; }
+	inline StmtSimple *&getIn() { return in; }
+	inline bool isArg() { return is_arg; }
 };
 
 class StmtFnSig : public Stmt
 {
-	// StmtVar contains constness, name, and optionally val
+	// StmtVar contains name and, optionally, val
 	Vector<StmtVar *> args;
-	bool is_variadic;
+	StmtSimple *kwarg, *vaarg;
 
 public:
-	StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, bool is_variadic);
+	StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
+		  StmtSimple *vaarg);
 	~StmtFnSig();
 	static StmtFnSig *create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
-				 bool is_variadic);
+				 StmtSimple *kwarg, StmtSimple *vaarg);
 
 	void disp(bool has_next);
 
 	inline void insertArg(StmtVar *arg) { args.push_back(arg); }
 	inline void insertArg(size_t pos, StmtVar *arg) { args.insert(args.begin() + pos, arg); }
-	inline void setVariadic(bool va) { is_variadic = va; }
 
 	inline StmtVar *&getArg(size_t idx) { return args[idx]; }
 	inline Vector<StmtVar *> &getArgs() { return args; }
-	inline bool isVariadic() const { return is_variadic; }
+	inline StmtSimple *&getKwArg() { return kwarg; }
+	inline StmtSimple *&getVaArg() { return vaarg; }
 };
 
 class StmtFnDef : public Stmt
@@ -217,7 +221,8 @@ public:
 
 	inline StmtVar *&getSigArg(size_t idx) { return sig->getArg(idx); }
 	inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
-	inline bool isSigVariadic() const { return sig->isVariadic(); }
+	inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
+	inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
 };
 
 class StmtVarDecl : public Stmt

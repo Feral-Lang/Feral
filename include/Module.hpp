@@ -17,6 +17,7 @@ class Module
 	Context &ctx;
 	StringRef id;
 	StringRef path;
+	StringRef dir;
 	StringRef code;
 	Vector<lex::Lexeme> tokens;
 	Bytecode bc;
@@ -24,7 +25,8 @@ class Module
 	bool is_main_module;
 
 public:
-	Module(Context &ctx, StringRef id, StringRef path, StringRef code, bool is_main_module);
+	Module(Context &ctx, StringRef id, StringRef path, StringRef dir, StringRef code,
+	       bool is_main_module);
 	~Module();
 
 	bool tokenize();
@@ -34,17 +36,19 @@ public:
 
 	template<class T, typename... Args>
 	typename std::enable_if<std::is_base_of<ParserPass, T>::value, bool>::type
-	executeParserPass(Args &...args)
+	executeParserPass(Args &&...args)
 	{
-		T pass(ctx, args...);
+		T pass(ctx, std::forward<Args>(args)...);
 		return pass.visitTree(ptree);
 	}
 
 	inline StringRef getID() const { return id; }
 	inline StringRef getPath() const { return path; }
+	inline StringRef getDir() const { return dir; }
 	inline StringRef getCode() const { return code; }
 	inline bool isMainModule() const { return is_main_module; }
 	inline const Vector<lex::Lexeme> &getTokens() const { return tokens; }
+	inline Bytecode &getBytecode() { return bc; }
 	inline Stmt *&getParseTree() { return ptree; }
 
 	void dumpTokens() const;

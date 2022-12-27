@@ -10,13 +10,15 @@ namespace fer
 StringRef getOpcodeStr(Opcode opcode)
 {
 	switch(opcode) {
-	case Opcode::LOAD_CONST: return "LOAD_CONST";
+	case Opcode::LOAD_DATA: return "LOAD_DATA";
 	case Opcode::UNLOAD: return "UNLOAD";
-	case Opcode::CREATE_VAR: return "CREATE_VAR";
-	case Opcode::CREATE_CONST: return "CREATE_CONST";
-	case Opcode::PUSH_LAYER: return "PUSH_LAYER";
-	case Opcode::POP_LAYER: return "POP_LAYER";
-	case Opcode::LOAD_ARG: return "LOAD_ARG";
+	case Opcode::STORE: return "STORE";
+	case Opcode::CREATE: return "CREATE_VAR";
+	case Opcode::CREATE_IN: return "CREATE_VARIN";
+	case Opcode::PUSH_BLOCK: return "PUSH_BLOCK";
+	case Opcode::POP_BLOCK: return "POP_BLOCK";
+	case Opcode::PUSH_LOOP: return "PUSH_LOOP";
+	case Opcode::POP_LOOP: return "POP_LOOP";
 	case Opcode::RETURN: return "RETURN";
 	case Opcode::BLOCK_TILL: return "BLOCK_TILL";
 	case Opcode::CREATE_FN: return "CREATE_FN";
@@ -25,65 +27,21 @@ StringRef getOpcodeStr(Opcode opcode)
 	case Opcode::JMP: return "JMP";
 	case Opcode::JMP_TRUE: return "JMP_TRUE";
 	case Opcode::JMP_FALSE: return "JMP_FALSE";
-	case Opcode::JMP_POP: return "JMP_POP";
 	case Opcode::JMP_TRUE_POP: return "JMP_TRUE_POP";
 	case Opcode::JMP_FALSE_POP: return "JMP_FALSE_POP";
-
-	case Opcode::ASSN: return "ASSN";
-	// Arithmetic
-	case Opcode::ADD: return "ADD";
-	case Opcode::SUB: return "SUB";
-	case Opcode::MUL: return "MUL";
-	case Opcode::DIV: return "DIV";
-	case Opcode::MOD: return "MOD";
-	case Opcode::ADD_ASSN: return "ADD_ASSN";
-	case Opcode::SUB_ASSN: return "SUB_ASSN";
-	case Opcode::MUL_ASSN: return "MUL_ASSN";
-	case Opcode::DIV_ASSN: return "DIV_ASSN";
-	case Opcode::MOD_ASSN: return "MOD_ASSN";
-	// Post/Pre Inc/Dec
-	case Opcode::XINC: return "XINC";
-	case Opcode::INCX: return "INCX";
-	case Opcode::XDEC: return "XDEC";
-	case Opcode::DECX: return "DECX";
-	// Unary
-	case Opcode::UADD: return "UADD";
-	case Opcode::USUB: return "USUB";
-	case Opcode::UAND: return "UAND";
-	case Opcode::UMUL: return "UMUL";
-	// Logic (LAND and LOR are handled using jmps)
-	case Opcode::LNOT: return "LNOT";
-	// Comparison
-	case Opcode::EQ: return "EQ";
-	case Opcode::LT: return "LT";
-	case Opcode::GT: return "GT";
-	case Opcode::LE: return "LE";
-	case Opcode::GE: return "GE";
-	case Opcode::NE: return "NE";
-	// Bitwise
-	case Opcode::BAND: return "BAND";
-	case Opcode::BOR: return "BOR";
-	case Opcode::BNOT: return "BNOT";
-	case Opcode::BXOR: return "BXOR";
-	case Opcode::BAND_ASSN: return "BAND_ASSN";
-	case Opcode::BOR_ASSN: return "BOR_ASSN";
-	case Opcode::BNOT_ASSN: return "BNOT_ASSN";
-	case Opcode::BXOR_ASSN: return "BXOR_ASSN";
-	// Others
-	case Opcode::LSHIFT: return "LSHIFT";
-	case Opcode::RSHIFT: return "RSHIFT";
-	case Opcode::LSHIFT_ASSN: return "LSHIFT_ASSN";
-	case Opcode::RSHIFT_ASSN: return "RSHIFT_ASSN";
-	case Opcode::SUBS: return "SUBS";
-	case Opcode::DOT: return "DOT";
-	case Opcode::FNCALL: return "FNCALL";
+	case Opcode::PUSH_JMP: return "PUSH_JMP";
+	case Opcode::PUSH_JMP_NAME: return "PUSH_JMP_NAME";
+	case Opcode::POP_JMP: return "POP_JMP";
+	case Opcode::ATTR: return "ATTR";
+	case Opcode::CALL: return "FNCALL";
+	case Opcode::MEM_CALL: return "MEM_FNCALL";
 	default: break;
 	}
 	return "";
 }
 
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data)
-	: data{.s = data}, loc(loc), dtype(DataType::STR), opcode(opcode)
+Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype)
+	: data{.s = data}, loc(loc), dtype(dtype), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data)
 	: data{.i = data}, loc(loc), dtype(DataType::INT), opcode(opcode)
@@ -110,12 +68,13 @@ void Bytecode::dump(OStream &os) const
 		auto &i = code[idx];
 		os << std::left << std::setw(5) << idx << std::left << std::setw(14)
 		   << getOpcodeStr(i.getOpcode());
-		if(i.isStr()) os << "[str]  " << i.getDataStr() << "\n";
-		if(i.isFlt()) os << "[flt]  " << i.getDataFlt() << "\n";
-		if(i.isInt()) os << "[int]  " << i.getDataInt() << "\n";
-		if(i.isChr()) os << "[chr]  " << i.getDataChr() << "\n";
-		if(i.isNil()) os << "[nil]\n";
-		if(i.isBool()) os << "[bool] " << (i.getDataBool() ? "true" : "false") << "\n";
+		if(i.isDataNil()) os << "[nil]\n";
+		if(i.isDataChr()) os << "[chr]  " << i.getDataChr() << "\n";
+		if(i.isDataInt()) os << "[int]  " << i.getDataInt() << "\n";
+		if(i.isDataFlt()) os << "[flt]  " << i.getDataFlt() << "\n";
+		if(i.isDataStr()) os << "[str]  " << i.getDataStr() << "\n";
+		if(i.isDataIden()) os << "[iden] " << i.getDataStr() << "\n";
+		if(i.isDataBool()) os << "[bool] " << (i.getDataBool() ? "true" : "false") << "\n";
 	}
 }
 

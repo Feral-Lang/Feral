@@ -3,6 +3,7 @@
 #include "Error.hpp"
 #include "FS.hpp"
 #include "RAIIParser.hpp"
+#include "VM/Interpreter.hpp"
 
 using namespace fer;
 
@@ -68,11 +69,16 @@ int compileAndRun(RAIIParser &parser, const String &file)
 	if(!mod->genCode()) return 1;
 	if(args.has("ir")) mod->dumpCode();
 
+	Interpreter interp(parser.getContext(), args);
+	interp.pushModule(nullptr, mod);
+	int res = interp.execute();
+	interp.popModule();
+
 	// convert to bytecode
 	// apply bytecode passes
 	// execute on the VM
 
-	return 0;
+	return res;
 }
 
 int execInteractive(ArgParser &cmdargs)

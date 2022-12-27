@@ -40,7 +40,7 @@ bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 {
-	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_LAYER, stmt->getLoc(), 1);
+	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_BLOCK, stmt->getLoc(), 1);
 	if(toGenInBlock) {
 		if(!visit(*toGenInBlock, asStmt(toGenInBlock))) {
 			err::out(*toGenInBlock,
@@ -58,7 +58,7 @@ bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 			bc.addInstrInt(Opcode::UNLOAD, s->getLoc(), 1);
 		}
 	}
-	if(!stmt->isTop()) bc.addInstrInt(Opcode::POP_LAYER, stmt->getLoc(), 1);
+	if(!stmt->isTop()) bc.addInstrInt(Opcode::POP_BLOCK, stmt->getLoc(), 1);
 	return true;
 }
 
@@ -70,22 +70,24 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 {
 	const lex::Lexeme &val = stmt->getLexValue();
 	switch(val.getTokVal()) {
-	case lex::IDEN: // fallthrough
+	case lex::IDEN:
+		bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataStr());
+		return true;
 	case lex::STR:
-		bc.addInstrStr(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataStr());
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataStr());
 		return true;
 	case lex::INT:
-		bc.addInstrInt(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataInt());
+		bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataInt());
 		return true;
 	case lex::FLT:
-		bc.addInstrFlt(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataFlt());
+		bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataFlt());
 		return true;
 	case lex::CHAR:
-		bc.addInstrChr(Opcode::LOAD_CONST, stmt->getLoc(), val.getDataInt());
+		bc.addInstrChr(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataInt());
 		return true;
-	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), true); return true;
-	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_CONST, stmt->getLoc(), false); return true;
-	case lex::NIL: bc.addInstrNil(Opcode::LOAD_CONST, stmt->getLoc()); return true;
+	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
+	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
+	case lex::NIL: bc.addInstrNil(Opcode::LOAD_DATA, stmt->getLoc()); return true;
 	default: break;
 	}
 	err::out(stmt,
@@ -107,6 +109,18 @@ bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 			return false;
 		}
 	}
+	// arginfo:
+	// 0 => simple
+	// 1 => keyword
+	// 2 => unpack
+	String arginfo;
+	for(size_t i = 0; i < stmt->getArgs().size(); ++i) {
+		auto &a = stmt->getArg(i);
+		if(a->isVar()) arginfo += '1';
+		else if(stmt->unpackArg(i)) arginfo += '2';
+		else arginfo += '0';
+	}
+	fncallarginfo.push_back(ctx.moveStr(std::move(arginfo)));
 	return true;
 }
 
@@ -116,11 +130,42 @@ bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 {
+	// if LHS is a dot operation and the current expr is a function call, we want the
+	// member function call instr to be emitted
+	StringRef attrname;
 	// index to edit from where the jump after RHS is to occur (for && and || operations)
 	size_t logicaljmploc;
 	lex::TokType oper = stmt->getOperTok().getVal();
 
-	if(!visit(stmt->getLHS(), &stmt->getLHS())) {
+	size_t or_jmp_pos = 0;
+	if(stmt->getOrBlk()) {
+		StmtBlock *orblk = stmt->getOrBlk();
+		lex::Lexeme &var = stmt->getOrBlkVar();
+		or_jmp_pos	 = bc.size();
+		bc.addInstrInt(Opcode::PUSH_JMP, orblk->getLoc(), 0); // placeholder
+		if(!var.getDataStr().empty()) {
+			bc.addInstrStr(Opcode::PUSH_JMP_NAME, var.getLoc(), var.getDataStr());
+		}
+	}
+
+	// handle member function call - we don't want ATTR instr to be emitted so we take care
+	// of the whole thing ourselves
+	if(oper == lex::FNCALL && stmt->getLHS()->isExpr()) {
+		StmtExpr *l = as<StmtExpr>(stmt->getLHS());
+		if(l->getOperTok().getVal() == lex::DOT) {
+			assert(l->getRHS()->isSimple() &&
+			       "RHS of dot operation must always be an identifier");
+			if(!visit(l->getLHS(), &l->getLHS())) {
+				err::out(l->getLHS(),
+					 {"failed to generate bytecode for LHS of dot operation"});
+				return false;
+			}
+			attrname = as<StmtSimple>(l->getRHS())->getLexDataStr();
+			bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), attrname);
+		}
+	}
+
+	if(attrname.empty() && !visit(stmt->getLHS(), &stmt->getLHS())) {
 		err::out(stmt->getLHS(), {"failed to generate code for LHS of expression"});
 		return false;
 	}
@@ -135,79 +180,45 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 		bc.addInstrInt(Opcode::UNLOAD, stmt->getLHS()->getLoc(), 1);
 	}
 
-	if(stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
+	// for operator based memcall, the operator must come before RHS (AKA the memcall arg)
+	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL) {
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(), lex::TokStrs[oper]);
+	}
+
+	if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
 		err::out(stmt->getRHS(), {"failed to generate code for RHS of expression"});
 		return false;
 	}
 
 	if(oper == lex::LAND || oper == lex::LOR) bc.updateInstrInt(logicaljmploc, bc.size());
 
-	switch(oper) {
-	case lex::ASSN: bc.addInstrInt(Opcode::ASSN, stmt->getLoc(), 0); break;
-	// Arithmetic
-	case lex::ADD: bc.addInstrInt(Opcode::ADD, stmt->getLoc(), 0); break;
-	case lex::SUB: bc.addInstrInt(Opcode::SUB, stmt->getLoc(), 0); break;
-	case lex::MUL: bc.addInstrInt(Opcode::MUL, stmt->getLoc(), 0); break;
-	case lex::DIV: bc.addInstrInt(Opcode::DIV, stmt->getLoc(), 0); break;
-	case lex::MOD: bc.addInstrInt(Opcode::MOD, stmt->getLoc(), 0); break;
-	case lex::ADD_ASSN: bc.addInstrInt(Opcode::ADD_ASSN, stmt->getLoc(), 0); break;
-	case lex::SUB_ASSN: bc.addInstrInt(Opcode::SUB_ASSN, stmt->getLoc(), 0); break;
-	case lex::MUL_ASSN: bc.addInstrInt(Opcode::MUL_ASSN, stmt->getLoc(), 0); break;
-	case lex::DIV_ASSN: bc.addInstrInt(Opcode::DIV_ASSN, stmt->getLoc(), 0); break;
-	case lex::MOD_ASSN: bc.addInstrInt(Opcode::MOD_ASSN, stmt->getLoc(), 0); break;
-	// Post/Pre Inc/Dec
-	case lex::XINC: bc.addInstrInt(Opcode::XINC, stmt->getLoc(), 0); break;
-	case lex::INCX: bc.addInstrInt(Opcode::INCX, stmt->getLoc(), 0); break;
-	case lex::XDEC: bc.addInstrInt(Opcode::XDEC, stmt->getLoc(), 0); break;
-	case lex::DECX: bc.addInstrInt(Opcode::DECX, stmt->getLoc(), 0); break;
-	// Unary
-	case lex::UADD: bc.addInstrInt(Opcode::UADD, stmt->getLoc(), 0); break;
-	case lex::USUB: bc.addInstrInt(Opcode::USUB, stmt->getLoc(), 0); break;
-	case lex::UAND: bc.addInstrInt(Opcode::UAND, stmt->getLoc(), 0); break;
-	case lex::UMUL: bc.addInstrInt(Opcode::UMUL, stmt->getLoc(), 0); break;
-	// Logic (LAND and LOR are handled using jmps)
-	case lex::LAND: break;
-	case lex::LOR: break;
-	case lex::LNOT: bc.addInstrInt(Opcode::LNOT, stmt->getLoc(), 0); break;
-	// Comparison
-	case lex::EQ: bc.addInstrInt(Opcode::EQ, stmt->getLoc(), 0); break;
-	case lex::LT: bc.addInstrInt(Opcode::LT, stmt->getLoc(), 0); break;
-	case lex::GT: bc.addInstrInt(Opcode::GT, stmt->getLoc(), 0); break;
-	case lex::LE: bc.addInstrInt(Opcode::LE, stmt->getLoc(), 0); break;
-	case lex::GE: bc.addInstrInt(Opcode::GE, stmt->getLoc(), 0); break;
-	case lex::NE: bc.addInstrInt(Opcode::NE, stmt->getLoc(), 0); break;
-	// Bitwise
-	case lex::BAND: bc.addInstrInt(Opcode::BAND, stmt->getLoc(), 0); break;
-	case lex::BOR: bc.addInstrInt(Opcode::BOR, stmt->getLoc(), 0); break;
-	case lex::BNOT: bc.addInstrInt(Opcode::BNOT, stmt->getLoc(), 0); break;
-	case lex::BXOR: bc.addInstrInt(Opcode::BXOR, stmt->getLoc(), 0); break;
-	case lex::BAND_ASSN: bc.addInstrInt(Opcode::BAND_ASSN, stmt->getLoc(), 0); break;
-	case lex::BOR_ASSN: bc.addInstrInt(Opcode::BOR_ASSN, stmt->getLoc(), 0); break;
-	case lex::BNOT_ASSN: bc.addInstrInt(Opcode::BNOT_ASSN, stmt->getLoc(), 0); break;
-	case lex::BXOR_ASSN: bc.addInstrInt(Opcode::BXOR_ASSN, stmt->getLoc(), 0); break;
-	// Others
-	case lex::LSHIFT: bc.addInstrInt(Opcode::LSHIFT, stmt->getLoc(), 0); break;
-	case lex::RSHIFT: bc.addInstrInt(Opcode::RSHIFT, stmt->getLoc(), 0); break;
-	case lex::LSHIFT_ASSN: bc.addInstrInt(Opcode::LSHIFT_ASSN, stmt->getLoc(), 0); break;
-	case lex::RSHIFT_ASSN: bc.addInstrInt(Opcode::RSHIFT_ASSN, stmt->getLoc(), 0); break;
-	case lex::SUBS: bc.addInstrInt(Opcode::SUBS, stmt->getLoc(), 0); break;
-	case lex::DOT: bc.addInstrInt(Opcode::DOT, stmt->getLoc(), 0); break;
-	case lex::FNCALL: {
-		// TODO: technically an assert
-		if(!stmt->getRHS()->isFnArgs()) {
-			err::out(stmt->getRHS(), {"unexpected internal failure: fnargs expected "
-						  "but not found during codegen"});
+	if(oper == lex::ASSN) {
+		bc.addInstrNil(Opcode::STORE, stmt->getLoc());
+	} else if(oper == lex::DOT) {
+		assert(stmt->getRHS()->isSimple() &&
+		       "RHS of dot operation must always be an identifier");
+		StmtSimple *r = as<StmtSimple>(stmt->getRHS());
+		bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
+	} else if(oper == lex::FNCALL) {
+		assert(stmt->getRHS()->isFnArgs() && "fnargs expected as RHS for function call");
+		bc.addInstrStr(attrname.empty() ? Opcode::CALL : Opcode::MEM_CALL, stmt->getLoc(),
+			       fncallarginfo.back());
+		fncallarginfo.pop_back();
+	} else {
+		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), "0");
+	}
+
+	if(stmt->getOrBlk()) {
+		StmtBlock *&orblk = stmt->getOrBlk();
+		bc.addInstrNil(Opcode::POP_JMP, orblk->getLoc());
+		size_t bypass_orblk = bc.size();
+		bc.addInstrInt(Opcode::JMP, orblk->getLoc(), 0);
+		bc.updateInstrInt(or_jmp_pos, bc.size());
+		if(!visit(orblk, asStmt(&orblk))) {
+			err::out(orblk, {"failed to generate bytecode for or-block of expression"});
 			return false;
 		}
-		size_t args = as<StmtFnArgs>(stmt->getRHS())->getArgs().size();
-		bc.addInstrInt(Opcode::FNCALL, stmt->getLoc(), args);
-		break;
-	}
-	default: {
-		err::out(stmt, {"invalid operator during codegen: ",
-				lex::TokStrs[stmt->getOperTok().getVal()]});
-		return false;
-	}
+		bc.updateInstrInt(bypass_orblk, bc.size());
 	}
 	return true;
 }
@@ -231,8 +242,17 @@ bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 			 {"failed to generate bytecode of variable val: ", name.getDataStr()});
 		return false;
 	}
-	if(stmt->isConst()) bc.addInstrStr(Opcode::CREATE_CONST, stmt->getLoc(), name.getDataStr());
-	else bc.addInstrStr(Opcode::CREATE_VAR, stmt->getLoc(), name.getDataStr());
+	if(stmt->getIn()) {
+		if(!visit(stmt->getIn(), asStmt(&stmt->getIn()))) {
+			err::out(stmt->getIn(), {"failed to generate bytecode for 'in' part"});
+			return false;
+		}
+		bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), name.getDataStr());
+		return true;
+	}
+	// if the var is a function arg, CREATE instr must not be created
+	if(stmt->isArg()) bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), name.getDataStr());
+	else bc.addInstrStr(Opcode::CREATE, stmt->getLoc(), name.getDataStr());
 	return true;
 }
 
@@ -242,17 +262,28 @@ bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 {
-	for(ssize_t i = stmt->getArgs().size() - 1; i >= 0; --i) {
-		auto &arg = stmt->getArg(i);
-		bc.addInstrInt(Opcode::LOAD_ARG, arg->getLoc(), i);
-		if(arg->isConst()) {
-			bc.addInstrStr(Opcode::CREATE_CONST, arg->getLoc(),
-				       arg->getName().getDataStr());
-		} else {
-			bc.addInstrStr(Opcode::CREATE_VAR, arg->getLoc(),
-				       arg->getName().getDataStr());
+	String arginfo;
+	arginfo += stmt->getKwArg() ? "1" : "0";
+	arginfo += stmt->getVaArg() ? "1" : "0";
+	Vector<StmtVar *> &args = stmt->getArgs();
+	for(auto arg = args.rbegin(); arg != args.rend(); ++arg) {
+		auto &a = *arg;
+		if(!visit(a, asStmt(&a))) {
+			err::out(a, {"failed to generate bytecode for function parameter: ",
+				     a->getName().getDataStr()});
+			return false;
 		}
 	}
+	if(stmt->getKwArg())
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
+			       stmt->getKwArg()->getLexDataStr());
+	if(stmt->getVaArg())
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
+			       stmt->getVaArg()->getLexDataStr());
+	for(auto &a : args) {
+		arginfo += a->getVal() ? "1" : "0";
+	}
+	fndefarginfo.push_back(ctx.moveStr(std::move(arginfo)));
 	return true;
 }
 
@@ -270,10 +301,12 @@ bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source)
 		return false;
 	}
 	bc.updateInstrInt(block_till_loc, bc.size() - 1);
-	// toGenInBlock is cleared in StmtBlock::visit()
-	size_t arginfo = stmt->getSigArgs().size();
-	if(stmt->isSigVariadic()) arginfo = addVariadicFlag(arginfo);
-	bc.addInstrInt(Opcode::CREATE_FN, stmt->getLoc(), arginfo);
+	if(!visit(stmt->getSig(), asStmt(&stmt->getSig()))) {
+		err::out(stmt, {"failed to generate bytecode for function signature"});
+		return false;
+	}
+	bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), fndefarginfo.back());
+	fndefarginfo.pop_back();
 	return true;
 }
 
@@ -330,7 +363,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 	size_t condloc	  = 0;
 	size_t condjmploc = 0;
 
-	bc.addInstrInt(Opcode::PUSH_LAYER, stmt->getLoc(), 1);
+	bc.addInstrNil(Opcode::PUSH_LOOP, stmt->getLoc());
 	if(init) {
 		if(!visit(init, &init)) {
 			err::out(init, {"failed to generate code for loop init"});
@@ -366,7 +399,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 	}
 	bc.addInstrInt(Opcode::JMP, stmt->getLoc(), condloc); // jmp back to condition
 	if(cond) bc.updateInstrInt(condjmploc, bc.size());
-	bc.addInstrInt(Opcode::POP_LAYER, stmt->getLoc(), 1);
+	bc.addInstrNil(Opcode::POP_LOOP, stmt->getLoc());
 	return true;
 }
 
@@ -390,7 +423,7 @@ bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
 {
-	bc.addInstrInt(Opcode::CONTINUE, stmt->getLoc(), 0);
+	bc.addInstrNil(Opcode::CONTINUE, stmt->getLoc());
 	return true;
 }
 
@@ -400,7 +433,7 @@ bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source)
 {
-	bc.addInstrInt(Opcode::BREAK, stmt->getLoc(), 0);
+	bc.addInstrNil(Opcode::BREAK, stmt->getLoc());
 	return true;
 }
 

@@ -9,78 +9,44 @@ class ModuleLoc;
 
 enum class Opcode : uint8_t
 {
-	LOAD_CONST,    // laod a const int/float/char/string from operand on the stack
+	LOAD_DATA,     // laod a const int/float/char/string from operand on the stack
 	UNLOAD,	       // unload from stack; operand = count of unloads to perform
-	CREATE_VAR,    // create a variable with name as operand, value present in stack
-	CREATE_CONST,  // create a const variable with name as operand, value present in stack
-	PUSH_LAYER,    // push a layer for variables on stack; operand = count of layers to push
-	POP_LAYER,     // pop a layer of variables from stack; operand = count of layers to pop
-	LOAD_ARG,      // load a funtion arg by index (to create func args in body); operand = index
-		       // of arg to be fetched
-	RETURN,	       // self explanatory; operand = true if a val exists, false for void
+	STORE,	       // store data in a variable; no operand
+	CREATE,	       // create a variable with name as operand, value present in stack
+	CREATE_IN,     // create a variable with name as operand, value and 'in' present in stack
+	PUSH_BLOCK,    // push a layer for variables on stack; operand = count of layers to push
+	POP_BLOCK,     // pop a layer of variables from stack; operand = count of layers to pop
+	PUSH_LOOP,     // special handling for loops
+	POP_LOOP,      // special handling for loops
+	RETURN,	       // self explanatory; operand = true if a val exists, false for void/nil
 	BLOCK_TILL,    // create a block (for function); operand = index till which block exists
-	CREATE_FN,     // self explanatory; operand = first char boolean -> true if variadic,
-		       // second char -> number of args (char itself is the number)
-		       // also loads the block from stack (created via BLOCK_TILL)
+	CREATE_FN,     // self explanatory; operand = string:
+		       // first char '1' if function contains keyword arg, else '0';
+		       // second char '1' if function contains variadic, else '0';
+		       // rest chars '1' if the equivalent arg has default value, else '0'
 	CONTINUE,      // self explanatory; no operand
 	BREAK,	       // self explanatory, no operand
 	JMP,	       // jump unconditionally; operand = index in bytecode to jump to
 	JMP_TRUE,      // jump if true; operand = index in bytecode to jump to
 	JMP_FALSE,     // jump if false; operand = index in bytecode to jump to
-	JMP_POP,       // jump unconditionally; operand = index in bytecode to jump to
 	JMP_TRUE_POP,  // jump if true; operand = index in bytecode to jump to
 	JMP_FALSE_POP, // jump if false; operand = index in bytecode to jump to
 
-	// Operators
-	// None of the operators have an operand
-	ASSN,
-	// Arithmetic
-	ADD,
-	SUB,
-	MUL,
-	DIV,
-	MOD,
-	ADD_ASSN,
-	SUB_ASSN,
-	MUL_ASSN,
-	DIV_ASSN,
-	MOD_ASSN,
-	// Post/Pre Inc/Dec
-	XINC,
-	INCX,
-	XDEC,
-	DECX,
-	// Unary
-	UADD,
-	USUB,
-	UAND, // address of
-	UMUL, // dereference
-	// Logic (LAND and LOR are handled using jmps)
-	LNOT,
-	// Comparison
-	EQ,
-	LT,
-	GT,
-	LE,
-	GE,
-	NE,
-	// Bitwise
-	BAND,
-	BOR,
-	BNOT,
-	BXOR,
-	BAND_ASSN,
-	BOR_ASSN,
-	BNOT_ASSN,
-	BXOR_ASSN,
-	// Others
-	LSHIFT,
-	RSHIFT,
-	LSHIFT_ASSN,
-	RSHIFT_ASSN,
-	SUBS,
-	DOT,	// attribute operation
-	FNCALL, // operand = count of args
+	// for 'or' block
+	PUSH_JMP,      // marks the position to jump to if 'or' exists in an expression
+	PUSH_JMP_NAME, // sets the variable name for last jump instr (must occur after PUSH_JMP)
+	POP_JMP,       // unmarks the position to jump to if 'or' exists in an expression
+
+	ATTR, // operand = string - attribute name
+
+	// arginfo:
+	// 0 => simple
+	// 1 => keyword
+	// 2 => unpack
+	CALL,	  // operand = string of arginfo
+	MEM_CALL, // operand = string of arginfo
+
+	LAST, // used only as a case in execution
 };
 
 StringRef getOpcodeStr(Opcode opcode);
@@ -102,10 +68,8 @@ enum class DataType : uint8_t
 	FLT,
 	CHR,
 	STR,
+	IDEN,
 };
-
-inline int64_t addVariadicFlag(int64_t arginfo) { return arginfo |= (int64_t)1 << 63; }
-inline bool hasVariadicFlag(int64_t arginfo) { return arginfo & ((int64_t)1 << 63); }
 
 class Instruction
 {
@@ -115,7 +79,7 @@ class Instruction
 	Opcode opcode;
 
 public:
-	Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data);
+	Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype);
 	Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, char data);
@@ -123,19 +87,14 @@ public:
 	Instruction(Opcode opcode, const ModuleLoc *loc); // for nil
 
 #define isDataX(X, ENUMVAL) \
-	inline bool is##X() const { return dtype == DataType::ENUMVAL; }
+	inline bool isData##X() const { return dtype == DataType::ENUMVAL; }
 	isDataX(Bool, BOOL);
 	isDataX(Nil, NIL);
 	isDataX(Chr, CHR);
 	isDataX(Int, INT);
 	isDataX(Flt, FLT);
 	isDataX(Str, STR);
-
-#define isX(X, ENUMVAL) \
-	inline bool is##X() const { return opcode == Opcode::ENUMVAL; }
-	isX(LoadConst, LOAD_CONST);
-	isX(Unload, UNLOAD);
-	isX(CreateVar, CREATE_VAR);
+	isDataX(Iden, IDEN);
 
 	inline void setInt(int64_t dat) { data.i = dat; }
 
@@ -146,6 +105,7 @@ public:
 	inline char getDataChr() const { return data.c; }
 	inline bool getDataBool() const { return data.b; }
 
+	inline Data &getData() { return data; }
 	inline DataType getDataType() const { return dtype; }
 	inline Opcode getOpcode() const { return opcode; }
 };
@@ -160,7 +120,11 @@ public:
 
 	inline void addInstrStr(Opcode opcode, const ModuleLoc *loc, StringRef data)
 	{
-		code.emplace_back(opcode, loc, data);
+		code.emplace_back(opcode, loc, data, DataType::STR);
+	}
+	inline void addInstrIden(Opcode opcode, const ModuleLoc *loc, StringRef data)
+	{
+		code.emplace_back(opcode, loc, data, DataType::IDEN);
 	}
 	inline void addInstrInt(Opcode opcode, const ModuleLoc *loc, int64_t data)
 	{

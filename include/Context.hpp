@@ -34,9 +34,9 @@ public:
 
 	ModuleLoc *allocModuleLoc(Module *mod, size_t line, size_t col);
 
-	template<typename T, typename... Args> T *allocStmt(Args... args)
+	template<typename T, typename... Args> T *allocStmt(Args &&...args)
 	{
-		T *res = new T(args...);
+		T *res = new T(std::forward<Args>(args)...);
 		stmtmem.push_front(res);
 		return res;
 	}

@@ -88,8 +88,8 @@ const char *TokStrs[_LAST] = {
 "{}",
 
 // Varargs
-"x...",
 "...x",
+"x...",
 
 // Separators
 ".",

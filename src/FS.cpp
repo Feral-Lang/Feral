@@ -17,6 +17,7 @@ static int total_lines = 0;
 
 int getTotalLines() { return total_lines; }
 
+bool exists(const char *loc) { return access(loc, F_OK) != -1; }
 bool exists(const String &loc) { return access(loc.c_str(), F_OK) != -1; }
 
 bool read(const String &file, String &data)
@@ -48,13 +49,14 @@ bool read(const String &file, String &data)
 	return true;
 }
 
-String absPath(const String &loc)
+String absPath(const char *loc)
 {
 	static char abs[MAX_PATH_CHARS];
-	static char abs_tmp[MAX_PATH_CHARS];
-	realpath(loc.c_str(), abs);
+	realpath(loc, abs);
 	return abs;
 }
+
+String absPath(const String &loc) { return absPath(loc.c_str()); }
 
 String getCWD()
 {
@@ -67,7 +69,7 @@ String getCWD()
 
 bool setCWD(const String &path) { return chdir(path.c_str()) != 0; }
 
-String parentDir(const String &path) { return path.substr(0, path.find_last_of("/\\")); }
+StringRef parentDir(StringRef path) { return path.substr(0, path.find_last_of("/\\")); }
 
 String home()
 {

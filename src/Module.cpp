@@ -9,8 +9,9 @@
 namespace fer
 {
 
-Module::Module(Context &ctx, StringRef id, StringRef path, StringRef code, bool is_main_module)
-	: ctx(ctx), id(id), path(path), code(code), tokens(), ptree(nullptr),
+Module::Module(Context &ctx, StringRef id, StringRef path, StringRef dir, StringRef code,
+	       bool is_main_module)
+	: ctx(ctx), id(id), path(path), dir(dir), code(code), tokens(), ptree(nullptr),
 	  is_main_module(is_main_module)
 {}
 Module::~Module() {}

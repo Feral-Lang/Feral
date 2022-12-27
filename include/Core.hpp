@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <deque>
 #include <forward_list>
 #include <initializer_list>

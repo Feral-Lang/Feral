@@ -134,6 +134,7 @@ list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
 
 add_executable(feralvm "${PROJECT_SOURCE_DIR}/src/VMMain.cpp" ${SRCS} ${INCS})
 target_include_directories(feralvm PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feralvm ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(feralvm
 	PROPERTIES
 	OUTPUT_NAME feralvm
@@ -155,6 +156,7 @@ list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
 
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp" ${SRCS} ${INCS})
 target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feral ${MPFR_LIBRARIES} ${GMP_LIBRARY})
 set_target_properties(feral
 	PROPERTIES
 	OUTPUT_NAME feral-new
