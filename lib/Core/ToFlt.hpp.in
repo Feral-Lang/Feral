@@ -1,0 +1,60 @@
+Var *nilToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarFlt>(loc, 0.0);
+}
+
+Var *boolToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->get() ? 1.0 : 0.0);
+}
+
+Var *intToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getSrc());
+}
+
+Var *fltToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	return args[0];
+}
+
+Var *strToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, {"base must be an integer, found: ", vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	VarFlt *res = vm.makeVar<VarFlt>(loc, 0.0);
+	int tmp =
+	mpfr_set_str(res->get(), as<VarStr>(args[0])->get().c_str(),
+		     mpz_get_ui(as<VarInt>(args[1])->get()), mpfr_get_default_rounding_mode());
+	if(tmp == 0) return res;
+	vm.unmakeVar(res);
+	return vm.getNil();
+}
+
+Var *strRefToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, {"base must be an integer, found: ", vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	StringRef dat = as<VarStrRef>(args[0])->get();
+	size_t datsz  = dat.size();
+	char *data    = new char[datsz + 1];
+	strncpy(data, dat.data(), datsz);
+	data[datsz] = '\0';
+	VarFlt *res = vm.makeVar<VarFlt>(loc, 0.0);
+	int tmp	    = mpfr_set_str(res->get(), data, mpz_get_ui(as<VarInt>(args[1])->get()),
+				   mpfr_get_default_rounding_mode());
+	delete[] data;
+	if(tmp == 0) return res;
+	vm.unmakeVar(res);
+	return vm.getNil();
+}

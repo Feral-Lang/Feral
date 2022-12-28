@@ -90,7 +90,7 @@ public:
 	{
 		fnvars[fnstack]->add(name, val, iref);
 	}
-	// add variable to module level unconditionally (for interp.registerNewType())
+	// add variable to module level unconditionally (for vm.registerNewType())
 	inline void addm(StringRef name, Var *val, bool iref) { fnvars[0]->add(name, val, iref); }
 	inline bool rem(StringRef name, bool dref) { return fnvars[fnstack]->rem(name, dref); }
 

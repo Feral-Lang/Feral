@@ -1,0 +1,23 @@
+mload("std/FS");
+let stat = import("std/stat");
+
+let fopen = fn(file, mode = "r") {
+	return fopenNative(file, mode);
+};
+
+let reopen in FileTy = fn(file, mode = "r") {
+	return self.reopenNative(file, mode);
+};
+
+let walkDir = fn(dir, mode = WALK_RECURSE, regex = "(.*)") {
+	return walkDirNative(dir, mode, regex);
+};
+
+let fdOpen = fn(name, mode = O_RDONLY) {
+	return fdOpenNative(name, mode);
+};
+
+let dirExists = fn(name) {
+	if !exists(name) { return false; }
+	return stat.stat(name).isDir();
+};

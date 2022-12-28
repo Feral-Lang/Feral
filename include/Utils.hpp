@@ -28,4 +28,6 @@ Vector<StringRef> stringDelim(StringRef str, StringRef delim);
 // Convert special characters in string (\n, \t, ...) to raw (\\n, \\t, ...)
 void appendRawString(String &res, StringRef from);
 
+String vecToStr(Span<StringRef> items);
+
 } // namespace fer

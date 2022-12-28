@@ -16,6 +16,7 @@ enum class VarInfo
 	LOAD_AS_REF = 1 << 2,
 };
 
+struct AssnArgData;
 class Interpreter;
 
 class Var
@@ -60,7 +61,8 @@ public:
 	virtual Var *copy(const ModuleLoc *loc) = 0;
 	virtual void set(Var *from)		= 0;
 
-	virtual Var *call(const ModuleLoc *loc, Interpreter &vm, Span<Var *> args);
+	virtual Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			  const Map<StringRef, AssnArgData> &assn_args);
 	virtual void setAttr(StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
 	virtual Var *getAttr(StringRef name);
@@ -158,15 +160,17 @@ class VarInt : public Var
 
 public:
 	VarInt(const ModuleLoc *loc, int64_t _val);
-	VarInt(const ModuleLoc *loc, const mpz_t &_val);
-	VarInt(const ModuleLoc *loc, const mpfr_t &_val);
+	VarInt(const ModuleLoc *loc, mpz_srcptr _val);
+	VarInt(const ModuleLoc *loc, mpfr_srcptr _val);
 	VarInt(const ModuleLoc *loc, const char *_val);
 	~VarInt();
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
-	inline mpz_t &get() { return val; }
+	inline mpz_ptr get() { return val; }
+	// mpz_srcptr is basically 'const mpz_ptr'
+	inline mpz_srcptr getSrc() { return val; }
 };
 
 class VarFlt : public Var
@@ -175,15 +179,17 @@ class VarFlt : public Var
 
 public:
 	VarFlt(const ModuleLoc *loc, long double _val);
-	VarFlt(const ModuleLoc *loc, const mpfr_t &_val);
-	VarFlt(const ModuleLoc *loc, const mpz_t &_val);
+	VarFlt(const ModuleLoc *loc, mpfr_srcptr _val);
+	VarFlt(const ModuleLoc *loc, mpz_srcptr _val);
 	VarFlt(const ModuleLoc *loc, const char *_val);
 	~VarFlt();
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
-	inline mpfr_t &get() { return val; }
+	inline mpfr_ptr get() { return val; }
+	// mpfr_srcptr is basically 'const mpfr_ptr'
+	inline mpfr_srcptr getSrc() { return val; }
 };
 
 class VarChar : public Var
@@ -197,7 +203,7 @@ public:
 	void set(Var *from) override;
 
 	inline void set(char newval) { val = newval; }
-	inline char get() { return val; }
+	inline char &get() { return val; }
 };
 
 class VarStr : public Var
@@ -205,8 +211,10 @@ class VarStr : public Var
 	String val;
 
 public:
+	VarStr(const ModuleLoc *loc, char val);
 	VarStr(const ModuleLoc *loc, StringRef val);
 	VarStr(const ModuleLoc *loc, InitList<StringRef> _val);
+	VarStr(const ModuleLoc *loc, const char *val, size_t count);
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
@@ -221,6 +229,7 @@ class VarStrRef : public Var
 
 public:
 	VarStrRef(const ModuleLoc *loc, StringRef val);
+	VarStrRef(const ModuleLoc *loc, const char *val, size_t count);
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
@@ -265,8 +274,15 @@ public:
 	inline bool isRefVec() { return asrefs; }
 };
 
+// used in native function calls
+struct AssnArgData
+{
+	size_t pos; // index of the arg
+	Var *val;
+};
+
 typedef Var *(*NativeFn)(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<StringRef, Var *> &assn_args);
+			 const Map<StringRef, AssnArgData> &assn_args);
 
 struct FeralFnBody
 {
@@ -299,7 +315,7 @@ public:
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, Var *> &assn_args);
+		  const Map<StringRef, AssnArgData> &assn_args) override;
 
 	inline void pushParam(StringRef param) { params.push_back(param); }
 	inline void setParams(Span<StringRef> newparams)

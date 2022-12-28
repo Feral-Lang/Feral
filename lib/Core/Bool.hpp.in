@@ -1,0 +1,26 @@
+#define BoolComparison(name, op, opname)                                                           \
+	Var *bool##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
+			const Map<StringRef, AssnArgData> &assn_args)                              \
+	{                                                                                          \
+		if(!args[1]->is<VarBool>()) {                                                      \
+			vm.fail(loc, {"expected boolean argument for logical '", opname,           \
+				      "', found: ", vm.getTypeName(args[1])});                     \
+			return nullptr;                                                            \
+		}                                                                                  \
+		return as<VarBool>(args[0])->get() op as<VarBool>(args[1])->get() ? vm.getTrue()   \
+										  : vm.getFalse(); \
+	}
+
+// logical functions
+BoolComparison(LT, <, "<");
+BoolComparison(GT, >, ">");
+BoolComparison(LE, <=, "<=");
+BoolComparison(GE, >=, ">=");
+BoolComparison(Eq, ==, "==");
+BoolComparison(Ne, !=, "!=");
+
+Var *boolNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const Map<StringRef, AssnArgData> &assn_args)
+{
+	return as<VarBool>(args[0])->get() ? vm.getFalse() : vm.getTrue();
+}

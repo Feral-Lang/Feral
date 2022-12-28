@@ -1,0 +1,5 @@
+mload("std/Bytebuffer");
+
+let new = fn(size = 0) {
+	return newNative(size);
+};

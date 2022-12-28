@@ -20,7 +20,11 @@ Var::~Var() {}
 
 uiptr Var::getTypeFnID() { return _typeid; }
 
-Var *Var::call(const ModuleLoc *loc, Interpreter &vm, Span<Var *> args) { return nullptr; }
+Var *Var::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<StringRef, AssnArgData> &assn_args)
+{
+	return nullptr;
+}
 void Var::setAttr(StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
@@ -59,7 +63,7 @@ void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarBool::VarBool(const ModuleLoc *loc, bool val)
-	: Var(loc, typeID<VarTypeID>(), false, false), val(val)
+	: Var(loc, typeID<VarBool>(), false, false), val(val)
 {}
 Var *VarBool::copy(const ModuleLoc *loc) { return new VarBool(loc, val); }
 void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
@@ -72,11 +76,11 @@ VarInt::VarInt(const ModuleLoc *loc, int64_t _val) : Var(loc, typeID<VarInt>(), 
 {
 	mpz_init_set_si(val, _val);
 }
-VarInt::VarInt(const ModuleLoc *loc, const mpz_t &_val) : Var(loc, typeID<VarInt>(), false, false)
+VarInt::VarInt(const ModuleLoc *loc, mpz_srcptr _val) : Var(loc, typeID<VarInt>(), false, false)
 {
 	mpz_init_set(val, _val);
 }
-VarInt::VarInt(const ModuleLoc *loc, const mpfr_t &_val) : Var(loc, typeID<VarInt>(), false, false)
+VarInt::VarInt(const ModuleLoc *loc, mpfr_srcptr _val) : Var(loc, typeID<VarInt>(), false, false)
 {
 	mpz_init(val);
 	mpfr_get_z(val, _val, mpfr_get_default_rounding_mode());
@@ -97,11 +101,11 @@ VarFlt::VarFlt(const ModuleLoc *loc, long double _val) : Var(loc, typeID<VarFlt>
 {
 	mpfr_init_set_ld(val, _val, mpfr_get_default_rounding_mode());
 }
-VarFlt::VarFlt(const ModuleLoc *loc, const mpfr_t &_val) : Var(loc, typeID<VarFlt>(), false, false)
+VarFlt::VarFlt(const ModuleLoc *loc, mpfr_srcptr _val) : Var(loc, typeID<VarFlt>(), false, false)
 {
 	mpfr_init_set(val, _val, mpfr_get_default_rounding_mode());
 }
-VarFlt::VarFlt(const ModuleLoc *loc, const mpz_t &_val) : Var(loc, typeID<VarFlt>(), false, false)
+VarFlt::VarFlt(const ModuleLoc *loc, mpz_srcptr _val) : Var(loc, typeID<VarFlt>(), false, false)
 {
 	mpfr_init_set_z(val, _val, mpfr_get_default_rounding_mode());
 }
@@ -130,6 +134,9 @@ void VarChar::set(Var *from) { val = as<VarChar>(from)->get(); }
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+VarStr::VarStr(const ModuleLoc *loc, char val)
+	: Var(loc, typeID<VarStr>(), false, false), val(1, val)
+{}
 VarStr::VarStr(const ModuleLoc *loc, StringRef val)
 	: Var(loc, typeID<VarStr>(), false, false), val(val)
 {}
@@ -138,6 +145,9 @@ VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val)
 {
 	for(auto &e : _val) val += e;
 }
+VarStr::VarStr(const ModuleLoc *loc, const char *val, size_t count)
+	: Var(loc, typeID<VarStr>(), false, false), val(val, count)
+{}
 Var *VarStr::copy(const ModuleLoc *loc) { return new VarStr(loc, val); }
 void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
 
@@ -147,6 +157,9 @@ void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
 
 VarStrRef::VarStrRef(const ModuleLoc *loc, StringRef val)
 	: Var(loc, typeID<VarStrRef>(), false, false), val(val)
+{}
+VarStrRef::VarStrRef(const ModuleLoc *loc, const char *val, size_t count)
+	: Var(loc, typeID<VarStrRef>(), false, false), val(val, count)
 {}
 Var *VarStrRef::copy(const ModuleLoc *loc) { return new VarStrRef(loc, val); }
 void VarStrRef::set(Var *from) { val = as<VarStrRef>(from)->get(); }
@@ -268,11 +281,11 @@ void VarFn::set(Var *from)
 	is_native   = tmp->is_native;
 }
 Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, Var *> &assn_args)
+		 const Map<StringRef, AssnArgData> &assn_args)
 {
 	Context &c = vm.getContext();
 	// -1 for self
-	if(args.size() - 1 < params.size() - assn_args.size() ||
+	if(args.size() - 1 < params.size() - assn_params.size() ||
 	   (args.size() - 1 > params.size() && var_arg.empty()))
 	{
 		vm.fail(loc,
@@ -284,8 +297,6 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(isNative()) {
 		Var *res = body.native(vm, loc, args, assn_args);
 		if(!res) return nullptr;
-		// if it's a new variable (create with makeVar<>()), set the loc
-		if(res->getRef() == 0) res->setLoc(loc);
 		vm.pushExecStack(res);
 		return vm.getNil();
 	}
@@ -308,7 +319,7 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vars->stash(aa.first, cpy, false); // copy will make sure there is ref = 1 already
 	}
 	if(!var_arg.empty()) {
-		VarVec *v = vm.makeVar<VarVec>(loc, args.size(), false);
+		VarVec *v = vm.makeVarWithRef<VarVec>(loc, args.size(), false);
 		while(i < args.size()) {
 			incref(args[i]);
 			v->push(args[i]);
@@ -317,10 +328,10 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vars->stash(var_arg, v, false);
 	}
 	if(!kw_arg.empty()) {
-		VarMap *m = vm.makeVar<VarMap>(loc, assn_args.size(), false);
+		VarMap *m = vm.makeVarWithRef<VarMap>(loc, assn_args.size(), false);
 		for(auto &a : assn_args) {
-			incref(a.second);
-			m->insert(a.first, a.second);
+			incref(a.second.val);
+			m->insert(a.first, a.second.val);
 		}
 		vars->stash(kw_arg, m, false);
 	}

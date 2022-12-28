@@ -210,8 +210,8 @@ Lexeme::Lexeme(const ModuleLoc *loc, TokType type)
 Lexeme::Lexeme(const ModuleLoc *loc, TokType type, StringRef _data)
 	: loc(loc), tok(type), data({.s = _data, .i = 0lu, .f = 0.0})
 {}
-Lexeme::Lexeme(const ModuleLoc *loc, int64_t _data)
-	: loc(loc), tok(INT), data({.s = "", .i = _data, .f = 0.0})
+Lexeme::Lexeme(const ModuleLoc *loc, TokType type, int64_t _data)
+	: loc(loc), tok(type), data({.s = "", .i = _data, .f = 0.0})
 {}
 Lexeme::Lexeme(const ModuleLoc *loc, long double _data)
 	: loc(loc), tok(FLT), data({.s = "", .i = 0lu, .f = _data})
@@ -312,6 +312,13 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			StringRef str = getName(data, i);
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
+			if(str == "__SRC_PATH__") {
+				str	  = mod->getPath();
+				str_class = STR;
+			} else if(str == "__SRC_DIR__") {
+				str	  = mod->getDir();
+				str_class = STR;
+			}
 			if(str[0] == '.') str = str.substr(0, 1);
 			if(str_class == STR || str_class == IDEN)
 			{ // place either the data itself (type = STR, IDEN)
@@ -344,7 +351,7 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 				num = num.substr(base == 8 ? 1 : 2);
 			}
 			std::from_chars(num.data(), num.data() + num.size(), intval, base);
-			toks.emplace_back(locAlloc(line, i - line_start - num.size()), intval);
+			toks.emplace_back(locAlloc(line, i - line_start - num.size()), INT, intval);
 			continue;
 		}
 
@@ -353,9 +360,13 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			String str;
 			char quote_type = 0;
 			if(!getConstStr(data, quote_type, i, line, line_start, str)) return false;
+			size_t endloc = i - line_start - str.size();
+			if(quote_type == '\'') {
+				toks.emplace_back(locAlloc(line, endloc), CHAR, str[0]);
+				continue;
+			}
 			StringRef strref = ctx.moveStr(std::move(str));
-			toks.emplace_back(locAlloc(line, i - line_start - str.size()),
-					  quote_type == '\'' ? CHAR : STR, strref);
+			toks.emplace_back(locAlloc(line, endloc), STR, strref);
 			continue;
 		}
 
@@ -756,50 +767,50 @@ void Tokenizer::removeBackSlash(String &s)
 String viewBackSlash(StringRef data)
 {
 	String res(data);
-	for(auto it = res.begin(); it != res.end(); ++it) {
-		if(*it == '\0') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\0");
+	for(size_t i = 0; i < res.size(); ++i) {
+		if(res[i] == '\0') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\0");
 			continue;
 		}
-		if(*it == '\a') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\a");
+		if(res[i] == '\a') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\a");
 			continue;
 		}
-		if(*it == '\b') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\b");
+		if(res[i] == '\b') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\b");
 			continue;
 		}
-		if(*it == '\e') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\e");
+		if(res[i] == '\e') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\e");
 			continue;
 		}
-		if(*it == '\f') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\f");
+		if(res[i] == '\f') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\f");
 			continue;
 		}
-		if(*it == '\n') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\n");
+		if(res[i] == '\n') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\n");
 			continue;
 		}
-		if(*it == '\r') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\r");
+		if(res[i] == '\r') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\r");
 			continue;
 		}
-		if(*it == '\t') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\t");
+		if(res[i] == '\t') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\t");
 			continue;
 		}
-		if(*it == '\v') {
-			it = res.erase(it);
-			res.insert(it - res.begin(), "\\v");
+		if(res[i] == '\v') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\v");
 			continue;
 		}
 	}

@@ -9,7 +9,7 @@ class ModuleLoc;
 
 enum class Opcode : uint8_t
 {
-	LOAD_DATA,     // laod a const int/float/char/string from operand on the stack
+	LOAD_DATA,     // laod a const int/float/char/string from operand onto the stack
 	UNLOAD,	       // unload from stack; operand = count of unloads to perform
 	STORE,	       // store data in a variable; no operand
 	CREATE,	       // create a variable with name as operand, value present in stack
@@ -24,9 +24,10 @@ enum class Opcode : uint8_t
 		       // first char '1' if function contains keyword arg, else '0';
 		       // second char '1' if function contains variadic, else '0';
 		       // rest chars '1' if the equivalent arg has default value, else '0'
-	CONTINUE,      // self explanatory; no operand
-	BREAK,	       // self explanatory, no operand
+	CONTINUE,      // self explanatory; operand = jump index
+	BREAK,	       // self explanatory, operand = pop loop index
 	JMP,	       // jump unconditionally; operand = index in bytecode to jump to
+	JMP_NIL,       // jump if nil (for for-in loops); operand = index in bytecode to jump to
 	JMP_TRUE,      // jump if true; operand = index in bytecode to jump to
 	JMP_FALSE,     // jump if false; operand = index in bytecode to jump to
 	JMP_TRUE_POP,  // jump if true; operand = index in bytecode to jump to

@@ -766,8 +766,9 @@ begin_brack:
 		}
 		// parse arguments
 		while(true) {
-			if(p.accept(lex::STR) && p.peekt(1) == lex::ASSN) {
-				// assn args (begins with <STR> '=')
+			if(p.accept(lex::STR, lex::IDEN) && p.peekt(1) == lex::ASSN) {
+				// assn args (begins with <STR/IDEN> '=')
+				if(p.accept(lex::IDEN)) p.sett(lex::STR);
 				lex::Lexeme &name = p.peek();
 				p.next();
 				p.next();
@@ -829,7 +830,7 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 {
 	var = nullptr;
 
-	if(!p.accept(lex::IDEN)) {
+	if(!p.accept(lex::IDEN, lex::STR)) {
 		err::out(p.peek(), {"expected identifier for variable name, found: ",
 				    p.peek().getTok().cStr()});
 		return false;
@@ -977,7 +978,7 @@ bool Parser::parseVardecl(ParseHelper &p, Stmt *&vd)
 		return false;
 	}
 
-	while(p.accept(lex::IDEN, lex::CONST)) {
+	while(p.accept(lex::IDEN, lex::STR)) {
 		if(!parseVar(p, decl, false)) return false;
 		decls.push_back(decl);
 		decl = nullptr;
@@ -1031,19 +1032,21 @@ blk:
 // ----------------------
 // will generate
 // ----------------------
+// LOOP_BEGIN
+// let __e = vec.eachRev();
+// INIT:
+// let x = __e.next();
 // {
-// let e_interm = vec.eachRev();
-// for let _e = e_interm.begin(); _e != e_interm.end(); _e = e_interm.next(_e) {
-// 	let e = e_interm.at(_e); // e is a reference
+// 	if x is nil, jump to LOOP_END (done using JMP_NIL instr)
 // 	...
 // }
-// }
+// JMP INIT
+// LOOP_END
 bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 {
 	fin = nullptr;
 
-	lex::Lexeme iter;
-	Stmt *in	   = nullptr; // L01
+	Stmt *in	   = nullptr; // Expr15
 	StmtBlock *blk	   = nullptr;
 	lex::Lexeme &start = p.peek();
 
@@ -1057,7 +1060,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 				    p.peek().getTok().cStr()});
 		return false;
 	}
-	iter = p.peek();
+	lex::Lexeme &iter = p.peek();
 	p.next();
 
 	if(!p.acceptn(lex::IN)) {
@@ -1065,7 +1068,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 		return false;
 	}
 
-	if(!parseExpr01(p, in, true)) {
+	if(!parseExpr15(p, in, true)) {
 		err::out(p.peek(), {"failed to parse expression for 'in'"});
 		return false;
 	}
@@ -1081,79 +1084,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 		return false;
 	}
 
-	const ModuleLoc *loc	= iter.getLoc();
-	lex::Lexeme in_interm	= iter; // e_interm
-	lex::Lexeme iter_interm = iter; // _e
-	lex::Lexeme lexbegin	= lex::Lexeme(loc, lex::IDEN, "begin");
-	lex::Lexeme lexend	= lex::Lexeme(loc, lex::IDEN, "end");
-	lex::Lexeme lexnext	= lex::Lexeme(loc, lex::IDEN, "next");
-	lex::Lexeme lexat	= lex::Lexeme(loc, lex::IDEN, "at");
-	lex::Lexeme dot_op	= lex::Lexeme(loc, lex::DOT);
-	lex::Lexeme call_op	= lex::Lexeme(loc, lex::FNCALL);
-	lex::Lexeme ne_op	= lex::Lexeme(loc, lex::NE);
-	lex::Lexeme assn_op	= lex::Lexeme(loc, lex::ASSN);
-
-	in_interm.setDataStr(ctx.strFrom({in_interm.getDataStr(), "_interm"}));
-	iter_interm.setDataStr(ctx.strFrom({"_", iter_interm.getDataStr()}));
-
-	StmtVar *in_interm_var =
-	StmtVar::create(ctx, in_interm.getLoc(), in_interm, nullptr, in, false);
-	// block statement 1:
-	StmtVarDecl *in_interm_vardecl = StmtVarDecl::create(ctx, loc, {in_interm_var});
-
-	// init:
-	// let <iter_interm> = <in_interm>.begin()
-	StmtSimple *init_lhs	   = StmtSimple::create(ctx, loc, in_interm);
-	StmtSimple *init_rhs	   = StmtSimple::create(ctx, loc, lexbegin);
-	StmtExpr *init_dot_expr	   = StmtExpr::create(ctx, loc, init_lhs, dot_op, init_rhs);
-	StmtFnArgs *init_call_info = StmtFnArgs::create(ctx, loc, {}, {});
-	StmtExpr *init_expr = StmtExpr::create(ctx, loc, init_dot_expr, call_op, init_call_info);
-	StmtVar *init_iter_interm_var =
-	StmtVar::create(ctx, iter_interm.getLoc(), iter_interm, nullptr, init_expr, false);
-	StmtVarDecl *init = StmtVarDecl::create(ctx, iter_interm.getLoc(), {init_iter_interm_var});
-
-	// cond:
-	// <iter_interm> != <in_interm>.end()
-	StmtSimple *cond_rhs_lhs   = StmtSimple::create(ctx, loc, in_interm);
-	StmtSimple *cond_rhs_rhs   = StmtSimple::create(ctx, loc, lexend);
-	StmtExpr *cond_dot_expr	   = StmtExpr::create(ctx, loc, cond_rhs_lhs, dot_op, cond_rhs_rhs);
-	StmtFnArgs *cond_call_info = StmtFnArgs::create(ctx, loc, {}, {});
-	StmtExpr *cond_rhs   = StmtExpr::create(ctx, loc, cond_dot_expr, call_op, cond_call_info);
-	StmtSimple *cond_lhs = StmtSimple::create(ctx, iter_interm.getLoc(), iter_interm);
-	StmtExpr *cond	     = StmtExpr::create(ctx, loc, cond_lhs, ne_op, cond_rhs);
-
-	// incr:
-	// <iter_interm> = <in_interm>.next(<iter_interm>)
-	StmtSimple *incr_lhs_lhs   = StmtSimple::create(ctx, loc, in_interm);
-	StmtSimple *incr_lhs_rhs   = StmtSimple::create(ctx, loc, lexnext);
-	StmtExpr *incr_dot_expr	   = StmtExpr::create(ctx, loc, incr_lhs_lhs, dot_op, incr_lhs_rhs);
-	StmtSimple *incr_call_arg  = StmtSimple::create(ctx, loc, iter_interm);
-	StmtFnArgs *incr_call_info = StmtFnArgs::create(ctx, loc, {incr_call_arg}, {false});
-	StmtExpr *incr_lhs   = StmtExpr::create(ctx, loc, incr_dot_expr, call_op, incr_call_info);
-	StmtSimple *incr_rhs = StmtSimple::create(ctx, iter_interm.getLoc(), iter_interm);
-	StmtExpr *incr	     = StmtExpr::create(ctx, loc, incr_lhs, assn_op, incr_rhs);
-
-	// inside loop block:
-	// let <iter> = <in_interm>.at(<iter_interm>)
-	StmtSimple *loop_var_val_lhs = StmtSimple::create(ctx, loc, in_interm);
-	StmtSimple *loop_var_val_rhs = StmtSimple::create(ctx, loc, lexat);
-	StmtExpr *loop_var_val_dot_expr =
-	StmtExpr::create(ctx, loc, loop_var_val_lhs, dot_op, loop_var_val_rhs);
-	StmtSimple *loop_var_val_call_arg = StmtSimple::create(ctx, loc, iter_interm);
-	StmtFnArgs *loop_var_val_call_info =
-	StmtFnArgs::create(ctx, loc, {loop_var_val_call_arg}, {false});
-	StmtExpr *loop_var_val =
-	StmtExpr::create(ctx, loc, loop_var_val_dot_expr, call_op, loop_var_val_call_info);
-	StmtVar *loop_var	  = StmtVar::create(ctx, loc, iter, nullptr, loop_var_val, false);
-	StmtVarDecl *loop_vardecl = StmtVarDecl::create(ctx, loc, {loop_var});
-	blk->getStmts().insert(blk->getStmts().begin(), loop_vardecl);
-
-	// StmtFor - block statement 2:
-	StmtFor *loop = StmtFor::create(ctx, start.getLoc(), init, cond, incr, blk);
-
-	// StmtBlock
-	Vector<Stmt *> outerblkstmts = {in_interm_vardecl, loop};
-	fin			     = StmtBlock::create(ctx, start.getLoc(), outerblkstmts, false);
+	fin = StmtForIn::create(ctx, start.getLoc(), iter, in, blk);
 	return true;
 }
 bool Parser::parseFor(ParseHelper &p, Stmt *&f)

@@ -199,7 +199,7 @@ public:
 	Lexeme(const ModuleLoc *loc = nullptr);
 	explicit Lexeme(const ModuleLoc *loc, TokType type);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, StringRef _data);
-	explicit Lexeme(const ModuleLoc *loc, int64_t _data);
+	explicit Lexeme(const ModuleLoc *loc, TokType type, int64_t _data);
 	explicit Lexeme(const ModuleLoc *loc, long double _data);
 
 	String str(int64_t pad = 10) const;

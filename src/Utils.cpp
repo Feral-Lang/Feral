@@ -40,4 +40,19 @@ void appendRawString(String &res, StringRef from)
 	}
 }
 
+String vecToStr(Span<StringRef> items)
+{
+	String res = "[";
+	for(auto i : items) {
+		res += i;
+		res += ", ";
+	}
+	if(!items.empty()) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "]";
+	return res;
+}
+
 } // namespace fer

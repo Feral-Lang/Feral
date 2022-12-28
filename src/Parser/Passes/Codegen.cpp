@@ -5,8 +5,6 @@
 namespace fer
 {
 
-static StmtFnSig **toGenInBlock = nullptr;
-
 CodegenParserPass::CodegenParserPass(Context &ctx, Bytecode &bc)
 	: ParserPass(ParserPass::genPassID<CodegenParserPass>(), ctx), bc(bc)
 {}
@@ -25,6 +23,7 @@ bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
 	case VARDECL: return visit(as<StmtVarDecl>(stmt), source);
 	case COND: return visit(as<StmtCond>(stmt), source);
 	case FOR: return visit(as<StmtFor>(stmt), source);
+	case FORIN: return visit(as<StmtForIn>(stmt), source);
 	case RET: return visit(as<StmtRet>(stmt), source);
 	case CONTINUE: return visit(as<StmtContinue>(stmt), source);
 	case BREAK: return visit(as<StmtBreak>(stmt), source);
@@ -41,14 +40,6 @@ bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
 bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 {
 	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_BLOCK, stmt->getLoc(), 1);
-	if(toGenInBlock) {
-		if(!visit(*toGenInBlock, asStmt(toGenInBlock))) {
-			err::out(*toGenInBlock,
-				 {"unable to generate bytecode for function signature"});
-			return false;
-		}
-		toGenInBlock = nullptr;
-	}
 	for(auto &s : stmt->getStmts()) {
 		if(!visit(s, &s)) {
 			err::out(stmt, {"failed to generate bytecode for block stmt"});
@@ -205,7 +196,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 			       fncallarginfo.back());
 		fncallarginfo.pop_back();
 	} else {
-		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), "0");
+		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), stmt->getRHS() ? "0" : "");
 	}
 
 	if(stmt->getOrBlk()) {
@@ -231,13 +222,13 @@ bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 {
 	Stmt *&val		= stmt->getVal();
 	const lex::Lexeme &name = stmt->getName();
-	if(!val) {
+	if(!val && !stmt->isArg()) {
 		err::out(stmt, {"cannot generate bytecode of"
 				" a variable with no value: ",
 				name.getDataStr()});
 		return false;
 	}
-	if(!visit(val, &val)) {
+	if(val && !visit(val, &val)) {
 		err::out(stmt,
 			 {"failed to generate bytecode of variable val: ", name.getDataStr()});
 		return false;
@@ -293,7 +284,6 @@ bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source)
 {
-	toGenInBlock	      = &stmt->getSig();
 	size_t block_till_loc = bc.size();
 	bc.addInstrInt(Opcode::BLOCK_TILL, stmt->getLoc(), 0); // 0 is a placeholder
 	if(!visit(stmt->getBlk(), asStmt(&stmt->getBlk()))) {
@@ -383,10 +373,14 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 		bc.addInstrInt(Opcode::JMP_FALSE_POP, cond->getLoc(), 0); // placeholder
 	}
 
+	size_t body_begin = bc.size();
 	if(blk && !visit(blk, asStmt(&blk))) {
 		err::out(blk, {"failed to generate code for loop block"});
 		return false;
 	}
+	// TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
+	// the Vars (and VarStack) ::continueLoop() should be able to take care of that
+	size_t body_end = bc.size(); // also = continue jump location
 
 	if(incr) {
 		if(!visit(incr, &incr)) {
@@ -399,7 +393,78 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 	}
 	bc.addInstrInt(Opcode::JMP, stmt->getLoc(), condloc); // jmp back to condition
 	if(cond) bc.updateInstrInt(condjmploc, bc.size());
+
+	size_t breakjmppos = bc.size();
 	bc.addInstrNil(Opcode::POP_LOOP, stmt->getLoc());
+
+	// update all continue and break instructions
+	for(size_t i = body_begin; i < body_end; ++i) {
+		auto &ins = bc.getInstrAt(i);
+		if(ins.getOpcode() == Opcode::CONTINUE && ins.getDataInt() == 0)
+			ins.setInt(body_end);
+		else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0)
+			ins.setInt(breakjmppos);
+	}
+	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
+{
+	lex::Lexeme &iter    = stmt->getIter();
+	Stmt *&in	     = stmt->getIn();
+	StmtBlock *&blk	     = stmt->getBlk();
+	const ModuleLoc *loc = stmt->getLoc();
+
+	bc.addInstrNil(Opcode::PUSH_LOOP, loc);
+
+	// let __<iter> = <in-expr>;
+	if(!visit(in, &in)) {
+		err::out(in, {"failed to generate bytecode for forin loop in-expr"});
+		return false;
+	}
+	StringRef __iter = ctx.strFrom({"__", iter.getDataStr()});
+	bc.addInstrStr(Opcode::CREATE, loc, __iter);
+
+	size_t continuejmppos = bc.size();
+
+	// let <iter> = __<iter>.next();
+	bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter);
+	bc.addInstrStr(Opcode::LOAD_DATA, loc, "next");
+	bc.addInstrStr(Opcode::MEM_CALL, loc, "");
+	// jump-nil location will be set later
+	size_t jmp_nil_loc = bc.size();
+	bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
+	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
+
+	size_t body_begin = bc.size();
+	if(blk && !visit(blk, asStmt(&blk))) {
+		err::out(blk, {"failed to generate code for loop block"});
+		return false;
+	}
+	// TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
+	// the Vars (and VarStack) ::continueLoop() should be able to take care of that
+	size_t body_end = bc.size();
+
+	bc.addInstrInt(Opcode::JMP, loc, continuejmppos);
+
+	// this is where break jumps to
+	size_t breakjmppos = bc.size();
+	bc.addInstrNil(Opcode::POP_LOOP, loc);
+	// update the jump-nil loc to breakpos
+	bc.updateInstrInt(jmp_nil_loc, breakjmppos);
+
+	// update all continue and break instructions
+	for(size_t i = body_begin; i < body_end; ++i) {
+		auto &ins = bc.getInstrAt(i);
+		if(ins.getOpcode() == Opcode::CONTINUE && ins.getDataInt() == 0)
+			ins.setInt(continuejmppos);
+		else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0)
+			ins.setInt(breakjmppos);
+	}
 	return true;
 }
 
@@ -423,7 +488,7 @@ bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
 {
-	bc.addInstrNil(Opcode::CONTINUE, stmt->getLoc());
+	bc.addInstrInt(Opcode::CONTINUE, stmt->getLoc(), 0); // placeholder
 	return true;
 }
 
@@ -433,7 +498,7 @@ bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source)
 {
-	bc.addInstrNil(Opcode::BREAK, stmt->getLoc());
+	bc.addInstrInt(Opcode::BREAK, stmt->getLoc(), 0); // placeholder
 	return true;
 }
 

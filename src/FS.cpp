@@ -1,7 +1,6 @@
 #include "FS.hpp"
 
 #include <cstdlib>
-#include <cstring>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -29,7 +28,7 @@ bool read(const String &file, String &data)
 
 	fp = fopen(file.c_str(), "r");
 	if(fp == NULL) {
-		fprintf(stderr, "Error: failed to open source file: %s\n", file.c_str());
+		std::cerr << "Error: failed to open source file: " << file << "\n";
 		return false;
 	}
 
@@ -42,7 +41,7 @@ bool read(const String &file, String &data)
 	if(line) free(line);
 
 	if(data.empty()) {
-		fprintf(stderr, "Error: encountered empty file: %s\n", file.c_str());
+		std::cerr << "Error: encountered empty file: " << file << "\n";
 		return false;
 	}
 

@@ -25,6 +25,7 @@ const char *Stmt::getStmtTypeCString() const
 	case VARDECL: return "variable declaration";
 	case COND: return "conditional";
 	case FOR: return "for loop";
+	case FORIN: return "forin loop";
 	case RET: return "return";
 	case CONTINUE: return "continue";
 	case BREAK: return "break";
@@ -102,15 +103,13 @@ void StmtFnArgs::disp(bool has_next)
 	tio::taba(has_next);
 	tio::print(has_next, {"Function Args: ", args.empty() ? "(empty)" : "", "\n"});
 	if(!args.empty()) {
-		tio::taba(false);
 		for(size_t i = 0; i < args.size(); ++i) {
+			tio::taba(i != args.size() - 1);
 			tio::print(i != args.size() - 1,
 				   {"Arg: [unpack = ", unpackArg(i) ? "true" : "false", "]\n"});
-			tio::taba(i != args.size() - 1);
-			args[i]->disp(i != args.size() - 1);
+			args[i]->disp(false);
 			tio::tabr();
 		}
-		tio::tabr();
 	}
 	tio::tabr();
 }
@@ -363,6 +362,37 @@ void StmtFor::disp(bool has_next)
 		incr->disp(false);
 		tio::tabr();
 	}
+	if(blk) {
+		tio::taba(false);
+		tio::print(false, {"Block:\n"});
+		blk->disp(false);
+		tio::tabr();
+	}
+	tio::tabr();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+StmtForIn::StmtForIn(const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk)
+	: Stmt(FORIN, loc), iter(iter), in(in), blk(blk)
+{}
+StmtForIn::~StmtForIn() {}
+StmtForIn *StmtForIn::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in,
+			     StmtBlock *blk)
+{
+	return c.allocStmt<StmtForIn>(loc, iter, in, blk);
+}
+
+void StmtForIn::disp(bool has_next)
+{
+	tio::taba(has_next);
+	tio::print(has_next, {"For each: ", iter.getDataStr(), "\n"});
+	tio::taba(blk);
+	tio::print(blk, {"In-Expr:\n"});
+	in->disp(false);
+	tio::tabr();
 	if(blk) {
 		tio::taba(false);
 		tio::print(false, {"Block:\n"});

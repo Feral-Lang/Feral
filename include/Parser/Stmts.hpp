@@ -20,6 +20,7 @@ enum Stmts : uint8_t
 	VARDECL, // <VAR>[, <VAR>]*
 	COND,
 	FOR,
+	FORIN,
 	RET,
 	CONTINUE,
 	BREAK,
@@ -54,6 +55,7 @@ public:
 	isStmtX(VarDecl, VARDECL);
 	isStmtX(Cond, COND);
 	isStmtX(For, FOR);
+	isStmtX(ForIn, FORIN);
 	isStmtX(Return, RET);
 	isStmtX(Continue, CONTINUE);
 	isStmtX(Break, BREAK);
@@ -297,6 +299,26 @@ public:
 	inline Stmt *&getInit() { return init; }
 	inline Stmt *&getCond() { return cond; }
 	inline Stmt *&getIncr() { return incr; }
+	inline StmtBlock *&getBlk() { return blk; }
+};
+
+class StmtForIn : public Stmt
+{
+	lex::Lexeme iter;
+	Stmt *in;
+	StmtBlock *blk;
+
+public:
+	StmtForIn(const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk);
+	~StmtForIn();
+	// init, cond, incr can be nullptr
+	static StmtForIn *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &iter,
+				 Stmt *in, StmtBlock *blk);
+
+	void disp(bool has_next);
+
+	inline lex::Lexeme &getIter() { return iter; }
+	inline Stmt *&getIn() { return in; }
 	inline StmtBlock *&getBlk() { return blk; }
 };
 

@@ -1,0 +1,41 @@
+mload("std/Vec");
+
+let "==" in VecTy = fn(other) {
+	if self._type_() != other._type_() { return false; }
+	if self.len() != other.len() { return false; }
+	let len = self.len();
+	for let i = 0; i < len; ++i {
+		if self[i] != other[i] { return false; }
+	}
+	return true;
+};
+
+# stores in the type - NOT object
+let find in VecTy = fn(obj) {
+	for data in self.each() {
+		if data == obj { return true; }
+	}
+	return false;
+};
+
+# returns true if element is found in the list, else false
+let rem in VecTy = fn(obj) {
+	let len = self.len();
+	for let i = 0; i < len; ++i {
+		if self[i] == obj {
+			self.erase(i);
+			return true;
+		}
+	}
+	return false;
+};
+
+let slice in VecTy = fn(start, end = -1) {
+	if end == -1 { end = self.len(); }
+	return self.sliceNative(start, end);
+};
+
+let sub in VecTy = fn(start, end = -1) {
+	if end == -1 { end = self.len(); }
+	return self.subNtive(start, end);
+};

@@ -41,7 +41,7 @@ set(ORIGIN "$ORIGIN")
 if(APPLE)
 	set(ORIGIN "@loader_path")
 endif()
-set(CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral;${ORIGIN}/.")
+list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
 set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -120,52 +120,117 @@ endif()
 # Set Config.hpp.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Config.hpp" @ONLY)
 
+# Install CMake modules
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/cmake_modules/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake_modules"
+)
+
 # Install C++ Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/compiler"
 	FILES_MATCHING PATTERN "*.hpp"
 )
 
-# Feral VM
+# Install Feral Imports
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
+	FILES_MATCHING PATTERN "*.fer"
+	PATTERN "lib/Core" EXCLUDE
+)
+
+# Feral Compiler/VM Library
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
-
 list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
+add_library(feral SHARED ${SRCS})
+target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feral ${MPFR_LIBRARIES} ${GMP_LIBRARY})
+set_target_properties(feral
+    PROPERTIES
+    PREFIX "lib"
+    LINK_FLAGS "${EXTRA_LD_FLAGS}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS feral
+	LIBRARY
+	  DESTINATION lib/feral/
+	  COMPONENT Libraries
+)
 
-add_executable(feralvm "${PROJECT_SOURCE_DIR}/src/VMMain.cpp" ${SRCS} ${INCS})
-target_include_directories(feralvm PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feralvm ${MPFR_LIBRARIES} ${GMP_LIBRARY})
-set_target_properties(feralvm
+# Feral VM
+add_executable(feral-vm "${PROJECT_SOURCE_DIR}/src/VMMain.cpp" ${SRCS} ${INCS})
+target_include_directories(feral-vm PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feral-vm feral)
+set_target_properties(feral-vm
 	PROPERTIES
-	OUTPUT_NAME feralvm
+	OUTPUT_NAME feral-vm
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-install(TARGETS feralvm
+install(TARGETS feral-vm
 	RUNTIME
 	  DESTINATION bin
 	  COMPONENT Binaries
 )
 
 # Feral Compiler
-file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
-file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
-
-list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
-
-add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp" ${SRCS} ${INCS})
-target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feral ${MPFR_LIBRARIES} ${GMP_LIBRARY})
-set_target_properties(feral
+add_executable(feral-compiler "${PROJECT_SOURCE_DIR}/src/Main.cpp" ${SRCS} ${INCS})
+target_include_directories(feral-compiler PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feral-compiler feral)
+set_target_properties(feral-compiler
 	PROPERTIES
 	OUTPUT_NAME feral-new
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-install(TARGETS feral
+install(TARGETS feral-compiler
 	RUNTIME
 	  DESTINATION bin
 	  COMPONENT Binaries
 )
+
+# Libraries
+file(GLOB_RECURSE mods RELATIVE "${PROJECT_SOURCE_DIR}" "lib/*.cpp")
+foreach(mod ${mods})
+	string(SUBSTRING ${mod} 4 -1 m)
+	get_filename_component(modname ${m} NAME_WE)
+	get_filename_component(moddir ${m} DIRECTORY)
+	if(NOT "${moddir}" STREQUAL "")
+		string(APPEND moddir "/")
+	endif()
+	# add dependencies
+	set(dep "")
+	if("${modname}" STREQUAL "FS") # FS
+		set(dep "BytebufferType" "FSType")
+	endif()
+	if("${modname}" STREQUAL "IO") # IO
+		set(dep "FS" "FSType")
+	endif()
+	if("${modname}" STREQUAL "Lang") # Lang
+		set(dep "StructType")
+	endif()
+	if("${modname}" STREQUAL "Stat") # Stat
+		set(dep "StructType")
+	endif()
+	if("${modname}" STREQUAL "Vec") # Vec
+		set(dep "VecType")
+	endif()
+	add_library(${modname} SHARED "${mod}")
+	target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
+	target_link_libraries(${modname} feral ${dep})
+	set_target_properties(${modname}
+	    PROPERTIES
+	    PREFIX "libferal"
+	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
+	    INSTALL_RPATH_USE_LINK_PATH TRUE
+	)
+	install(TARGETS ${modname}
+		LIBRARY
+		  DESTINATION lib/feral/${moddir}
+		  COMPONENT Libraries
+	)
+endforeach()

@@ -1,0 +1,63 @@
+Var *nilToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, 0);
+}
+
+Var *boolToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->get() ? 1 : 0);
+}
+
+Var *typeIDToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->get());
+}
+
+Var *intToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	return args[0];
+}
+
+Var *fltToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	mpfr_get_z(res->get(), as<VarFlt>(args[0])->getSrc(), mpfr_get_default_rounding_mode());
+	return res;
+}
+
+Var *charToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<StringRef, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, (int64_t)as<VarChar>(args[0])->get());
+}
+
+Var *strToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<StringRef, AssnArgData> &assn_args)
+{
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	int tmp	    = mpz_set_str(res->get(), as<VarStr>(args[0])->get().c_str(), 0);
+	if(tmp == 0) return res;
+	vm.unmakeVar(res);
+	return vm.getNil();
+}
+
+Var *strRefToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<StringRef, AssnArgData> &assn_args)
+{
+	StringRef dat = as<VarStrRef>(args[0])->get();
+	size_t datsz  = dat.size();
+	char *data    = new char[datsz + 1];
+	strncpy(data, dat.data(), datsz);
+	data[datsz] = '\0';
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	int tmp	    = mpz_set_str(res->get(), data, 0);
+	delete[] data;
+	if(tmp == 0) return res;
+	vm.unmakeVar(res);
+	return vm.getNil();
+}

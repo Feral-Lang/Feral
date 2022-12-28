@@ -25,6 +25,7 @@ StringRef getOpcodeStr(Opcode opcode)
 	case Opcode::CONTINUE: return "CONTINUE";
 	case Opcode::BREAK: return "BREAK";
 	case Opcode::JMP: return "JMP";
+	case Opcode::JMP_NIL: return "JMP_NIL";
 	case Opcode::JMP_TRUE: return "JMP_TRUE";
 	case Opcode::JMP_FALSE: return "JMP_FALSE";
 	case Opcode::JMP_TRUE_POP: return "JMP_TRUE_POP";

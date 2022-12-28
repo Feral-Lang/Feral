@@ -1,7 +1,5 @@
 #include "VM/Interpreter.hpp"
 
-#include <cstring>
-
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -13,13 +11,19 @@ namespace fer
 
 size_t MAX_RECURSE_COUNT = DEFAULT_MAX_RECURSE_COUNT;
 
-Interpreter::Interpreter(Context &c, ArgParser &argparser)
-	: c(c), argparser(argparser), tru(makeVar<VarBool>(nullptr, true)),
-	  fals(makeVar<VarBool>(nullptr, false)), nil(makeVar<VarNil>(nullptr)), exitcode(0),
-	  recurse_count(0), exit_called(false), recurse_count_exceeded(false)
+Interpreter::Interpreter(RAIIParser &parser)
+	: parser(parser), c(parser.getContext()), argparser(parser.getCommandArgs()),
+	  tru(makeVarWithRef<VarBool>(nullptr, true)),
+	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
+	  exitcode(0), recurse_count(0), exit_called(false), recurse_count_exceeded(false)
 {
 	initTypeNames();
 
+	// set core modules
+	coremods.emplace_back("Core");
+	coremods.emplace_back("Utils");
+
+	// set feral binary and base locations
 	selfbin	 = c.moveStr(env::getProcPath());
 	selfbase = fs::parentDir(fs::parentDir(selfbin));
 	char base[MAX_PATH_CHARS];
@@ -28,9 +32,9 @@ Interpreter::Interpreter(Context &c, ArgParser &argparser)
 	selfbase	      = c.moveStr(fs::absPath(base));
 
 	Span<StringRef> _cmdargs = argparser.getCodeExecArgs();
-	cmdargs			 = makeVar<VarVec>(nullptr, _cmdargs.size(), false);
+	cmdargs			 = makeVarWithRef<VarVec>(nullptr, _cmdargs.size(), false);
 	for(auto &a : _cmdargs) {
-		cmdargs->get().push_back(makeVar<VarStr>(nullptr, a));
+		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
 	includelocs.push_back(c.strFrom({selfbase, "/include/feral"}));
@@ -59,12 +63,45 @@ Interpreter::~Interpreter()
 	for(auto &mod : allmodules) decref(mod.second);
 }
 
+int Interpreter::compileAndRun(const ModuleLoc *loc, const String &file, bool main_module)
+{
+	Module *mod = parser.createModule(file, main_module);
+
+	if(!mod) return 1;
+	if(!mod->tokenize()) return 1;
+	if(argparser.has("lex")) mod->dumpTokens();
+	if(!mod->parseTokens()) return 1;
+	if(argparser.has("parse")) mod->dumpParseTree();
+	if(!mod->executeDefaultParserPasses()) {
+		err::out(loc,
+			 {"Failed to apply default parser passes on module: ", mod->getPath()});
+		return 1;
+	}
+	if(argparser.has("optparse")) mod->dumpParseTree();
+	if(!mod->genCode()) return 1;
+	if(argparser.has("ir")) mod->dumpCode();
+
+	pushModule(loc, mod);
+	if(main_module) {
+		for(auto m : coremods) {
+			if(!loadNativeModule(loc, m)) {
+				popModule();
+				return 1;
+			}
+		}
+	}
+	int res = execute();
+	popModule();
+
+	return res;
+}
+
 void Interpreter::pushModule(const ModuleLoc *loc, Module *mod)
 {
 	auto mloc	= allmodules.find(mod->getPath());
 	VarModule *mvar = nullptr;
 	if(mloc == allmodules.end()) {
-		mvar = makeVar<VarModule>(loc, mod);
+		mvar = makeVarWithRef<VarModule>(loc, mod);
 		allmodules.insert({mod->getPath(), mvar});
 	} else {
 		mvar = mloc->second;
@@ -84,35 +121,40 @@ void Interpreter::popModule()
 	modulestack.pop_back();
 }
 
-bool Interpreter::moduleExists(Span<StringRef> locs, String &mod)
+bool Interpreter::findFileIn(Span<StringRef> dirs, String &name, StringRef ext)
 {
-	size_t count = mod.size();
+	size_t count = name.size();
 	static char testpath[MAX_PATH_CHARS];
-	if(mod.front() != '~' && mod.front() != '/' && mod.front() != '.') {
-		for(auto loc : locs) {
+	if(name.front() != '~' && name.front() != '/' && name.front() != '.') {
+		for(auto loc : dirs) {
 			strncpy(testpath, loc.data(), loc.size());
 			testpath[loc.size()] = '\0';
 			strcat(testpath, "/");
-			strcat(testpath, mod.c_str());
+			strcat(testpath, name.c_str());
+			if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
+			if(fs::exists(testpath)) {
+				name = fs::absPath(testpath);
+				return true;
+			}
 		}
 	} else {
-		if(mod.front() == '~') {
-			mod.erase(mod.begin());
+		if(name.front() == '~') {
+			name.erase(name.begin());
 			static String home = env::get("HOME");
-			mod.insert(mod.begin(), home.begin(), home.end());
-		} else if(mod.front() == '.') {
+			name.insert(name.begin(), home.begin(), home.end());
+		} else if(name.front() == '.') {
 			assert(modulestack.size() > 0 &&
 			       "dot based module search cannot be done on empty modulestack");
 			StringRef dir = modulestack.back()->getMod()->getPath();
-			mod.erase(mod.begin());
-			mod.insert(mod.begin(), dir.begin(), dir.end());
+			name.erase(name.begin());
+			name.insert(name.begin(), dir.begin(), dir.end());
 		}
-		strcpy(testpath, mod.c_str());
-	}
-	strcat(testpath, MODULE_EXTENSION);
-	if(fs::exists(testpath)) {
-		mod = fs::absPath(testpath);
-		return true;
+		strcpy(testpath, name.c_str());
+		if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
+		if(fs::exists(testpath)) {
+			name = fs::absPath(testpath);
+			return true;
+		}
 	}
 	return false;
 }
@@ -122,10 +164,9 @@ bool Interpreter::loadNativeModule(const ModuleLoc *loc, StringRef modstr)
 	StringRef mod	 = modstr.substr(modstr.find_last_of('/') + 1);
 	StringRef moddir = fs::parentDir(modstr);
 	String modfilestr(modstr);
-	modfilestr += getNativeModuleExtension();
 	modfilestr.insert(modfilestr.find_last_of('/') + 1, "libferal");
-	if(!moduleExists(dlllocs, modfilestr)) {
-		fail(loc, {"module: ", mod, " not found"});
+	if(!findModule(modfilestr)) {
+		fail(loc, {"module: ", modfilestr, " not found in locs: ", vecToStr(dlllocs)});
 		return false;
 	}
 
@@ -139,11 +180,11 @@ bool Interpreter::loadNativeModule(const ModuleLoc *loc, StringRef modstr)
 		return false;
 	}
 
-	String tmp = "init_";
+	String tmp = "Init";
 	tmp += mod;
 	ModInitFn initfn = (ModInitFn)dlibs.get(modfile, tmp.c_str());
 	if(initfn == nullptr) {
-		fail(loc, {"unable to load init function from module file: ", modfile});
+		fail(loc, {"unable to load init function '", tmp, "' from module file: ", modfile});
 		dlibs.unload(modfile);
 		return false;
 	}
@@ -165,7 +206,14 @@ void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
 	if(globals.exists(name)) return;
 	globals.add(name, val, iref);
 }
-
+void Interpreter::addNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
+			      bool is_va)
+{
+	VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getMod()->getPath(), "",
+					 is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
+	for(size_t i = 0; i < args; ++i) f->pushParam("");
+	addGlobal(name, f, false);
+}
 void Interpreter::addTypeFn(uiptr _typeid, StringRef name, Var *fn, bool iref)
 {
 	auto loc    = typefns.find(_typeid);
@@ -210,39 +258,75 @@ Var *Interpreter::getConst(const ModuleLoc *loc, Data &d, DataType dataty)
 	switch(dataty) {
 	case DataType::BOOL: return d.b ? tru : fals;
 	case DataType::NIL: return nil;
-	case DataType::CHR: return makeVar<VarChar>(loc, d.c);
-	case DataType::INT: return makeVar<VarInt>(loc, d.i);
-	case DataType::FLT: return makeVar<VarFlt>(loc, d.d);
-	case DataType::STR: return makeVar<VarStrRef>(loc, d.s);
-	default: err::out(*loc, {"internal error: invalid data type encountered"});
+	case DataType::CHR: return makeVarWithRef<VarChar>(loc, d.c);
+	case DataType::INT: return makeVarWithRef<VarInt>(loc, d.i);
+	case DataType::FLT: return makeVarWithRef<VarFlt>(loc, d.d);
+	case DataType::STR: return makeVarWithRef<VarStrRef>(loc, d.s);
+	default: err::out(loc, {"internal error: invalid data type encountered"});
 	}
 	return nullptr;
 }
 
+bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
+			 const Map<StringRef, AssnArgData> &assn_args)
+{
+	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
+	bool memcall = args[0] != nullptr;
+	Var *fn	     = nullptr;
+	if(memcall) {
+		if(args[0]->isAttrBased()) fn = args[0]->getAttr(name);
+		if(!fn) fn = getTypeFn(args[0], name);
+	} else {
+		Vars *vars = getCurrModule()->getVars();
+		fn	   = vars->get(name);
+		if(!fn) fn = getGlobal(name);
+	}
+	if(!fn) {
+		if(memcall) {
+			fail(loc, {"callable '", name,
+				   "' does not exist for type: ", getTypeName(args[0])});
+		} else {
+			fail(loc, {"callable '", name, "' does not exist"});
+		}
+		return false;
+	}
+	if(!fn->call(*this, loc, args, assn_args)) {
+		if(memcall) {
+			fail(loc, {"call to '", name, "' failed for type: ", getTypeName(args[0])});
+		} else {
+			fail(loc, {"call to '", name, "' failed"});
+		}
+		return false;
+	}
+	retdata = popExecStack(false);
+	return true;
+}
+
 void Interpreter::initTypeNames()
 {
-	registerType<VarAll>("all");
+	registerType<VarAll>(nullptr, "All");
 
-	registerType<VarNil>("nil");
-	registerType<VarBool>("bool");
-	registerType<VarInt>("int");
-	registerType<VarFlt>("flt");
-	registerType<VarStr>("str");
-	registerType<VarStrRef>("strref");
-	registerType<VarVec>("vec");
-	registerType<VarMap>("map");
-	registerType<VarFn>("func");
-	registerType<VarModule>("module");
-	registerType<VarTypeID>("typeid");
+	registerType<VarNil>(nullptr, "Nil");
+	registerType<VarBool>(nullptr, "Bool");
+	registerType<VarChar>(nullptr, "Char");
+	registerType<VarInt>(nullptr, "Int");
+	registerType<VarFlt>(nullptr, "Flt");
+	registerType<VarStr>(nullptr, "Str");
+	registerType<VarStrRef>(nullptr, "StrRef");
+	registerType<VarVec>(nullptr, "Vec");
+	registerType<VarMap>(nullptr, "Map");
+	registerType<VarFn>(nullptr, "Func");
+	registerType<VarModule>(nullptr, "Module");
+	registerType<VarTypeID>(nullptr, "TypeID");
 }
 
 void Interpreter::fail(const ModuleLoc *loc, InitList<StringRef> err)
 {
 	// if there is no block in the failstack, simply show the error
 	if(failstack.empty() || exit_called) {
-		err::out(*loc, err);
+		err::out(loc, err);
 	} else {
-		failstack.push(makeVar<VarStr>(loc, err), false);
+		failstack.push(makeVarWithRef<VarStr>(loc, err), false);
 	}
 }
 

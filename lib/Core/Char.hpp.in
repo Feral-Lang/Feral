@@ -1,0 +1,123 @@
+// 'a' + 5 = 'f'
+Var *charAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>() && !args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected string/stringref/char argument"
+			      " for string addition, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	VarChar *res = vm.makeVar<VarChar>(loc, as<VarChar>(args[0])->get());
+	if(args[1]->is<VarInt>()) res->get() += mpz_get_si(as<VarInt>(args[1])->getSrc());
+	else if(args[1]->is<VarChar>()) res->get() += as<VarChar>(args[1])->get();
+	return res;
+}
+
+// 'a' * 5 = "aaaaa"
+Var *charMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, {"expected integer argument for string multiplication, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	char lhs = as<VarChar>(args[0])->get();
+	mpz_t i;
+	mpz_init_set_si(i, 0);
+	mpz_srcptr rhs = as<VarInt>(args[1])->getSrc();
+	VarStr *res    = vm.makeVar<VarStr>(loc, "");
+	for(; mpz_cmp(i, rhs) < 0; mpz_add_ui(i, i, 1)) {
+		res->get() += lhs;
+	}
+	mpz_clear(i);
+	return res;
+}
+
+// 'a' += 5 => 'f'
+Var *charAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>() && !args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected int/char argument for char add-assn, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	VarStr *res = as<VarStr>(args[0]);
+	if(args[1]->is<VarInt>()) res->get() += mpz_get_si(as<VarInt>(args[1])->getSrc());
+	else if(args[1]->is<VarChar>()) res->get() += as<VarChar>(args[1])->get();
+	return args[0];
+}
+
+// logical functions
+
+Var *charLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected char argument for logical less than, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs < rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *charGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected char argument for logical greater than, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs > rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *charLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected char argument for logical greater than, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs <= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *charGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) {
+		vm.fail(loc, {"expected char argument for logical greater than, found: ",
+			      vm.getTypeName(args[1])});
+		return nullptr;
+	}
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs >= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *charEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) return vm.getFalse();
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs == rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *charNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<StringRef, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarChar>()) return vm.getTrue();
+	char lhs = as<VarChar>(args[0])->get();
+	char rhs = as<VarChar>(args[1])->get();
+	return lhs != rhs ? vm.getTrue() : vm.getFalse();
+}

@@ -1,6 +1,5 @@
 #include "VM/DynLib.hpp"
 
-#include <cstring>
 #include <dlfcn.h>
 
 #include "Error.hpp"

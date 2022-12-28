@@ -49,36 +49,8 @@ int main(int argc, char **argv)
 	file = fs::absPath(file);
 
 	RAIIParser parser(args);
-	return compileAndRun(parser, file);
-}
-
-int compileAndRun(RAIIParser &parser, const String &file)
-{
-	ArgParser &args = parser.getCommandArgs();
-	Module *mod	= parser.createModule(file, true);
-	if(!mod) return 1;
-	if(!mod->tokenize()) return 1;
-	if(args.has("lex")) mod->dumpTokens();
-	if(!mod->parseTokens()) return 1;
-	if(args.has("parse")) mod->dumpParseTree();
-	if(!mod->executeDefaultParserPasses()) {
-		err::out({"Failed to apply default parser passes on module: ", mod->getPath()});
-		return 1;
-	}
-	if(args.has("optparse")) mod->dumpParseTree();
-	if(!mod->genCode()) return 1;
-	if(args.has("ir")) mod->dumpCode();
-
-	Interpreter interp(parser.getContext(), args);
-	interp.pushModule(nullptr, mod);
-	int res = interp.execute();
-	interp.popModule();
-
-	// convert to bytecode
-	// apply bytecode passes
-	// execute on the VM
-
-	return res;
+	Interpreter vm(parser);
+	return vm.compileAndRun(nullptr, file, true);
 }
 
 int execInteractive(ArgParser &cmdargs)

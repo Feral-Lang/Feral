@@ -22,7 +22,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 	Vector<JumpData> jmps;
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
-	Map<StringRef, Var *> assn_args;
+	Map<StringRef, AssnArgData> assn_args;
 
 	if(!custombc) vars->pushFn();
 
@@ -45,10 +45,13 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 				execstack.push(res, false);
 			} else {
 				Var *res = vars->get(ins.getDataStr());
-				if(res == nullptr) {
-					fail(ins.getLoc(),
-					     {"variable '", ins.getDataStr(), "' does not exist"});
-					goto handle_err;
+				if(!res) {
+					res = getGlobal(ins.getDataStr());
+					if(!res) {
+						fail(ins.getLoc(), {"variable '", ins.getDataStr(),
+								    "' does not exist"});
+						goto handle_err;
+					}
 				}
 				execstack.push(res);
 			}
@@ -75,10 +78,9 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		case Opcode::CREATE_IN: {
 			// back() and pop() are not combined because pop can cause the Var* to be
 			// destroyed
-			StringRef name = as<VarStrRef>(execstack.back())->get();
-			execstack.pop();
-			Var *in	 = execstack.pop(false);
-			Var *val = execstack.pop(false);
+			StringRef name = ins.getDataStr();
+			Var *in	       = execstack.pop(false);
+			Var *val       = execstack.pop(false);
 			if(in->isAttrBased()) {
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
@@ -143,6 +145,13 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			i = ins.getDataInt() - 1;
 			break;
 		}
+		case Opcode::JMP_NIL: {
+			if(execstack.back()->is<VarNil>()) {
+				execstack.pop();
+				i = ins.getDataInt() - 1;
+			}
+			break;
+		}
 		case Opcode::JMP_TRUE_POP: // fallthrough
 		case Opcode::JMP_TRUE: {
 			assert(!execstack.empty());
@@ -191,7 +200,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		}
 		case Opcode::BLOCK_TILL: {
 			bodies.push_back({i + 1, (size_t)ins.getDataInt()});
-			i = ins.getDataInt() - 1;
+			i = ins.getDataInt();
 			break;
 		}
 		case Opcode::CREATE_FN: {
@@ -211,8 +220,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 				else ++argcount;
 			}
 			VarFn *fn =
-			makeVar<VarFn>(ins.getLoc(), mod->getPath(), kw, va, argcount,
-				       assnarg_count, FnBody{.feral = bodies.back()}, false);
+			makeVarWithRef<VarFn>(ins.getLoc(), mod->getPath(), kw, va, argcount,
+					      assnarg_count, FnBody{.feral = bodies.back()}, false);
 			bodies.pop_back();
 			for(size_t i = 2; i < arginfo.size(); ++i) {
 				StringRef name = as<VarStrRef>(execstack.back())->get();
@@ -241,8 +250,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			bool memcall	  = ins.getOpcode() == Opcode::MEM_CALL;
 			StringRef arginfo = ins.getDataStr();
 			for(size_t i = 0; i < arginfo.size(); ++i) {
-				Var *a = execstack.pop(false);
 				if(arginfo[i] == '2') { // unpack
+					Var *a = execstack.pop(false);
 					if(!a->is<VarVec>()) {
 						fail(ins.getLoc(),
 						     {"expected a vector to unpack, found: ",
@@ -258,7 +267,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 				} else if(arginfo[i] == '1') {
 					StringRef name = as<VarStrRef>(execstack.back())->get();
 					execstack.pop();
-					assn_args[name] = execstack.pop(false);
+					assn_args[name] = {i, execstack.pop(false)};
 				} else if(arginfo[i] == '0') {
 					args.push_back(execstack.pop(false));
 				}
@@ -280,8 +289,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 					     {"callable '", fnname,
 					      "' does not exist for type: ", getTypeName(self)});
 				} else {
-					fail(ins.getLoc(),
-					     {"function '", fnname, "' does not exist"});
+					fail(ins.getLoc(), {"this function does not exist"});
 				}
 				decref(self);
 				goto fncall_fail;
@@ -295,28 +303,27 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			args.insert(args.begin(), self);
 
 			// call the function
-			res = fnbase->call(ins.getLoc(), *this, args);
+			res = fnbase->call(*this, ins.getLoc(), args, assn_args);
 			// don't show the following failure when exec stack count is exceeded or
 			// there'll be a GIANT stack trace
 			if(!res) {
 				if(!recurse_count_exceeded) {
 					fail(ins.getLoc(),
-					     {"function '", fnname,
-					      "' call failed, check the error above"});
+					     {"function call failed, check the error above"});
 				}
 				goto fncall_fail;
 			}
-			if(!res->is<VarNil>()) execstack.push(res, false);
+			if(!res->is<VarNil>()) execstack.push(res);
 
 			// cleanup
 			for(auto &a : args) decref(a);
-			for(auto &aa : assn_args) decref(aa.second);
+			for(auto &aa : assn_args) decref(aa.second.val);
 			if(!memcall) decref(fnbase);
 			if(exit_called) goto done;
 			break;
 		fncall_fail:
 			for(auto &a : args) decref(a);
-			for(auto &aa : assn_args) decref(aa.second);
+			for(auto &aa : assn_args) decref(aa.second.val);
 			if(!memcall) decref(fnbase);
 			goto handle_err;
 		}
@@ -379,10 +386,10 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			if(!jmps.empty() && !exit_called) {
 				i = jmps.back().pos - 1;
 				if(!jmps.back().name.empty()) {
-					Var *dat =
-					!failstack.emptyTop()
-					? failstack.pop(false)
-					: makeVar<VarStrRef>(ins.getLoc(), "unknown failure");
+					Var *dat = !failstack.emptyTop()
+						   ? failstack.pop(false)
+						   : makeVarWithRef<VarStrRef>(ins.getLoc(),
+									       "unknown failure");
 					vars->stash(jmps.back().name, dat, false);
 				}
 				jmps.pop_back();
