@@ -66,7 +66,7 @@ bool ArgParser::parse()
 			}
 			continue;
 		}
-		if(!source_done) source = arg;
+		if(!source_done && i > 0) source = arg;
 		else args.push_back(arg);
 	}
 	if(expect_val) {

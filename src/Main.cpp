@@ -10,6 +10,8 @@ using namespace fer;
 int execInteractive(ArgParser &cmdargs);
 int compileAndRun(RAIIParser &parser, const String &file);
 
+void showVersion();
+
 int main(int argc, char **argv)
 {
 	ArgParser args(argc, (const char **)argv);
@@ -28,10 +30,7 @@ int main(int argc, char **argv)
 	}
 
 	if(args.has("version")) {
-		std::cout << PROJECT_NAME << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
-			  << VERSION_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " "
-			  << TREE_STATUS << "\nBuilt with " << BUILD_CXX_COMPILER << "\nOn "
-			  << BUILD_DATE << "\n";
+		showVersion();
 		return 0;
 	}
 
@@ -55,9 +54,14 @@ int main(int argc, char **argv)
 
 int execInteractive(ArgParser &cmdargs)
 {
-	std::cout << PROJECT_NAME << " compiler " << VERSION_MAJOR << "." << VERSION_MINOR << "."
-		  << VERSION_PATCH << "(" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
-		  << "\nBuilt with " << BUILD_CXX_COMPILER << "\nOn " << BUILD_DATE << "\n";
+	showVersion();
 	// TODO:
 	return 0;
+}
+
+void showVersion()
+{
+	std::cout << PROJECT_NAME << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
+		  << VERSION_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
+		  << ")\nBuilt with " << BUILD_CXX_COMPILER << "\nOn " << BUILD_DATE << "\n";
 }
