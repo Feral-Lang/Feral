@@ -2,6 +2,7 @@
 
 #include "Config.hpp"
 #include "Error.hpp"
+#include "Utils.hpp"
 
 namespace fer
 {
@@ -34,7 +35,7 @@ bool ArgParser::parse()
 			expect_val	 = false;
 			continue;
 		}
-		if(arg.rfind("--", 0) == 0) {
+		if(startsWith(arg, "--")) {
 			if(arg.size() == 2) {
 				source_done = true;
 				continue;
@@ -52,7 +53,7 @@ bool ArgParser::parse()
 			}
 			continue;
 		}
-		if(arg.rfind("-", 0) == 0) {
+		if(startsWith(arg, "-")) {
 			arg = arg.substr(1);
 			for(auto &a : arg_defs) {
 				if(a.second.shrt == arg) {
@@ -70,12 +71,12 @@ bool ArgParser::parse()
 		else args.push_back(arg);
 	}
 	if(expect_val) {
-		err::out({"Expected value to be provided for argument: ", expect_key});
+		err::out(nullptr, "Expected value to be provided for argument: ", expect_key);
 		return false;
 	}
 	for(auto &a : arg_defs) {
 		if(a.second.reqd && opts.find(a.first) == opts.end()) {
-			err::out({"Required argument: ", a.first, " was not provided"});
+			err::out(nullptr, "Required argument: ", a.first, " was not provided");
 			return false;
 		}
 	}

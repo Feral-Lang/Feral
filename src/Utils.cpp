@@ -55,4 +55,19 @@ String vecToStr(Span<StringRef> items)
 	return res;
 }
 
+String vecToStr(Span<String> items)
+{
+	String res = "[";
+	for(auto i : items) {
+		res += i;
+		res += ", ";
+	}
+	if(!items.empty()) {
+		res.pop_back();
+		res.pop_back();
+	}
+	res += "]";
+	return res;
+}
+
 } // namespace fer

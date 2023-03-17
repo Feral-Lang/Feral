@@ -10,7 +10,7 @@ namespace fer
 
 class DynLib
 {
-	Map<StringRef, void *> handles;
+	StringMap<void *> handles;
 
 public:
 	DynLib();
@@ -19,7 +19,7 @@ public:
 	static DynLib &getInstance();
 
 	// ensure the source of filepath StringRef does NOT get deleted before DynLib instance
-	void *load(StringRef filepath);
+	void *load(const String &filepath);
 	void unload(StringRef filepath);
 	void *get(StringRef filepath, const char *sym);
 

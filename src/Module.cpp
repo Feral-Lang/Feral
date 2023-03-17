@@ -1,5 +1,6 @@
 #include "Module.hpp"
 
+#include "FS.hpp"
 #include "Lexer.hpp"
 #include "Parser/Parse.hpp"
 #include "Parser/Passes/Base.hpp"
@@ -9,11 +10,12 @@
 namespace fer
 {
 
-Module::Module(Context &ctx, StringRef id, StringRef path, StringRef dir, StringRef code,
-	       bool is_main_module)
-	: ctx(ctx), id(id), path(path), dir(dir), code(code), tokens(), ptree(nullptr),
+Module::Module(Context &ctx, size_t id, const String &path, String &&code, bool is_main_module)
+	: ctx(ctx), id(id), path(path), code(std::move(code)), tokens(), ptree(nullptr),
 	  is_main_module(is_main_module)
-{}
+{
+	dir = fs::parentDir(path);
+}
 Module::~Module() {}
 bool Module::tokenize()
 {

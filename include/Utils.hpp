@@ -29,5 +29,57 @@ Vector<StringRef> stringDelim(StringRef str, StringRef delim);
 void appendRawString(String &res, StringRef from);
 
 String vecToStr(Span<StringRef> items);
+String vecToStr(Span<String> items);
+
+inline void appendToString(String &dest) {}
+
+template<typename... Args> void appendToString(String &dest, StringRef data, Args... args);
+template<typename... Args> void appendToString(String &dest, char data, Args... args);
+template<typename... Args> void appendToString(String &dest, u8 data, Args... args);
+template<typename... Args> void appendToString(String &dest, int data, Args... args);
+template<typename... Args> void appendToString(String &dest, size_t data, Args... args);
+template<typename... Args> void appendToString(String &dest, float data, Args... args);
+template<typename... Args> void appendToString(String &dest, double data, Args... args);
+
+template<typename... Args> void appendToString(String &dest, StringRef data, Args... args)
+{
+	dest += data;
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, char data, Args... args)
+{
+	dest += data;
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, u8 data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, int data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, size_t data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, float data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, double data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename T, typename... Args> void appendToString(String &dest, Args... args)
+{
+	int tmp[] = {(appendToString(dest, args))...};
+	static_cast<void>(tmp);
+}
 
 } // namespace fer

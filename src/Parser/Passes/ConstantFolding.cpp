@@ -63,10 +63,8 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	switch(oper.getVal()) {
 	case lex::ADD: {
 		if(ltok == lex::STR && rtok == lex::STR) {
-			String res = String(l->getLexDataStr());
-			res += r->getLexDataStr();
-			StringRef resref = ctx.moveStr(std::move(res));
-			lex::Lexeme restok(l->getLoc(), lex::STR, resref);
+			lex::Lexeme restok(l->getLoc(), lex::STR, StringRef());
+			restok.setDataSecStr({l->getLexDataStr(), r->getLexDataStr()});
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		binaryIntFltOps(+);
@@ -84,8 +82,8 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 			for(int64_t i = 0; i < r->getLexDataInt(); ++i) {
 				res += l->getLexDataStr();
 			}
-			StringRef resref = ctx.moveStr(std::move(res));
-			lex::Lexeme restok(l->getLoc(), lex::STR, resref);
+			lex::Lexeme restok(l->getLoc(), lex::STR, StringRef());
+			restok.setDataSecStr(res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		// 2 * "xyz" = "xyzxyz"
@@ -95,8 +93,8 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 			for(int64_t i = 0; i < l->getLexDataInt(); ++i) {
 				res += r->getLexDataStr();
 			}
-			StringRef resref = ctx.moveStr(std::move(res));
-			lex::Lexeme restok(l->getLoc(), lex::STR, resref);
+			lex::Lexeme restok(l->getLoc(), lex::STR, StringRef());
+			restok.setDataSecStr(res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		binaryIntFltOps(*);

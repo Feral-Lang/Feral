@@ -7,13 +7,13 @@ namespace fer
 
 class VarFrame
 {
-	Map<StringRef, Var *> vars;
+	StringMap<Var *> vars;
 
 public:
 	VarFrame();
 	~VarFrame();
 
-	inline Map<StringRef, Var *> &get() { return vars; }
+	inline StringMap<Var *> &get() { return vars; }
 	inline bool exists(StringRef name) { return vars.find(name) != vars.end(); }
 
 	// use this instead of exists() if the Var* retrieval is actually required
@@ -58,7 +58,7 @@ public:
 
 class Vars
 {
-	Map<StringRef, Var *> stashed;
+	Map<String, Var *> stashed;
 	// maps function ids to VarStack
 	// 0 is the id for global scope
 	Map<size_t, VarStack *> fnvars;

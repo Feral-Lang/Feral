@@ -15,18 +15,17 @@ class Bytecode;
 class Module
 {
 	Context &ctx;
-	StringRef id;
-	StringRef path;
+	size_t id;
 	StringRef dir;
-	StringRef code;
+	String path;
+	String code;
 	Vector<lex::Lexeme> tokens;
 	Bytecode bc;
 	Stmt *ptree;
 	bool is_main_module;
 
 public:
-	Module(Context &ctx, StringRef id, StringRef path, StringRef dir, StringRef code,
-	       bool is_main_module);
+	Module(Context &ctx, size_t id, const String &path, String &&code, bool is_main_module);
 	~Module();
 
 	bool tokenize();
@@ -42,9 +41,9 @@ public:
 		return pass.visitTree(ptree);
 	}
 
-	inline StringRef getID() const { return id; }
-	inline StringRef getPath() const { return path; }
+	inline size_t getID() const { return id; }
 	inline StringRef getDir() const { return dir; }
+	inline StringRef getPath() const { return path; }
 	inline StringRef getCode() const { return code; }
 	inline bool isMainModule() const { return is_main_module; }
 	inline const Vector<lex::Lexeme> &getTokens() const { return tokens; }

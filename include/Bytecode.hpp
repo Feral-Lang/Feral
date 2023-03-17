@@ -7,7 +7,7 @@ namespace fer
 
 class ModuleLoc;
 
-enum class Opcode : uint8_t
+enum class Opcode : u8
 {
 	LOAD_DATA,     // laod a const int/float/char/string from operand onto the stack
 	UNLOAD,	       // unload from stack; operand = count of unloads to perform
@@ -57,17 +57,15 @@ union Data
 	StringRef s;
 	int64_t i;
 	long double d;
-	char c;
 	bool b;
 };
 
-enum class DataType : uint8_t
+enum class DataType : u8
 {
 	BOOL,
 	NIL,
 	INT,
 	FLT,
-	CHR,
 	STR,
 	IDEN,
 };
@@ -83,15 +81,16 @@ public:
 	Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype);
 	Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
-	Instruction(Opcode opcode, const ModuleLoc *loc, char data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, bool data);
 	Instruction(Opcode opcode, const ModuleLoc *loc); // for nil
 
-#define isDataX(X, ENUMVAL) \
-	inline bool isData##X() const { return dtype == DataType::ENUMVAL; }
+#define isDataX(X, ENUMVAL)                        \
+	inline bool isData##X() const              \
+	{                                          \
+		return dtype == DataType::ENUMVAL; \
+	}
 	isDataX(Bool, BOOL);
 	isDataX(Nil, NIL);
-	isDataX(Chr, CHR);
 	isDataX(Int, INT);
 	isDataX(Flt, FLT);
 	isDataX(Str, STR);
@@ -103,12 +102,13 @@ public:
 	inline StringRef getDataStr() const { return data.s; }
 	inline int64_t getDataInt() const { return data.i; }
 	inline long double getDataFlt() const { return data.d; }
-	inline char getDataChr() const { return data.c; }
 	inline bool getDataBool() const { return data.b; }
 
 	inline Data &getData() { return data; }
 	inline DataType getDataType() const { return dtype; }
 	inline Opcode getOpcode() const { return opcode; }
+
+	void dump(OStream &os) const;
 };
 
 class Bytecode
@@ -132,10 +132,6 @@ public:
 		code.emplace_back(opcode, loc, data);
 	}
 	inline void addInstrFlt(Opcode opcode, const ModuleLoc *loc, long double data)
-	{
-		code.emplace_back(opcode, loc, data);
-	}
-	inline void addInstrChr(Opcode opcode, const ModuleLoc *loc, char data)
 	{
 		code.emplace_back(opcode, loc, data);
 	}

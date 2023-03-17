@@ -4,12 +4,10 @@
 using namespace fer;
 
 #include "Core/Bool.hpp.in"
-#include "Core/Char.hpp.in"
 #include "Core/Flt.hpp.in"
 #include "Core/Int.hpp.in"
 #include "Core/Nil.hpp.in"
 #include "Core/Str.hpp.in"
-#include "Core/StrRef.hpp.in"
 #include "Core/ToBool.hpp.in"
 #include "Core/ToFlt.hpp.in"
 #include "Core/ToInt.hpp.in"
@@ -28,10 +26,10 @@ Var *allGetTypeFnID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
-Var *allGetTypeStrRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<StringRef, AssnArgData> &assn_args)
+Var *allGetTypeStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		   const Map<StringRef, AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStrRef>(loc, vm.getTypeName(args[0]));
+	return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
 Var *allEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -65,31 +63,26 @@ Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for raise(), found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected string argument for raise(), found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(args[1]->is<VarStr>()) {
-		vm.fail(loc, {"raised error: ", as<VarStr>(args[1])->get()});
-	} else if(args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"raised error: ", as<VarStrRef>(args[1])->get()});
-	}
+	vm.fail(loc, "raised error: ", as<VarStr>(args[1])->get());
 	return nullptr;
 }
 
 Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected argument to be of type string/stringref, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef mod =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
-	if(!vm.loadNativeModule(loc, mod)) {
-		vm.fail(loc, {"failed to load module: ", mod, "; look at the error above"});
+	if(!vm.loadNativeModule(loc, as<VarStr>(args[1])->get())) {
+		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get(),
+			"; look at the error above");
 		return nullptr;
 	}
 	return vm.getNil();
@@ -98,28 +91,25 @@ Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected argument to be of type string/stringref, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	String file;
-	if(args[1]->is<VarStr>()) {
-		file = as<VarStr>(args[1])->get();
-	} else if(args[1]->is<VarStrRef>()) {
-		file = as<VarStrRef>(args[1])->get();
-	}
+	file = as<VarStr>(args[1])->get();
 	if(!vm.findImport(file)) {
-		vm.fail(args[1]->getLoc(),
-			{"import: ", file, " not found in locs: ", vecToStr(vm.getImportDirs())});
+		vm.fail(args[1]->getLoc(), "import: ", file,
+			" not found in locs: ", vecToStr(vm.getImportDirs()));
 		return nullptr;
 	}
-	int res = vm.compileAndRun(loc, file);
-	if(res != 0) {
-		vm.fail(args[1]->getLoc(),
-			{"module import failed, look at error above (exit code: ",
-			 vm.getContext().strFrom(res), ")"});
-		return nullptr;
+	if(!vm.hasModule(file)) {
+		int res = vm.compileAndRun(loc, file);
+		if(res != 0) {
+			vm.fail(args[1]->getLoc(),
+				"module import failed, look at error above (exit code: ", res, ")");
+			return nullptr;
+		}
 	}
 	return vm.getModule(file);
 }
@@ -142,7 +132,7 @@ INIT_MODULE(Core)
 	// fundamental functions for builtin types
 	vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetTypeID, 0);
 	vm.addNativeTypeFn<VarAll>(loc, "_typefid_", allGetTypeFnID, 0);
-	vm.addNativeTypeFn<VarAll>(loc, "_typestr_", allGetTypeStrRef, 0);
+	vm.addNativeTypeFn<VarAll>(loc, "_typestr_", allGetTypeStr, 0);
 	vm.addNativeTypeFn<VarAll>(loc, "==", allEq, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "!=", allNe, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "copy", allCopy, 0);
@@ -153,9 +143,7 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarBool>(loc, "bool", boolToBool, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "bool", intToBool, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "bool", fltToBool, 0);
-	vm.addNativeTypeFn<VarChar>(loc, "bool", charToBool, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "bool", strToBool, 0);
-	vm.addNativeTypeFn<VarStrRef>(loc, "bool", strRefToBool, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "bool", vecToBool, 0);
 	vm.addNativeTypeFn<VarMap>(loc, "bool", mapToBool, 0);
 	vm.addNativeTypeFn<VarTypeID>(loc, "bool", typeIDToBool, 0);
@@ -165,9 +153,7 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarBool>(loc, "int", boolToInt, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "int", intToInt, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "int", fltToInt, 0);
-	vm.addNativeTypeFn<VarChar>(loc, "int", charToInt, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "int", strToInt, 0);
-	vm.addNativeTypeFn<VarStrRef>(loc, "int", strRefToInt, 0);
 	vm.addNativeTypeFn<VarTypeID>(loc, "int", typeIDToInt, 0);
 
 	// to float
@@ -176,7 +162,6 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarInt>(loc, "flt", intToFlt, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "flt", fltToFlt, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "flt", strToFlt, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "flt", strRefToFlt, 1);
 
 	// to string
 	vm.addNativeTypeFn<VarAll>(loc, "str", allToStr, 0);
@@ -184,9 +169,7 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarBool>(loc, "str", boolToStr, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "str", intToStr, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "str", fltToStr, 0);
-	vm.addNativeTypeFn<VarChar>(loc, "str", charToStr, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "str", strToStr, 0);
-	vm.addNativeTypeFn<VarStrRef>(loc, "str", strRefToStr, 0);
 	vm.addNativeTypeFn<VarTypeID>(loc, "str", typeIDToStr, 0);
 
 	// core type functions
@@ -283,19 +266,6 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarFlt>(loc, "==", fltEq, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, "!=", fltNe, 1);
 
-	// char
-	vm.addNativeTypeFn<VarChar>(loc, "+", charAdd, 1);
-	vm.addNativeTypeFn<VarChar>(loc, "*", charMul, 1);
-
-	vm.addNativeTypeFn<VarChar>(loc, "+=", charAddAssn, 1);
-
-	vm.addNativeTypeFn<VarChar>(loc, "<", charLT, 1);
-	vm.addNativeTypeFn<VarChar>(loc, ">", charGT, 1);
-	vm.addNativeTypeFn<VarChar>(loc, "<=", charLE, 1);
-	vm.addNativeTypeFn<VarChar>(loc, ">=", charGE, 1);
-	vm.addNativeTypeFn<VarChar>(loc, "==", charEq, 1);
-	vm.addNativeTypeFn<VarChar>(loc, "!=", charNe, 1);
-
 	// string
 	vm.addNativeTypeFn<VarStr>(loc, "+", strAdd, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "*", strMul, 1);
@@ -312,20 +282,6 @@ INIT_MODULE(Core)
 
 	vm.addNativeTypeFn<VarStr>(loc, "at", strAt, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "[]", strAt, 1);
-
-	// stringref
-	vm.addNativeTypeFn<VarStrRef>(loc, "+", strRefAdd, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "*", strRefMul, 1);
-
-	vm.addNativeTypeFn<VarStrRef>(loc, "<", strRefLT, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, ">", strRefGT, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "<=", strRefLE, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, ">=", strRefGE, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "==", strRefEq, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "!=", strRefNe, 1);
-
-	vm.addNativeTypeFn<VarStrRef>(loc, "at", strRefAt, 1);
-	vm.addNativeTypeFn<VarStrRef>(loc, "[]", strRefAt, 1);
 
 	return true;
 }

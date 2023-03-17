@@ -10,7 +10,6 @@ namespace fer::lex
 const char *TokStrs[_LAST] = {
 "INT",
 "FLT",
-"CHAR",
 "STR",
 "IDEN",
 
@@ -230,12 +229,12 @@ String Lexeme::str(int64_t pad) const
 	len = res.size() - len;
 	for(int64_t i = 0; i < pad - len; ++i) res += " ";
 	if(pad == 0) res += " ";
-	if(tok.getVal() == CHAR || tok.getVal() == STR || tok.getVal() == IDEN) {
-		res += viewBackSlash(data.s);
+	if(tok.getVal() == STR || tok.getVal() == IDEN) {
+		res += viewBackSlash(getDataStr());
 	} else if(tok.getVal() == INT) {
-		res += std::to_string(data.i);
+		res += std::to_string(getDataInt());
 	} else if(tok.getVal() == FLT) {
-		res += std::to_string(data.f);
+		res += std::to_string(getDataFlt());
 	}
 	return res;
 }
@@ -255,7 +254,7 @@ ModuleLoc *Tokenizer::locAlloc(size_t line, size_t col)
 }
 ModuleLoc Tokenizer::loc(size_t line, size_t col) { return ModuleLoc(mod, line, col); }
 
-bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
+bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 {
 	int comment_block = 0; // int to handle nested comment blocks
 	bool comment_line = false;
@@ -281,8 +280,8 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 		if(CURR == '*' && NEXT == '/') {
 			if(!comment_block) {
 				err::out(loc(line, i - line_start),
-					 {"encountered multi line comment "
-					  "terminator '*/' in non comment block"});
+					 "encountered multi line comment "
+					 "terminator '*/' in non comment block");
 				return false;
 			}
 			i += 2;
@@ -312,6 +311,7 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			StringRef str = getName(data, i);
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
+			size_t strsz	  = str.size();
 			if(str == "__SRC_PATH__") {
 				str	  = mod->getPath();
 				str_class = STR;
@@ -322,10 +322,10 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			if(str[0] == '.') str = str.substr(0, 1);
 			if(str_class == STR || str_class == IDEN)
 			{ // place either the data itself (type = STR, IDEN)
-				toks.emplace_back(locAlloc(line, i - line_start - str.size()),
-						  str_class, str);
+				toks.emplace_back(locAlloc(line, i - line_start - strsz), str_class,
+						  str);
 			} else { // or the type
-				toks.emplace_back(locAlloc(line, i - line_start - str.size()),
+				toks.emplace_back(locAlloc(line, i - line_start - strsz),
 						  str_class);
 			}
 			continue;
@@ -338,8 +338,15 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 			StringRef num	 = getNum(data, i, line, line_start, num_type, base);
 			if(num.empty()) return false;
 			if(num_type == FLT) {
+				// FIXME: from_chars() does not work with LLVM's libc++
+#if defined(_LIBCPP_VERSION)
+				String numtmp(num);
+				char *end	   = NULL;
+				long double fltval = std::strtold(numtmp.c_str(), &end);
+#else
 				long double fltval;
 				std::from_chars(num.data(), num.data() + num.size(), fltval);
+#endif
 				toks.emplace_back(locAlloc(line, i - line_start - num.size()),
 						  fltval);
 				continue;
@@ -357,16 +364,12 @@ bool Tokenizer::tokenize(StringRef data, Vector<Lexeme> &toks)
 
 		// const strings
 		if(CURR == '\"' || CURR == '\'' || CURR == '`') {
-			String str;
+			StringRef buf;
+			size_t startloc = i + 1;
 			char quote_type = 0;
-			if(!getConstStr(data, quote_type, i, line, line_start, str)) return false;
-			size_t endloc = i - line_start - str.size();
-			if(quote_type == '\'') {
-				toks.emplace_back(locAlloc(line, endloc), CHAR, str[0]);
-				continue;
-			}
-			StringRef strref = ctx.moveStr(std::move(str));
-			toks.emplace_back(locAlloc(line, endloc), STR, strref);
+			if(!getConstStr(data, quote_type, len, i, line, line_start, buf))
+				return false;
+			toks.emplace_back(locAlloc(line, startloc - line_start), STR, buf);
 			continue;
 		}
 
@@ -389,7 +392,7 @@ StringRef Tokenizer::getName(StringRef data, size_t &i)
 	}
 	if(i < len && CURR == '?') ++i;
 
-	return StringRef(data).substr(start, i - start);
+	return StringRef(&data[start], i - start);
 }
 
 TokType Tokenizer::classifyStr(StringRef str)
@@ -420,8 +423,7 @@ TokType Tokenizer::classifyStr(StringRef str)
 StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &line_start,
 			    TokType &num_type, int &base)
 {
-	size_t len = data.size();
-	String buf;
+	size_t len	      = data.size();
 	size_t first_digit_at = i;
 
 	int dot_loc = -1;
@@ -480,8 +482,8 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 		case '.':
 			if(!read_base && base != 10) {
 				err::out(loc(line, first_digit_at - line_start),
-					 {"encountered dot (.) character when base is not 10 (",
-					  ctx.strFrom((int64_t)base), ") "});
+					 "encountered dot (.) character when base is not 10 (",
+					 base, ") ");
 				return "";
 			} else if(dot_loc == -1) {
 				if(next >= '0' && next <= '9') {
@@ -492,9 +494,9 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 				}
 			} else {
 				err::out(loc(line, first_digit_at - line_start),
-					 {"encountered dot (.) character when the number being "
-					  "retrieved (from column ",
-					  ctx.strFrom(first_digit_at + 1), ") already had one"});
+					 "encountered dot (.) character when the "
+					 "number being retrieved (from column ",
+					 first_digit_at + 1, ") already had one");
 				return "";
 			}
 			read_base = false;
@@ -504,29 +506,25 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 		fail:
 			if(isalnum(c)) {
 				err::out(loc(line, first_digit_at - line_start),
-					 {"encountered invalid character '", String(1, c),
-					  "' while retrieving a number of base ",
-					  ctx.strFrom((int64_t)base)});
+					 "encountered invalid character '", c,
+					 "' while retrieving a number of base ", base);
 				return "";
 			} else {
 				goto end;
 			}
 		}
-		if(!buf.empty() || c != '0') read_base = false;
-		buf.push_back(c);
+		if(first_digit_at != i || c != '0') read_base = false;
 		++i;
 	}
 end:
-	return ctx.moveStr(std::move(buf));
+	return StringRef(&data[first_digit_at], i - first_digit_at);
 }
 
-bool Tokenizer::getConstStr(StringRef data, char &quote_type, size_t &i, size_t &line,
-			    size_t &line_start, String &buf)
+bool Tokenizer::getConstStr(String &data, char &quote_type, size_t &len, size_t &i, size_t &line,
+			    size_t &line_start, StringRef &buf)
 {
-	size_t len = data.size();
-	buf.clear();
 	quote_type		    = CURR;
-	int starting_at		    = i;
+	int starting_at		    = i + 1;
 	size_t continuous_backslash = 0;
 	// omit beginning quote
 	++i;
@@ -537,16 +535,17 @@ bool Tokenizer::getConstStr(StringRef data, char &quote_type, size_t &i, size_t 
 		}
 		if(CURR == '\\') {
 			++continuous_backslash;
-			buf.push_back(data[i++]);
+			++i;
 			continue;
 		}
 		if(CURR == quote_type && continuous_backslash % 2 == 0) break;
-		buf.push_back(data[i++]);
+		++i;
 		if(quote_type == '\'') {
 			if(CURR != quote_type) {
 				err::out(loc(line, starting_at - line_start),
-					 {"expected single quote for end of const char, found: ",
-					  String(1, CURR)});
+					 "expected single quote for end"
+					 " of const char, found: ",
+					 CURR);
 				return false;
 			}
 			break;
@@ -554,13 +553,14 @@ bool Tokenizer::getConstStr(StringRef data, char &quote_type, size_t &i, size_t 
 		continuous_backslash = 0;
 	}
 	if(CURR != quote_type) {
-		err::out(loc(line, starting_at - line_start),
-			 {"no matching quote for '", String(1, quote_type), "' found"});
+		err::out(loc(line, starting_at - line_start), "no matching quote for '", quote_type,
+			 "' found");
 		return false;
 	}
+	removeBackSlash(data, len, i, starting_at);
+	buf = StringRef(&data[starting_at], i - starting_at);
 	// omit ending quote
 	++i;
-	removeBackSlash(buf);
 	return true;
 }
 
@@ -736,8 +736,8 @@ TokType Tokenizer::getOperator(StringRef data, size_t &i, size_t line, size_t li
 	case ']': SET_OP_TYPE_BRK(RBRACK);
 	case '}': SET_OP_TYPE_BRK(RBRACE);
 	default:
-		err::out(loc(line, starting_at - line_start),
-			 {"unknown operator '", String(1, CURR), "' found"});
+		err::out(loc(line, starting_at - line_start), "unknown operator '", CURR,
+			 "' found");
 		op_type = INVALID;
 	}
 
@@ -745,22 +745,23 @@ TokType Tokenizer::getOperator(StringRef data, size_t &i, size_t line, size_t li
 	return op_type;
 }
 
-void Tokenizer::removeBackSlash(String &s)
+void Tokenizer::removeBackSlash(String &data, size_t &len, size_t &i, size_t start)
 {
-	for(auto it = s.begin(); it != s.end(); ++it) {
-		if(*it == '\\') {
-			if(it + 1 >= s.end()) continue;
-			it = s.erase(it);
-			if(*it == '0') *it = '\0';
-			else if(*it == 'a') *it = '\a';
-			else if(*it == 'b') *it = '\b';
-			else if(*it == 'e') *it = '\e';
-			else if(*it == 'f') *it = '\f';
-			else if(*it == 'n') *it = '\n';
-			else if(*it == 'r') *it = '\r';
-			else if(*it == 't') *it = '\t';
-			else if(*it == 'v') *it = '\v';
-		}
+	for(size_t idx = start; idx < i; ++idx) {
+		if(data[idx] != '\\') continue;
+		if(idx + 1 >= i) continue;
+		data.erase(data.begin() + idx);
+		--i;
+		--len;
+		if(data[idx] == '0') data[idx] = '\0';
+		else if(data[idx] == 'a') data[idx] = '\a';
+		else if(data[idx] == 'b') data[idx] = '\b';
+		else if(data[idx] == 'e') data[idx] = '\e';
+		else if(data[idx] == 'f') data[idx] = '\f';
+		else if(data[idx] == 'n') data[idx] = '\n';
+		else if(data[idx] == 'r') data[idx] = '\r';
+		else if(data[idx] == 't') data[idx] = '\t';
+		else if(data[idx] == 'v') data[idx] = '\v';
 	}
 }
 

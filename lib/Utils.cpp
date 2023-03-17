@@ -102,18 +102,18 @@ Var *range(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	Var *step_base = args.size() > 3 ? args[3] : nullptr;
 
 	if(!lhs_base->is<VarInt>()) {
-		vm.fail(lhs_base->getLoc(), {"expected argument 1 to be of type int, found: ",
-					     vm.getTypeName(lhs_base)});
+		vm.fail(lhs_base->getLoc(),
+			"expected argument 1 to be of type int, found: ", vm.getTypeName(lhs_base));
 		return nullptr;
 	}
 	if(rhs_base && !rhs_base->is<VarInt>()) {
-		vm.fail(rhs_base->getLoc(), {"expected argument 2 to be of type int, found: ",
-					     vm.getTypeName(rhs_base)});
+		vm.fail(rhs_base->getLoc(),
+			"expected argument 2 to be of type int, found: ", vm.getTypeName(rhs_base));
 		return nullptr;
 	}
 	if(step_base && !step_base->is<VarInt>()) {
-		vm.fail(step_base->getLoc(), {"expected argument 3 to be of type int, found: ",
-					      vm.getTypeName(step_base)});
+		vm.fail(step_base->getLoc(), "expected argument 3 to be of type int, found: ",
+			vm.getTypeName(step_base));
 		return nullptr;
 	}
 
@@ -131,14 +131,15 @@ Var *assertion(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) {
-		vm.fail(loc, {"expected boolean argument"
-			      " for assertion, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(loc,
+			"expected boolean argument"
+			" for assertion, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 
 	if(!as<VarBool>(args[1])->get()) {
-		vm.fail(loc, {"assertion failed"});
+		vm.fail(loc, "assertion failed");
 		return nullptr;
 	}
 	return vm.getNil();

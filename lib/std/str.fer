@@ -1,0 +1,29 @@
+mload("std/Str");
+
+let substr in StrTy = fn(begin = 0, len = -1) {
+	if len == -1 { len = self.len(); }
+	return self.substrNative(begin, len);
+};
+
+let split in StrTy = fn(delim = ':') {
+	return self.splitNative(delim);
+};
+
+let isAlpha in StrTy = fn() {
+	if self.empty() { return false; }
+	return (self >= 'a' && self <= 'z') || (self >= 'A' && self <= 'Z');
+};
+
+let isDigit in StrTy = fn() {
+	if self.empty() { return false; }
+	return self >= '0' && self <= '9';
+};
+
+let isSpace in StrTy = fn() {
+	if self.empty() { return false; }
+	return self == ' ' || self == '\t' || self == '\r' || self == '\n';
+};
+
+let getUTF8CharFromHexString in StrTy = fn() {
+	return self.getBinStrFromHexStr().getUTF8CharFromBinStr();
+};

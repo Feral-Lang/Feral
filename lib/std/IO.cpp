@@ -17,21 +17,20 @@ int applyColors(String &str);
 Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	StringRef str;
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) str = as<VarStrRef>(v)->get();
+		const String &str = as<VarStr>(v)->get();
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
 	}
@@ -41,21 +40,20 @@ Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<StringRef, AssnArgData> &assn_args)
 {
-	StringRef str;
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) str = as<VarStrRef>(v)->get();
+		const String &str = as<VarStr>(v)->get();
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
 	}
@@ -68,30 +66,29 @@ Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a file argument for fprint, found: ", vm.getTypeName(args[1])});
+			"expected a file argument for fprint, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(as<VarFile>(args[1])->getFile() == nullptr) {
-		vm.fail(args[1]->getLoc(),
-			{"file has probably been closed already", vm.getTypeName(args[1])});
+		vm.fail(args[1]->getLoc(), "file has probably been closed already",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	FILE *f = as<VarFile>(args[1])->getFile();
-	StringRef str;
+	FILE *f	      = as<VarFile>(args[1])->getFile();
 	ssize_t count = 0;
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) str = as<VarStrRef>(v)->get();
+		const String &str = as<VarStr>(v)->get();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
 	}
@@ -103,30 +100,29 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a file argument for fprint, found: ", vm.getTypeName(args[1])});
+			"expected a file argument for fprint, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(as<VarFile>(args[1])->getFile() == nullptr) {
-		vm.fail(args[1]->getLoc(),
-			{"file has probably been closed already", vm.getTypeName(args[1])});
+		vm.fail(args[1]->getLoc(), "file has probably been closed already",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	FILE *f = as<VarFile>(args[1])->getFile();
-	StringRef str;
+	FILE *f	      = as<VarFile>(args[1])->getFile();
 	ssize_t count = 0;
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) str = as<VarStrRef>(v)->get();
+		const String &str = as<VarStr>(v)->get();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
 	}
@@ -137,22 +133,20 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
-	StringRef _str;
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) _str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) _str = as<VarStrRef>(v)->get();
-		String str(_str);
+		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
@@ -163,22 +157,20 @@ Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<StringRef, AssnArgData> &assn_args)
 {
-	StringRef _str;
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) _str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) _str = as<VarStrRef>(v)->get();
-		String str(_str);
+		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
@@ -192,31 +184,29 @@ Var *fcprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a file argument for fcprint, found: ", vm.getTypeName(args[1])});
+			"expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(as<VarFile>(args[1])->getFile() == nullptr) {
-		vm.fail(args[1]->getLoc(),
-			{"file has probably been closed already", vm.getTypeName(args[1])});
+		vm.fail(args[1]->getLoc(), "file has probably been closed already",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	FILE *f = as<VarFile>(args[1])->getFile();
-	StringRef _str;
+	FILE *f	      = as<VarFile>(args[1])->getFile();
 	ssize_t count = 0;
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) _str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) _str = as<VarStrRef>(v)->get();
-		String str(_str);
+		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
@@ -229,31 +219,29 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a file argument for fcprint, found: ", vm.getTypeName(args[1])});
+			"expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(as<VarFile>(args[1])->getFile() == nullptr) {
-		vm.fail(args[1]->getLoc(),
-			{"file has probably been closed already", vm.getTypeName(args[1])});
+		vm.fail(args[1]->getLoc(), "file has probably been closed already",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	FILE *f = as<VarFile>(args[1])->getFile();
-	StringRef _str;
+	FILE *f	      = as<VarFile>(args[1])->getFile();
 	ssize_t count = 0;
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			return nullptr;
 		}
-		if(v->is<VarStr>()) _str = as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) _str = as<VarStrRef>(v)->get();
-		String str(_str);
+		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
@@ -265,20 +253,16 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *scan(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	  const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(args.size() > 1 && !args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
+	if(args.size() > 1 && !args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected string/stringrf data for input prompt, found: ",
-			 vm.getTypeName(args[1])});
+			"expected string data for input prompt, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 
-	StringRef prompt;
 	if(args.size() > 1) {
-		if(args[1]->is<VarStr>()) prompt = as<VarStr>(args[1])->get();
-		else if(args[1]->is<VarStrRef>()) prompt = as<VarStrRef>(args[1])->get();
+		const String &prompt = as<VarStr>(args[1])->get();
+		write(STDOUT_FILENO, prompt.data(), prompt.size());
 	}
-
-	if(!prompt.empty()) write(STDOUT_FILENO, prompt.data(), prompt.size());
 
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
 	std::getline(std::cin, res->get());
@@ -292,20 +276,16 @@ Var *scan(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *scanEOF(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(args.size() > 1 && !args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
+	if(args.size() > 1 && !args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected string/stringrf data for input prompt, found: ",
-			 vm.getTypeName(args[1])});
+			"expected string data for input prompt, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 
-	StringRef prompt;
 	if(args.size() > 1) {
-		if(args[1]->is<VarStr>()) prompt = as<VarStr>(args[1])->get();
-		else if(args[1]->is<VarStrRef>()) prompt = as<VarStrRef>(args[1])->get();
+		const String &prompt = as<VarStr>(args[1])->get();
+		write(STDOUT_FILENO, prompt.data(), prompt.size());
 	}
-
-	if(!prompt.empty()) write(STDOUT_FILENO, prompt.data(), prompt.size());
 
 	String line;
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
@@ -322,12 +302,12 @@ Var *fflush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a file argument for fcprint, found: ", vm.getTypeName(args[1])});
+			"expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(as<VarFile>(args[1])->getFile() == nullptr) {
-		vm.fail(args[1]->getLoc(),
-			{"file has probably been closed already", vm.getTypeName(args[1])});
+		vm.fail(args[1]->getLoc(), "file has probably been closed already",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	fflush(as<VarFile>(args[1])->getFile());
@@ -339,8 +319,8 @@ Var *readChar(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected an integer argument for file descriptor, found: ",
-			 vm.getTypeName(args[1])});
+			"expected an integer argument for file descriptor, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 
@@ -348,10 +328,10 @@ Var *readChar(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	char c	= 0;
 	int res = read(fd, &c, 1);
 	if(res <= 0) {
-		vm.fail(loc, {"failed to read char"});
+		vm.fail(loc, "failed to read char");
 		return nullptr;
 	}
-	return vm.makeVar<VarChar>(loc, c);
+	return vm.makeVar<VarStr>(loc, c);
 }
 
 INIT_MODULE(IO)

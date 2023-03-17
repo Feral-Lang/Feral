@@ -13,31 +13,14 @@
 
 #include "Error.hpp"
 
-#include <iostream>
-
-#include "Module.hpp"
-#include "Parser/Stmts.hpp"
-
 namespace fer
 {
 namespace err
 {
 
-static size_t max_errs = 10;
-void setMaxErrs(size_t max_err) { max_errs = max_err; }
+size_t max_errs = 10;
 
-void out(Stmt *stmt, InitList<StringRef> err) { outCommon(stmt->getLoc(), err, false, true); }
-void out(const lex::Lexeme &tok, InitList<StringRef> err)
-{
-	outCommon(tok.getLoc(), err, false, true);
-}
-void outw(Stmt *stmt, InitList<StringRef> err) { outCommon(stmt->getLoc(), err, true, true); }
-void outw(const lex::Lexeme &tok, InitList<StringRef> err)
-{
-	outCommon(tok.getLoc(), err, true, true);
-}
-
-void outCommon(const ModuleLoc *loc, InitList<StringRef> err, bool is_warn, bool with_loc)
+void outCommonStr(const ModuleLoc *loc, bool is_warn, bool with_loc, const String &e)
 {
 	static size_t errcount = 0;
 
@@ -46,7 +29,7 @@ void outCommon(const ModuleLoc *loc, InitList<StringRef> err, bool is_warn, bool
 	// just show the error
 	if(!with_loc) {
 		std::cout << (is_warn ? "Warning" : "Failure") << ": ";
-		for(auto &e : err) std::cout << e;
+		std::cout << e;
 		std::cout << "\n";
 		if(!is_warn) ++errcount;
 		if(errcount >= max_errs) std::cout << "Failure: Too many errors encountered\n";
@@ -94,7 +77,7 @@ void outCommon(const ModuleLoc *loc, InitList<StringRef> err, bool is_warn, bool
 
 	std::cout << filename << " (" << line + 1 << ":" << col + 1 << "): ";
 	std::cout << (is_warn ? "Warning" : "Failure") << ": ";
-	for(auto &e : err) std::cout << e;
+	std::cout << e;
 	std::cout << "\n";
 	std::cout << err_line << "\n";
 	std::cout << spacing_caret << "^\n";

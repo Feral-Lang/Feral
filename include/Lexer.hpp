@@ -1,8 +1,11 @@
 #pragma once
 
+#include "Error.hpp"
 #include "Module.hpp"
 
-namespace fer::lex
+namespace fer
+{
+namespace lex
 {
 
 enum TokType
@@ -10,7 +13,6 @@ enum TokType
 	INT,
 	FLT,
 
-	CHAR,
 	STR,
 	IDEN,
 
@@ -131,13 +133,12 @@ public:
 
 	inline bool isData() const
 	{
-		return val == INT || val == FLT || val == CHAR || val == STR || val == IDEN ||
-		       val == VOID || val == TRUE || val == FALSE || val == NIL;
+		return val == INT || val == FLT || val == STR || val == IDEN || val == VOID ||
+		       val == TRUE || val == FALSE || val == NIL;
 	}
 	inline bool isLiteral() const
 	{
-		return val == INT || val == FLT || val == CHAR || val == STR || val == TRUE ||
-		       val == FALSE;
+		return val == INT || val == FLT || val == STR || val == TRUE || val == FALSE;
 	}
 
 	inline bool isOper() const { return val >= ASSN && val <= RBRACK; }
@@ -194,6 +195,7 @@ class Lexeme
 	const ModuleLoc *loc;
 	Tok tok;
 	Data data;
+	String secdata; // secondary data - when StringRef is not viable
 
 public:
 	Lexeme(const ModuleLoc *loc = nullptr);
@@ -206,17 +208,29 @@ public:
 
 	inline bool operator==(const Lexeme &other) const
 	{
-		return tok == other.tok && data.cmp(other.data, tok.getVal());
+		return tok == other.tok &&
+		       (data.cmp(other.data, tok.getVal()) || secdata == other.secdata);
 	}
 	inline bool operator!=(const Lexeme &other) const { return *this == other ? false : true; }
 
-	inline void setDataStr(StringRef str) { data.s = str; }
+	inline void setDataStr(StringRef str)
+	{
+		data.s = str;
+		secdata.clear();
+	}
 	inline void setDataInt(int64_t i) { data.i = i; }
 	inline void setDataFlt(long double f) { data.f = f; }
+	inline void setDataSecStr(StringRef str) { secdata = str; }
+	inline void setDataSecStr(InitList<StringRef> strs)
+	{
+		secdata.clear();
+		for(auto s : strs) secdata += s;
+	}
 
-	inline StringRef getDataStr() const { return data.s; }
+	inline StringRef getDataStr() const { return !secdata.empty() ? secdata : data.s; }
 	inline int64_t getDataInt() const { return data.i; }
-	inline const long double &getDataFlt() const { return data.f; }
+	inline long double getDataFlt() const { return data.f; }
+	inline StringRef getDataMainStr() const { return data.s; } // does not bother with secdata
 
 	inline Tok &getTok() { return tok; }
 	inline const Tok &getTok() const { return tok; }
@@ -236,14 +250,28 @@ class Tokenizer
 	TokType classifyStr(StringRef str);
 	StringRef getNum(StringRef data, size_t &i, size_t &line, size_t &line_start,
 			 TokType &num_type, int &base);
-	bool getConstStr(StringRef data, char &quote_type, size_t &i, size_t &line,
-			 size_t &line_start, String &buf);
+	bool getConstStr(String &data, char &quote_type, size_t &len, size_t &i, size_t &line,
+			 size_t &line_start, StringRef &end);
 	TokType getOperator(StringRef data, size_t &i, size_t line, size_t line_start);
-	void removeBackSlash(String &s);
+	void removeBackSlash(String &data, size_t &len, size_t &i, size_t start);
 
 public:
 	Tokenizer(Context &ctx, Module *m);
-	bool tokenize(StringRef data, Vector<Lexeme> &toks);
+	bool tokenize(String &data, Vector<Lexeme> &toks);
 };
 
-} // namespace fer::lex
+} // namespace lex
+
+namespace err
+{
+template<typename... Args> void out(const lex::Lexeme &tok, Args &&...args)
+{
+	out(tok.getLoc(), std::forward<Args>(args)...);
+}
+template<typename... Args> void outw(const lex::Lexeme &tok, Args &&...args)
+{
+	outw(tok.getLoc(), std::forward<Args>(args)...);
+}
+} // namespace err
+
+} // namespace fer

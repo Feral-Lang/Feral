@@ -19,10 +19,10 @@ namespace fer
 namespace env
 {
 
-String get(const String &key)
+String get(const char *key)
 {
-	const char *env = getenv(key.c_str());
-	return env == NULL ? "" : env;
+	const char *env = getenv(key);
+	return env ? env : "";
 }
 
 String getProcPath()
@@ -50,15 +50,19 @@ String getProcPath()
 	return path;
 }
 
-String getExeFromPath(const String &exe)
+String getExeFromPath(const char *exe)
 {
 	String path = get("PATH");
-	if(path.empty()) return "";
+	if(path.empty()) return path;
 
 	Vector<StringRef> paths = stringDelim(path, ":");
 
+	String pathstr;
 	for(auto &p : paths) {
-		if(fs::exists(String(p) + "/" + exe)) return String(p) + "/" + exe;
+		pathstr = p;
+		pathstr += "/";
+		pathstr += exe;
+		if(fs::exists(pathstr.c_str())) return pathstr;
 	}
 	return "";
 }

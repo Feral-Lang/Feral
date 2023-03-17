@@ -49,8 +49,8 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	for(auto &aa : assn_args) {
 		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
-			vm.fail(aa.second.val->getLoc(), {"no attribute named '", aa.first,
-							  "' in the structure definition"});
+			vm.fail(aa.second.val->getLoc(), "no attribute named '", aa.first,
+				"' in the structure definition");
 			return nullptr;
 		}
 	}
@@ -62,13 +62,13 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		auto &arg = *argit;
 		if(it == attrorder.end()) {
 			vm.fail(arg->getLoc(),
-				{"provided more arguments than existing in structure definition"});
+				"provided more arguments than existing in structure definition");
 			goto fail;
 		}
 		auto aloc = attrs.find(*it);
 		if(aloc->second->getType() != arg->getType()) {
-			vm.fail(arg->getLoc(), {"expected type: ", vm.getTypeName(aloc->second),
-						", found: ", vm.getTypeName(arg)});
+			vm.fail(arg->getLoc(), "expected type: ", vm.getTypeName(aloc->second),
+				", found: ", vm.getTypeName(arg));
 			goto fail;
 		}
 		res->setAttr(*it, arg->copy(loc), false);
@@ -78,14 +78,14 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(auto &aa : assn_args) {
 		auto aloc = attrs.find(aa.first);
 		if(aloc == attrs.end()) {
-			vm.fail(aa.second.val->getLoc(),
-				{"attribute '", aa.first, "' does not exist in this structure"});
+			vm.fail(aa.second.val->getLoc(), "attribute '", aa.first,
+				"' does not exist in this structure");
 			goto fail;
 		}
 		if(aloc->second->getType() != aa.second.val->getType()) {
 			vm.fail(aa.second.val->getLoc(),
-				{"expected type: ", vm.getTypeName(aloc->second),
-				 ", found: ", vm.getTypeName(aa.second.val)});
+				"expected type: ", vm.getTypeName(aloc->second),
+				", found: ", vm.getTypeName(aa.second.val));
 			goto fail;
 		}
 		res->setAttr(aa.first, aa.second.val->copy(loc), false);

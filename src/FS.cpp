@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "Env.hpp"
@@ -12,21 +11,16 @@ namespace fer
 namespace fs
 {
 
-static int total_lines = 0;
+int total_lines = 0;
 
-int getTotalLines() { return total_lines; }
-
-bool exists(const char *loc) { return access(loc, F_OK) != -1; }
-bool exists(const String &loc) { return access(loc.c_str(), F_OK) != -1; }
-
-bool read(const String &file, String &data)
+bool read(const char *file, String &data)
 {
 	FILE *fp;
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
 
-	fp = fopen(file.c_str(), "r");
+	fp = fopen(file, "r");
 	if(fp == NULL) {
 		std::cerr << "Error: failed to open source file: " << file << "\n";
 		return false;
@@ -55,8 +49,6 @@ String absPath(const char *loc)
 	return abs;
 }
 
-String absPath(const String &loc) { return absPath(loc.c_str()); }
-
 String getCWD()
 {
 	static char cwd[MAX_PATH_CHARS];
@@ -65,10 +57,6 @@ String getCWD()
 	}
 	return "";
 }
-
-bool setCWD(const String &path) { return chdir(path.c_str()) != 0; }
-
-StringRef parentDir(StringRef path) { return path.substr(0, path.find_last_of("/\\")); }
 
 String home()
 {

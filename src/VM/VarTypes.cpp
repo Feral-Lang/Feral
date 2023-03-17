@@ -45,7 +45,11 @@ void VarAll::set(Var *from) {}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarNil::VarNil(const ModuleLoc *loc) : Var(loc, typeID<VarNil>(), false, false) {}
-Var *VarNil::copy(const ModuleLoc *loc) { return new VarNil(loc); }
+Var *VarNil::copy(const ModuleLoc *loc)
+{
+	this->iref();
+	return this;
+}
 void VarNil::set(Var *from) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,16 +125,6 @@ void VarFlt::set(Var *from)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////// VarChar ///////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-VarChar::VarChar(const ModuleLoc *loc, char val)
-	: Var(loc, typeID<VarChar>(), false, false), val(val)
-{}
-Var *VarChar::copy(const ModuleLoc *loc) { return new VarChar(loc, val); }
-void VarChar::set(Var *from) { val = as<VarChar>(from)->get(); }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -150,19 +144,6 @@ VarStr::VarStr(const ModuleLoc *loc, const char *val, size_t count)
 {}
 Var *VarStr::copy(const ModuleLoc *loc) { return new VarStr(loc, val); }
 void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////// VarStrRef //////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-VarStrRef::VarStrRef(const ModuleLoc *loc, StringRef val)
-	: Var(loc, typeID<VarStrRef>(), false, false), val(val)
-{}
-VarStrRef::VarStrRef(const ModuleLoc *loc, const char *val, size_t count)
-	: Var(loc, typeID<VarStrRef>(), false, false), val(val, count)
-{}
-Var *VarStrRef::copy(const ModuleLoc *loc) { return new VarStrRef(loc, val); }
-void VarStrRef::set(Var *from) { val = as<VarStrRef>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarVec ////////////////////////////////////////////////
@@ -244,7 +225,7 @@ void VarMap::set(const Map<StringRef, Var *> &newval)
 ////////////////////////////////////////// VarFn /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFn::VarFn(const ModuleLoc *loc, StringRef modpath, StringRef kw_arg, StringRef var_arg,
+VarFn::VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, const String &var_arg,
 	     size_t paramcount, size_t assn_params_count, FnBody body, bool is_native)
 	: Var(loc, typeID<VarFn>(), true, false), modpath(modpath), kw_arg(kw_arg),
 	  var_arg(var_arg), body(body), is_native(is_native)
@@ -288,10 +269,9 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(args.size() - 1 < params.size() - assn_params.size() ||
 	   (args.size() - 1 > params.size() && var_arg.empty()))
 	{
-		vm.fail(loc,
-			{"arg count required: ", c.strFrom(params.size()),
-			 " (without default args: ", c.strFrom(params.size() - assn_args.size()),
-			 "); received: ", c.strFrom(args.size() - 1)});
+		vm.fail(loc, "arg count required: ", params.size(),
+			" (without default args: ", params.size() - assn_args.size(),
+			"); received: ", args.size() - 1);
 		return nullptr;
 	}
 	if(isNative()) {

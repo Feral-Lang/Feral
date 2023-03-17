@@ -25,7 +25,7 @@ public:
 	RAIIParser(ArgParser &args);
 	~RAIIParser();
 
-	Module *createModule(const String &path, bool main_module);
+	Module *createModule(const String &path, bool ismain);
 
 	Module *getModule(StringRef path);
 

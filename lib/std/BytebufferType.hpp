@@ -21,6 +21,6 @@ public:
 
 	inline void setLen(size_t newlen) { buflen = newlen; }
 	inline char *&getBuf() { return buffer; }
-	inline size_t size() { return bufsz; }
+	inline size_t capacity() { return bufsz; }
 	inline size_t len() { return buflen; }
 };

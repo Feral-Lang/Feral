@@ -41,11 +41,11 @@ int main(int argc, char **argv)
 
 	String file = String(args.getSource());
 
-	if(!fs::exists(file)) {
-		err::out({"File ", file, " does not exist"});
+	if(!fs::exists(file.c_str())) {
+		err::out(nullptr, "File ", file, " does not exist");
 		return 1;
 	}
-	file = fs::absPath(file);
+	file = fs::absPath(file.c_str());
 
 	RAIIParser parser(args);
 	Interpreter vm(parser);

@@ -34,22 +34,10 @@ Var *fltToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return mpfr_cmp_si(as<VarFlt>(args[0])->getSrc(), 0) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *charToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
-{
-	return vm.getTrue();
-}
-
 Var *strToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<StringRef, AssnArgData> &assn_args)
 {
 	return !as<VarStr>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
-}
-
-Var *strRefToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args)
-{
-	return !as<VarStrRef>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,

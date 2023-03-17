@@ -12,7 +12,7 @@ class ParserPass;
 
 class Context
 {
-	List<String> stringmem;
+	List<String> strings;
 	List<ModuleLoc> modlocmem;
 	List<Stmt *> stmtmem;
 	Map<size_t, ParserPass *> passes;
@@ -21,17 +21,11 @@ public:
 	Context();
 	~Context();
 
-	StringRef strFrom(InitList<StringRef> strs);
-	StringRef strFrom(const String &s);
-	StringRef moveStr(String &&str);
-	StringRef strFrom(int32_t i);
-	StringRef strFrom(int64_t i);
-	StringRef strFrom(uint32_t i);
-	StringRef strFrom(size_t i);
-#ifdef __APPLE__
-	StringRef strFrom(uint64_t i);
-#endif // __APPLE__
-
+	inline StringRef moveStr(String &&str)
+	{
+		strings.push_front(std::move(str));
+		return strings.front();
+	}
 	ModuleLoc *allocModuleLoc(Module *mod, size_t line, size_t col);
 
 	template<typename T, typename... Args> T *allocStmt(Args &&...args)

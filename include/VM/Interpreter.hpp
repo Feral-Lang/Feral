@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Bytecode.hpp"
+#include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
 #include "RAIIParser.hpp"
+#include "Utils.hpp"
 #include "VarMemory.hpp"
 #include "Vars.hpp"
 
@@ -33,7 +35,7 @@ class Interpreter
 	// functions for all C++ types
 	Map<uiptr, VarFrame *> typefns;
 	// names of types (optional)
-	Map<uiptr, StringRef> typenames;
+	Map<uiptr, String> typenames;
 	// all functions to call before unloading dlls
 	Map<StringRef, ModDeinitFn> dlldeinitfns;
 	Map<StringRef, VarModule *> allmodules;
@@ -41,12 +43,12 @@ class Interpreter
 	// core modules that must be loaded before any program is executed
 	Vector<StringRef> coremods;
 	// include and module locations - searches in increasing order of List elements
-	Vector<StringRef> includelocs; // should be shared between multiple threads
-	Vector<StringRef> dlllocs;     // should be shared between multiple threads
+	Vector<String> includelocs; // should be shared between multiple threads
+	Vector<String> dlllocs;	    // should be shared between multiple threads
 	// path where feral binary exists (used by sys.selfBin())
-	StringRef selfbin;
+	String selfbin;
 	// parent directory of selfbin (used by sys.selfBase())
-	StringRef selfbase;
+	String selfbase;
 	RAIIParser &parser;
 	Context &c;
 	ArgParser &argparser;
@@ -92,7 +94,7 @@ public:
 	void popModule();
 
 	// ext can be empty
-	bool findFileIn(Span<StringRef> dirs, String &name, StringRef ext);
+	bool findFileIn(Span<String> dirs, String &name, StringRef ext);
 	inline bool findImport(String &name)
 	{
 		return findFileIn(includelocs, name, getFeralImportExtension());
@@ -101,17 +103,17 @@ public:
 	{
 		return findFileIn(dlllocs, name, getNativeModuleExtension());
 	}
-	bool loadNativeModule(const ModuleLoc *loc, StringRef modstr);
+	bool loadNativeModule(const ModuleLoc *loc, String modstr);
 
 	void addGlobal(StringRef name, Var *val, bool iref = true);
 	inline Var *getGlobal(StringRef name) { return globals.get(name); }
 
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-	registerType(const ModuleLoc *loc, StringRef _name)
+	registerType(const ModuleLoc *loc, String name)
 	{
-		setTypeName(typeID<T>(), _name);
+		setTypeName(typeID<T>(), name);
 		VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
-		StringRef name	 = c.strFrom({_name, "Ty"});
+		name += "Ty";
 		if(modulestack.empty()) addGlobal(name, tyvar, false);
 		else modulestack.back()->addNativeVar(name, tyvar, false, true);
 	}
@@ -147,15 +149,26 @@ public:
 
 	void initTypeNames();
 
-	void fail(const ModuleLoc *loc, InitList<StringRef> err);
+	void dumpExecStack(OStream &os);
+
+	template<typename... Args> void fail(const ModuleLoc *loc, Args &&...args)
+	{
+		if(failstack.empty() || exit_called) {
+			err::out(loc, std::forward<Args>(args)...);
+		} else {
+			VarStr *str = makeVarWithRef<VarStr>(loc, "");
+			appendToString(str->get(), std::forward<Args>(args)...);
+		}
+	}
 	inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }
 	inline Var *popExecStack(bool dref = true) { return execstack.pop(dref); }
+	inline bool hasModule(StringRef path) { return allmodules.find(path) != allmodules.end(); }
 	inline VarModule *getModule(StringRef path) { return allmodules[path]; }
 	inline VarModule *getCurrModule() { return modulestack.back(); }
 	inline void setTypeName(uiptr _typeid, StringRef name) { typenames[_typeid] = name; }
 	inline StringRef getTypeName(Var *var) { return getTypeName(var->getType()); }
-	inline Span<StringRef> getImportDirs() { return includelocs; }
-	inline Span<StringRef> getModuleDirs() { return dlllocs; }
+	inline Span<String> getImportDirs() { return includelocs; }
+	inline Span<String> getModuleDirs() { return dlllocs; }
 	inline StringRef getSelfBin() { return selfbin; }
 	inline StringRef getSelfBase() { return selfbase; }
 	inline RAIIParser &getRAIIParser() { return parser; }

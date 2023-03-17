@@ -7,74 +7,30 @@
 
 namespace fer
 {
-
 Context::Context() {}
 Context::~Context()
 {
 #ifdef MEM_COUNT
-	size_t s1 = 0, l1 = 0, s2 = 0, t1 = 0, v1 = 0;
-	for(auto &s : stringmem) ++s1;
+	size_t loccount = 0, stringcount = 0, stmtcount = 0;
 #endif
+
+#ifdef MEM_COUNT
+	for(auto &str : strings) ++stringcount;
+	for(auto &loc : modlocmem) ++loccount;
+#endif
+
 	for(auto &s : stmtmem) {
 #ifdef MEM_COUNT
-		++s2;
+		++stmtcount;
 #endif
 		delete s;
 	}
 
 #ifdef MEM_COUNT
-	printf("Total deallocation:\nStrings: %zu\nModLocs:"
-	       " %zu\nStmts: %zu\nTypes: %zu\nVals: %zu\n",
-	       s1, l1, s2, t1, v1);
+	printf("Total deallocation:\nModLocs: %zu\nStrings: %zu\nStmts: %zu\n", loccount,
+	       stringcount, stmtcount);
 #endif
 }
-
-StringRef Context::strFrom(InitList<StringRef> strs)
-{
-	stringmem.push_front({});
-	String &res = stringmem.front();
-	for(auto &s : strs) {
-		res += s;
-	}
-	return res;
-}
-StringRef Context::strFrom(const String &s)
-{
-	stringmem.push_front(s);
-	return stringmem.front();
-}
-StringRef Context::moveStr(String &&str)
-{
-	stringmem.push_front(std::move(str));
-	return stringmem.front();
-}
-StringRef Context::strFrom(int32_t i)
-{
-	stringmem.push_front(std::to_string(i));
-	return stringmem.front();
-}
-StringRef Context::strFrom(int64_t i)
-{
-	stringmem.push_front(std::to_string(i));
-	return stringmem.front();
-}
-StringRef Context::strFrom(uint32_t i)
-{
-	stringmem.push_front(std::to_string(i));
-	return stringmem.front();
-}
-StringRef Context::strFrom(size_t i)
-{
-	stringmem.push_front(std::to_string(i));
-	return stringmem.front();
-}
-#ifdef __APPLE__
-StringRef Context::strFrom(uint64_t i)
-{
-	stringmem.push_front(std::to_string(i));
-	return stringmem.front();
-}
-#endif // __APPLE__
 
 ModuleLoc *Context::allocModuleLoc(Module *mod, size_t line, size_t col)
 {

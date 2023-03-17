@@ -22,8 +22,8 @@ bool Parser::parseBlock(ParseHelper &p, StmtBlock *&tree, bool with_brace)
 
 	if(with_brace) {
 		if(!p.acceptn(lex::LBRACE)) {
-			err::out(p.peek(), {"expected opening braces '{' for block, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(), "expected opening braces '{' for block, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 	}
@@ -66,15 +66,15 @@ bool Parser::parseBlock(ParseHelper &p, StmtBlock *&tree, bool with_brace)
 			stmt = nullptr;
 			continue;
 		}
-		err::out(p.peek(), {"expected semicolon for end of statement, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected semicolon for end of statement, found: ",
+			 p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(with_brace) {
 		if(!p.acceptn(lex::RBRACE)) {
-			err::out(p.peek(), {"expected closing braces '}' for block, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(), "expected closing braces '}' for block, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 	}
@@ -88,7 +88,7 @@ bool Parser::parseSimple(ParseHelper &p, Stmt *&data)
 	data = nullptr;
 
 	if(!p.peek().getTok().isData()) {
-		err::out(p.peek(), {"expected data here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected data here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -189,7 +189,7 @@ bool Parser::parseExpr16(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	}
 	if(!p.accept(lex::COL)) {
 		err::out(p.peek(),
-			 {"expected ':' for ternary operator, found: ", p.peek().getTok().cStr()});
+			 "expected ':' for ternary operator, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 	oper_inside = p.peek();
@@ -623,7 +623,7 @@ bool Parser::parseExpr03(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	}
 
 	if(!lhs) {
-		err::out(start, {"invalid expression"});
+		err::out(start, "invalid expression");
 		return false;
 	}
 
@@ -689,8 +689,7 @@ bool Parser::parseExpr01(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	Vector<Stmt *> args;
 	Stmt *arg = nullptr;
 	Vector<bool> unpack_vector; // works for variadic as well
-	bool unpack_arg	  = false;
-	bool is_intrinsic = false;
+	bool unpack_arg = false;
 
 	// prefixed/suffixed literals
 	if(p.accept(lex::IDEN) && p.peek(1).getTok().isLiteral() ||
@@ -705,15 +704,17 @@ bool Parser::parseExpr01(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 		}
 		if(!p.acceptn(lex::RPAREN)) {
 			err::out(p.peek(),
-				 {"expected ending parenthesis ')' for expression, found: ",
-				  p.peek().getTok().cStr()});
+				 "expected ending parenthesis ')' for expression, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 	}
 
 begin:
-	if(p.acceptn(lex::AT)) is_intrinsic = true;
-	if(p.acceptd() && !parseSimple(p, lhs)) return false;
+	if(p.acceptd() && !parseSimple(p, lhs)) {
+		err::out(p.peek(), "failed to parse simple");
+		return false;
+	}
 	goto begin_brack;
 
 after_dot:
@@ -729,19 +730,15 @@ begin_brack:
 		p.sett(lex::SUBS);
 		oper = p.peek();
 		p.next();
-		if(is_intrinsic) {
-			err::out(p.peek(), {"only function calls can be intrinsic;"
-					    " attempted subscript here"});
-			return false;
-		}
 		if(!parseExpr16(p, rhs, false)) {
-			err::out(oper, {"failed to parse expression for subscript"});
+			err::out(oper, "failed to parse expression for subscript");
 			return false;
 		}
 		if(!p.acceptn(lex::RBRACK)) {
-			err::out(p.peek(), {"expected closing bracket for"
-					    " subscript expression, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(),
+				 "expected closing bracket for"
+				 " subscript expression, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 		lhs = StmtExpr::create(ctx, oper.getLoc(), lhs, oper, rhs);
@@ -753,9 +750,10 @@ begin_brack:
 		bool fncall = p.accept(lex::LPAREN);
 		lex::Lexeme oper;
 		if(!p.accept(lex::LPAREN, lex::LBRACE)) {
-			err::out(p.peek(), {"expected opening parenthesis/brace"
-					    " for function/struct call, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(),
+				 "expected opening parenthesis/brace"
+				 " for function/struct call, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 		p.sett(fncall ? lex::FNCALL : lex::STCALL);
@@ -791,9 +789,10 @@ begin_brack:
 			if(!p.acceptn(lex::COMMA)) break;
 		}
 		if(!p.acceptn(fncall ? lex::RPAREN : lex::RBRACE)) {
-			err::out(p.peek(), {"expected closing parenthesis/brace after "
-					    "function/struct call arguments, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(),
+				 "expected closing parenthesis/brace after "
+				 "function/struct call arguments, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 	post_args:
@@ -831,8 +830,8 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	var = nullptr;
 
 	if(!p.accept(lex::IDEN, lex::STR)) {
-		err::out(p.peek(), {"expected identifier for variable name, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected identifier for variable name, found: ",
+			 p.peek().getTok().cStr());
 		return false;
 	}
 	lex::Lexeme &name = p.peek();
@@ -843,14 +842,14 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	if(p.acceptn(lex::IN) && !is_fn_arg) {
 		if(!parseSimple(p, (Stmt *&)in)) {
 			err::out(p.peek(),
-				 {"failed to parse in-type for variable: ", name.getDataStr()});
+				 "failed to parse in-type for variable: ", name.getDataStr());
 			return false;
 		}
 	}
 
 	if(!p.acceptn(lex::ASSN)) {
 		if(is_fn_arg) goto end;
-		err::out(name, {"invalid variable declaration - no value set"});
+		err::out(name, "invalid variable declaration - no value set");
 		return false;
 	}
 	if(p.accept(lex::FN)) {
@@ -860,7 +859,7 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	}
 
 	if(in && val->getStmtType() != FNDEF) {
-		err::out(name, {"only functions can be created using let-in statements"});
+		err::out(name, "only functions can be created using let-in statements");
 		return false;
 	}
 
@@ -880,13 +879,13 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::FN)) {
-		err::out(p.peek(), {"expected 'fn' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'fn' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!p.acceptn(lex::LPAREN)) {
-		err::out(p.peek(), {"expected opening parenthesis for function args, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected opening parenthesis for function args, found: ",
+			 p.peek().getTok().cStr());
 		return false;
 	}
 	if(p.acceptn(lex::RPAREN)) goto post_args;
@@ -896,22 +895,23 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 		bool attempt_kw = false;
 		if(p.acceptn(lex::DOT)) attempt_kw = true;
 		if(!p.accept(lex::IDEN)) {
-			err::out(p.peek(), {"expected identifier for argument, found: ",
-					    p.peek().getTok().cStr()});
+			err::out(p.peek(), "expected identifier for argument, found: ",
+				 p.peek().getTok().cStr());
 			return false;
 		}
 		if(argnames.find(p.peek().getDataStr()) != argnames.end()) {
-			err::out(p.peek(), {"this argument name is already used "
-					    "before in this function signature"});
+			err::out(p.peek(), "this argument name is already used "
+					   "before in this function signature");
 			return false;
 		}
 		argnames.insert(p.peek().getDataStr());
 		// this is a keyword arg
 		if(attempt_kw) {
 			if(kwarg) {
-				err::out(p.peek(), {"function cannot have multiple"
-						    " keyword arguments (previous: ",
-						    kwarg->getLexDataStr(), ")"});
+				err::out(p.peek(),
+					 "function cannot have multiple"
+					 " keyword arguments (previous: ",
+					 kwarg->getLexDataStr(), ")");
 				return false;
 			}
 			kwarg = StmtSimple::create(ctx, p.peek().getLoc(), p.peek());
@@ -924,8 +924,7 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 			p.next();
 		} else {
 			if(!parseVar(p, arg, true)) {
-				err::out(p.peek(),
-					 {"failed to parse function definition parameter"});
+				err::out(p.peek(), "failed to parse function definition parameter");
 				return false;
 			}
 			args.push_back(arg);
@@ -933,14 +932,14 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 		}
 		if(!p.acceptn(lex::COMMA)) break;
 		if(vaarg) {
-			err::out(p.peek(), {"no parameter can exist after variadic"});
+			err::out(p.peek(), "no parameter can exist after variadic");
 			return false;
 		}
 	}
 
 	if(!p.acceptn(lex::RPAREN)) {
-		err::out(p.peek(), {"expected closing parenthesis after function args, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected closing parenthesis after function args, found: ",
+			 p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -974,7 +973,7 @@ bool Parser::parseVardecl(ParseHelper &p, Stmt *&vd)
 
 	if(!p.acceptn(lex::LET)) {
 		err::out(p.peek(),
-			 {"expected 'let' keyword here, found: ", p.peek().getTok().cStr()});
+			 "expected 'let' keyword here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1000,18 +999,18 @@ bool Parser::parseConds(ParseHelper &p, Stmt *&conds)
 
 cond:
 	if(!p.acceptn(lex::IF, lex::ELIF)) {
-		err::out(p.peek(), {"expected 'if' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'if' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!parseExpr15(p, c.getCond(), true)) {
-		err::out(p.peek(), {"failed to parse condition for if/else if statement"});
+		err::out(p.peek(), "failed to parse condition for if/else if statement");
 		return false;
 	}
 
 blk:
 	if(!parseBlock(p, c.getBlk())) {
-		err::out(p.peek(), {"failed to parse block for conditional"});
+		err::out(p.peek(), "failed to parse block for conditional");
 		return false;
 	}
 
@@ -1051,36 +1050,36 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::FOR)) {
-		err::out(p.peek(), {"expected 'for' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'for' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!p.accept(lex::IDEN)) {
-		err::out(p.peek(), {"expected iterator (identifier) here, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(),
+			 "expected iterator (identifier) here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 	lex::Lexeme &iter = p.peek();
 	p.next();
 
 	if(!p.acceptn(lex::IN)) {
-		err::out(p.peek(), {"expected 'in' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'in' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!parseExpr15(p, in, true)) {
-		err::out(p.peek(), {"failed to parse expression for 'in'"});
+		err::out(p.peek(), "failed to parse expression for 'in'");
 		return false;
 	}
 
 	if(!p.accept(lex::LBRACE)) {
-		err::out(p.peek(), {"expected block for for-in construct, found: ",
-				    p.peek().getTok().cStr()});
+		err::out(p.peek(),
+			 "expected block for for-in construct, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!parseBlock(p, blk)) {
-		err::out(p.peek(), {"failed to parse block for for-in construct"});
+		err::out(p.peek(), "failed to parse block for for-in construct");
 		return false;
 	}
 
@@ -1098,7 +1097,7 @@ bool Parser::parseFor(ParseHelper &p, Stmt *&f)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::FOR)) {
-		err::out(p.peek(), {"expected 'for' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'for' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1111,7 +1110,7 @@ init:
 		if(!parseExpr(p, init, false)) return false;
 	}
 	if(!p.acceptn(lex::COLS)) {
-		err::out(p.peek(), {"expected semicolon here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected semicolon here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1120,7 +1119,7 @@ cond:
 
 	if(!parseExpr16(p, cond, false)) return false;
 	if(!p.acceptn(lex::COLS)) {
-		err::out(p.peek(), {"expected semicolon here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected semicolon here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1130,13 +1129,13 @@ incr:
 	if(!parseExpr(p, incr, true)) return false;
 	if(!p.accept(lex::LBRACE)) {
 		err::out(p.peek(),
-			 {"expected braces for body here, found: ", p.peek().getTok().cStr()});
+			 "expected braces for body here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 body:
 	if(!parseBlock(p, blk)) {
-		err::out(p.peek(), {"failed to parse block for 'for' construct"});
+		err::out(p.peek(), "failed to parse block for 'for' construct");
 		return false;
 	}
 
@@ -1152,14 +1151,14 @@ bool Parser::parseWhile(ParseHelper &p, Stmt *&w)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::WHILE)) {
-		err::out(p.peek(), {"expected 'while' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'while' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!parseExpr16(p, cond, true)) return false;
 
 	if(!parseBlock(p, blk)) {
-		err::out(p.peek(), {"failed to parse block for 'for' construct"});
+		err::out(p.peek(), "failed to parse block for 'for' construct");
 		return false;
 	}
 
@@ -1174,14 +1173,14 @@ bool Parser::parseRet(ParseHelper &p, Stmt *&ret)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::RETURN)) {
-		err::out(p.peek(), {"expected 'return' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'return' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(p.accept(lex::COLS)) goto done;
 
 	if(!parseExpr16(p, val, false)) {
-		err::out(p.peek(), {"failed to parse expression for return value"});
+		err::out(p.peek(), "failed to parse expression for return value");
 		return false;
 	}
 
@@ -1196,7 +1195,7 @@ bool Parser::parseContinue(ParseHelper &p, Stmt *&cont)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::CONTINUE)) {
-		err::out(p.peek(), {"expected 'continue' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'continue' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1210,7 +1209,7 @@ bool Parser::parseBreak(ParseHelper &p, Stmt *&brk)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::BREAK)) {
-		err::out(p.peek(), {"expected 'break' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'break' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
@@ -1225,12 +1224,12 @@ bool Parser::parseDefer(ParseHelper &p, Stmt *&defer)
 	lex::Lexeme &start = p.peek();
 
 	if(!p.acceptn(lex::DEFER)) {
-		err::out(p.peek(), {"expected 'defer' here, found: ", p.peek().getTok().cStr()});
+		err::out(p.peek(), "expected 'defer' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}
 
 	if(!parseExpr16(p, val, false)) {
-		err::out(p.peek(), {"failed to parse expression for return value"});
+		err::out(p.peek(), "failed to parse expression for return value");
 		return false;
 	}
 

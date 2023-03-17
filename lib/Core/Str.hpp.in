@@ -1,16 +1,15 @@
 Var *strAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>() && !args[1]->is<VarChar>()) {
-		vm.fail(loc, {"expected string/stringref/char argument"
-			      " for string addition, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected string/char argument"
+			" for string addition, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	VarStr *res = vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->get());
-	if(args[1]->is<VarStr>()) res->get() += as<VarStr>(args[1])->get();
-	else if(args[1]->is<VarStrRef>()) res->get() += as<VarStrRef>(args[1])->get();
-	else if(args[1]->is<VarChar>()) res->get() += as<VarChar>(args[1])->get();
+	res->get() += as<VarStr>(args[1])->get();
 	return res;
 }
 
@@ -18,8 +17,8 @@ Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected integer argument for string multiplication, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(loc, "expected integer argument for string multiplication, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef lhs = as<VarStr>(args[0])->get();
@@ -37,15 +36,13 @@ Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>() && !args[1]->is<VarChar>()) {
-		vm.fail(loc, {"expected string argument for addition assignment, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for addition assignment, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	VarStr *res = as<VarStr>(args[0]);
-	if(args[1]->is<VarStr>()) res->get() += as<VarStr>(args[1])->get();
-	else if(args[1]->is<VarStrRef>()) res->get() += as<VarStrRef>(args[1])->get();
-	else if(args[1]->is<VarChar>()) res->get() += as<VarChar>(args[1])->get();
+	res->get() += as<VarStr>(args[1])->get();
 	return args[0];
 }
 
@@ -54,8 +51,8 @@ Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
-			{"expected integer argument for string multiplication assignment, found: ",
-			 vm.getTypeName(args[1])});
+			"expected integer argument for string multiplication assignment, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	String lhs = as<VarStr>(args[0])->get();
@@ -74,76 +71,67 @@ Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for '<', found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string/stringref argument for '<', found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs < rhs ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for '>', found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs > rhs ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for '<=', found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs <= rhs ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for '>=', found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs >= rhs ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) return vm.getFalse();
+	if(!args[1]->is<VarStr>()) return vm.getFalse();
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs == rhs ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) return vm.getTrue();
+	if(!args[1]->is<VarStr>()) return vm.getTrue();
 	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs =
-	args[1]->is<VarStr>() ? as<VarStr>(args[1])->get() : as<VarStrRef>(args[1])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
 	return lhs != rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -151,12 +139,12 @@ Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected argument to be of type integer for string.at(), found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(loc, "expected argument to be of type integer for string.at(), found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	StringRef str = as<VarStr>(args[0])->get();
 	size_t pos    = mpz_get_ui(as<VarInt>(args[1])->getSrc());
 	if(pos >= str.size()) return vm.getNil();
-	return vm.makeVar<VarChar>(loc, str[pos]);
+	return vm.makeVar<VarStr>(loc, str[pos]);
 }

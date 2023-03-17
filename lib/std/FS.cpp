@@ -8,6 +8,7 @@
 
 #include "std/BytebufferType.hpp"
 #include "std/FSType.hpp"
+#include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
 enum WalkEntry
@@ -17,7 +18,7 @@ enum WalkEntry
 	RECURSE = 1 << 2,
 };
 
-void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, String &&dirstr, VarVec *v,
+void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dirstr, VarVec *v,
 			Regex regex, size_t flags);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,53 +28,30 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, String &&dirstr, 
 Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for path, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(args[1]->is<VarStr>()) {
-		return access(as<VarStr>(args[1])->get().c_str(), F_OK) != -1 ? vm.getTrue()
-									      : vm.getFalse();
-	}
-	// args[1]->is<VarStrRef>() == true
-	char item[MAX_PATH_CHARS];
-	strncpy(item, as<VarStrRef>(args[1])->get().data(), as<VarStrRef>(args[1])->get().size());
-	item[as<VarStrRef>(args[1])->get().size()] = '\0';
-	return access(item, F_OK) != -1 ? vm.getTrue() : vm.getFalse();
+	return fs::exists(as<VarStr>(args[1])->get().c_str()) ? vm.getTrue() : vm.getFalse();
 }
 
 Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for path, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(!args[2]->is<VarStr>() && !args[2]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for file open mode, found: ",
-			      vm.getTypeName(args[2])});
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for file open mode, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	char filename[MAX_PATH_CHARS], mode[10];
-	if(args[1]->is<VarStr>()) {
-		strcpy(filename, as<VarStr>(args[1])->get().c_str());
-	} else {
-		strncpy(filename, as<VarStrRef>(args[1])->get().data(),
-			as<VarStrRef>(args[1])->get().size());
-		filename[as<VarStrRef>(args[1])->get().size()] = '\0';
-	}
-	if(args[2]->is<VarStr>()) {
-		strcpy(mode, as<VarStr>(args[2])->get().c_str());
-	} else {
-		strncpy(mode, as<VarStrRef>(args[2])->get().data(),
-			as<VarStrRef>(args[2])->get().size());
-		mode[as<VarStrRef>(args[2])->get().size()] = '\0';
-	}
-	FILE *file = fopen(filename, mode);
+	const String &filename = as<VarStr>(args[1])->get();
+	const String &mode     = as<VarStr>(args[2])->get();
+	FILE *file	       = fopen(filename.c_str(), mode.c_str());
 	if(!file) {
-		vm.fail(loc, {"failed to open file '", filename, "' with mode: ", mode});
+		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
 		return nullptr;
 	}
 	return vm.makeVar<VarFile>(loc, file, mode);
@@ -82,38 +60,37 @@ Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<StringRef, AssnArgData> &assn_args)
 {
-	std::vector<Var *> v;
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for directory name, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for directory name, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument "
-			      "for walk mode, found: ",
-			      vm.getTypeName(args[2])});
+		vm.fail(loc,
+			"expected int argument "
+			"for walk mode, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	if(!args[3]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for file regex, found: ",
-			      vm.getTypeName(args[3])});
+	if(!args[3]->is<VarStr>()) {
+		vm.fail(
+		loc, "expected string argument for file regex, found: ", vm.getTypeName(args[3]));
 		return nullptr;
 	}
-	String dirstr;
-	if(args[1]->is<VarStr>()) dirstr = as<VarStr>(args[1])->get();
-	else dirstr = as<VarStrRef>(args[1])->get();
+	String dirstr = as<VarStr>(args[1])->get();
+	size_t flags  = mpz_get_ui(as<VarInt>(args[2])->getSrc());
 
-	size_t flags = mpz_get_ui(as<VarInt>(args[2])->getSrc());
+	if(dirstr.empty()) {
+		vm.fail(loc, "empty directory path provided");
+		return nullptr;
+	}
 
-	StringRef regexstr;
-	Regex regex;
-	if(args[3]->is<VarStr>()) regexstr = as<VarStr>(args[3])->get();
-	else regexstr = as<VarStrRef>(args[3])->get();
-	regex.assign(regexstr.data(), regexstr.size());
+	const String &regexstr = as<VarStr>(args[3])->get();
+	Regex regex(regexstr);
 
 	if(dirstr.size() > 0 && dirstr.back() != '/') dirstr += "/";
 	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-	getEntriesInternal(vm, loc, std::move(dirstr), res, regex, flags);
+	getEntriesInternal(vm, loc, dirstr, res, regex, flags);
 	return res;
 }
 
@@ -123,34 +100,20 @@ Var *fileReopen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarFile *filev = as<VarFile>(args[0]);
 	if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
 
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for path, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(!args[2]->is<VarStr>() && !args[2]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for file open mode, found: ",
-			      vm.getTypeName(args[2])});
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for file open mode, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	char filename[MAX_PATH_CHARS], mode[10];
-	if(args[1]->is<VarStr>()) {
-		strcpy(filename, as<VarStr>(args[1])->get().c_str());
-	} else {
-		strncpy(filename, as<VarStrRef>(args[1])->get().data(),
-			as<VarStrRef>(args[1])->get().size());
-		filename[as<VarStrRef>(args[1])->get().size()] = '\0';
-	}
-	if(args[2]->is<VarStr>()) {
-		strcpy(mode, as<VarStr>(args[2])->get().c_str());
-	} else {
-		strncpy(mode, as<VarStrRef>(args[2])->get().data(),
-			as<VarStrRef>(args[2])->get().size());
-		mode[as<VarStrRef>(args[2])->get().size()] = '\0';
-	}
-	filev->getFile() = fopen(filename, mode);
+	const String &filename = as<VarStr>(args[1])->get();
+	const String &mode     = as<VarStr>(args[2])->get();
+	filev->getFile()       = fopen(filename.c_str(), mode.c_str());
 	if(!filev->getFile()) {
-		vm.fail(loc, {"failed to open file '", filename, "' with mode: ", mode});
+		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
 		filev->setMode("");
 		filev->setOwner(true);
 		return nullptr;
@@ -186,13 +149,13 @@ Var *fileSeek(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for file seek position, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(loc, "expected int argument for file seek position, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for file seek origin, found: ",
-			      vm.getTypeName(args[2])});
+		vm.fail(loc, "expected int argument for file seek origin, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
 	long pos   = mpz_get_si(as<VarInt>(args[1])->getSrc());
@@ -223,24 +186,19 @@ Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc,
-			{"expected string/stringref argument for block begin location, found: ",
-			 vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for block begin location, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(!args[2]->is<VarStr>() && !args[2]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for block end location, found: ",
-			      vm.getTypeName(args[2])});
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for block end location, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
 
-	StringRef beg;
-	if(args[1]->is<VarStr>()) beg = as<VarStr>(args[1])->get();
-	else beg = as<VarStrRef>(args[1])->get();
-	StringRef end;
-	if(args[2]->is<VarStr>()) end = as<VarStr>(args[1])->get();
-	else end = as<VarStrRef>(args[2])->get();
+	const String &beg = as<VarStr>(args[1])->get();
+	const String &end = as<VarStr>(args[2])->get();
 
 	bool inside_block = false;
 	char *lineptr	  = NULL;
@@ -299,26 +257,18 @@ Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for path, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for mode, found: ", vm.getTypeName(args[2])});
+		vm.fail(loc, "expected int argument for mode, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	char path[MAX_PATH_CHARS];
-	if(args[1]->is<VarStr>()) {
-		strcpy(path, as<VarStr>(args[1])->get().c_str());
-	} else { // VarStrRef
-		strncpy(path, as<VarStrRef>(args[1])->get().data(),
-			as<VarStrRef>(args[1])->get().size());
-		path[as<VarStrRef>(args[1])->get().size()] = '\0';
-	}
-	int res = creat(path, mpz_get_si(as<VarInt>(args[2])->getSrc()));
+	const String &path = as<VarStr>(args[1])->get();
+	int res		   = creat(path.c_str(), mpz_get_si(as<VarInt>(args[2])->getSrc()));
 	if(res < 0) {
-		vm.fail(loc, {"failed to create file: '", path, "', error: ", strerror(errno)});
+		vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -327,27 +277,19 @@ Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *fdOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected string/stringref argument for path, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(!args[2]->is<VarInt>()) {
 		vm.fail(loc,
-			{"expected int argument for open flags, found: ", vm.getTypeName(args[2])});
+			"expected int argument for open flags, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	char path[MAX_PATH_CHARS];
-	if(args[1]->is<VarStr>()) {
-		strcpy(path, as<VarStr>(args[1])->get().c_str());
-	} else { // VarStrRef
-		strncpy(path, as<VarStrRef>(args[1])->get().data(),
-			as<VarStrRef>(args[1])->get().size());
-		path[as<VarStrRef>(args[1])->get().size()] = '\0';
-	}
-	int res = open(path, mpz_get_si(as<VarInt>(args[2])->getSrc()));
+	const String &path = as<VarStr>(args[1])->get();
+	int res		   = open(path.c_str(), mpz_get_si(as<VarInt>(args[2])->getSrc()));
 	if(res < 0) {
-		vm.fail(loc, {"failed to open file: '", path, "', error: ", strerror(errno)});
+		vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -357,22 +299,22 @@ Var *fdRead(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for file descriptor, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(
+		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	if(!args[2]->is<VarBytebuffer>()) {
-		vm.fail(loc, {"expected bytebuffer containing data to write, found: ",
-			      vm.getTypeName(args[2])});
+		vm.fail(loc, "expected bytebuffer containing data to write, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
 	VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
 	errno		  = 0;
-	ssize_t res	  = read(mpz_get_si(as<VarInt>(args[1])->get()), bb->getBuf(), bb->size());
+	ssize_t res = read(mpz_get_si(as<VarInt>(args[1])->get()), bb->getBuf(), bb->capacity());
 	if(res < 0 || errno != 0) {
-		vm.fail(loc, {"failed to read from the file descriptor: '",
-			      std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			      "', error: ", strerror(errno)});
+		vm.fail(loc, "failed to read from the file descriptor: '",
+			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	bb->setLen(res);
@@ -383,14 +325,13 @@ Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for file descriptor, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(
+		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(!args[2]->is<VarBytebuffer>() && !args[2]->is<VarStr>() && !args[2]->is<VarStrRef>()) {
-		vm.fail(loc,
-			{"expected bytebuffer/string/stringref containing data to write, found: ",
-			 vm.getTypeName(args[2])});
+	if(!args[2]->is<VarBytebuffer>() && !args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected bytebuffer/string containing data to write, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
 	const void *data = nullptr;
@@ -399,21 +340,17 @@ Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(args[2]->is<VarBytebuffer>()) {
 		VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
 		data		  = bb->getBuf();
-		count		  = bb->size();
+		count		  = bb->capacity();
 	} else if(args[2]->is<VarStr>()) {
 		VarStr *s = as<VarStr>(args[2]);
 		data	  = s->get().data();
 		count	  = s->get().size();
-	} else if(args[2]->is<VarStrRef>()) {
-		VarStrRef *sr = as<VarStrRef>(args[2]);
-		data	      = sr->get().data();
-		count	      = sr->get().size();
 	}
 	ssize_t res = write(mpz_get_si(as<VarInt>(args[1])->get()), data, count);
 	if(res < 0 || errno != 0) {
-		vm.fail(loc, {"failed to write to the file descriptor: '",
-			      std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			      "', error: ", strerror(errno)});
+		vm.fail(loc, "failed to write to the file descriptor: '",
+			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -423,15 +360,15 @@ Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for file descriptor, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(
+		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	int res = close(mpz_get_si(as<VarInt>(args[1])->getSrc()));
 	if(res < 0) {
-		vm.fail(loc, {"failed to close the file descriptor: '",
-			      std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			      "', error: ", strerror(errno)});
+		vm.fail(loc, "failed to close the file descriptor: '",
+			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -499,7 +436,7 @@ INIT_MODULE(FS)
 	return true;
 }
 
-void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, String &&dirstr, VarVec *v,
+void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dirstr, VarVec *v,
 			Regex regex, size_t flags)
 {
 	DIR *dir;

@@ -3,8 +3,8 @@
 			const Map<StringRef, AssnArgData> &assn_args)                              \
 	{                                                                                          \
 		if(!args[1]->is<VarBool>()) {                                                      \
-			vm.fail(loc, {"expected boolean argument for logical '", opname,           \
-				      "', found: ", vm.getTypeName(args[1])});                     \
+			vm.fail(loc, "expected boolean argument for logical '", opname,            \
+				"', found: ", vm.getTypeName(args[1]));                            \
 			return nullptr;                                                            \
 		}                                                                                  \
 		return as<VarBool>(args[0])->get() op as<VarBool>(args[1])->get() ? vm.getTrue()   \

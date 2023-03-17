@@ -1,0 +1,47 @@
+let fs = import("std/fs");
+let os = import("std/os");
+
+# 50 ms
+os.sleep(50);
+os.setEnv("__tmp__", "val");
+assert(os.getEnv("__tmp__") == "val");
+
+# this script is probably running thanks to os.exec()
+
+# TODO: add os.system() test
+
+let insfile = "__testinsfile__";
+os.install(__SRC_PATH__, insfile);
+assert(fs.exists(insfile));
+os.rm(insfile);
+assert(!fs.exists(insfile));
+
+os.name;
+
+let cwd = os.getCWD();
+os.setCWD("/");
+assert(os.getCWD() != cwd);
+os.setCWD(cwd);
+assert(os.getCWD() == cwd);
+
+let dir = "__testdir__";
+os.mkdir(dir);
+assert(fs.exists(dir));
+os.mv(dir, "__moved_testdir__");
+assert(fs.exists("__moved_testdir__"));
+assert(!fs.exists(dir));
+os.mv("__moved_testdir__", dir);
+os.rm(dir);
+assert(!fs.exists(dir));
+
+let cpfile = "__testcpfile__";
+os.cp(__SRC_PATH__, cpfile);
+assert(fs.exists(cpfile));
+os.rm(cpfile);
+assert(!fs.exists(cpfile));
+
+# len == 0 => not found
+assert(os.findExec("ls").len() > 0);
+assert(os.findExec("randomword").empty());
+
+# chmod

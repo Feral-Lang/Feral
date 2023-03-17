@@ -14,8 +14,8 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(!args[1]->is<VarStruct>()) {
 		vm.fail(args[1]->getLoc(),
-			{"expected a struct (of type Stat) as first argument, found: ",
-			 vm.getTypeName(args[1])});
+			"expected a struct (of type Stat) as first argument, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	static const Array<StringRef, 13> reqdkeys = {"dev",   "ino",	  "mode",  "nlink", "uid",
@@ -26,39 +26,28 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(auto key : reqdkeys) {
 		Var *val = st->getAttr(key);
 		if(val == nullptr) {
-			vm.fail(args[1]->getLoc(), {"expected attribute '", key,
-						    "' in struct of type Stat (provided "
-						    "invalid struct)"});
+			vm.fail(args[1]->getLoc(), "expected attribute '", key,
+				"' in struct of type Stat (provided invalid struct)");
 			return nullptr;
 		} else if(!val->is<VarInt>()) {
-			vm.fail(args[1]->getLoc(),
-				{"expected attribute '", key,
-				 "' to be of type 'int', found: ", vm.getTypeName(val)});
+			vm.fail(args[1]->getLoc(), "expected attribute '", key,
+				"' to be of type 'int', found: ", vm.getTypeName(val));
 			return nullptr;
 		}
 	}
-	if(!args[2]->is<VarStr>() && !args[2]->is<VarStrRef>()) {
-		vm.fail(args[2]->getLoc(), {"expected a file name string/stringref"
-					    " parameter as second argument, found: ",
-					    vm.getTypeName(args[2])});
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(args[2]->getLoc(),
+			"expected a file name string"
+			" parameter as second argument, found: ",
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
+	const String &path = as<VarStr>(args[2])->get();
 	struct stat _stat;
-	StringRef path;
-	int res = 0;
-	if(args[2]->is<VarStr>()) {
-		path = as<VarStr>(args[2])->get();
-		res  = stat(as<VarStr>(args[2])->get().c_str(), &_stat);
-	} else if(args[2]->is<VarStrRef>()) {
-		char _path[MAX_PATH_CHARS];
-		path = as<VarStrRef>(args[2])->get();
-		strncpy(_path, path.data(), path.size());
-		_path[path.size()] = '\0';
-		res		   = stat(_path, &_stat);
-	}
+	int res = stat(path.c_str(), &_stat);
 	if(res != 0) {
-		vm.fail(loc, {"stat for path '", path, "' failed, error(", std::to_string(errno),
-			      "): ", strerror(errno)});
+		vm.fail(loc, "stat for path '", path, "' failed, error(", std::to_string(errno),
+			"): ", strerror(errno));
 		return nullptr;
 	}
 

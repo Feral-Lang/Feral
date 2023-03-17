@@ -70,25 +70,16 @@ Var *fltToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		pre_zero.insert(pre_zero.begin(), '.');
 		pre_zero.insert(pre_zero.begin(), '0');
 		pre_zero += res->get();
-		res->get() = std::move(pre_zero);
+		using namespace std;
+		swap(res->get(), pre_zero);
 	}
 	return res;
 }
 
-Var *charToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
-{
-	return vm.makeVar<VarStr>(loc, as<VarChar>(args[0])->get());
-}
 Var *strToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<StringRef, AssnArgData> &assn_args)
 {
 	return args[0];
-}
-Var *strRefToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
-{
-	return vm.makeVar<VarStr>(loc, as<VarStrRef>(args[0])->get());
 }
 
 // TODO: vecToStr() must be done in feral code as Var::toStr() does not exist

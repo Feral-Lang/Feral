@@ -22,15 +22,11 @@ DynLib &DynLib::getInstance()
 	return dynlib;
 }
 
-void *DynLib::load(StringRef filepath)
+void *DynLib::load(const String &filepath)
 {
 	auto handle = handles.find(filepath);
 	if(handle != handles.end()) return handle->second;
 
-	// I WANNA USE STRINGREF DAMN IT!!!
-	static char fp[MAX_PATH_CHARS];
-	strncpy(fp, filepath.data(), filepath.size());
-	fp[filepath.size()] = '\0';
 	// RTLD_GLOBAL is required for allowing unique type_id<>() across shared library
 	// boundaries; see the following
 	// https://cpptruths.blogspot.com/2018/11/non-colliding-efficient.html (section:
@@ -39,12 +35,12 @@ void *DynLib::load(StringRef filepath)
 	// therefore, showing the internal error if not resolved (since dlopen will return
 	// NULL then) this ensures proper error output and exit instead of segfaulting or
 	// something
-	void *hndl = dlopen(fp, RTLD_NOW | RTLD_GLOBAL);
+	void *hndl = dlopen(filepath.c_str(), RTLD_NOW | RTLD_GLOBAL);
 	if(hndl == nullptr) {
-		err::out({"dyn lib failed to open ", filepath, ": ", dlerror()});
+		err::out(nullptr, "dyn lib failed to open ", filepath, ": ", dlerror());
 		return nullptr;
 	}
-	handles[filepath] = hndl;
+	handles.insert({filepath, hndl});
 	return hndl;
 }
 void DynLib::unload(StringRef filepath)

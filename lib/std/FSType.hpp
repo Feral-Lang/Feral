@@ -11,25 +11,22 @@ using namespace fer;
 class VarFile : public Var
 {
 	FILE *file;
-	char mode[10];
+	String mode;
 	bool owner;
 
 public:
-	VarFile(const ModuleLoc *loc, FILE *const file, const char *mode, const bool owner = true);
+	VarFile(const ModuleLoc *loc, FILE *const file, const String &mode,
+		const bool owner = true);
 	~VarFile();
 
 	Var *copy(const ModuleLoc *loc);
 	void set(Var *from);
 
-	void setMode(StringRef newmode);
-
-	inline void setMode(const char *newmode) { strcpy(mode, newmode); }
-	inline void setMode(const String &newmode) { strcpy(mode, newmode.c_str()); }
-
+	inline void setMode(StringRef newmode) { mode = newmode; }
 	inline void setOwner(bool isowner) { owner = isowner; }
 
 	inline FILE *&getFile() { return file; }
-	inline const char *getMode() { return mode; }
+	inline StringRef getMode() { return mode; }
 	inline bool isOwner() { return owner; }
 };
 

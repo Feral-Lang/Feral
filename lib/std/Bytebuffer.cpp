@@ -9,8 +9,8 @@ Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 			 const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for bytebuffer size, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(
+		loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	return vm.makeVar<VarBytebuffer>(loc, mpz_get_ui(as<VarInt>(args[1])->getSrc()));
@@ -20,9 +20,10 @@ Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		      const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument "
-			      "for bytebuffer size, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(loc,
+			"expected int argument "
+			"for bytebuffer size, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
@@ -34,8 +35,8 @@ Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		      const Map<StringRef, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, {"expected int argument for bytebuffer len, found: ",
-			      vm.getTypeName(args[1])});
+		vm.fail(
+		loc, "expected int argument for bytebuffer len, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
@@ -43,10 +44,10 @@ Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *bytebufferSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		    const Map<StringRef, AssnArgData> &assn_args)
+Var *bytebufferCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			const Map<StringRef, AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->size());
+	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->capacity());
 }
 
 Var *bytebufferLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -73,8 +74,8 @@ INIT_MODULE(Bytebuffer)
 
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "resize", bytebufferResize, 1);
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "setLen", bytebufferSetLen, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "size", bytebufferSize, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr, 1);
+	vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen, 0);
+	vm.addNativeTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity, 0);
+	vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr, 0);
 	return true;
 }

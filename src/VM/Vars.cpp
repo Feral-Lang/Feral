@@ -21,7 +21,7 @@ void VarFrame::add(StringRef name, Var *val, bool iref)
 	auto loc = vars.find(name);
 	if(loc != vars.end()) decref(loc->second);
 	if(iref) incref(val);
-	if(loc == vars.end()) vars[name] = val;
+	if(loc == vars.end()) vars.insert({String(name), val});
 	else loc->second = val;
 }
 bool VarFrame::rem(StringRef name, bool dref)
@@ -150,7 +150,7 @@ void Vars::popFn()
 void Vars::stash(StringRef name, Var *val, bool iref)
 {
 	if(iref) incref(val);
-	stashed[name] = val;
+	stashed.insert({String(name), val});
 }
 void Vars::unstash()
 {

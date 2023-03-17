@@ -4,11 +4,9 @@
 ///////////////////////////////////////////// VarFile ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFile::VarFile(const ModuleLoc *loc, FILE *const file, const char *mode, const bool owner)
-	: Var(loc, typeID<VarFile>(), false, false), file(file), owner(owner)
-{
-	strcpy(this->mode, mode);
-}
+VarFile::VarFile(const ModuleLoc *loc, FILE *const file, const String &mode, const bool owner)
+	: Var(loc, typeID<VarFile>(), false, false), file(file), mode(mode), owner(owner)
+{}
 VarFile::~VarFile()
 {
 	if(owner && file) fclose(file);
@@ -21,12 +19,6 @@ void VarFile::set(Var *from)
 	if(owner) fclose(file);
 	owner = false;
 	file  = as<VarFile>(from)->file;
-}
-
-void VarFile::setMode(StringRef newmode)
-{
-	strncpy(mode, newmode.data(), newmode.size());
-	mode[newmode.size()] = '\0';
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,16 +42,17 @@ void VarFileIterator::set(Var *from)
 
 bool VarFileIterator::next(VarStr *&val)
 {
-	if(!val || !val->is<VarStr>()) return false;
-	char *lineptr = NULL;
-	size_t len    = 0;
-	ssize_t read  = 0;
+	if(!val) return false;
+	char *lineptr	= NULL;
+	size_t len	= 0;
+	ssize_t read	= 0;
+	String &valdata = val->get();
 	if((read = getline(&lineptr, &len, file->getFile())) != -1) {
-		val->get().clear();
-		val->get() = lineptr;
+		valdata.clear();
+		valdata = lineptr;
 		free(lineptr);
-		while(!val->get().empty() && val->get().back() == '\n') val->get().pop_back();
-		while(!val->get().empty() && val->get().back() == '\r') val->get().pop_back();
+		while(!valdata.empty() && valdata.back() == '\n') valdata.pop_back();
+		while(!valdata.empty() && valdata.back() == '\r') valdata.pop_back();
 		return true;
 	}
 	if(lineptr) free(lineptr);

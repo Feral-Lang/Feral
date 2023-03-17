@@ -50,15 +50,23 @@ Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data)
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, long double data)
 	: data{.d = data}, loc(loc), dtype(DataType::FLT), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, char data)
-	: data{.c = data}, loc(loc), dtype(DataType::CHR), opcode(opcode)
-{}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, bool data)
 	: data{.b = data}, loc(loc), dtype(DataType::BOOL), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc)
 	: data{.i = 0}, loc(loc), dtype(DataType::NIL), opcode(opcode)
 {}
+
+void Instruction::dump(OStream &os) const
+{
+	os << getOpcodeStr(getOpcode());
+	if(isDataNil()) os << "[nil]";
+	if(isDataInt()) os << "[int]  " << getDataInt();
+	if(isDataFlt()) os << "[flt]  " << getDataFlt();
+	if(isDataStr()) os << "[str]  " << getDataStr();
+	if(isDataIden()) os << "[iden] " << getDataStr();
+	if(isDataBool()) os << "[bool] " << (getDataBool() ? "true" : "false");
+}
 
 Bytecode::Bytecode() {}
 Bytecode::~Bytecode() {}
@@ -67,15 +75,9 @@ void Bytecode::dump(OStream &os) const
 {
 	for(size_t idx = 0; idx < code.size(); ++idx) {
 		auto &i = code[idx];
-		os << std::left << std::setw(5) << idx << std::left << std::setw(14)
-		   << getOpcodeStr(i.getOpcode());
-		if(i.isDataNil()) os << "[nil]\n";
-		if(i.isDataChr()) os << "[chr]  " << i.getDataChr() << "\n";
-		if(i.isDataInt()) os << "[int]  " << i.getDataInt() << "\n";
-		if(i.isDataFlt()) os << "[flt]  " << i.getDataFlt() << "\n";
-		if(i.isDataStr()) os << "[str]  " << i.getDataStr() << "\n";
-		if(i.isDataIden()) os << "[iden] " << i.getDataStr() << "\n";
-		if(i.isDataBool()) os << "[bool] " << (i.getDataBool() ? "true" : "false") << "\n";
+		os << std::left << std::setw(5) << idx << std::left << std::setw(14);
+		i.dump(os);
+		os << "\n";
 	}
 }
 

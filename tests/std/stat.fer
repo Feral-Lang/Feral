@@ -1,0 +1,20 @@
+let stat = import("std/stat");
+
+let st1 = stat.stat(__SRC_DIR__ + "/stat.fer");
+let st2 = stat.stat("/dev/zero");
+
+assert(st1.isReg());
+assert(!st1.isDir());
+assert(!st1.isChr());
+assert(!st1.isBlk());
+assert(!st1.isFifo());
+assert(!st1.isLnk());
+assert(!st1.isSock());
+
+assert(!st2.isReg());
+assert(!st2.isDir());
+assert(st2.isChr());
+assert(!st2.isBlk());
+assert(!st2.isFifo());
+assert(!st2.isLnk());
+assert(!st2.isSock());

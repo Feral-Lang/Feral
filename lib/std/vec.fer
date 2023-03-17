@@ -37,5 +37,5 @@ let slice in VecTy = fn(start, end = -1) {
 
 let sub in VecTy = fn(start, end = -1) {
 	if end == -1 { end = self.len(); }
-	return self.subNtive(start, end);
+	return self.subNative(start, end);
 };

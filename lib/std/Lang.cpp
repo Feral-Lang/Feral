@@ -30,21 +30,21 @@ Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 	for(size_t i = 1; i < args.size(); ++i) {
 		auto &a = args[i];
-		if(!a->is<VarStrRef>()) {
+		if(!a->is<VarStr>()) {
 			vm.fail(a->getLoc(),
-				{"expected const strings for enums (use strings or atoms), found: ",
-				 vm.getTypeName(a)});
+				"expected strings for enums (use strings or atoms), found: ",
+				vm.getTypeName(a));
 			vm.unmakeVar(res);
 			return nullptr;
 		}
-		res->setAttr(as<VarStrRef>(a)->get(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
+		res->setAttr(as<VarStr>(a)->get(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
 	}
 
 	for(auto &a : assn_args) {
 		if(!a.second.val->is<VarInt>()) {
 			vm.fail(a.second.val->getLoc(),
-				{"expected argument value to be of type integer for enums, found: ",
-				 vm.getTypeName(a.second.val)});
+				"expected argument value to be of type integer for enums, found: ",
+				vm.getTypeName(a.second.val));
 			vm.unmakeVar(res);
 			return nullptr;
 		}
@@ -64,18 +64,18 @@ Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{a.second};
 		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>() && !v->is<VarStrRef>()) {
-			vm.fail(loc, {"'str' member call did not return a"
-				      " string/stringref, instead returned: ",
-				      vm.getTypeName(v)});
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
 			decref(v);
 			vm.unmakeVar(res);
 			return nullptr;
 		}
 		res->get() += a.first;
 		res->get() += ": ";
-		if(v->is<VarStr>()) res->get() += as<VarStr>(v)->get();
-		else if(v->is<VarStrRef>()) res->get() += as<VarStrRef>(v)->get();
+		res->get() += as<VarStr>(v)->get();
 		decref(v);
 		res->get() += ", ";
 	}
@@ -90,16 +90,14 @@ Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			  const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected typename to be of type string/stringref, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected typename to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	VarStructDef *def = as<VarStructDef>(args[0]);
-	StringRef name;
-	if(args[1]->is<VarStr>()) name = as<VarStr>(args[1])->get();
-	else if(args[1]->is<VarStrRef>()) name = as<VarStrRef>(args[1])->get();
-	vm.setTypeName(def->getTypeFnID(), vm.getContext().strFrom({name}));
+	VarStructDef *def  = as<VarStructDef>(args[0]);
+	const String &name = as<VarStr>(args[1])->get();
+	vm.setTypeName(def->getTypeFnID(), name);
 	return vm.getNil();
 }
 
@@ -109,7 +107,7 @@ Var *structDefGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarStructDef *def = as<VarStructDef>(args[0]);
 	VarVec *res	  = vm.makeVar<VarVec>(loc, def->getAttrOrder().size(), false);
 	for(auto &a : def->getAttrOrder()) {
-		res->push(vm.makeVarWithRef<VarStrRef>(loc, a));
+		res->push(vm.makeVarWithRef<VarStr>(loc, a));
 	}
 	return res;
 }
@@ -117,15 +115,15 @@ Var *structDefGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			    const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected field name to be of type string/stringref, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected field name to be "
+			"of type string, found: ",
+			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef name;
-	if(args[1]->is<VarStr>()) name = as<VarStr>(args[1])->get();
-	else if(args[1]->is<VarStrRef>()) name = as<VarStrRef>(args[1])->get();
-	Var *res = as<VarStructDef>(args[0])->getAttr(name);
+	const String &name = as<VarStr>(args[1])->get();
+	Var *res	   = as<VarStructDef>(args[0])->getAttr(name);
 	return res ? res : vm.getNil();
 }
 
@@ -135,7 +133,7 @@ Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarStruct *st = as<VarStruct>(args[0]);
 	VarVec *res   = vm.makeVar<VarVec>(loc, st->getAttrs().size(), false);
 	for(auto &a : st->getAttrs()) {
-		res->push(vm.makeVarWithRef<VarStrRef>(loc, a.first));
+		res->push(vm.makeVarWithRef<VarStr>(loc, a.first));
 	}
 	return res;
 }
@@ -143,25 +141,23 @@ Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			 const Map<StringRef, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>() && !args[1]->is<VarStrRef>()) {
-		vm.fail(loc, {"expected field name to be of type string/stringref, found: ",
-			      vm.getTypeName(args[1])});
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(
+		loc, "expected field name to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef name;
-	if(args[1]->is<VarStr>()) name = as<VarStr>(args[1])->get();
-	else if(args[1]->is<VarStrRef>()) name = as<VarStrRef>(args[1])->get();
+	const String &name = as<VarStr>(args[1])->get();
 
 	VarStruct *st = as<VarStruct>(args[0]);
 	Var *val      = st->getAttr(name);
 	if(!val) {
-		vm.fail(loc, {"field name: '", name, "' not found in struct"});
+		vm.fail(loc, "field name: '", name, "' not found in struct");
 		return nullptr;
 	}
 
 	if(val->getType() != args[2]->getType()) {
-		vm.fail(loc, {"attribute value type mismatch; expected: '", vm.getTypeName(val),
-			      "', provided: '", vm.getTypeName(args[2]), "'"});
+		vm.fail(loc, "attribute value type mismatch; expected: '", vm.getTypeName(val),
+			"', provided: '", vm.getTypeName(args[2]), "'");
 		return nullptr;
 	}
 	val->set(args[2]);

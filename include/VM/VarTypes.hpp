@@ -192,20 +192,6 @@ public:
 	inline mpfr_srcptr getSrc() { return val; }
 };
 
-class VarChar : public Var
-{
-	char val;
-
-public:
-	VarChar(const ModuleLoc *loc, char val);
-
-	Var *copy(const ModuleLoc *loc) override;
-	void set(Var *from) override;
-
-	inline void set(char newval) { val = newval; }
-	inline char &get() { return val; }
-};
-
 class VarStr : public Var
 {
 	String val;
@@ -221,21 +207,6 @@ public:
 
 	inline void set(StringRef newval) { val = newval; }
 	inline String &get() { return val; }
-};
-
-class VarStrRef : public Var
-{
-	StringRef val;
-
-public:
-	VarStrRef(const ModuleLoc *loc, StringRef val);
-	VarStrRef(const ModuleLoc *loc, const char *val, size_t count);
-
-	Var *copy(const ModuleLoc *loc) override;
-	void set(Var *from) override;
-
-	inline void set(StringRef newval) { val = newval; }
-	inline StringRef &get() { return val; }
 };
 
 class VarVec : public Var
@@ -299,16 +270,16 @@ union FnBody
 class VarFn : public Var
 {
 	StringRef modpath;
-	StringRef kw_arg;
-	StringRef var_arg;
-	Vector<StringRef> params;
-	Map<StringRef, Var *> assn_params;
+	String kw_arg;
+	String var_arg;
+	Vector<String> params;
+	StringMap<Var *> assn_params;
 	FnBody body;
 	bool is_native;
 
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
-	VarFn(const ModuleLoc *loc, StringRef modpath, StringRef kw_arg, StringRef var_arg,
+	VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
 	~VarFn();
 
@@ -317,21 +288,25 @@ public:
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const Map<StringRef, AssnArgData> &assn_args) override;
 
-	inline void pushParam(StringRef param) { params.push_back(param); }
-	inline void setParams(Span<StringRef> newparams)
+	inline void pushParam(const String &param) { params.push_back(param); }
+	inline void setParams(Span<String> newparams)
 	{
 		params.assign(newparams.begin(), newparams.end());
 	}
-	inline void insertAssnParam(StringRef key, Var *val) { assn_params.insert({key, val}); }
-	inline void setAssnParams(const Map<StringRef, Var *> &newmap) { assn_params = newmap; }
+	inline void insertAssnParam(const String &key, Var *val) { assn_params.insert({key, val}); }
+	inline void setAssnParams(const StringMap<Var *> &newmap) { assn_params = newmap; }
 
 	inline StringRef getModulePath() { return modpath; }
 	inline StringRef getKwArg() { return kw_arg; }
 	inline StringRef getVarArg() { return var_arg; }
-	inline Vector<StringRef> &getParams() { return params; }
+	inline Vector<String> &getParams() { return params; }
 	inline StringRef getParam(size_t idx) { return params[idx]; }
-	inline Map<StringRef, Var *> &getAssnParam() { return assn_params; }
-	inline Var *getAssnParam(StringRef name) { return assn_params[name]; }
+	inline StringMap<Var *> &getAssnParam() { return assn_params; }
+	inline Var *getAssnParam(StringRef name)
+	{
+		auto loc = assn_params.find(name);
+		return loc == assn_params.end() ? nullptr : loc->second;
+	}
 	inline NativeFn getNativeFn() { return body.native; }
 	inline FeralFnBody getFeralFnBody() { return body.feral; }
 	inline bool isNative() { return is_native; }

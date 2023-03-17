@@ -15,7 +15,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 	VarModule *varmod = getCurrModule();
 	Vars *vars	  = varmod->getVars();
 	Module *mod	  = varmod->getMod();
-	StringRef modid	  = mod->getID();
+	size_t modid	  = mod->getID();
 	Bytecode &bc	  = custombc ? *custombc : mod->getBytecode();
 	size_t bcsz	  = end == 0 ? bc.size() : end;
 
@@ -28,9 +28,14 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 
 	for(size_t i = begin; i < bcsz; ++i) {
 		Instruction &ins = bc.getInstrAt(i);
+		// std::cout << "[" << i << ": " << ins.getLoc()->getMod()->getPath() << "] ";
+		// ins.dump(std::cout);
+		// std::cout << " :: ";
+		// dumpExecStack(std::cout);
+		// std::cout << "\n";
+
 		if(recurse_count >= MAX_RECURSE_COUNT) {
-			fail(ins.getLoc(),
-			     {"exceeded max recursion stack count: ", c.strFrom(recurse_count)});
+			fail(ins.getLoc(), "exceeded max recursion stack count: ", recurse_count);
 			recurse_count_exceeded = true;
 			goto handle_err;
 		}
@@ -39,17 +44,17 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			if(!ins.isDataIden()) {
 				Var *res = getConst(ins.getLoc(), ins.getData(), ins.getDataType());
 				if(res == nullptr) {
-					fail(ins.getLoc(), {"invalid data received as const"});
+					fail(ins.getLoc(), "invalid data received as const");
 					goto handle_err;
 				}
-				execstack.push(res, false);
+				execstack.push(res);
 			} else {
 				Var *res = vars->get(ins.getDataStr());
 				if(!res) {
 					res = getGlobal(ins.getDataStr());
 					if(!res) {
-						fail(ins.getLoc(), {"variable '", ins.getDataStr(),
-								    "' does not exist"});
+						fail(ins.getLoc(), "variable '", ins.getDataStr(),
+						     "' does not exist");
 						goto handle_err;
 					}
 				}
@@ -92,8 +97,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 				}
 			} else {
 				if(!val->isCallable()) {
-					fail(ins.getLoc(), {"only callables can be added to non "
-							    "attribute based types"});
+					fail(ins.getLoc(), "only callables can be added to non "
+							   "attribute based types");
 					goto create_fail;
 				}
 				addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->get()
@@ -110,9 +115,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		}
 		case Opcode::STORE: {
 			if(execstack.size() < 2) {
-				fail(ins.getLoc(),
-				     {"execution stack has ", c.strFrom(execstack.size()),
-				      " item(s); required 2 for store operation"});
+				fail(ins.getLoc(), "execution stack has ", execstack.size(),
+				     " item(s); required 2 for store operation");
 				goto handle_err;
 			}
 			Var *var = execstack.pop(false);
@@ -120,10 +124,9 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			// TODO: check if this works for assigning one struct instance of type X to
 			// another struct instance of type Y
 			if(var->getType() != val->getType()) {
-				fail(
-				var->getLoc(),
-				{"type mismatch for assignment: ", getTypeName(val),
-				 " cannot be assigned to variable of type: ", getTypeName(var)});
+				fail(var->getLoc(),
+				     "type mismatch for assignment: ", getTypeName(val),
+				     " cannot be assigned to variable of type: ", getTypeName(var));
 				decref(val);
 				decref(var);
 				goto handle_err;
@@ -165,9 +168,10 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			} else if(var->is<VarBool>()) {
 				res = as<VarBool>(var)->get();
 			} else {
-				fail(ins.getLoc(), {"conditional jump requires boolean"
-						    " (or int/float) data, found: ",
-						    getTypeName(var)});
+				fail(ins.getLoc(),
+				     "conditional jump requires boolean"
+				     " (or int/float) data, found: ",
+				     getTypeName(var));
 				execstack.pop();
 				goto handle_err;
 			}
@@ -188,9 +192,10 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			} else if(var->is<VarBool>()) {
 				res = as<VarBool>(var)->get();
 			} else {
-				fail(ins.getLoc(), {"conditional jump requires boolean"
-						    " (or int/float) data, found: ",
-						    getTypeName(var)});
+				fail(ins.getLoc(),
+				     "conditional jump requires boolean"
+				     " (or int/float) data, found: ",
+				     getTypeName(var));
 				execstack.pop();
 				goto handle_err;
 			}
@@ -205,13 +210,13 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		}
 		case Opcode::CREATE_FN: {
 			StringRef arginfo = ins.getDataStr();
-			StringRef kw, va;
+			String kw, va;
 			if(arginfo[0] == '1') {
-				kw = as<VarStrRef>(execstack.back())->get();
+				kw = as<VarStr>(execstack.back())->get();
 				execstack.pop();
 			}
 			if(arginfo[1] == '1') {
-				va = as<VarStrRef>(execstack.back())->get();
+				va = as<VarStr>(execstack.back())->get();
 				execstack.pop();
 			}
 			size_t argcount = 0, assnarg_count = 0;
@@ -224,7 +229,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 					      assnarg_count, FnBody{.feral = bodies.back()}, false);
 			bodies.pop_back();
 			for(size_t i = 2; i < arginfo.size(); ++i) {
-				StringRef name = as<VarStrRef>(execstack.back())->get();
+				String name = as<VarStr>(execstack.back())->get();
 				execstack.pop();
 				if(arginfo[i] == '1') {
 					fn->insertAssnParam(name,
@@ -243,7 +248,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			Var *self   = nullptr; // only for memcall
 			Var *fnbase = nullptr;
 			Var *res    = nullptr;
-			StringRef fnname;
+			String fnname;
 			// setup call args
 			args.clear();
 			assn_args.clear();
@@ -254,8 +259,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 					Var *a = execstack.pop(false);
 					if(!a->is<VarVec>()) {
 						fail(ins.getLoc(),
-						     {"expected a vector to unpack, found: ",
-						      getTypeName(a)});
+						     "expected a vector to unpack, found: ",
+						     getTypeName(a));
 						decref(a);
 						goto fncall_fail;
 					}
@@ -265,7 +270,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 					}
 					decref(a);
 				} else if(arginfo[i] == '1') {
-					StringRef name = as<VarStrRef>(execstack.back())->get();
+					String name = as<VarStr>(execstack.back())->get();
 					execstack.pop();
 					assn_args[name] = {i, execstack.pop(false)};
 				} else if(arginfo[i] == '0') {
@@ -275,7 +280,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 
 			// fetch the function
 			if(memcall) {
-				fnname = as<VarStrRef>(execstack.back())->get();
+				fnname = as<VarStr>(execstack.back())->get();
 				execstack.pop();
 				self = execstack.pop(false);
 				if(self->isAttrBased()) fnbase = self->getAttr(fnname);
@@ -285,18 +290,17 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			}
 			if(!fnbase) {
 				if(memcall) {
-					fail(ins.getLoc(),
-					     {"callable '", fnname,
-					      "' does not exist for type: ", getTypeName(self)});
+					fail(ins.getLoc(), "callable '", fnname,
+					     "' does not exist for type: ", getTypeName(self));
 				} else {
-					fail(ins.getLoc(), {"this function does not exist"});
+					fail(ins.getLoc(), "this function does not exist");
 				}
 				decref(self);
 				goto fncall_fail;
 			}
 			if(!fnbase->isCallable()) {
-				fail(ins.getLoc(),
-				     {"'", getTypeName(fnbase), "' is not a callable type"});
+				fail(ins.getLoc(), "'", getTypeName(fnbase),
+				     "' is not a callable type");
 				decref(self);
 				goto fncall_fail;
 			}
@@ -309,7 +313,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			if(!res) {
 				if(!recurse_count_exceeded) {
 					fail(ins.getLoc(),
-					     {"function call failed, check the error above"});
+					     "function call failed, check the error above");
 				}
 				goto fncall_fail;
 			}
@@ -334,8 +338,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			if(inbase->isAttrBased()) val = inbase->getAttr(attr);
 			if(!val) val = getTypeFn(inbase, attr);
 			if(!val) {
-				fail(ins.getLoc(), {"type ", getTypeName(inbase),
-						    " does not contain attribute: ", attr});
+				fail(ins.getLoc(), "type ", getTypeName(inbase),
+				     " does not contain attribute: ", attr);
 				decref(inbase);
 				goto handle_err;
 			}
@@ -345,7 +349,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		}
 		case Opcode::RETURN: {
 			if(!ins.getDataBool()) execstack.push(nil);
-			break;
+			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
 			vars->pushLoop();
@@ -386,10 +390,10 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			if(!jmps.empty() && !exit_called) {
 				i = jmps.back().pos - 1;
 				if(!jmps.back().name.empty()) {
-					Var *dat = !failstack.emptyTop()
-						   ? failstack.pop(false)
-						   : makeVarWithRef<VarStrRef>(ins.getLoc(),
-									       "unknown failure");
+					Var *dat =
+					!failstack.emptyTop()
+					? failstack.pop(false)
+					: makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
 					vars->stash(jmps.back().name, dat, false);
 				}
 				jmps.pop_back();
@@ -410,6 +414,26 @@ fail:
 	if(!custombc) vars->popFn();
 	--recurse_count;
 	return 1;
+}
+
+void Interpreter::dumpExecStack(OStream &os)
+{
+	for(auto &e : execstack.get()) {
+		if(e->is<VarInt>()) {
+			os << "int";
+		} else if(e->is<VarFlt>()) {
+			os << "flt";
+		} else if(e->is<VarStr>()) {
+			os << "Str:" << as<VarStr>(e)->get();
+		} else if(e->is<VarNil>()) {
+			os << "nil";
+		} else if(e->is<VarBool>()) {
+			os << "bool:" << (as<VarBool>(e)->get() ? "true" : "false");
+		} else {
+			os << "unknown";
+		}
+		std::cout << " ";
+	}
 }
 
 } // namespace fer

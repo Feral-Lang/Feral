@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "Bytecode.hpp"
+#include "Error.hpp"
 #include "Lexer.hpp"
 
 namespace fer
@@ -43,8 +44,11 @@ public:
 	inline const Stmts &getStmtType() const { return stype; }
 	inline StringRef getStmtTypeString() const { return getStmtTypeCString(); }
 
-#define isStmtX(X, ENUMVAL) \
-	inline bool is##X() { return stype == ENUMVAL; }
+#define isStmtX(X, ENUMVAL)              \
+	inline bool is##X()              \
+	{                                \
+		return stype == ENUMVAL; \
+	}
 	isStmtX(Block, BLOCK);
 	isStmtX(Simple, SIMPLE);
 	isStmtX(Expr, EXPR);
@@ -68,6 +72,18 @@ public:
 template<typename T> T *as(Stmt *data) { return static_cast<T *>(data); }
 
 template<typename T> Stmt **asStmt(T **data) { return (Stmt **)(data); }
+
+namespace err
+{
+template<typename... Args> void out(Stmt *stmt, Args &&...args)
+{
+	out(stmt->getLoc(), std::forward<Args>(args)...);
+}
+template<typename... Args> void outw(Stmt *stmt, Args &&...args)
+{
+	outw(stmt->getLoc(), std::forward<Args>(args)...);
+}
+} // namespace err
 
 class StmtBlock : public Stmt
 {

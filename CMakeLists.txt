@@ -84,7 +84,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 endif()
 
 # Generally, disabled for CI purposes
-if(NOT DEFINED DISABLE_MARCH_NATIVE_FLAG)
+# Also needed when running valgrind as valgrind does not support instruction bytes for Vector<bool>
+if(NOT DEFINED ENV{DISABLE_MARCH_NATIVE} OR "$ENV{DISABLE_MARCH_NATIVE}" STREQUAL "")
 	check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
 	if(COMPILER_SUPPORTS_MARCH_NATIVE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
@@ -203,19 +204,22 @@ foreach(mod ${mods})
 	endif()
 	# add dependencies
 	set(dep "")
-	if("${modname}" STREQUAL "FS") # FS
+	if("${modname}" STREQUAL "Bytebuffer")
+		set(dep "BytebufferType")
+	endif()
+	if("${modname}" STREQUAL "FS")
 		set(dep "BytebufferType" "FSType")
 	endif()
-	if("${modname}" STREQUAL "IO") # IO
+	if("${modname}" STREQUAL "IO")
 		set(dep "FS" "FSType")
 	endif()
-	if("${modname}" STREQUAL "Lang") # Lang
+	if("${modname}" STREQUAL "Lang")
 		set(dep "StructType")
 	endif()
-	if("${modname}" STREQUAL "Stat") # Stat
+	if("${modname}" STREQUAL "Stat")
 		set(dep "StructType")
 	endif()
-	if("${modname}" STREQUAL "Vec") # Vec
+	if("${modname}" STREQUAL "Vec")
 		set(dep "VecType")
 	endif()
 	add_library(${modname} SHARED "${mod}")

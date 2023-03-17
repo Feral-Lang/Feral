@@ -29,7 +29,7 @@ bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
 	case BREAK: return visit(as<StmtBreak>(stmt), source);
 	case DEFER: return visit(as<StmtDefer>(stmt), source);
 	}
-	err::out(stmt, {"invalid statement found for codegen pass: ", stmt->getStmtTypeCString()});
+	err::out(stmt, "invalid statement found for codegen pass: ", stmt->getStmtTypeCString());
 	return false;
 }
 
@@ -42,7 +42,7 @@ bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_BLOCK, stmt->getLoc(), 1);
 	for(auto &s : stmt->getStmts()) {
 		if(!visit(s, &s)) {
-			err::out(stmt, {"failed to generate bytecode for block stmt"});
+			err::out(stmt, "failed to generate bytecode for block stmt");
 			return false;
 		}
 		if(s->isExpr() || s->isSimple()) {
@@ -73,16 +73,12 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 	case lex::FLT:
 		bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataFlt());
 		return true;
-	case lex::CHAR:
-		bc.addInstrChr(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataInt());
-		return true;
 	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
 	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
 	case lex::NIL: bc.addInstrNil(Opcode::LOAD_DATA, stmt->getLoc()); return true;
 	default: break;
 	}
-	err::out(stmt,
-		 {"unable to generate bytecode - unknown simple type: ", val.getTok().cStr()});
+	err::out(stmt, "unable to generate bytecode - unknown simple type: ", val.getTok().cStr());
 	return false;
 }
 
@@ -96,7 +92,7 @@ bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 	for(ssize_t i = stmt->getArgs().size() - 1; i >= 0; --i) {
 		Stmt *&a = stmt->getArg(i);
 		if(!visit(a, &a)) {
-			err::out(a, {"failed to generate code for function argument"});
+			err::out(a, "failed to generate code for function argument");
 			return false;
 		}
 	}
@@ -148,7 +144,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 			       "RHS of dot operation must always be an identifier");
 			if(!visit(l->getLHS(), &l->getLHS())) {
 				err::out(l->getLHS(),
-					 {"failed to generate bytecode for LHS of dot operation"});
+					 "failed to generate bytecode for LHS of dot operation");
 				return false;
 			}
 			attrname = as<StmtSimple>(l->getRHS())->getLexDataStr();
@@ -157,7 +153,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	}
 
 	if(attrname.empty() && !visit(stmt->getLHS(), &stmt->getLHS())) {
-		err::out(stmt->getLHS(), {"failed to generate code for LHS of expression"});
+		err::out(stmt->getLHS(), "failed to generate code for LHS of expression");
 		return false;
 	}
 
@@ -177,7 +173,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	}
 
 	if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
-		err::out(stmt->getRHS(), {"failed to generate code for RHS of expression"});
+		err::out(stmt->getRHS(), "failed to generate code for RHS of expression");
 		return false;
 	}
 
@@ -206,7 +202,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 		bc.addInstrInt(Opcode::JMP, orblk->getLoc(), 0);
 		bc.updateInstrInt(or_jmp_pos, bc.size());
 		if(!visit(orblk, asStmt(&orblk))) {
-			err::out(orblk, {"failed to generate bytecode for or-block of expression"});
+			err::out(orblk, "failed to generate bytecode for or-block of expression");
 			return false;
 		}
 		bc.updateInstrInt(bypass_orblk, bc.size());
@@ -223,19 +219,17 @@ bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 	Stmt *&val		= stmt->getVal();
 	const lex::Lexeme &name = stmt->getName();
 	if(!val && !stmt->isArg()) {
-		err::out(stmt, {"cannot generate bytecode of"
-				" a variable with no value: ",
-				name.getDataStr()});
+		err::out(
+		stmt, "cannot generate bytecode of a variable with no value: ", name.getDataStr());
 		return false;
 	}
 	if(val && !visit(val, &val)) {
-		err::out(stmt,
-			 {"failed to generate bytecode of variable val: ", name.getDataStr()});
+		err::out(stmt, "failed to generate bytecode of variable val: ", name.getDataStr());
 		return false;
 	}
 	if(stmt->getIn()) {
 		if(!visit(stmt->getIn(), asStmt(&stmt->getIn()))) {
-			err::out(stmt->getIn(), {"failed to generate bytecode for 'in' part"});
+			err::out(stmt->getIn(), "failed to generate bytecode for 'in' part");
 			return false;
 		}
 		bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), name.getDataStr());
@@ -260,8 +254,8 @@ bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 	for(auto arg = args.rbegin(); arg != args.rend(); ++arg) {
 		auto &a = *arg;
 		if(!visit(a, asStmt(&a))) {
-			err::out(a, {"failed to generate bytecode for function parameter: ",
-				     a->getName().getDataStr()});
+			err::out(a, "failed to generate bytecode for function parameter: ",
+				 a->getName().getDataStr());
 			return false;
 		}
 	}
@@ -287,12 +281,12 @@ bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source)
 	size_t block_till_loc = bc.size();
 	bc.addInstrInt(Opcode::BLOCK_TILL, stmt->getLoc(), 0); // 0 is a placeholder
 	if(!visit(stmt->getBlk(), asStmt(&stmt->getBlk()))) {
-		err::out(stmt, {"failed to generate code for function definition block"});
+		err::out(stmt, "failed to generate code for function definition block");
 		return false;
 	}
 	bc.updateInstrInt(block_till_loc, bc.size() - 1);
 	if(!visit(stmt->getSig(), asStmt(&stmt->getSig()))) {
-		err::out(stmt, {"failed to generate bytecode for function signature"});
+		err::out(stmt, "failed to generate bytecode for function signature");
 		return false;
 	}
 	bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), fndefarginfo.back());
@@ -322,14 +316,14 @@ bool CodegenParserPass::visit(StmtCond *stmt, Stmt **source)
 	for(auto &c : stmt->getConditionals()) {
 		if(c.getCond()) {
 			if(!visit(c.getCond(), &c.getCond())) {
-				err::out(c.getCond(), {"failed to generate code for condition"});
+				err::out(c.getCond(), "failed to generate code for condition");
 				return false;
 			}
 			jmpendplaceholders.push_back(bc.size());
 			bc.addInstrInt(Opcode::JMP_FALSE_POP, c.getCond()->getLoc(), 0);
 		}
 		if(!visit(c.getBlk(), asStmt(&c.getBlk()))) {
-			err::out(stmt, {"failed to generate code for conditional block"});
+			err::out(stmt, "failed to generate code for conditional block");
 			return false;
 		}
 	}
@@ -356,7 +350,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 	bc.addInstrNil(Opcode::PUSH_LOOP, stmt->getLoc());
 	if(init) {
 		if(!visit(init, &init)) {
-			err::out(init, {"failed to generate code for loop init"});
+			err::out(init, "failed to generate code for loop init");
 			return false;
 		}
 		if(init->isExpr() || init->isSimple()) {
@@ -366,7 +360,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 	condloc = bc.size();
 	if(cond) {
 		if(!visit(cond, &cond)) {
-			err::out(cond, {"failed to generate code for loop init"});
+			err::out(cond, "failed to generate code for loop init");
 			return false;
 		}
 		condjmploc = bc.size();
@@ -375,7 +369,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 
 	size_t body_begin = bc.size();
 	if(blk && !visit(blk, asStmt(&blk))) {
-		err::out(blk, {"failed to generate code for loop block"});
+		err::out(blk, "failed to generate code for loop block");
 		return false;
 	}
 	// TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
@@ -384,7 +378,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 
 	if(incr) {
 		if(!visit(incr, &incr)) {
-			err::out(incr, {"failed to generate code for loop init"});
+			err::out(incr, "failed to generate code for loop init");
 			return false;
 		}
 		if(incr->isExpr() || incr->isSimple()) {
@@ -423,26 +417,26 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 
 	// let __<iter> = <in-expr>;
 	if(!visit(in, &in)) {
-		err::out(in, {"failed to generate bytecode for forin loop in-expr"});
+		err::out(in, "failed to generate bytecode for forin loop in-expr");
 		return false;
 	}
-	StringRef __iter = ctx.strFrom({"__", iter.getDataStr()});
-	bc.addInstrStr(Opcode::CREATE, loc, __iter);
+	iter.setDataSecStr({"__", iter.getDataStr()});
+	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
 
 	size_t continuejmppos = bc.size();
 
 	// let <iter> = __<iter>.next();
-	bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter);
+	bc.addInstrIden(Opcode::LOAD_DATA, loc, iter.getDataStr());
 	bc.addInstrStr(Opcode::LOAD_DATA, loc, "next");
 	bc.addInstrStr(Opcode::MEM_CALL, loc, "");
 	// jump-nil location will be set later
 	size_t jmp_nil_loc = bc.size();
 	bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
-	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
+	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataMainStr());
 
 	size_t body_begin = bc.size();
 	if(blk && !visit(blk, asStmt(&blk))) {
-		err::out(blk, {"failed to generate code for loop block"});
+		err::out(blk, "failed to generate code for loop block");
 		return false;
 	}
 	// TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
@@ -475,7 +469,7 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source)
 {
 	if(stmt->getRetVal() && !visit(stmt->getRetVal(), &stmt->getRetVal())) {
-		err::out(stmt->getRetVal(), {"failed to generate code for return value"});
+		err::out(stmt->getRetVal(), "failed to generate code for return value");
 		return false;
 	}
 	bc.addInstrBool(Opcode::RETURN, stmt->getLoc(), stmt->getRetVal());
@@ -508,7 +502,7 @@ bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtDefer *stmt, Stmt **source)
 {
-	err::out(stmt, {"defer should have been dealt with in SimplifyParserPass"});
+	err::out(stmt, "defer should have been dealt with in SimplifyParserPass");
 	return false;
 }
 
