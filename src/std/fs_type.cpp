@@ -70,8 +70,8 @@ bool var_file_iterable_t::next(var_base_t *&val)
 	if((read = getline(&line_ptr, &len, m_file->get())) != -1) {
 		std::string line = line_ptr;
 		free(line_ptr);
-		while(line.back() == '\n') line.pop_back();
-		while(line.back() == '\r') line.pop_back();
+		while(!line.empty() && line.back() == '\n') line.pop_back();
+		while(!line.empty() && line.back() == '\r') line.pop_back();
 		val = make<var_str_t>(line);
 		return true;
 	}
