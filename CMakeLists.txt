@@ -83,7 +83,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 # Generally, disabled for CI purposes
-if(NOT DEFINED DISABLE_MARCH_NATIVE_FLAG)
+# Also needed when running valgrind as valgrind does not support instruction bytes for Vector<bool>
+if(NOT DEFINED ENV{DISABLE_MARCH_NATIVE} OR "$ENV{DISABLE_MARCH_NATIVE}" STREQUAL "")
 	check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
 	if(COMPILER_SUPPORTS_MARCH_NATIVE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
