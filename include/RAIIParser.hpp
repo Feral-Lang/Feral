@@ -15,17 +15,13 @@ class RAIIParser
 	// as new sources are imported, they'll be pushed back
 	Vector<StringRef> modulestack;
 
-	// the iteration of this list will give the order of imports
-	// this list does NOT contain the main module
-	Vector<StringRef> moduleorder;
-
 	Map<StringRef, Module *> modules;
 
 public:
 	RAIIParser(ArgParser &args);
 	~RAIIParser();
 
-	Module *createModule(const String &path, bool ismain);
+	Module *createModule(String &&path, bool ismain);
 
 	Module *getModule(StringRef path);
 

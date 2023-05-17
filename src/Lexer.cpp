@@ -189,32 +189,30 @@ const char *Tok::getOperCStr() const
 	return "";
 }
 
-bool Data::cmp(const Data &other, const TokType type) const
+Lexeme::Lexeme(const ModuleLoc *loc) : loc(loc), tok(INVALID) {}
+Lexeme::Lexeme(const ModuleLoc *loc, TokType type) : loc(loc), tok(type) {}
+Lexeme::Lexeme(const ModuleLoc *loc, TokType type, String &&_data)
+	: loc(loc), tok(type), data(std::move(_data))
+{}
+Lexeme::Lexeme(const ModuleLoc *loc, TokType type, StringRef _data)
+	: loc(loc), tok(type), data(String(_data))
+{}
+Lexeme::Lexeme(const ModuleLoc *loc, TokType type, int64_t _data) : loc(loc), tok(type), data(_data)
+{}
+Lexeme::Lexeme(const ModuleLoc *loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
+
+bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
 {
 	switch(type) {
-	case STR:
-	case IDEN: return s == other.s;
-	case INT: return i == other.i;
-	case FLT: return f == other.f;
+	case STR: // fallthrough
+	case IDEN: return std::get<String>(data) == std::get<String>(other.data);
+	case INT: return std::get<int64_t>(data) == std::get<int64_t>(other.data);
+	case FLT: return std::get<long double>(data) == std::get<long double>(other.data);
 	default: return false;
 	}
 	return false;
 }
 
-Lexeme::Lexeme(const ModuleLoc *loc) : loc(loc), tok(INVALID), data({.s = "", .i = 0lu, .f = 0.0})
-{}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type)
-	: loc(loc), tok(type), data({.s = "", .i = 0lu, .f = 0.0})
-{}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type, StringRef _data)
-	: loc(loc), tok(type), data({.s = _data, .i = 0lu, .f = 0.0})
-{}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type, int64_t _data)
-	: loc(loc), tok(type), data({.s = "", .i = _data, .f = 0.0})
-{}
-Lexeme::Lexeme(const ModuleLoc *loc, long double _data)
-	: loc(loc), tok(FLT), data({.s = "", .i = 0lu, .f = _data})
-{}
 String Lexeme::str(int64_t pad) const
 {
 	String res;
@@ -312,6 +310,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
 			size_t strsz	  = str.size();
+			if(!str.empty() && str[0] == '.') str = str.substr(1);
 			if(str == "__SRC_PATH__") {
 				str	  = mod->getPath();
 				str_class = STR;
@@ -319,7 +318,6 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 				str	  = mod->getDir();
 				str_class = STR;
 			}
-			if(str[0] == '.') str = str.substr(0, 1);
 			if(str_class == STR || str_class == IDEN)
 			{ // place either the data itself (type = STR, IDEN)
 				toks.emplace_back(locAlloc(line, i - line_start - strsz), str_class,
@@ -385,7 +383,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 StringRef Tokenizer::getName(StringRef data, size_t &i)
 {
 	size_t len   = data.size();
-	size_t start = i;
+	size_t start = i++; // we know first char is valid, duh
 	while(i < len) {
 		if(!isalnum(CURR) && CURR != '_') break;
 		++i;

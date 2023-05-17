@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	auto refloc    = assn_args.find("refs");
 	auto caploc    = assn_args.find("cap");
@@ -49,44 +49,44 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().size());
 }
 
 Var *vecCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().capacity());
 }
 
 Var *vecIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecFront(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->get().empty() ? vm.getNil()
 						  : as<VarVec>(args[0])->get().front();
 }
 
 Var *vecBack(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->get().empty() ? vm.getNil() : as<VarVec>(args[0])->get().back();
 }
 
 Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
 	if(res->isRefVec()) {
@@ -100,7 +100,7 @@ Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
 	if(res->get().empty()) {
@@ -113,7 +113,7 @@ Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -140,7 +140,7 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -166,7 +166,7 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
@@ -186,13 +186,13 @@ Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecLast(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().size() - 1);
 }
 
 Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
@@ -206,7 +206,7 @@ Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -244,7 +244,7 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -281,13 +281,13 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *vecEach(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
 Var *vecIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		     const Map<StringRef, AssnArgData> &assn_args)
+		     const Map<String, AssnArgData> &assn_args)
 {
 	VarVecIterator *it = as<VarVecIterator>(args[0]);
 	Var *res	   = nullptr;

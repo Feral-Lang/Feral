@@ -20,18 +20,18 @@ namespace err
 
 size_t max_errs = 10;
 
-void outCommonStr(const ModuleLoc *loc, bool is_warn, bool with_loc, const String &e)
+void outCommonStr(const ModuleLoc *loc, bool iswarn, bool withloc, const String &e)
 {
 	static size_t errcount = 0;
 
 	if(errcount >= max_errs) return;
 
 	// just show the error
-	if(!with_loc) {
-		std::cout << (is_warn ? "Warning" : "Failure") << ": ";
+	if(!withloc) {
+		std::cout << (iswarn ? "Warning" : "Failure") << ": ";
 		std::cout << e;
 		std::cout << "\n";
-		if(!is_warn) ++errcount;
+		if(!iswarn) ++errcount;
 		if(errcount >= max_errs) std::cout << "Failure: Too many errors encountered\n";
 		return;
 	}
@@ -76,13 +76,13 @@ void outCommonStr(const ModuleLoc *loc, bool is_warn, bool with_loc, const Strin
 	}
 
 	std::cout << filename << " (" << line + 1 << ":" << col + 1 << "): ";
-	std::cout << (is_warn ? "Warning" : "Failure") << ": ";
+	std::cout << (iswarn ? "Warning" : "Failure") << ": ";
 	std::cout << e;
 	std::cout << "\n";
 	std::cout << err_line << "\n";
 	std::cout << spacing_caret << "^\n";
 
-	if(!is_warn) ++errcount;
+	if(!iswarn) ++errcount;
 	if(errcount >= max_errs) std::cout << "Failure: Too many errors encountered\n";
 }
 

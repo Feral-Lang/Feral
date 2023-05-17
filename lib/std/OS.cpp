@@ -22,7 +22,7 @@ String dirPart(const String &full_loc);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *sleepCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(
@@ -35,7 +35,7 @@ Var *sleepCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *getEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for env variable name, found: ",
@@ -48,7 +48,7 @@ Var *getEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *setEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for env variable name, found: ",
@@ -76,7 +76,7 @@ Var *setEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -114,7 +114,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args)
+		  const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -130,7 +130,7 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -160,7 +160,7 @@ Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 #if __ANDROID__
 	return vm.makeVar<VarStr>(loc, "android");
@@ -176,7 +176,7 @@ Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osStrErr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected integer argument for destination directory, found: ",
@@ -191,7 +191,7 @@ Var *osStrErr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *osGetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
 	if(res->get().empty()) {
@@ -203,7 +203,7 @@ Var *osGetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osSetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for destination directory, found: ",
@@ -215,7 +215,7 @@ Var *osSetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	String cmd = "mkdir -p";
 
@@ -237,7 +237,7 @@ Var *osMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osRem(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	String cmd = "rm -r";
 
@@ -259,7 +259,7 @@ Var *osRem(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	String cmd = "cp -r";
 	// last element is the destination
@@ -281,7 +281,7 @@ Var *osCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -316,7 +316,7 @@ Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *osMov(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));

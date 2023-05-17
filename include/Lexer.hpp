@@ -181,56 +181,49 @@ public:
 	inline bool isType(TokType other) const { return val == other; }
 };
 
-struct Data
-{
-	StringRef s;
-	int64_t i;
-	long double f;
-
-	bool cmp(const Data &other, TokType type) const;
-};
-
 class Lexeme
 {
+public:
+	using Data = Variant<String, int64_t, long double>;
+
+private:
+	Data data;
 	const ModuleLoc *loc;
 	Tok tok;
-	Data data;
-	String secdata; // secondary data - when StringRef is not viable
 
 public:
 	Lexeme(const ModuleLoc *loc = nullptr);
 	explicit Lexeme(const ModuleLoc *loc, TokType type);
+	explicit Lexeme(const ModuleLoc *loc, TokType type, String &&_data);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, StringRef _data);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, int64_t _data);
 	explicit Lexeme(const ModuleLoc *loc, long double _data);
+
+	bool cmpData(const Lexeme &other, TokType type) const;
 
 	String str(int64_t pad = 10) const;
 
 	inline bool operator==(const Lexeme &other) const
 	{
-		return tok == other.tok &&
-		       (data.cmp(other.data, tok.getVal()) || secdata == other.secdata);
+		return tok == other.tok && cmpData(other, tok.getVal());
 	}
 	inline bool operator!=(const Lexeme &other) const { return *this == other ? false : true; }
 
-	inline void setDataStr(StringRef str)
+	inline void setDataStr(StringRef str) { data = String(str); }
+	inline void setDataInt(int64_t i) { data = i; }
+	inline void setDataFlt(long double f) { data = f; }
+	inline void setDataStr(InitList<StringRef> strs)
 	{
-		data.s = str;
-		secdata.clear();
-	}
-	inline void setDataInt(int64_t i) { data.i = i; }
-	inline void setDataFlt(long double f) { data.f = f; }
-	inline void setDataSecStr(StringRef str) { secdata = str; }
-	inline void setDataSecStr(InitList<StringRef> strs)
-	{
-		secdata.clear();
-		for(auto s : strs) secdata += s;
+		String datanew;
+		for(auto s : strs) datanew += s;
+		data = datanew;
 	}
 
-	inline StringRef getDataStr() const { return !secdata.empty() ? secdata : data.s; }
-	inline int64_t getDataInt() const { return data.i; }
-	inline long double getDataFlt() const { return data.f; }
-	inline StringRef getDataMainStr() const { return data.s; } // does not bother with secdata
+	inline StringRef getDataStr() const { return std::get<String>(data); }
+	inline int64_t getDataInt() const { return std::get<int64_t>(data); }
+	inline long double getDataFlt() const { return std::get<long double>(data); }
+	// does not bother with secdata
+	inline StringRef getDataMainStr() const { return std::get<String>(data); }
 
 	inline Tok &getTok() { return tok; }
 	inline const Tok &getTok() const { return tok; }

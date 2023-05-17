@@ -6,8 +6,8 @@ using namespace fer;
 
 class VarStructDef : public Var
 {
-	Map<StringRef, Var *> attrs;
-	Vector<StringRef> attrorder;
+	StringMap<Var *> attrs;
+	Vector<String> attrorder;
 	// type id of struct (struct id) which will be used as typeID for struct objects
 	uiptr id;
 
@@ -20,26 +20,26 @@ public:
 
 	// returns VarStruct
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args) override;
+		  const Map<String, AssnArgData> &assn_args) override;
 
 	void setAttr(StringRef name, Var *val, bool iref) override;
 	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
 	Var *getAttr(StringRef name) override;
 
-	inline void pushAttrOrder(StringRef attr) { attrorder.push_back(attr); }
+	inline void pushAttrOrder(StringRef attr) { attrorder.emplace_back(attr); }
 	inline void setAttrOrderAt(size_t idx, StringRef attr) { attrorder[idx] = attr; }
 	inline void setAttrOrder(Span<StringRef> neworder)
 	{
 		attrorder.assign(neworder.begin(), neworder.end());
 	}
-	inline Span<StringRef> getAttrOrder() { return attrorder; }
+	inline Span<String> getAttrOrder() { return attrorder; }
 	inline StringRef getAttrOrderAt(size_t idx) { return attrorder[idx]; }
 	inline uiptr getID() { return id; }
 };
 
 class VarStruct : public Var
 {
-	Map<StringRef, Var *> attrs;
+	StringMap<Var *> attrs;
 	VarStructDef *base;
 	uiptr id;
 
@@ -57,6 +57,6 @@ public:
 	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
 	Var *getAttr(StringRef name) override;
 
-	inline const Map<StringRef, Var *> &getAttrs() { return attrs; }
+	inline const StringMap<Var *> &getAttrs() { return attrs; }
 	inline VarStructDef *getBase() { return base; }
 };

@@ -7,11 +7,11 @@ namespace fer
 
 class ArgInfo
 {
-	StringRef shrt, lng; // short and long names
-	StringRef val;	     // value for argument
-	StringRef help;	     // help string for argument
-	bool reqd;	     // required argument(?)
-	bool val_reqd;	     // value required for argument(?)
+	String shrt, lng; // short and long names
+	String val;	  // value for argument
+	String help;	  // help string for argument
+	bool reqd;	  // required argument(?)
+	bool val_reqd;	  // value required for argument(?)
 
 public:
 	ArgInfo();
@@ -50,9 +50,9 @@ class ArgParser
 	Vector<StringRef> argv;
 	Map<StringRef, ArgInfo> arg_defs; // what/how to parse
 	Map<StringRef, StringRef> opts;	  // parsed args
-	StringRef source;		  // provided source (file) name
 	Vector<StringRef> args;		  // args to interpreter (after source)
 					  // (can use '--' to force start these)
+	String source;			  // provided source (file) name
 
 public:
 	ArgParser(int argc, const char **argv);

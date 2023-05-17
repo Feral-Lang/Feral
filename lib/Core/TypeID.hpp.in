@@ -1,5 +1,5 @@
 Var *typeIDEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarTypeID>()) {
 		return vm.getFalse();
@@ -9,7 +9,7 @@ Var *typeIDEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *typeIDNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarTypeID>()) {
 		return vm.getTrue();

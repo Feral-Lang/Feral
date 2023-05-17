@@ -893,9 +893,9 @@ bool Parser::parseFnSig(ParseHelper &p, Stmt *&fsig)
 	// args
 	while(true) {
 		bool attempt_kw = false;
-		if(p.acceptn(lex::DOT)) attempt_kw = true;
-		if(!p.accept(lex::IDEN)) {
-			err::out(p.peek(), "expected identifier for argument, found: ",
+		if(p.accept(lex::STR)) attempt_kw = true;
+		if(!p.accept(lex::IDEN, lex::STR)) {
+			err::out(p.peek(), "expected identifier/str for argument, found: ",
 				 p.peek().getTok().cStr());
 			return false;
 		}

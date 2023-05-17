@@ -107,7 +107,7 @@ bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 		else if(stmt->unpackArg(i)) arginfo += '2';
 		else arginfo += '0';
 	}
-	fncallarginfo.push_back(ctx.moveStr(std::move(arginfo)));
+	fncallarginfo.push_back(std::move(arginfo));
 	return true;
 }
 
@@ -268,7 +268,7 @@ bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 	for(auto &a : args) {
 		arginfo += a->getVal() ? "1" : "0";
 	}
-	fndefarginfo.push_back(ctx.moveStr(std::move(arginfo)));
+	fndefarginfo.push_back(std::move(arginfo));
 	return true;
 }
 
@@ -420,7 +420,7 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 		err::out(in, "failed to generate bytecode for forin loop in-expr");
 		return false;
 	}
-	iter.setDataSecStr({"__", iter.getDataStr()});
+	iter.setDataStr({"__", iter.getDataStr()});
 	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
 
 	size_t continuejmppos = bc.size();

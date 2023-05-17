@@ -21,8 +21,7 @@ void VarFrame::add(StringRef name, Var *val, bool iref)
 	auto loc = vars.find(name);
 	if(loc != vars.end()) decref(loc->second);
 	if(iref) incref(val);
-	if(loc == vars.end()) vars.insert({String(name), val});
-	else loc->second = val;
+	vars.insert_or_assign(String(name), val);
 }
 bool VarFrame::rem(StringRef name, bool dref)
 {

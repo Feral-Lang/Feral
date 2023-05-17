@@ -1,29 +1,29 @@
 Var *nilToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFlt>(loc, 0.0);
 }
 
 Var *boolToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->get() ? 1.0 : 0.0);
 }
 
 Var *intToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getSrc());
 }
 
 Var *fltToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	return args[0];
 }
 
 Var *strToFlt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "base must be an integer, found: ", vm.getTypeName(args[1]));

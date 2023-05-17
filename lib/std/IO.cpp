@@ -15,7 +15,7 @@ int applyColors(String &str);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -38,7 +38,7 @@ Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -62,7 +62,7 @@ Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
@@ -96,7 +96,7 @@ Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
@@ -131,7 +131,7 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -155,7 +155,7 @@ Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -180,7 +180,7 @@ Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fcprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
@@ -215,7 +215,7 @@ Var *fcprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
@@ -251,7 +251,7 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *scan(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	  const Map<StringRef, AssnArgData> &assn_args)
+	  const Map<String, AssnArgData> &assn_args)
 {
 	if(args.size() > 1 && !args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(),
@@ -274,7 +274,7 @@ Var *scan(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *scanEOF(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(args.size() > 1 && !args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(),
@@ -298,7 +298,7 @@ Var *scanEOF(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fflush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
 		vm.fail(args[1]->getLoc(),
@@ -315,7 +315,7 @@ Var *fflush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *readChar(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<StringRef, AssnArgData> &assn_args)
+	      const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(args[1]->getLoc(),

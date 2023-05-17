@@ -95,7 +95,7 @@ bool VarIntIterator::next(mpz_ptr val)
 }
 
 Var *range(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	Var *lhs_base  = args[1];
 	Var *rhs_base  = args.size() > 2 ? args[2] : nullptr;
@@ -128,7 +128,7 @@ Var *range(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *assertion(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) {
 		vm.fail(loc,
@@ -146,7 +146,7 @@ Var *assertion(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<StringRef, AssnArgData> &assn_args)
+			const Map<String, AssnArgData> &assn_args)
 {
 	VarIntIterator *it = as<VarIntIterator>(args[0]);
 	VarInt *res	   = vm.makeVar<VarInt>(loc, 0);

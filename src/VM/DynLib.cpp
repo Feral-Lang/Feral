@@ -22,7 +22,7 @@ DynLib &DynLib::getInstance()
 	return dynlib;
 }
 
-void *DynLib::load(const String &filepath)
+void *DynLib::load(const char *filepath)
 {
 	auto handle = handles.find(filepath);
 	if(handle != handles.end()) return handle->second;
@@ -35,7 +35,7 @@ void *DynLib::load(const String &filepath)
 	// therefore, showing the internal error if not resolved (since dlopen will return
 	// NULL then) this ensures proper error output and exit instead of segfaulting or
 	// something
-	void *hndl = dlopen(filepath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+	void *hndl = dlopen(filepath, RTLD_NOW | RTLD_GLOBAL);
 	if(hndl == nullptr) {
 		err::out(nullptr, "dyn lib failed to open ", filepath, ": ", dlerror());
 		return nullptr;

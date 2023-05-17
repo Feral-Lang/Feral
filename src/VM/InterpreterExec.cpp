@@ -22,7 +22,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 	Vector<JumpData> jmps;
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
-	Map<StringRef, AssnArgData> assn_args;
+	Map<String, AssnArgData> assn_args;
 
 	if(!custombc) vars->pushFn();
 

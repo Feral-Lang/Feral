@@ -8,7 +8,6 @@
 using namespace fer;
 
 int execInteractive(ArgParser &cmdargs);
-int compileAndRun(RAIIParser &parser, const String &file);
 
 void showVersion();
 
@@ -49,7 +48,7 @@ int main(int argc, char **argv)
 
 	RAIIParser parser(args);
 	Interpreter vm(parser);
-	return vm.compileAndRun(nullptr, file, true);
+	return vm.compileAndRun(nullptr, std::move(file), true);
 }
 
 int execInteractive(ArgParser &cmdargs)

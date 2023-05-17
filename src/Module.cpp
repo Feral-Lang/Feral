@@ -10,11 +10,11 @@
 namespace fer
 {
 
-Module::Module(Context &ctx, size_t id, const String &path, String &&code, bool is_main_module)
-	: ctx(ctx), id(id), path(path), code(std::move(code)), tokens(), ptree(nullptr),
+Module::Module(Context &ctx, size_t id, String &&path, String &&code, bool is_main_module)
+	: ctx(ctx), id(id), path(std::move(path)), code(std::move(code)), tokens(), ptree(nullptr),
 	  is_main_module(is_main_module)
 {
-	dir = fs::parentDir(path);
+	dir = fs::parentDir(this->path);
 }
 Module::~Module() {}
 bool Module::tokenize()

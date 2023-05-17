@@ -11,10 +11,10 @@ class CodegenParserPass : public ParserPass
 {
 	// argument info string for function definitions
 	// needs to be propagated between function signature and definition
-	Vector<StringRef> fndefarginfo;
+	Vector<String> fndefarginfo;
 	// argument info string for function call
 	// needs to be propagated between function call args and expression
-	Vector<StringRef> fncallarginfo;
+	Vector<String> fncallarginfo;
 	Bytecode &bc;
 
 public:

@@ -52,14 +52,6 @@ enum class Opcode : u8
 
 StringRef getOpcodeStr(Opcode opcode);
 
-union Data
-{
-	StringRef s;
-	int64_t i;
-	long double d;
-	bool b;
-};
-
 enum class DataType : u8
 {
 	BOOL,
@@ -72,6 +64,10 @@ enum class DataType : u8
 
 class Instruction
 {
+public:
+	using Data = Variant<String, int64_t, long double, bool>;
+
+private:
 	Data data;
 	const ModuleLoc *loc;
 	DataType dtype;
@@ -96,13 +92,13 @@ public:
 	isDataX(Str, STR);
 	isDataX(Iden, IDEN);
 
-	inline void setInt(int64_t dat) { data.i = dat; }
+	inline void setInt(int64_t dat) { data = dat; }
 
 	inline const ModuleLoc *getLoc() const { return loc; }
-	inline StringRef getDataStr() const { return data.s; }
-	inline int64_t getDataInt() const { return data.i; }
-	inline long double getDataFlt() const { return data.d; }
-	inline bool getDataBool() const { return data.b; }
+	inline StringRef getDataStr() const { return std::get<String>(data); }
+	inline int64_t getDataInt() const { return std::get<int64_t>(data); }
+	inline long double getDataFlt() const { return std::get<long double>(data); }
+	inline bool getDataBool() const { return std::get<bool>(data); }
 
 	inline Data &getData() { return data; }
 	inline DataType getDataType() const { return dtype; }

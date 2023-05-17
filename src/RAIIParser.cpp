@@ -21,7 +21,7 @@ RAIIParser::~RAIIParser()
 	for(auto &m : modules) delete m.second;
 }
 
-Module *RAIIParser::createModule(const String &path, bool ismain)
+Module *RAIIParser::createModule(String &&path, bool ismain)
 {
 	auto res = modules.find(path);
 	if(res != modules.end()) return res->second;
@@ -30,7 +30,7 @@ Module *RAIIParser::createModule(const String &path, bool ismain)
 		err::out(nullptr, "Failed to read source file: ", path);
 		return nullptr;
 	}
-	Module *mod = new Module(ctx, modulestack.size(), path, std::move(code), ismain);
+	Module *mod = new Module(ctx, modulestack.size(), std::move(path), std::move(code), ismain);
 	modulestack.push_back(mod->getPath());
 	modules[mod->getPath()] = mod;
 	return mod;

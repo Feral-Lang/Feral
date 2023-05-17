@@ -45,7 +45,7 @@ void VarStructDef::set(Var *from)
 }
 
 Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<StringRef, AssnArgData> &assn_args)
+			const Map<String, AssnArgData> &assn_args)
 {
 	for(auto &aa : assn_args) {
 		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
@@ -109,7 +109,7 @@ void VarStructDef::setAttr(StringRef name, Var *val, bool iref)
 		decref(loc->second);
 	}
 	if(iref) incref(val);
-	attrs[name] = val;
+	attrs.insert_or_assign(String(name), val);
 }
 
 Var *VarStructDef::getAttr(StringRef name)
@@ -173,7 +173,7 @@ void VarStruct::setAttr(StringRef name, Var *val, bool iref)
 		decref(loc->second);
 	}
 	if(iref) incref(val);
-	attrs[name] = val;
+	attrs.insert_or_assign(String(name), val);
 }
 
 Var *VarStruct::getAttr(StringRef name)

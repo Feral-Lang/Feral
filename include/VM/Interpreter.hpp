@@ -37,11 +37,11 @@ class Interpreter
 	// names of types (optional)
 	Map<uiptr, String> typenames;
 	// all functions to call before unloading dlls
-	Map<StringRef, ModDeinitFn> dlldeinitfns;
+	StringMap<ModDeinitFn> dlldeinitfns;
 	Map<StringRef, VarModule *> allmodules;
 	Vector<VarModule *> modulestack;
 	// core modules that must be loaded before any program is executed
-	Vector<StringRef> coremods;
+	Vector<String> coremods;
 	// include and module locations - searches in increasing order of List elements
 	Vector<String> includelocs; // should be shared between multiple threads
 	Vector<String> dlllocs;	    // should be shared between multiple threads
@@ -87,7 +87,11 @@ public:
 	}
 
 	// compile and run a file; the file argument must be absolute path
-	int compileAndRun(const ModuleLoc *loc, const String &file, bool main_module = false);
+	int compileAndRun(const ModuleLoc *loc, String &&file, bool main_module = false);
+	inline int compileAndRun(const ModuleLoc *loc, StringRef file, bool main_module = false)
+	{
+		return compileAndRun(loc, String(file), main_module);
+	}
 
 	void pushModule(const ModuleLoc *loc, Module *mod);
 	void pushModule(StringRef path);
@@ -139,13 +143,13 @@ public:
 	StringRef getTypeName(uiptr _typeid);
 
 	// supposed to call the overloaded delete operator in Var
-	Var *getConst(const ModuleLoc *loc, Data &d, DataType dataty);
+	Var *getConst(const ModuleLoc *loc, Instruction::Data &d, DataType dataty);
 
 	int execute(Bytecode *custombc = nullptr, size_t begin = 0, size_t end = 0);
 	// used primarily within libraries & by toStr, toBool
 	// first arg must ALWAYS be self for memcall, nullptr otherwise
 	bool callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-		    const Map<StringRef, AssnArgData> &assn_args);
+		    const Map<String, AssnArgData> &assn_args);
 
 	void initTypeNames();
 

@@ -25,7 +25,7 @@ class Module
 	bool is_main_module;
 
 public:
-	Module(Context &ctx, size_t id, const String &path, String &&code, bool is_main_module);
+	Module(Context &ctx, size_t id, String &&path, String &&code, bool is_main_module);
 	~Module();
 
 	bool tokenize();

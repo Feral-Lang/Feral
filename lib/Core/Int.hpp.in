@@ -1,6 +1,6 @@
 #define ARITHI_FUNC(fn, name)                                                                  \
 	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                  \
-		     const Map<StringRef, AssnArgData> &assn_args)                             \
+		     const Map<String, AssnArgData> &assn_args)                                \
 	{                                                                                      \
 		if(args[1]->is<VarInt>()) {                                                    \
 			VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());  \
@@ -24,7 +24,7 @@
 
 #define ARITHI_ASSN_FUNC(fn, name)                                                               \
 	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                \
-			 const Map<StringRef, AssnArgData> &assn_args)                           \
+			 const Map<String, AssnArgData> &assn_args)                              \
 	{                                                                                        \
 		if(args[1]->is<VarInt>()) {                                                      \
 			mpz_##name(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),    \
@@ -48,7 +48,7 @@
 
 #define LOGICI_FUNC(fn, name, sym)                                                         \
 	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,              \
-		     const Map<StringRef, AssnArgData> &assn_args)                         \
+		     const Map<String, AssnArgData> &assn_args)                            \
 	{                                                                                  \
 		if(args[1]->is<VarInt>()) {                                                \
 			return mpz_cmp(as<VarInt>(args[0])->getSrc(),                      \
@@ -77,7 +77,7 @@ LOGICI_FUNC(LE, le, <=)
 LOGICI_FUNC(GE, ge, >=)
 
 Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
@@ -109,7 +109,7 @@ Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
@@ -140,7 +140,7 @@ Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) == 0
@@ -151,7 +151,7 @@ Var *intEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) != 0
@@ -162,7 +162,7 @@ Var *intNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBAnd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -174,7 +174,7 @@ Var *intBAnd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -186,7 +186,7 @@ Var *intBOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBXOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -198,7 +198,7 @@ Var *intBXOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
 	mpz_com(res->get(), as<VarInt>(args[0])->getSrc());
@@ -206,7 +206,7 @@ Var *intBNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBAndAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		mpz_and(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
@@ -221,7 +221,7 @@ Var *intBAndAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		mpz_ior(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
@@ -234,7 +234,7 @@ Var *intBOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBXOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		mpz_xor(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
@@ -246,20 +246,20 @@ Var *intBXOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBNotAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	mpz_com(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc());
 	return args[0];
 }
 
 Var *intPopCnt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, mpz_popcount(as<VarInt>(args[0])->getSrc()));
 }
 
 Var *intLShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -283,7 +283,7 @@ Var *intLShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intRShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -307,7 +307,7 @@ Var *intRShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intLShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<StringRef, AssnArgData> &assn_args)
+		   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		mpz_mul_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
@@ -328,7 +328,7 @@ Var *intLShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intRShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<StringRef, AssnArgData> &assn_args)
+		   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		mpz_div_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
@@ -349,7 +349,7 @@ Var *intRShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -370,7 +370,7 @@ Var *intPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
@@ -391,14 +391,14 @@ Var *intRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	mpz_add_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
 	return args[0];
 }
 
 Var *intPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
 	mpz_add_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
@@ -406,14 +406,14 @@ Var *intPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intPreDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	mpz_sub_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
 	return args[0];
 }
 
 Var *intPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
 	mpz_sub_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
@@ -421,7 +421,7 @@ Var *intPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intUSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
 	mpz_neg(res->get(), res->getSrc());

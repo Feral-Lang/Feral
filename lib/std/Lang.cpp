@@ -12,7 +12,7 @@ static uiptr genStructEnumID()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *createStruct(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args)
+		  const Map<String, AssnArgData> &assn_args)
 {
 	VarStructDef *res = vm.makeVar<VarStructDef>(loc, assn_args.size(), genStructEnumID());
 	for(auto &attr : assn_args) {
@@ -23,7 +23,7 @@ Var *createStruct(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *res =
 	vm.makeVar<VarStruct>(loc, nullptr, args.size() + assn_args.size() - 1, genStructEnumID());
@@ -55,7 +55,7 @@ Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[0]);
 	VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getTypeFnID()));
@@ -88,7 +88,7 @@ Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			  const Map<StringRef, AssnArgData> &assn_args)
+			  const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -102,7 +102,7 @@ Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 }
 
 Var *structDefGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<StringRef, AssnArgData> &assn_args)
+			const Map<String, AssnArgData> &assn_args)
 {
 	VarStructDef *def = as<VarStructDef>(args[0]);
 	VarVec *res	  = vm.makeVar<VarVec>(loc, def->getAttrOrder().size(), false);
@@ -113,7 +113,7 @@ Var *structDefGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			    const Map<StringRef, AssnArgData> &assn_args)
+			    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -128,7 +128,7 @@ Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> a
 }
 
 Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		     const Map<StringRef, AssnArgData> &assn_args)
+		     const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[0]);
 	VarVec *res   = vm.makeVar<VarVec>(loc, st->getAttrs().size(), false);
@@ -139,7 +139,7 @@ Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<StringRef, AssnArgData> &assn_args)
+			 const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(

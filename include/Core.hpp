@@ -14,6 +14,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 namespace fer
@@ -29,6 +30,7 @@ using Mutex	= std::mutex;
 using Regex	= std::regex;
 using String	= std::string;
 using IStream	= std::istream;
+using Nullptr	= std::nullptr_t;
 using OStream	= std::ostream;
 using IOStream	= std::iostream;
 using StringRef = std::string_view;
@@ -50,6 +52,7 @@ template<typename T> using Deque	   = std::deque<T>;
 template<typename T> using Vector	   = std::vector<T>;
 template<typename T> using InitList	   = std::initializer_list<T>;
 template<typename T> using LockGuard	   = std::lock_guard<T>;
+template<typename... Ts> using Variant	   = std::variant<Ts...>;
 template<typename T, size_t N> using Array = std::array<T, N>;
 template<typename K, typename V> using Map = std::unordered_map<K, V>;
 template<typename V> using StringMap = std::unordered_map<String, V, StringHash, std::equal_to<>>;

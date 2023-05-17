@@ -12,7 +12,6 @@ class ParserPass;
 
 class Context
 {
-	List<String> strings;
 	List<ModuleLoc> modlocmem;
 	List<Stmt *> stmtmem;
 	Map<size_t, ParserPass *> passes;
@@ -21,11 +20,6 @@ public:
 	Context();
 	~Context();
 
-	inline StringRef moveStr(String &&str)
-	{
-		strings.push_front(std::move(str));
-		return strings.front();
-	}
 	ModuleLoc *allocModuleLoc(Module *mod, size_t line, size_t col);
 
 	template<typename T, typename... Args> T *allocStmt(Args &&...args)

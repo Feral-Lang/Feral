@@ -19,7 +19,7 @@ public:
 	static DynLib &getInstance();
 
 	// ensure the source of filepath StringRef does NOT get deleted before DynLib instance
-	void *load(const String &filepath);
+	void *load(const char *filepath);
 	void unload(StringRef filepath);
 	void *get(StringRef filepath, const char *sym);
 

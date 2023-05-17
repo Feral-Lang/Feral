@@ -21,7 +21,7 @@ Var::~Var() {}
 uiptr Var::getTypeFnID() { return _typeid; }
 
 Var *Var::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	return nullptr;
 }
@@ -262,7 +262,7 @@ void VarFn::set(Var *from)
 	is_native   = tmp->is_native;
 }
 Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<StringRef, AssnArgData> &assn_args)
+		 const Map<String, AssnArgData> &assn_args)
 {
 	Context &c = vm.getContext();
 	// -1 for self

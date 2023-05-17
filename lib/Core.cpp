@@ -15,37 +15,37 @@ using namespace fer;
 #include "Core/TypeID.hpp.in"
 
 Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args)
+		  const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
 Var *allGetTypeFnID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		    const Map<StringRef, AssnArgData> &assn_args)
+		    const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
 Var *allGetTypeStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<StringRef, AssnArgData> &assn_args)
+		   const Map<String, AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
 Var *allEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<StringRef, AssnArgData> &assn_args)
+	     const Map<String, AssnArgData> &assn_args)
 {
 	Var *copy = args[0]->copy(loc);
 	// decreased because system internally will increment it again
@@ -54,14 +54,14 @@ Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	args[1]->setLoadAsRef();
 	return args[1];
 }
 
 Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -73,7 +73,7 @@ Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -89,7 +89,7 @@ Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -115,7 +115,7 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<StringRef, AssnArgData> &assn_args)
+		  const Map<String, AssnArgData> &assn_args)
 {
 	return vm.getCurrModule()->getMod()->isMainModule() ? vm.getTrue() : vm.getFalse();
 }

@@ -11,11 +11,10 @@ Context::Context() {}
 Context::~Context()
 {
 #ifdef MEM_COUNT
-	size_t loccount = 0, stringcount = 0, stmtcount = 0;
+	size_t loccount = 0, stmtcount = 0;
 #endif
 
 #ifdef MEM_COUNT
-	for(auto &str : strings) ++stringcount;
 	for(auto &loc : modlocmem) ++loccount;
 #endif
 
@@ -27,8 +26,7 @@ Context::~Context()
 	}
 
 #ifdef MEM_COUNT
-	printf("Total deallocation:\nModLocs: %zu\nStrings: %zu\nStmts: %zu\n", loccount,
-	       stringcount, stmtcount);
+	printf("Total deallocation:\nModLocs: %zu\nStmts: %zu\n", loccount, stmtcount);
 #endif
 }
 

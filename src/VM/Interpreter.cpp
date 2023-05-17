@@ -59,9 +59,9 @@ Interpreter::~Interpreter()
 	for(auto &mod : allmodules) decref(mod.second);
 }
 
-int Interpreter::compileAndRun(const ModuleLoc *loc, const String &file, bool main_module)
+int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_module)
 {
-	Module *mod = parser.createModule(file, main_module);
+	Module *mod = parser.createModule(std::move(file), main_module);
 
 	if(!mod) return 1;
 	if(!mod->tokenize()) return 1;
@@ -167,7 +167,7 @@ bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
 	DynLib &dlibs = DynLib::getInstance();
 	if(dlibs.exists(modfile)) return true;
 
-	if(!dlibs.load(modfile)) {
+	if(!dlibs.load(modfile.c_str())) {
 		fail(loc, "unable to load module file: ", modfile);
 		return false;
 	}
@@ -250,21 +250,21 @@ StringRef Interpreter::getTypeName(uiptr _typeid)
 	return loc->second;
 }
 
-Var *Interpreter::getConst(const ModuleLoc *loc, Data &d, DataType dataty)
+Var *Interpreter::getConst(const ModuleLoc *loc, Instruction::Data &d, DataType dataty)
 {
 	switch(dataty) {
-	case DataType::BOOL: return d.b ? tru : fals;
 	case DataType::NIL: return nil;
-	case DataType::INT: return makeVar<VarInt>(loc, d.i);
-	case DataType::FLT: return makeVar<VarFlt>(loc, d.d);
-	case DataType::STR: return makeVar<VarStr>(loc, d.s);
+	case DataType::BOOL: return std::get<bool>(d) ? tru : fals;
+	case DataType::INT: return makeVar<VarInt>(loc, std::get<int64_t>(d));
+	case DataType::FLT: return makeVar<VarFlt>(loc, std::get<long double>(d));
+	case DataType::STR: return makeVar<VarStr>(loc, std::get<String>(d));
 	default: err::out(loc, "internal error: invalid data type encountered");
 	}
 	return nullptr;
 }
 
 bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-			 const Map<StringRef, AssnArgData> &assn_args)
+			 const Map<String, AssnArgData> &assn_args)
 {
 	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
 	bool memcall = args[0] != nullptr;

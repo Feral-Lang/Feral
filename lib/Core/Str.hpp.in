@@ -1,5 +1,5 @@
 Var *strAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -14,7 +14,7 @@ Var *strAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<StringRef, AssnArgData> &assn_args)
+	    const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected integer argument for string multiplication, found: ",
@@ -34,7 +34,7 @@ Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for addition assignment, found: ",
@@ -47,7 +47,7 @@ Var *strAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -69,7 +69,7 @@ Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 // logical functions
 
 Var *strLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string/stringref argument for '<', found: ",
@@ -82,7 +82,7 @@ Var *strLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
@@ -94,7 +94,7 @@ Var *strGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
@@ -106,7 +106,7 @@ Var *strLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
@@ -118,7 +118,7 @@ Var *strGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getFalse();
 	StringRef lhs = as<VarStr>(args[0])->get();
@@ -127,7 +127,7 @@ Var *strEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getTrue();
 	StringRef lhs = as<VarStr>(args[0])->get();
@@ -136,7 +136,7 @@ Var *strNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<StringRef, AssnArgData> &assn_args)
+	   const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected argument to be of type integer for string.at(), found: ",

@@ -42,19 +42,19 @@ StringRef getOpcodeStr(Opcode opcode)
 }
 
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype)
-	: data{.s = data}, loc(loc), dtype(dtype), opcode(opcode)
+	: data(String(data)), loc(loc), dtype(dtype), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data)
-	: data{.i = data}, loc(loc), dtype(DataType::INT), opcode(opcode)
+	: data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, long double data)
-	: data{.d = data}, loc(loc), dtype(DataType::FLT), opcode(opcode)
+	: data(data), loc(loc), dtype(DataType::FLT), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, bool data)
-	: data{.b = data}, loc(loc), dtype(DataType::BOOL), opcode(opcode)
+	: data(data), loc(loc), dtype(DataType::BOOL), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc)
-	: data{.i = 0}, loc(loc), dtype(DataType::NIL), opcode(opcode)
+	: loc(loc), dtype(DataType::NIL), opcode(opcode)
 {}
 
 void Instruction::dump(OStream &os) const

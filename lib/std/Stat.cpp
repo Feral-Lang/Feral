@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStruct>()) {
 		vm.fail(args[1]->getLoc(),
@@ -69,7 +69,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -77,7 +77,7 @@ Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -85,7 +85,7 @@ Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -93,7 +93,7 @@ Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -101,7 +101,7 @@ Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -109,7 +109,7 @@ Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<StringRef, AssnArgData> &assn_args)
+	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
@@ -117,7 +117,7 @@ Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsSock(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<StringRef, AssnArgData> &assn_args)
+		const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
