@@ -183,9 +183,12 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 		bc.addInstrNil(Opcode::STORE, stmt->getLoc());
 	} else if(oper == lex::DOT) {
 		assert(stmt->getRHS()->isSimple() &&
-		       "RHS of dot operation must always be an identifier");
+		       "RHS of dot operation must always be a primitive");
 		StmtSimple *r = as<StmtSimple>(stmt->getRHS());
-		bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
+		if(r->getLexValue().getTok().isType(lex::INT))
+			bc.addInstrStr(Opcode::ATTR, r->getLoc(),
+				       std::to_string(r->getLexValue().getDataInt()));
+		else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
 	} else if(oper == lex::FNCALL) {
 		assert(stmt->getRHS()->isFnArgs() && "fnargs expected as RHS for function call");
 		bc.addInstrStr(attrname.empty() ? Opcode::CALL : Opcode::MEM_CALL, stmt->getLoc(),
@@ -259,12 +262,12 @@ bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 			return false;
 		}
 	}
-	if(stmt->getKwArg())
-		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
-			       stmt->getKwArg()->getLexDataStr());
 	if(stmt->getVaArg())
 		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
 			       stmt->getVaArg()->getLexDataStr());
+	if(stmt->getKwArg())
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
+			       stmt->getKwArg()->getLexDataStr());
 	for(auto &a : args) {
 		arginfo += a->getVal() ? "1" : "0";
 	}
@@ -409,6 +412,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 {
 	lex::Lexeme &iter    = stmt->getIter();
+	lex::Lexeme __iter   = iter;
 	Stmt *&in	     = stmt->getIn();
 	StmtBlock *&blk	     = stmt->getBlk();
 	const ModuleLoc *loc = stmt->getLoc();
@@ -420,19 +424,19 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 		err::out(in, "failed to generate bytecode for forin loop in-expr");
 		return false;
 	}
-	iter.setDataStr({"__", iter.getDataStr()});
-	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
+	__iter.setDataStr({"__", __iter.getDataStr()});
+	bc.addInstrStr(Opcode::CREATE, loc, __iter.getDataStr());
 
 	size_t continuejmppos = bc.size();
 
 	// let <iter> = __<iter>.next();
-	bc.addInstrIden(Opcode::LOAD_DATA, loc, iter.getDataStr());
+	bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter.getDataStr());
 	bc.addInstrStr(Opcode::LOAD_DATA, loc, "next");
 	bc.addInstrStr(Opcode::MEM_CALL, loc, "");
 	// jump-nil location will be set later
 	size_t jmp_nil_loc = bc.size();
 	bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
-	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataMainStr());
+	bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
 
 	size_t body_begin = bc.size();
 	if(blk && !visit(blk, asStmt(&blk))) {

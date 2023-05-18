@@ -538,16 +538,6 @@ bool Tokenizer::getConstStr(String &data, char &quote_type, size_t &len, size_t 
 		}
 		if(CURR == quote_type && continuous_backslash % 2 == 0) break;
 		++i;
-		if(quote_type == '\'') {
-			if(CURR != quote_type) {
-				err::out(loc(line, starting_at - line_start),
-					 "expected single quote for end"
-					 " of const char, found: ",
-					 CURR);
-				return false;
-			}
-			break;
-		}
 		continuous_backslash = 0;
 	}
 	if(CURR != quote_type) {

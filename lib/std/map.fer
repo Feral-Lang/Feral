@@ -1,0 +1,10 @@
+mload('std/Map');
+
+let '==' in MapTy = fn(other) {
+	if self._type_() != other._type_() { return false; }
+	if self.len() != other.len() { return false; }
+	for e in self.each() {
+		if other[e.0] != e.1 { return false; }
+	}
+	return true;
+};

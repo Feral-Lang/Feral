@@ -222,8 +222,6 @@ public:
 	inline StringRef getDataStr() const { return std::get<String>(data); }
 	inline int64_t getDataInt() const { return std::get<int64_t>(data); }
 	inline long double getDataFlt() const { return std::get<long double>(data); }
-	// does not bother with secdata
-	inline StringRef getDataMainStr() const { return std::get<String>(data); }
 
 	inline Tok &getTok() { return tok; }
 	inline const Tok &getTok() const { return tok; }

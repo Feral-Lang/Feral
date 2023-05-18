@@ -154,6 +154,9 @@ VarVec::VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs)
 {
 	val.reserve(reservesz);
 }
+VarVec::VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs)
+	: Var(loc, typeID<VarVec>(), false, false), val(std::move(val)), asrefs(asrefs)
+{}
 VarVec::~VarVec()
 {
 	for(auto &v : val) decref(v);
@@ -192,6 +195,9 @@ VarMap::VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs)
 {
 	val.reserve(reservesz);
 }
+VarMap::VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs)
+	: Var(loc, typeID<VarMap>(), false, false), val(std::move(val)), asrefs(asrefs)
+{}
 VarMap::~VarMap()
 {
 	for(auto &v : val) decref(v.second);
@@ -207,7 +213,7 @@ Var *VarMap::copy(const ModuleLoc *loc)
 	}
 	return tmp;
 }
-void VarMap::set(const Map<StringRef, Var *> &newval)
+void VarMap::set(const StringMap<Var *> &newval)
 {
 	for(auto &v : val) decref(v.second);
 	val.clear();

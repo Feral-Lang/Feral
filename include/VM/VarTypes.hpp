@@ -216,6 +216,7 @@ class VarVec : public Var
 
 public:
 	VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs);
+	VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs);
 	~VarVec();
 
 	Var *copy(const ModuleLoc *loc) override;
@@ -229,20 +230,21 @@ public:
 
 class VarMap : public Var
 {
-	Map<StringRef, Var *> val;
+	StringMap<Var *> val;
 	bool asrefs;
 
 public:
 	VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs);
+	VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs);
 	~VarMap();
 
 	Var *copy(const ModuleLoc *loc) override;
 	inline void set(Var *from) override { set(as<VarMap>(from)->get()); }
-	void set(const Map<StringRef, Var *> &newval);
+	void set(const StringMap<Var *> &newval);
 
-	inline Map<StringRef, Var *> &get() { return val; }
-	inline void insert(StringRef key, Var *value) { val.insert({key, value}); }
-	inline bool isRefVec() { return asrefs; }
+	inline StringMap<Var *> &get() { return val; }
+	inline void insert(StringRef key, Var *value) { val.insert({String(key), value}); }
+	inline bool isRefMap() { return asrefs; }
 };
 
 // used in native function calls
