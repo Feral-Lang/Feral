@@ -1,3 +1,5 @@
+let assert = import('std/assert');
+
 let vec = import('std/vec');
 let map = import('std/map');
 let lang = import('std/lang');
@@ -5,24 +7,24 @@ let lang = import('std/lang');
 let SomeTy = lang.struct(a = 10, b = 20);
 
 let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
-	assert(self.a == 100);
-	assert(self.b == 200);
-	assert(x == 1);
-	assert(y == 2);
-	assert(kw['a'] == 10);
-	assert(kw['b'] == 20);
-	assert(kw['c'] == 30);
-	assert(va == vec.new(3, 4));
+	assert.eq(self.a, 100);
+	assert.eq(self.b, 200);
+	assert.eq(x, 1);
+	assert.eq(y, 2);
+	assert.eq(kw['a'], 10);
+	assert.eq(kw['b'], 20);
+	assert.eq(kw['c'], 30);
+	assert.eq(va, vec.new(3, 4));
 };
 
 let func2 in SomeTy = fn(x, y = 10, .kw, va...) {
-	assert(self.a == 100);
-	assert(self.b == 200);
-	assert(x == 1);
-	assert(y == 10);
-	assert(kw['a'] == 10);
-	assert(kw['b'] == 20);
-	assert(va.empty());
+	assert.eq(self.a, 100);
+	assert.eq(self.b, 200);
+	assert.eq(x, 1);
+	assert.eq(y, 10);
+	assert.eq(kw['a'], 10);
+	assert.eq(kw['b'], 20);
+	assert.eq(va.empty(), true);
 };
 
 let test = SomeTy(a = 100, b = 200);
@@ -44,5 +46,5 @@ let EXIT_CODE = lang.enum(
 );
 
 #io.println(EXIT_CODE.PARSE_FAIL);
-assert(EXIT_CODE.PARSE_FAIL == 4);
-assert(EXIT_CODE.SOME_ERR == 20);
+assert.eq(EXIT_CODE.PARSE_FAIL, 4);
+assert.eq(EXIT_CODE.SOME_ERR, 20);

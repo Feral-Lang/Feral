@@ -63,12 +63,23 @@ Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected string argument for raise(), found: ", vm.getTypeName(args[1]));
-		return nullptr;
+	String res;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		res += as<VarStr>(v)->get();
+		decref(v);
 	}
-	vm.fail(loc, "raised error: ", as<VarStr>(args[1])->get());
+	vm.fail(loc, "raised: ", res);
 	return nullptr;
 }
 
@@ -121,12 +132,13 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String expr = as<VarStr>(args[1])->get();
-	Var *res    = vm.eval(loc, std::move(expr));
+	StringRef expr = as<VarStr>(args[1])->get();
+	Var *res       = vm.eval(loc, expr);
 	if(!res) {
-		vm.fail(loc, "failed to evaluate expr: ", as<VarStr>(args[1])->get());
+		vm.fail(loc, "failed to evaluate expr: ", expr);
 		return nullptr;
 	}
+	res->dref();
 	return res;
 }
 
@@ -140,7 +152,7 @@ INIT_MODULE(Core)
 {
 	// global functions
 	vm.addNativeFn(loc, "ref", reference, 1);
-	vm.addNativeFn(loc, "raise", raise, 1);
+	vm.addNativeFn(loc, "raise", raise, 1, true);
 	vm.addNativeFn(loc, "mload", loadModule, 1);
 	vm.addNativeFn(loc, "import", importFile, 1);
 	vm.addNativeFn(loc, "eval", evaluateExpr, 1);

@@ -1,9 +1,11 @@
+let assert = import('std/assert');
+
 let data1 = eval('1 + 1'); # 2
 let data2 = eval('data1'); # 2
 let data3 = eval("'data2'"); # 'data2'
 let data4 = eval(data3); # 2
 
-assert(data1 == 2);
-assert(data2 == 2);
-assert(data3 == 'data2');
-assert(data4 == 2);
+assert.eq(data1, 2);
+assert.eq(data2, 2);
+assert.eq(data3, 'data2');
+assert.eq(data4, 2);

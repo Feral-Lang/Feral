@@ -298,9 +298,9 @@ bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Sp
 	return true;
 }
 
-Var *Interpreter::eval(const ModuleLoc *loc, String &&expr)
+Var *Interpreter::eval(const ModuleLoc *loc, StringRef expr)
 {
-	Module *mod = parser.createModule("<eval>", std::move(expr), false);
+	Module *mod = parser.createModule("<eval>", String(expr), false);
 
 	Var *res = nullptr;
 	if(!mod || !mod->tokenize() || !mod->parseTokens(true)) goto done;
@@ -310,7 +310,6 @@ Var *Interpreter::eval(const ModuleLoc *loc, String &&expr)
 	}
 	if(!mod->genCode() || execute(&mod->getBytecode()) || execstack.empty()) goto done;
 	res = execstack.pop(false);
-	res->dref(); // wanna dref but execstack.pop() would also erase the variable itself
 done:
 	if(mod) parser.removeModule(mod->getPath());
 	return res;

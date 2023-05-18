@@ -296,6 +296,59 @@ Var *strEndsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
 
+Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	String str    = as<VarStr>(args[0])->get();
+	size_t argctr = 1;
+	for(size_t i = 0; i < str.size(); ++i) {
+		if(str[i] != '{') continue;
+		if(i > 0 && str[i - 1] == '\\') {
+			str.erase(str.begin() + i - 1);
+			--i;
+			continue;
+		}
+		size_t start = i;
+		++i;
+		String expr;
+		Var *base = nullptr;
+		if(i < str.size() && str[i] == '}') {
+			base = args[argctr++];
+			incref(base);
+		} else {
+			while(i < str.size() && str[i] != '}') expr += str[i++];
+			if(i == str.size()) {
+				vm.fail(loc, "failed to find ending brace for eval expr: ", expr);
+				return nullptr;
+			}
+			base = vm.eval(loc, expr);
+			if(!base) {
+				vm.fail(loc, "failed to evaluate expr: ", expr);
+				return nullptr;
+			}
+		}
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{base};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			decref(base);
+			return nullptr;
+		}
+		String res = as<VarStr>(v)->get();
+		decref(v);
+		decref(base);
+		str.erase(start, expr.size() + 2); // +2 for braces
+		str.insert(str.begin() + start, res.begin(), res.end());
+		i = start + res.size() - 1; // -1 for loop increment (++i)
+	}
+	return vm.makeVar<VarStr>(loc, std::move(str));
+}
+
 Var *hexStrToBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		    const Map<String, AssnArgData> &assn_args)
 {
@@ -412,6 +465,7 @@ INIT_MODULE(Str)
 	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "endsWith", strEndsWith, 1);
+	vm.addNativeTypeFn<VarStr>(loc, "fmt", strFormat, 0, true);
 	vm.addNativeTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr, 0);
 

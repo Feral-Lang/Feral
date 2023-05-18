@@ -127,24 +127,6 @@ Var *range(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
-Var *assertion(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarBool>()) {
-		vm.fail(loc,
-			"expected boolean argument"
-			" for assertion, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-
-	if(!as<VarBool>(args[1])->get()) {
-		vm.fail(loc, "assertion failed");
-		return nullptr;
-	}
-	return vm.getNil();
-}
-
 Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			const Map<String, AssnArgData> &assn_args)
 {
@@ -161,7 +143,6 @@ Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 INIT_MODULE(Utils)
 {
 	vm.addNativeFn(loc, "range", range, 1, true);
-	vm.addNativeFn(loc, "assert", assertion, 1);
 
 	// generate the type ID for int iterator (registerType)
 	vm.registerType<VarIntIterator>(loc, "IntIterator");

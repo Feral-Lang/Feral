@@ -1,0 +1,10 @@
+let assert = import('std/assert');
+
+assert.eq(1, 1);
+assert.ne(1, 2);
+assert.gt(2, 1);
+assert.lt(1, 2);
+assert.ge(1, 1);
+assert.ge(2, 1);
+assert.le(1, 1);
+assert.le(1, 2);

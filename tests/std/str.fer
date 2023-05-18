@@ -1,0 +1,7 @@
+let assert = import('std/assert');
+
+let str = import('std/str');
+
+let template = '1 + 2 = {1 + 2}; 4 + 5 = {}; 10 + 11 = {}; \\{ignore this}{\'but not this\'}{\' or this\'}';
+
+assert.eq(template.fmt(4 + 5, 10 + 11), '1 + 2 = 3; 4 + 5 = 9; 10 + 11 = 21; {ignore this}but not this or this');

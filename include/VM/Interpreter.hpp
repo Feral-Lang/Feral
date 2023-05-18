@@ -153,7 +153,7 @@ public:
 
 	// evaluate a given expression and return its result
 	// primarily used for templates
-	Var *eval(const ModuleLoc *loc, String &&expr);
+	Var *eval(const ModuleLoc *loc, StringRef expr);
 
 	void initTypeNames();
 
