@@ -1,5 +1,6 @@
 #include "Args.hpp"
 #include "Config.hpp"
+#include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
 #include "RAIIParser.hpp"
@@ -41,8 +42,16 @@ int main(int argc, char **argv)
 	String file = String(args.getSource());
 
 	if(!fs::exists(file.c_str())) {
-		err::out(nullptr, "File ", file, " does not exist");
-		return 1;
+		String binfile(fs::parentDir(env::getProcPath()));
+		binfile += "/";
+		binfile += file;
+		binfile += ".fer";
+		if(!fs::exists(binfile.c_str())) {
+			err::out(nullptr, "File ", file, " does not exist");
+			return 1;
+		}
+		args.setSource(binfile);
+		file = binfile;
 	}
 	file = fs::absPath(file.c_str());
 

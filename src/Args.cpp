@@ -35,7 +35,7 @@ bool ArgParser::parse()
 			expect_val	 = false;
 			continue;
 		}
-		if(startsWith(arg, "--")) {
+		if(startsWith(arg, "--") && !source_done) {
 			if(arg.size() == 2) {
 				source_done = true;
 				continue;
@@ -53,7 +53,7 @@ bool ArgParser::parse()
 			}
 			continue;
 		}
-		if(startsWith(arg, "-")) {
+		if(startsWith(arg, "-") && !source_done) {
 			arg = arg.substr(1);
 			for(auto &a : arg_defs) {
 				if(a.second.shrt == arg) {
@@ -67,8 +67,12 @@ bool ArgParser::parse()
 			}
 			continue;
 		}
-		if(!source_done && i > 0) source = arg;
-		else args.push_back(arg);
+		if(!source_done && i > 0) {
+			source	    = arg;
+			source_done = true;
+		} else {
+			args.push_back(arg);
+		}
 	}
 	if(expect_val) {
 		err::out(nullptr, "Expected value to be provided for argument: ", expect_key);

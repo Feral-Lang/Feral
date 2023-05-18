@@ -76,6 +76,28 @@ LOGICI_FUNC(GT, gt, >)
 LOGICI_FUNC(LE, le, <=)
 LOGICI_FUNC(GE, ge, >=)
 
+Var *intEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(args[1]->is<VarInt>()) {
+		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) == 0
+		       ? vm.getTrue()
+		       : vm.getFalse();
+	}
+	return vm.getFalse();
+}
+
+Var *intNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(args[1]->is<VarInt>()) {
+		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) != 0
+		       ? vm.getTrue()
+		       : vm.getFalse();
+	}
+	return vm.getTrue();
+}
+
 Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<String, AssnArgData> &assn_args)
 {
@@ -137,28 +159,6 @@ Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	vm.fail(loc, "expected int or float argument for int " STRINGIFY(name) "-assn, found: ",
 		vm.getTypeName(args[1]));
 	return nullptr;
-}
-
-Var *intEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) == 0
-		       ? vm.getTrue()
-		       : vm.getFalse();
-	}
-	return vm.getFalse();
-}
-
-Var *intNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) != 0
-		       ? vm.getTrue()
-		       : vm.getFalse();
-	}
-	return vm.getTrue();
 }
 
 Var *intBAnd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,

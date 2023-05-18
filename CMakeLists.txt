@@ -247,3 +247,10 @@ foreach(mod ${mods})
 		  COMPONENT Libraries
 	)
 endforeach()
+
+# Utility Scripts
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/utils/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+	USE_SOURCE_PERMISSIONS
+	PATTERN "*"
+)

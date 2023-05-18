@@ -38,19 +38,19 @@
 		return nullptr;                                                                   \
 	}
 
-#define LOGICF_FUNC(name, symnamep, checksym)                                                    \
-	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                  \
-		       const Map<String, AssnArgData> &assn_args)                                \
-	{                                                                                        \
-		if(args[1]->is<VarFlt>()) {                                                      \
-			return mpfr_##symnamep(as<VarFlt>(args[0])->get(),                       \
-					       as<VarFlt>(args[1])->get()) checksym 0            \
-			       ? vm.getTrue()                                                    \
-			       : vm.getFalse();                                                  \
-		}                                                                                \
-		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) "assn, found: ", \
-			vm.getTypeName(args[1]));                                                \
-		return nullptr;                                                                  \
+#define LOGICF_FUNC(name, symnamep, checksym)                                                     \
+	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
+		       const Map<String, AssnArgData> &assn_args)                                 \
+	{                                                                                         \
+		if(args[1]->is<VarFlt>()) {                                                       \
+			return mpfr_##symnamep(as<VarFlt>(args[0])->get(),                        \
+					       as<VarFlt>(args[1])->get()) checksym 0             \
+			       ? vm.getTrue()                                                     \
+			       : vm.getFalse();                                                   \
+		}                                                                                 \
+		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) "-assn, found: ", \
+			vm.getTypeName(args[1]));                                                 \
+		return nullptr;                                                                   \
 	}
 
 ARITHF_FUNC(Add, add, add_z)
@@ -67,8 +67,24 @@ LOGICF_FUNC(LT, less_p, !=)
 LOGICF_FUNC(GT, greater_p, !=)
 LOGICF_FUNC(LE, lessequal_p, !=)
 LOGICF_FUNC(GE, greaterequal_p, !=)
-LOGICF_FUNC(Eq, equal_p, !=)
-LOGICF_FUNC(Ne, equal_p, ==)
+
+Var *fltEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarFlt>()) return vm.getFalse();
+	return mpfr_equal_p(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) == 0
+	       ? vm.getTrue()
+	       : vm.getFalse();
+}
+
+Var *fltNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarFlt>()) return vm.getTrue();
+	return mpfr_equal_p(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) != 0
+	       ? vm.getTrue()
+	       : vm.getFalse();
+}
 
 Var *fltPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)

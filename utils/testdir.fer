@@ -1,0 +1,211 @@
+# executes all files in a given directory, depending on the config
+# ensures they all exit with return code zero
+# also performs cleanup as required
+
+# config shorthands:
+#   $s => feral binary location (self)
+#   $p => full file path
+#   $d => dirname (file's directory)
+#   $f => filename (file name without directory)
+#   $b => basename (file name without directory and extension)
+#   $e => file extension
+
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let sys = import('std/sys');
+let fecl = import('std/fecl');
+let stat = import('std/stat');
+let time = import('std/time');
+let mproc = import('std/multiproc');
+
+let formatCmdStr = fn(fmtstr, fpath) {
+	let shorthand = false;
+	let dirname = '';
+	let filename = '';
+	let ext = '';
+	let locslash = fpath.rfind('/');
+	let locdot = fpath.rfind('.');
+	if locslash == -1 {
+		dirname = '.';
+		if locdot == -1 {
+			filename = fpath;
+		} else {
+			filename = fpath.substr(0, fpath.len() - locdot);
+		}
+	}
+	else {
+		dirname = fpath.substr(0, locslash);
+		if locdot == -1 {
+			filename = fpath.substr(locslash + 1, fpath.len() - locslash);
+		} else {
+			filename = fpath.substr(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
+		}
+	}
+	if locdot == -1 { ext = ''; }
+	else { ext = fpath.substr(locdot + 1, fpath.len() - locdot); }
+
+	let res = fmtstr;
+	for let i = 0; i < res.len(); ++i {
+		if res[i] == '$' && !shorthand {
+			shorthand = true;
+			res.erase(i);
+			--i;
+			continue;
+		}
+		if !shorthand { continue; }
+		shorthand = false;
+		if res[i] == 's' {
+			res.erase(i);
+			res.insert(i, sys.selfBin);
+			i += sys.selfBin.len();
+			--i;
+			continue;
+		}
+		if res[i] == 'p' {
+			res.erase(i);
+			res.insert(i, fpath);
+			i += fpath.len();
+			--i;
+			continue;
+		}
+		if res[i] == 'd' {
+			res.erase(i);
+			res.insert(i, dirname);
+			i += dirname.len();
+			--i;
+			continue;
+		}
+		if res[i] == 'f' {
+			res.erase(i);
+			res.insert(i, filename);
+			i += filename.len();
+			--i;
+			continue;
+		}
+		if res[i] == 'b' {
+			res.erase(i);
+			let extdot = '';
+			if !ext.empty() {
+				extdot = '.';
+			}
+			res.insert(i, filename + extdot + ext);
+			i += filename.len() + extdot.len() + ext.len();
+			--i;
+			continue;
+		}
+		if res[i] == 'e' {
+			res.erase(i);
+			res.insert(i, ext);
+			i += ext.len();
+			--i;
+			continue;
+		}
+	}
+	return res;
+};
+
+if sys.args.empty() {
+	io.println('Usage: ', sys.selfBin, ' ', __SRC_PATH__, ' <directory>');
+	sys.exit(1);
+}
+
+let st = stat.stat(sys.args[0]) or err {
+	io.println('error: stat failed on directory: ', err);
+	sys.exit(1);
+	return nil; # unreachable
+};
+
+if !st.isDir() {
+	io.println('error: entered path is not a directory');
+	sys.exit(1);
+}
+
+let cfgname = sys.args[0] + '/config.fecl';
+if !fs.exists(cfgname) {
+	io.println('error: test config: \'' + cfgname + '\' not found');
+	sys.exit(1);
+}
+let cfgfile = fs.fopen(cfgname);
+let cfgstr = '';
+for line in cfgfile.eachLine() {
+	cfgstr += line + '\n';
+}
+let cfg = fecl.loads(cfgstr);
+let file_pattern = cfg['FilePattern'];
+let exec_cmd = cfg['ExecCmd'];
+let clean_cmd = cfg['CleanCmd'];
+
+let files = fs.walkDir(sys.args[0], fs.WALK_RECURSE, file_pattern);
+let passed = 0, failed = 0;
+let tpool = vec.new(refs = true);
+let max_procs = mproc.getConcurrency();
+
+let wait_procs = fn(max_procs, with_valgrind, counter = true) {
+	while tpool.len() >= max_procs {
+		for let i = 0; i < tpool.len(); ++i {
+			if !tpool[i].isDone() { continue; }
+			let t = tpool[i];
+			if t.getResult() != 0 {
+				if counter { ++failed; }
+				if with_valgrind {
+					io.cprintln('{r}failed {y}', files[t.id()], '{c} with valgrind{0}, {y}code{0}: {r}', t.res(),'{0}');
+				} else {
+					io.cprintln('{r}failed {y}', files[t.id()], '{0}, {y}code{0}: {r}', t.res(),'{0}');
+				}
+				io.fflush(io.stdout);
+			} else {
+				if counter { ++passed; }
+			}
+			tpool.erase(i--);
+		}
+	}
+};
+
+let valgrind = '';
+if sys.args.find('--valgrind') {
+	valgrind = os.findExec('valgrind');
+	if valgrind.empty() {
+		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
+		sys.exit(1);
+	}
+	# --log-fd=1 to pour the valgrind output on stdout so that we
+	# don't have to redirect entire stderr to /dev/null
+	valgrind += ' --log-fd=1 ';
+}
+
+let time_begin = time.now();
+
+for file in files.each() {
+	wait_procs(max_procs, !valgrind.empty());
+	let cmd = formatCmdStr(exec_cmd, file);
+	if !valgrind.empty() {
+		io.cprintln('{c}test{0}({g}valgrind{0}): {y}', cmd, '{0} ...');
+	} else {
+		io.cprintln('{c}test{0}: {y}', cmd, '{0} ...');
+	}
+	io.fflush(io.stdout);
+	tpool.push(mproc.new(valgrind + cmd + ' >/dev/null'));
+}
+wait_procs(1, !valgrind.empty());
+
+let tot_time = time.now() - time_begin;
+
+if !clean_cmd.empty() {
+	for file in files.each() {
+		wait_procs(max_procs, !valgrind.empty(), false);
+		let cmd = formatCmdStr(clean_cmd, file);
+		io.cprintln('{c}clean{0}: {y}', cmd, '{0} ...');
+		io.fflush(io.stdout);
+		tpool.push(mproc.new(cmd + ' >/dev/null'));
+	}
+	wait_procs(1, !valgrind.empty(), false);
+}
+
+io.cprintln('total: {y}', files.len(),
+	    '{0}, passed: {g}', passed,
+	    '{0}, failed: {r}', failed,
+	    '{0}, time: {b}', time.resolve(tot_time, time.milli).round(),
+	    '{0} ms');
+sys.exit(failed);

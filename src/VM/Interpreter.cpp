@@ -28,8 +28,10 @@ Interpreter::Interpreter(RAIIParser &parser)
 	selfbase = fs::absPath(selfbase.c_str());
 
 	Span<StringRef> _cmdargs = argparser.getCodeExecArgs();
-	cmdargs			 = makeVarWithRef<VarVec>(nullptr, _cmdargs.size(), false);
-	for(auto &a : _cmdargs) {
+	// -1 to skip feral binary
+	cmdargs = makeVarWithRef<VarVec>(nullptr, _cmdargs.size() - 1, false);
+	for(size_t i = 1; i < _cmdargs.size(); ++i) {
+		auto &a = _cmdargs[i];
 		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
 	}
 

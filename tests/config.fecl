@@ -1,0 +1,3 @@
+FilePattern = '(.*)\.fer';
+ExecCmd = '$s $p';
+CleanCmd = '';
