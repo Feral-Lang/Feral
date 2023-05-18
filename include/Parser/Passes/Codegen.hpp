@@ -15,6 +15,8 @@ class CodegenParserPass : public ParserPass
 	// argument info string for function call
 	// needs to be propagated between function call args and expression
 	Vector<String> fncallarginfo;
+	// for logical AND and OR jumps
+	Vector<size_t> jmplocs;
 	Bytecode &bc;
 
 public:

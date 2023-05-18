@@ -186,7 +186,7 @@ bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
 		return false;
 	}
 	// set deinit function if available
-	tmp = "deinit_";
+	tmp = "Deinit";
 	tmp += mod;
 	ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modfile, tmp.c_str());
 	if(deinitfn) dlldeinitfns[modfile] = deinitfn;

@@ -166,6 +166,7 @@ public:
 		} else {
 			VarStr *str = makeVarWithRef<VarStr>(loc, "");
 			appendToString(str->get(), std::forward<Args>(args)...);
+			failstack.push(str, false);
 		}
 	}
 	inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }

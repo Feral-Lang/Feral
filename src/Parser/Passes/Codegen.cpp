@@ -121,8 +121,8 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	// member function call instr to be emitted
 	StringRef attrname;
 	// index to edit from where the jump after RHS is to occur (for && and || operations)
-	size_t logicaljmploc;
-	lex::TokType oper = stmt->getOperTok().getVal();
+	size_t beforelogicaljmplocscount = jmplocs.size();
+	lex::TokType oper		 = stmt->getOperTok().getVal();
 
 	size_t or_jmp_pos = 0;
 	if(stmt->getOrBlk()) {
@@ -158,19 +158,17 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	}
 
 	if(oper == lex::LAND || oper == lex::LOR) {
-		logicaljmploc = bc.size();
-		if(oper == lex::LAND) {
-			bc.addInstrInt(Opcode::JMP_FALSE, stmt->getLHS()->getLoc(), 0);
-		} else {
-			bc.addInstrInt(Opcode::JMP_TRUE, stmt->getLHS()->getLoc(), 0);
-		}
-		bc.addInstrInt(Opcode::UNLOAD, stmt->getLHS()->getLoc(), 1);
+		jmplocs.push_back(bc.size());
+		bc.addInstrInt(oper == lex::LAND ? Opcode::JMP_FALSE : Opcode::JMP_TRUE,
+			       stmt->getLHS()->getLoc(), 0);
 	}
 
 	// for operator based memcall, the operator must come before RHS (AKA the memcall arg)
-	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL) {
+	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::LAND &&
+	   oper != lex::LOR)
+	{
 		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(),
-			       StringRef(lex::TokStrs[oper]));
+			       String(lex::TokStrs[oper]));
 	}
 
 	if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
@@ -178,7 +176,14 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 		return false;
 	}
 
-	if(oper == lex::LAND || oper == lex::LOR) bc.updateInstrInt(logicaljmploc, bc.size());
+	if(oper == lex::LAND || oper == lex::LOR) {
+		for(size_t i = beforelogicaljmplocscount; i < jmplocs.size(); ++i) {
+			bc.updateInstrInt(jmplocs[i], bc.size());
+		}
+		size_t remjmps = jmplocs.size() - beforelogicaljmplocscount;
+		for(size_t i = 0; i < remjmps; ++i) jmplocs.pop_back();
+		goto end;
+	}
 
 	if(oper == lex::ASSN) {
 		bc.addInstrNil(Opcode::STORE, stmt->getLoc());
@@ -199,7 +204,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(),
 			       StringRef(stmt->getRHS() ? "0" : ""));
 	}
-
+end:
 	if(stmt->getOrBlk()) {
 		StmtBlock *&orblk = stmt->getOrBlk();
 		bc.addInstrNil(Opcode::POP_JMP, orblk->getLoc());

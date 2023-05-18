@@ -1,3 +1,5 @@
+#include <charconv>
+
 #include "VM/Interpreter.hpp"
 
 using namespace fer;
@@ -452,7 +454,7 @@ INIT_MODULE(Str)
 	vm.addNativeTypeFn<VarStr>(loc, "back", strBack, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "push", strPush, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "pop", strPop, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "ischat", strIsChAt, 2);
+	vm.addNativeTypeFn<VarStr>(loc, "isChAt", strIsChAt, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "set", strSetAt, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "insert", strInsert, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "erase", strErase, 1);

@@ -1,6 +1,45 @@
 let assert = import('std/assert');
 
 let str = import('std/str');
+let vec = import('std/vec');
+
+let s = '12345';
+
+assert.eq(s.len(), 5);
+assert.eq(!s.empty(), true);
+assert.eq(s.front(), '1');
+assert.eq(s.back(), '5');
+assert.eq(s.push('a'), '12345a');
+assert.eq(s.pop(), '12345');
+assert.eq(s.set(0, '0'), '02345');
+assert.eq(s.insert(1, '1'), '012345');
+assert.eq(s.erase(0), '12345');
+assert.eq(s.lastIdx(), 4);
+assert.ge(s.find('123'), 0);
+assert.lt(s.find('0'), 0);
+
+let a = '\n\t  ' + s + ' \t';
+assert.eq(a.trim(), s);
+a = 'abcde';
+assert.eq(a.upper(), 'ABCDE');
+
+assert.eq(s.split('3'), vec.new('12', '45'));
+
+assert.eq(s.startsWith('12'), true);
+assert.eq(s.endsWith('45'), true);
+
+assert.eq('025AF'.getBinStrFromHexStr(), '10010110101111');
+assert.eq('2665'.getBinStrFromHexStr(), '10011001100101');
+let heart = '2665'.getUTF8CharFromHexString();
+assert.eq(heart.len(), 3);
+assert.eq(heart[0].byt(), 226);
+assert.eq(heart[1].byt(), 153);
+assert.eq(heart[2].byt(), 165);
+
+assert.eq('A'.byt(), 65);
+assert.eq(66.chr(), 'B');
+assert.eq(' '.isSpace(), true);
+assert.eq(!'5'.isSpace(), true);
 
 let template = '1 + 2 = {1 + 2}; 4 + 5 = {}; 10 + 11 = {}; \\{ignore this}{\'but not this\'}{\' or this\'}';
 
