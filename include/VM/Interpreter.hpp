@@ -58,7 +58,7 @@ class Interpreter
 	VarNil *nil;
 	size_t exitcode;
 	size_t recurse_count; // how many times execute() has been called by itself
-	bool exit_called;     // mainly used by sys.exit()
+	bool exitcalled;      // mainly used by sys.exit()
 	bool recurse_count_exceeded;
 
 public:
@@ -161,7 +161,7 @@ public:
 
 	template<typename... Args> void fail(const ModuleLoc *loc, Args &&...args)
 	{
-		if(failstack.empty() || exit_called) {
+		if(failstack.empty() || exitcalled) {
 			err::out(loc, std::forward<Args>(args)...);
 		} else {
 			VarStr *str = makeVarWithRef<VarStr>(loc, "");
@@ -184,6 +184,12 @@ public:
 	inline VarBool *getTrue() { return tru; }
 	inline VarBool *getFalse() { return fals; }
 	inline VarNil *getNil() { return nil; }
+	inline bool isExitCalled() { return exitcalled; }
+	inline void setExitCalled(bool called) { exitcalled = called; }
+	inline void setExitCode(int exit_code) { exitcode = exit_code; }
+	inline void setMaxRecurseCount(size_t count) { MAX_RECURSE_COUNT = count; }
+	inline size_t getMaxRecurseCount() { return MAX_RECURSE_COUNT; }
+	inline VarVec *getCLIArgs() { return cmdargs; }
 
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()

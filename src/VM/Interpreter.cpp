@@ -15,7 +15,7 @@ Interpreter::Interpreter(RAIIParser &parser)
 	: selfbin(env::getProcPath()), parser(parser), c(parser.getContext()),
 	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
-	  exitcode(0), recurse_count(0), exit_called(false), recurse_count_exceeded(false)
+	  exitcode(0), recurse_count(0), exitcalled(false), recurse_count_exceeded(false)
 {
 	initTypeNames();
 

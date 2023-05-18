@@ -323,7 +323,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			for(auto &a : args) decref(a);
 			for(auto &aa : assn_args) decref(aa.second.val);
 			if(!memcall) decref(fnbase);
-			if(exit_called) goto done;
+			if(exitcalled) goto done;
 			break;
 		fncall_fail:
 			for(auto &a : args) decref(a);
@@ -387,7 +387,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!jmps.empty() && !exit_called) {
+			if(!jmps.empty() && !exitcalled) {
 				i = jmps.back().pos - 1;
 				if(!jmps.back().name.empty()) {
 					Var *dat =
