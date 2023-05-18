@@ -1,6 +1,6 @@
-let vec = import("std/vec");
-let map = import("std/map");
-let lang = import("std/lang");
+let vec = import('std/vec');
+let map = import('std/map');
+let lang = import('std/lang');
 
 let SomeTy = lang.struct(a = 10, b = 20);
 

@@ -74,6 +74,7 @@ private:
 	Opcode opcode;
 
 public:
+	Instruction(Opcode opcode, const ModuleLoc *loc, String &&data, DataType dtype);
 	Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype);
 	Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data);
 	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
@@ -115,6 +116,10 @@ public:
 	Bytecode();
 	~Bytecode();
 
+	inline void addInstrStr(Opcode opcode, const ModuleLoc *loc, String &&data)
+	{
+		code.emplace_back(opcode, loc, std::move(data), DataType::STR);
+	}
 	inline void addInstrStr(Opcode opcode, const ModuleLoc *loc, StringRef data)
 	{
 		code.emplace_back(opcode, loc, data, DataType::STR);

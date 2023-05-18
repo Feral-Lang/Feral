@@ -26,7 +26,9 @@ inline bool startsWith(StringRef src, StringRef term) { return src.rfind(term, 0
 Vector<StringRef> stringDelim(StringRef str, StringRef delim);
 
 // Convert special characters in string (\n, \t, ...) to raw (\\n, \\t, ...)
-void appendRawString(String &res, StringRef from);
+// and vice versa
+String toRawString(StringRef data);
+String fromRawString(StringRef data);
 
 String vecToStr(Span<StringRef> items);
 String vecToStr(Span<String> items);

@@ -1,8 +1,8 @@
-mload("std/OS");
+mload('std/OS');
 
-let fs = import("std/fs");
-let str = import("std/str");
-let vec = import("std/vec");
+let fs = import('std/fs');
+let str = import('std/str');
+let vec = import('std/vec');
 
 let setEnv = fn(var, val, overwrite = false) {
 	return setEnvNative(var, val, overwrite);
@@ -24,49 +24,49 @@ let exec = fn(cmd, out = nil) {
 # find the given file (exec) in the PATH variables
 # return the entire file path if found, empty string if not
 let findExec = fn(exec) {
-	for dir in getEnv("PATH").split().each() {
-		if fs.exists(dir + "/" + exec) { return dir + "/" + exec; }
+	for dir in getEnv('PATH').split().each() {
+		if fs.exists(dir + '/' + exec) { return dir + '/' + exec; }
 	}
-	return "";
+	return '';
 };
 
 # chmod command wrapper
-let chmod = fn(dest, mode = "0755", recurse = true) {
+let chmod = fn(dest, mode = '0755', recurse = true) {
 	return chmodNative(dest, mode, recurse);
 };
 
 # show a notification
-let notify = fn(title, body = "") {
-	title = '"' + title + '"';
-	if !body.empty() { body = '"' + body + '"'; }
-	let cmd = "";
-	if name == "linux" {
-		let notify = findExec("notify-send");
+let notify = fn(title, body = '') {
+	title = '\'' + title + '\'';
+	if !body.empty() { body = '\'' + body + '\''; }
+	let cmd = '';
+	if name == 'linux' {
+		let notify = findExec('notify-send');
 		if notify.empty() {
-			raise("notification requires notify-send on Linux (could not find in $PATH)");
+			raise('notification requires notify-send on Linux (could not find in $PATH)');
 		}
-		cmd = notify + " -u normal -t 5000 " + title + " " + body;
-	} elif name == "macos" {
-		let notify = findExec("osascript");
+		cmd = notify + ' -u normal -t 5000 ' + title + ' ' + body;
+	} elif name == 'macos' {
+		let notify = findExec('osascript');
 		if notify.empty() {
-			raise("notification requires osascript on macOS (could not find in $PATH)");
+			raise('notification requires osascript on macOS (could not find in $PATH)');
 		}
 		if body.empty() {
-			cmd = notify + " -e 'display notification " + title + "'";
+			cmd = notify + ' -e \'display notification ' + title + '\'';
 		} else {
-			cmd = notify + " -e 'display notification " + body + " with title " + title + "'";
+			cmd = notify + ' -e \'display notification ' + body + ' with title ' + title + '\'';
 		}
-	} elif name == "android" {
-		let notify = findExec("termux-notification");
+	} elif name == 'android' {
+		let notify = findExec('termux-notification');
 		if notify.empty() {
-			raise("notification requires termux-notification on Android (could not find in $PATH)");
+			raise('notification requires termux-notification on Android (could not find in $PATH)');
 		}
-		cmd = notify + " --title " + title;
+		cmd = notify + ' --title ' + title;
 		if !body.empty() {
-			cmd += " --content " + body;
+			cmd += ' --content ' + body;
 		}
 	} else {
-		raise("notifications unimplemented for this OS");
+		raise('notifications unimplemented for this OS');
 	}
 	exec(cmd);
 };

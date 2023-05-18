@@ -24,20 +24,77 @@ Vector<StringRef> stringDelim(StringRef str, StringRef delim)
 	return res;
 }
 
-void appendRawString(String &res, StringRef from)
+String toRawString(StringRef data)
 {
-	res.reserve(res.size() + from.size());
-	for(auto &e : from) {
-		if(e == '\t') {
-			res.push_back('\\');
-			res.push_back('t');
-		} else if(e == '\n') {
-			res.push_back('\\');
-			res.push_back('n');
-		} else {
-			res.push_back(e);
+	String res(data);
+	for(size_t i = 0; i < res.size(); ++i) {
+		if(res[i] == '\0') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\0");
+			continue;
+		}
+		if(res[i] == '\a') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\a");
+			continue;
+		}
+		if(res[i] == '\b') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\b");
+			continue;
+		}
+		if(res[i] == '\e') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\e");
+			continue;
+		}
+		if(res[i] == '\f') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\f");
+			continue;
+		}
+		if(res[i] == '\n') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\n");
+			continue;
+		}
+		if(res[i] == '\r') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\r");
+			continue;
+		}
+		if(res[i] == '\t') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\t");
+			continue;
+		}
+		if(res[i] == '\v') {
+			res.erase(res.begin() + i);
+			res.insert(i++, "\\v");
+			continue;
 		}
 	}
+	return res;
+}
+
+String fromRawString(StringRef from)
+{
+	String data(from);
+	for(size_t idx = 0; idx < data.size(); ++idx) {
+		if(data[idx] != '\\') continue;
+		if(idx + 1 >= data.size()) continue;
+		data.erase(data.begin() + idx);
+		if(data[idx] == '0') data[idx] = '\0';
+		else if(data[idx] == 'a') data[idx] = '\a';
+		else if(data[idx] == 'b') data[idx] = '\b';
+		else if(data[idx] == 'e') data[idx] = '\e';
+		else if(data[idx] == 'f') data[idx] = '\f';
+		else if(data[idx] == 'n') data[idx] = '\n';
+		else if(data[idx] == 'r') data[idx] = '\r';
+		else if(data[idx] == 't') data[idx] = '\t';
+		else if(data[idx] == 'v') data[idx] = '\v';
+	}
+	return data;
 }
 
 String vecToStr(Span<StringRef> items)

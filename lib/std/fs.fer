@@ -1,15 +1,15 @@
-mload("std/FS");
-let stat = import("std/stat");
+mload('std/FS');
+let stat = import('std/stat');
 
-let fopen = fn(file, mode = "r") {
+let fopen = fn(file, mode = 'r') {
 	return fopenNative(file, mode);
 };
 
-let reopen in FileTy = fn(file, mode = "r") {
+let reopen in FileTy = fn(file, mode = 'r') {
 	return self.reopenNative(file, mode);
 };
 
-let walkDir = fn(dir, mode = WALK_RECURSE, regex = "(.*)") {
+let walkDir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
 	return walkDirNative(dir, mode, regex);
 };
 

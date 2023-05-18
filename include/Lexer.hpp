@@ -244,7 +244,6 @@ class Tokenizer
 	bool getConstStr(String &data, char &quote_type, size_t &len, size_t &i, size_t &line,
 			 size_t &line_start, StringRef &end);
 	TokType getOperator(StringRef data, size_t &i, size_t line, size_t line_start);
-	void removeBackSlash(String &data, size_t &len, size_t &i, size_t start);
 
 public:
 	Tokenizer(Context &ctx, Module *m);

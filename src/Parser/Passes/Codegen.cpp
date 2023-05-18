@@ -65,7 +65,7 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 		bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataStr());
 		return true;
 	case lex::STR:
-		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataStr());
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), fromRawString(val.getDataStr()));
 		return true;
 	case lex::INT:
 		bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataInt());
@@ -169,7 +169,8 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 
 	// for operator based memcall, the operator must come before RHS (AKA the memcall arg)
 	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL) {
-		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(), lex::TokStrs[oper]);
+		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(),
+			       StringRef(lex::TokStrs[oper]));
 	}
 
 	if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
@@ -195,7 +196,8 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 			       fncallarginfo.back());
 		fncallarginfo.pop_back();
 	} else {
-		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), stmt->getRHS() ? "0" : "");
+		bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(),
+			       StringRef(stmt->getRHS() ? "0" : ""));
 	}
 
 	if(stmt->getOrBlk()) {
@@ -431,8 +433,8 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 
 	// let <iter> = __<iter>.next();
 	bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter.getDataStr());
-	bc.addInstrStr(Opcode::LOAD_DATA, loc, "next");
-	bc.addInstrStr(Opcode::MEM_CALL, loc, "");
+	bc.addInstrStr(Opcode::LOAD_DATA, loc, StringRef("next"));
+	bc.addInstrStr(Opcode::MEM_CALL, loc, StringRef(""));
 	// jump-nil location will be set later
 	size_t jmp_nil_loc = bc.size();
 	bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder

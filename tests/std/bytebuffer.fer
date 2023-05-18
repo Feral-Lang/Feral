@@ -1,4 +1,4 @@
-let bytebuffer = import("std/bytebuffer");
+let bytebuffer = import('std/bytebuffer');
 
 let bbuf = bytebuffer.new();
 

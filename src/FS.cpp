@@ -26,10 +26,7 @@ bool read(const char *file, String &data)
 		return false;
 	}
 
-	while((read = getline(&line, &len, fp)) != -1) {
-		data += line;
-		if(read > 1 || (read == 1 && line[0] == '\n')) ++total_lines;
-	}
+	while((read = getline(&line, &len, fp)) != -1) data += line;
 
 	fclose(fp);
 	if(line) free(line);

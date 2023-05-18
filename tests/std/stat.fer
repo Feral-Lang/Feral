@@ -1,7 +1,7 @@
-let stat = import("std/stat");
+let stat = import('std/stat');
 
-let st1 = stat.stat(__SRC_DIR__ + "/stat.fer");
-let st2 = stat.stat("/dev/zero");
+let st1 = stat.stat(__SRC_DIR__ + '/stat.fer');
+let st2 = stat.stat('/dev/zero');
 
 assert(st1.isReg());
 assert(!st1.isDir());

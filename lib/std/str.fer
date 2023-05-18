@@ -1,4 +1,4 @@
-mload("std/Str");
+mload('std/Str');
 
 let substr in StrTy = fn(begin = 0, len = -1) {
 	if len == -1 { len = self.len(); }

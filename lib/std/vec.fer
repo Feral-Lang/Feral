@@ -1,6 +1,6 @@
-mload("std/Vec");
+mload('std/Vec');
 
-let "==" in VecTy = fn(other) {
+let '==' in VecTy = fn(other) {
 	if self._type_() != other._type_() { return false; }
 	if self.len() != other.len() { return false; }
 	let len = self.len();

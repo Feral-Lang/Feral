@@ -12,6 +12,7 @@ namespace fs
 {
 
 extern int total_lines;
+inline void setTotalLines(int lines) { total_lines = lines; }
 inline int getTotalLines() { return total_lines; }
 
 inline bool exists(const char *loc) { return access(loc, F_OK) != -1; }

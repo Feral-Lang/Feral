@@ -41,6 +41,9 @@ StringRef getOpcodeStr(Opcode opcode)
 	return "";
 }
 
+Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, String &&data, DataType dtype)
+	: data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode)
+{}
 Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype)
 	: data(String(data)), loc(loc), dtype(dtype), opcode(opcode)
 {}

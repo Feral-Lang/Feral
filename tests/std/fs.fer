@@ -1,6 +1,6 @@
-let io = import("std/io");
-let fs = import("std/fs");
-let vec = import("std/vec");
+let io = import('std/io');
+let fs = import('std/fs');
+let vec = import('std/vec');
 
 /* sample comment block */
 
@@ -22,7 +22,7 @@ for line in file.eachLine() {
 }
 file.seek(0, fs.SEEK_SET);
 
-let blocks = file.readBlocks("/*", "*/");
-assert(blocks[0] == " sample comment block ");
-assert(blocks[1] == "\nsample comment block\nmultiline\n");
-assert(blocks[2] == "\", \""); # from read_blocks() itself
+let blocks = file.readBlocks('/*', '*/');
+assert(blocks[0] == ' sample comment block ');
+assert(blocks[1] == '\nsample comment block\nmultiline\n');
+assert(blocks[2] == '\', \''); # from readBlocks() itself
