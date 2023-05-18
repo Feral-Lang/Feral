@@ -1,5 +1,7 @@
 mload('std/Vec');
 
+let str = import('std/str');
+
 let '==' in VecTy = fn(other) {
 	if self._type_() != other._type_() { return false; }
 	if self.len() != other.len() { return false; }
@@ -38,4 +40,18 @@ let slice in VecTy = fn(start, end = -1) {
 let sub in VecTy = fn(start, end = -1) {
 	if end == -1 { end = self.len(); }
 	return self.subNative(start, end);
+};
+
+let str in VecTy = fn() {
+	let res = '[';
+	for elem in self.each() {
+		res += elem.str();
+		res += ', ';
+	}
+	if !self.empty() {
+		res.pop();
+		res.pop();
+	}
+	res += ']';
+	return res;
 };

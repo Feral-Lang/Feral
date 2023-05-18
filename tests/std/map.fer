@@ -18,3 +18,4 @@ for e in m.each() {
 	m2.insert(e.0, e.1);
 }
 assert.eq(m, m2);
+m.str();

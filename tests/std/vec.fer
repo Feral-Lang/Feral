@@ -32,3 +32,4 @@ v.push('string');
 for e in v.each() {
 	v3.push(e);
 }
+v.str();

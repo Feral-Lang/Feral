@@ -1,5 +1,7 @@
 mload('std/Map');
 
+let str = import('std/str');
+
 let '==' in MapTy = fn(other) {
 	if self._type_() != other._type_() { return false; }
 	if self.len() != other.len() { return false; }
@@ -7,4 +9,20 @@ let '==' in MapTy = fn(other) {
 		if other[e.0] != e.1 { return false; }
 	}
 	return true;
+};
+
+let str in MapTy = fn() {
+	let res = '{';
+	for pair in self.each() {
+		res += pair.0;
+		res += ': ';
+		res += pair.1;
+		res += ', ';
+	}
+	if !self.empty() {
+		res.pop();
+		res.pop();
+	}
+	res += '}';
+	return res;
 };

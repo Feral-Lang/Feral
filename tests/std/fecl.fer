@@ -1,0 +1,54 @@
+let assert = import('std/assert');
+
+let fecl = import('std/fecl');
+
+let singleline = `array = ['data1', 'data2']; arrayarray = [['data1', 'data2'], ['data3', 'data4']]; map = {data1 = 1; data2 = 2; data3 = 1.27; data4 = -1.27;}; mapmap = {one = {data1 = 'data2';}; two = {data3 = 'data4';};};`;
+let multiline = `array = [
+	'data1',
+	'data2'
+];
+arrayarray = [
+	[
+		'data1',
+		'data2'
+	],
+	[
+		'data3',
+		'data4'
+	]
+];
+map = {
+	data1 = 1;
+	data2 = 2;
+	data3 = 1.27;
+	data4 = -1.27;
+};
+mapmap = {
+	one = {
+		data1 = 'data2';
+	};
+	two = {
+		data3 = 'data4';
+	};
+};`;
+
+let onelineobj = fecl.loads(singleline);
+let onelinestr = fecl.dumps(onelineobj);
+let onelineobj2 = fecl.loads(onelinestr);
+let onelinestr2 = fecl.dumps(onelineobj2);
+let onelineobj3 = fecl.loads(onelinestr2);
+let onelinestr3 = fecl.dumps(onelineobj3);
+# the load and dump are done so many times because the first time around the unordered_map
+# fixates on a particular arrangement which is subsequently consistent (it seems)
+assert.eq(onelineobj2, onelineobj3);
+
+let multilineobj = fecl.loads(multiline);
+let prettystr = fecl.dumps(multilineobj, 0, '\t');
+let multilineobj2 = fecl.loads(prettystr);
+let prettystr2 = fecl.dumps(multilineobj2, 0, '\t');
+let multilineobj3 = fecl.loads(prettystr2);
+let prettystr3 = fecl.dumps(multilineobj3, 0, '\t');
+assert.eq(multilineobj2, multilineobj3);
+
+assert.eq(onelineobj['mapmap']['two']['data3'], 'data4');
+assert.eq(onelineobj['mapmap']['two']['data3'], multilineobj['mapmap']['two']['data3']);

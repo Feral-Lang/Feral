@@ -5,6 +5,7 @@
 #include <cstring>
 #include <deque>
 #include <forward_list>
+#include <future>
 #include <initializer_list>
 #include <iostream>
 #include <mutex>
@@ -12,6 +13,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
@@ -29,6 +31,7 @@ using uiptr	= std::uintptr_t;
 using Mutex	= std::mutex;
 using Regex	= std::regex;
 using String	= std::string;
+using Thread	= std::thread;
 using IStream	= std::istream;
 using Nullptr	= std::nullptr_t;
 using OStream	= std::ostream;
@@ -53,6 +56,8 @@ template<typename T> using Vector	   = std::vector<T>;
 template<typename T> using InitList	   = std::initializer_list<T>;
 template<typename T> using LockGuard	   = std::lock_guard<T>;
 template<typename... Ts> using Variant	   = std::variant<Ts...>;
+template<typename T> using SharedFuture	   = std::shared_future<T>;
+template<typename Fn> using PackagedTask   = std::packaged_task<Fn>;
 template<typename T, size_t N> using Array = std::array<T, N>;
 template<typename K, typename V> using Map = std::unordered_map<K, V>;
 template<typename V> using StringMap = std::unordered_map<String, V, StringHash, std::equal_to<>>;

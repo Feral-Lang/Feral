@@ -322,23 +322,33 @@ bool CodegenParserPass::visit(StmtVarDecl *stmt, Stmt **source)
 
 bool CodegenParserPass::visit(StmtCond *stmt, Stmt **source)
 {
-	Vector<size_t> jmpendplaceholders;
-	for(auto &c : stmt->getConditionals()) {
+	Vector<size_t> bodyjmps;
+	for(size_t i = 0; i < stmt->getConditionals().size(); ++i) {
+		auto &c		   = stmt->getConditionals()[i];
+		size_t falsejmppos = 0;
 		if(c.getCond()) {
 			if(!visit(c.getCond(), &c.getCond())) {
 				err::out(c.getCond(), "failed to generate code for condition");
 				return false;
 			}
-			jmpendplaceholders.push_back(bc.size());
+			falsejmppos = bc.size();
 			bc.addInstrInt(Opcode::JMP_FALSE_POP, c.getCond()->getLoc(), 0);
 		}
 		if(!visit(c.getBlk(), asStmt(&c.getBlk()))) {
 			err::out(stmt, "failed to generate code for conditional block");
 			return false;
 		}
+		if(i < stmt->getConditionals().size() - 1) {
+			bodyjmps.push_back(bc.size());
+			bc.addInstrInt(
+			Opcode::JMP, c.getCond() ? c.getCond()->getLoc() : c.getBlk()->getLoc(), 0);
+		}
+		if(c.getCond()) {
+			bc.updateInstrInt(falsejmppos, bc.size());
+		}
 	}
-	for(auto &placeholder : jmpendplaceholders) {
-		bc.updateInstrInt(placeholder, bc.size());
+	for(auto &bodyjmp : bodyjmps) {
+		bc.updateInstrInt(bodyjmp, bc.size());
 	}
 	return true;
 }
