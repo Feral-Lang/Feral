@@ -22,6 +22,9 @@ public:
 	~RAIIParser();
 
 	Module *createModule(String &&path, bool ismain);
+	// this overload does NOT check if the path already exists in modules
+	Module *createModule(String &&path, String &&code, bool ismain);
+	void removeModule(StringRef path);
 
 	Module *getModule(StringRef path);
 

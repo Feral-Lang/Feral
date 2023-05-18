@@ -22,11 +22,12 @@ bool Module::tokenize()
 	lex::Tokenizer tokenizer(ctx, this);
 	return tokenizer.tokenize(code, tokens);
 }
-bool Module::parseTokens()
+bool Module::parseTokens(bool expr_only)
 {
 	ParseHelper p(ctx, this, tokens);
 	Parser parser(ctx);
-	return parser.parseBlock(p, (StmtBlock *&)ptree, false);
+	return expr_only ? parser.parseExpr(p, ptree, false)
+			 : parser.parseBlock(p, (StmtBlock *&)ptree, false);
 }
 bool Module::executeDefaultParserPasses()
 {

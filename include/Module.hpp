@@ -29,7 +29,7 @@ public:
 	~Module();
 
 	bool tokenize();
-	bool parseTokens();
+	bool parseTokens(bool expr_only = false);
 	bool executeDefaultParserPasses();
 	bool genCode(); // generate bytecode
 

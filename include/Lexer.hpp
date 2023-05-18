@@ -196,7 +196,7 @@ public:
 	explicit Lexeme(const ModuleLoc *loc, TokType type);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, String &&_data);
 	explicit Lexeme(const ModuleLoc *loc, TokType type, StringRef _data);
-	explicit Lexeme(const ModuleLoc *loc, TokType type, int64_t _data);
+	explicit Lexeme(const ModuleLoc *loc, int64_t _data);
 	explicit Lexeme(const ModuleLoc *loc, long double _data);
 
 	bool cmpData(const Lexeme &other, TokType type) const;

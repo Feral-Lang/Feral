@@ -96,8 +96,7 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String file;
-	file = as<VarStr>(args[1])->get();
+	String file = as<VarStr>(args[1])->get();
 	if(!vm.findImport(file)) {
 		vm.fail(args[1]->getLoc(), "import: ", file,
 			" not found in locs: ", vecToStr(vm.getImportDirs()));
@@ -114,6 +113,23 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getModule(file);
 }
 
+Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		  const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	String expr = as<VarStr>(args[1])->get();
+	Var *res    = vm.eval(loc, std::move(expr));
+	if(!res) {
+		vm.fail(loc, "failed to evaluate expr: ", as<VarStr>(args[1])->get());
+		return nullptr;
+	}
+	return res;
+}
+
 Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const Map<String, AssnArgData> &assn_args)
 {
@@ -127,6 +143,7 @@ INIT_MODULE(Core)
 	vm.addNativeFn(loc, "raise", raise, 1);
 	vm.addNativeFn(loc, "mload", loadModule, 1);
 	vm.addNativeFn(loc, "import", importFile, 1);
+	vm.addNativeFn(loc, "eval", evaluateExpr, 1);
 	vm.addNativeFn(loc, "_isMainModule_", isMainModule, 1);
 
 	// fundamental functions for builtin types

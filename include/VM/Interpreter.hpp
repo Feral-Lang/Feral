@@ -151,6 +151,10 @@ public:
 	bool callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
 		    const Map<String, AssnArgData> &assn_args);
 
+	// evaluate a given expression and return its result
+	// primarily used for templates
+	Var *eval(const ModuleLoc *loc, String &&expr);
+
 	void initTypeNames();
 
 	void dumpExecStack(OStream &os);

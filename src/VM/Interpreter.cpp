@@ -298,6 +298,24 @@ bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Sp
 	return true;
 }
 
+Var *Interpreter::eval(const ModuleLoc *loc, String &&expr)
+{
+	Module *mod = parser.createModule("<eval>", std::move(expr), false);
+
+	Var *res = nullptr;
+	if(!mod || !mod->tokenize() || !mod->parseTokens(true)) goto done;
+	if(!mod->executeDefaultParserPasses()) {
+		err::out(loc, "Failed to apply default parser passes on module: ", mod->getPath());
+		goto done;
+	}
+	if(!mod->genCode() || execute(&mod->getBytecode()) || execstack.empty()) goto done;
+	res = execstack.pop(false);
+	res->dref(); // wanna dref but execstack.pop() would also erase the variable itself
+done:
+	if(mod) parser.removeModule(mod->getPath());
+	return res;
+}
+
 void Interpreter::initTypeNames()
 {
 	registerType<VarAll>(nullptr, "All");

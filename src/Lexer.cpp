@@ -195,8 +195,7 @@ Lexeme::Lexeme(const ModuleLoc *loc, TokType type, String &&_data)
 Lexeme::Lexeme(const ModuleLoc *loc, TokType type, StringRef _data)
 	: loc(loc), tok(type), data(String(_data))
 {}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type, int64_t _data) : loc(loc), tok(type), data(_data)
-{}
+Lexeme::Lexeme(const ModuleLoc *loc, int64_t _data) : loc(loc), tok(INT), data(_data) {}
 Lexeme::Lexeme(const ModuleLoc *loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
 
 bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
@@ -354,7 +353,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 				num = num.substr(base == 8 ? 1 : 2);
 			}
 			std::from_chars(num.data(), num.data() + num.size(), intval, base);
-			toks.emplace_back(locAlloc(line, i - line_start - num.size()), INT, intval);
+			toks.emplace_back(locAlloc(line, i - line_start - num.size()), intval);
 			continue;
 		}
 
