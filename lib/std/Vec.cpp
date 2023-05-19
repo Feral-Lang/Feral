@@ -112,6 +112,17 @@ Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
+Var *vecClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	VarVec *v = as<VarVec>(args[0]);
+	for(auto &e : v->get()) {
+		decref(e);
+	}
+	v->get().clear();
+	return args[0];
+}
+
 Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<String, AssnArgData> &assn_args)
 {
@@ -136,6 +147,26 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	} else {
 		res->get()[pos] = args[2]->copy(loc);
 	}
+	return args[0];
+}
+
+Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarVec *res = as<VarVec>(args[0]);
+	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	if(pos >= res->get().size()) {
+		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
+			std::to_string(res->get().size()));
+		return nullptr;
+	}
+	decref(res->get()[pos]);
+	res->get().erase(res->get().begin() + pos);
 	return args[0];
 }
 
@@ -165,23 +196,11 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+Var *vecReverse(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const Map<String, AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
-	if(pos >= res->get().size()) {
-		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->get().size()));
-		return nullptr;
-	}
-	decref(res->get()[pos]);
-	res->get().erase(res->get().begin() + pos);
+	std::reverse(res->get().begin(), res->get().end());
 	return args[0];
 }
 
@@ -310,9 +329,11 @@ INIT_MODULE(Vec)
 	vm.addNativeTypeFn<VarVec>(loc, "back", vecBack, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "push", vecPush, 1);
 	vm.addNativeTypeFn<VarVec>(loc, "pop", vecPop, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
+	vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);
+	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "lastIdx", vecLast, 0);
+	vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "at", vecAt, 1);
 	vm.addNativeTypeFn<VarVec>(loc, "[]", vecAt, 1);

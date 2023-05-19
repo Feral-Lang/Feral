@@ -1,0 +1,190 @@
+let io = import('std/io');
+let os = import('std/os');
+let map = import('std/map');
+let str = import('std/str');
+let vec = import('std/vec');
+let lang = import('std/lang');
+
+let Project = lang.struct(
+	name = '',
+	headers = vec.new(),
+	components = map.new(refs = true)
+);
+Project.setTypeName('Project');
+
+let Component = lang.struct(
+	isCLib = false,
+	name = '',
+	srcs = vec.new(),
+	deps = vec.new(refs = true), # each is a Component
+	includes = '',
+	ldflags = ''
+);
+Component.setTypeName('Component');
+
+let new = fn(name) { return Project(name = name); };
+
+let addCLib in Project = fn(name, includes = '', ldflags = '') {
+	let component = Component(isCLib = true, name = name, includes = includes, ldflags = ldflags);
+	self.components.insert(name, component);
+	# here ref() is required because adding component to self.components increased
+	# its ref count to be > 1, therefore returning it would copy the value
+	# unless ref() is explicitly used
+	return ref(component);
+};
+
+let addNativeLib in Project = fn(name, srcs...) {
+	let component = Component(name = name, srcs = ref(srcs));
+	self.components.insert(name, component);
+	return ref(component);
+};
+
+let addHeaders in Project = fn(headers...) {
+	for header in headers.each() {
+		self.headers.push(header);
+	}
+	return self;
+};
+
+let dependsOn in Component = fn(components...) {
+	for component in components.each() {
+		self.deps.push(component);
+	}
+	return self;
+};
+
+let build in Project = fn(nameframeonly = false) {
+	let compiler = os.findExec('g++');
+	if compiler.empty() {
+		compiler = os.findExec('clang++');
+	}
+	if compiler.empty() {
+		raise('neither g++, nor clang++ are available in $PATH');
+	}
+	let frames = self.generateBuildFrames();
+	if nameframeonly {
+		let v = vec.new();
+		for f in frames.each() {
+			let vtmp = vec.new();
+			for c in f.each() {
+				if c.isCLib { continue; }
+				vtmp.push(c.name);
+			}
+			v.push(vtmp);
+		}
+		return v;
+	}
+
+	for frame in frames.each() {
+		let compilesrcs = vec.new();
+		for comp in frame.each() {
+			if comp.isCLib { continue; }
+			for src in comp.srcs.each() {
+				compilesrcs.push(src);
+			}
+		}
+		io.println('Frame: ', compilesrcs);
+	}
+};
+
+let generateBuildFrames in Project = fn() {
+	# each frame's commands can be executed concurrently
+	# and it also defines dependency - a previous frame
+	# MUST finish before the next one can be started
+	let frames = vec.new(refs = true);
+	let visited = vec.new(refs = true);
+	let donetmp = vec.new(refs = true);
+	let done = vec.new(); # contains dependence lists (vectors)
+	for comp in self.components.each() {
+		let todo = vec.new(refs = true);
+		todo.push(comp.0);
+		while !todo.empty() {
+			let curr = ref(todo.front());
+			todo.erase(0);
+			if visited.find(curr) { continue; }
+			let dep = ref(self.components[curr]);
+			for d in dep.deps.each() {
+				todo.push(d.name);
+			}
+			donetmp.push(curr);
+			visited.push(curr);
+		}
+		donetmp.reverse();
+		done.push(donetmp);
+		donetmp.clear();
+	}
+	# now put everything in frames
+	let ctr = 0;
+	while true {
+		let frame = vec.new(refs = true);
+		for let i = 0; i < done.len(); ++i {
+			if ctr >= done[i].len() { continue; }
+			frame.push(self.components[done[i][ctr]]);
+		}
+		if frame.empty() { break; }
+		frames.push(frame);
+		++ctr;
+	}
+	# now move the components in each frame up a level if
+	# they are not dependent on any of their parent components
+	let anychanged = true;
+	while anychanged {
+		let prevnames = vec.new(refs = true);
+		anychanged = false;
+		for let i = 1; i < frames.len(); ++i {
+			# set the prevnames using current frame and continue;
+			# there is nothing else to be done in that case
+			prevnames.clear();
+			for comp in frames[i - 1].each() {
+				prevnames.push(comp.name);
+			}
+			for let j = 0; j < frames[i].len(); ++j {
+				let comp = ref(frames[i][j]);
+				let viable = true;
+				for dep in comp.deps.each() {
+					if !prevnames.find(dep.name) { continue; }
+					viable = false;
+					break;
+				}
+				if viable {
+					frames[i - 1].push(comp);
+					frames[i].erase(j);
+					--j;
+					anychanged = true;
+				}
+			}
+			if frames[i].empty() { frames.erase(i--); }
+		}
+	}
+	return frames;
+};
+
+let str in Project = fn() {
+	let res = '<Project: headers: ';
+	res += self.headers.str();
+	res += '; components: {';
+	for component in self.components.each() {
+		res += component.0;
+		res += ', ';
+	}
+	if !self.components.empty() {
+		res.pop();
+		res.pop();
+	}
+	res += '}>';
+	return res;
+};
+
+let str in Component = fn() {
+	let res = '<Component: ';
+	res += self.name;
+	res += '; srcs: ';
+	res += self.srcs.str();
+	res += '; deps: ';
+	res += self.deps.str();
+	if self.isCLib {
+		res += '; (clib)';
+	}
+	res += '>';
+	return res;
+};
