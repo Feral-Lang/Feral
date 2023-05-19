@@ -1,9 +1,12 @@
 let io = import('std/io');
+let fs = import('std/fs');
 let os = import('std/os');
 let map = import('std/map');
 let str = import('std/str');
+let sys = import('std/sys');
 let vec = import('std/vec');
 let lang = import('std/lang');
+let mproc = import('std/multiproc');
 
 let Project = lang.struct(
 	name = '',
@@ -54,13 +57,6 @@ let dependsOn in Component = fn(components...) {
 };
 
 let build in Project = fn(nameframeonly = false) {
-	let compiler = os.findExec('g++');
-	if compiler.empty() {
-		compiler = os.findExec('clang++');
-	}
-	if compiler.empty() {
-		raise('neither g++, nor clang++ are available in $PATH');
-	}
 	let frames = self.generateBuildFrames();
 	if nameframeonly {
 		let v = vec.new();
@@ -74,7 +70,11 @@ let build in Project = fn(nameframeonly = false) {
 		}
 		return v;
 	}
+	return self.buildFrames(frames);
+};
 
+# does the actual compilation work
+let buildFrames in Project = fn(frames) {
 	for frame in frames.each() {
 		let compilesrcs = vec.new();
 		for comp in frame.each() {
@@ -83,10 +83,48 @@ let build in Project = fn(nameframeonly = false) {
 				compilesrcs.push(src);
 			}
 		}
-		io.println('Frame: ', compilesrcs);
 	}
+	let compiler = os.findExec('g++');
+	if compiler.empty() {
+		compiler = os.findExec('clang++');
+	}
+	if compiler.empty() {
+		raise('neither g++, nor clang++ are available in $PATH');
+	}
+
+	let cwd = os.getCWD();
+	defer os.setCWD(cwd);
+	if !sys.mainModulePath.empty() { os.setCWD(fs.parentDir(sys.mainModulePath)); }
+	let procpool = vec.new(refs = true);
+	let maxprocs = mproc.getConcurrency();
+	for frame in frames.each() {
+		waitProcs(procpool, 1);
+		for comp in frame.each() {
+			if comp.isCLib { continue; }
+			# <compiler> -std=c++20 -O2 -o build/$d/$b.so $p
+			let cmdtemplate = '{compiler} -std=c++20 -O2 -o build/$b.so $p';
+			for dep in comp.deps.each() {
+				if dep.isCLib {
+					cmdtemplate += ' ';
+					cmdtemplate += dep.includes;
+					cmdtemplate += ' ';
+					cmdtemplate += dep.ldflags;
+				}
+			}
+			for src in comp.srcs.each() {
+				let cmd = fs.fmtWithPath(cmdtemplate, src);
+				let cmd = cmd.fmt();
+				waitProcs(procpool, maxprocs);
+				io.println(cmd);
+				io.fflush(io.stdout);
+				procpool.push(mproc.new(cmd));
+			}
+		}
+	}
+	return true;
 };
 
+# generates the most parallel pipeline possible for building
 let generateBuildFrames in Project = fn() {
 	# each frame's commands can be executed concurrently
 	# and it also defines dependency - a previous frame
@@ -157,6 +195,19 @@ let generateBuildFrames in Project = fn() {
 		}
 	}
 	return frames;
+};
+
+let waitProcs = fn(threadpool, maxprocs) {
+	while threadpool.len() >= maxprocs {
+		for let i = 0; i < threadpool.len(); ++i {
+			if !threadpool[i].isDone() { continue; }
+			let t = threadpool[i];
+			if t.getResult() != 0 {
+				raise('compilation failed');
+			}
+			threadpool.erase(i--);
+		}
+	}
 };
 
 let str in Project = fn() {

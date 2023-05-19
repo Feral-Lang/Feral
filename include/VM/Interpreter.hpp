@@ -49,6 +49,8 @@ class Interpreter
 	String selfbin;
 	// parent directory of selfbin (used by sys.selfBase())
 	String selfbase;
+	// path of the main module
+	StringRef mainmodulepath;
 	RAIIParser &parser;
 	Context &c;
 	ArgParser &argparser;
@@ -180,6 +182,7 @@ public:
 	inline Span<String> getModuleDirs() { return dlllocs; }
 	inline StringRef getSelfBin() { return selfbin; }
 	inline StringRef getSelfBase() { return selfbase; }
+	inline StringRef getMainModulePath() { return mainmodulepath; }
 	inline RAIIParser &getRAIIParser() { return parser; }
 	inline Context &getContext() { return c; }
 	inline VarBool *getTrue() { return tru; }

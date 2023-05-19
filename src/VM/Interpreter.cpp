@@ -86,6 +86,7 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 				return 1;
 			}
 		}
+		mainmodulepath = mod->getPath();
 	}
 	int res = execute();
 	popModule();
@@ -142,7 +143,7 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 		} else if(name.front() == '.') {
 			assert(modulestack.size() > 0 &&
 			       "dot based module search cannot be done on empty modulestack");
-			StringRef dir = modulestack.back()->getMod()->getPath();
+			StringRef dir = modulestack.back()->getMod()->getDir();
 			name.erase(name.begin());
 			name.insert(name.begin(), dir.begin(), dir.end());
 		}

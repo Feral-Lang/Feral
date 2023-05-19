@@ -61,6 +61,7 @@ INIT_MODULE(Sys)
 
 	mod->addNativeVar("selfBin", vm.makeVar<VarStr>(loc, vm.getSelfBin()));
 	mod->addNativeVar("selfBase", vm.makeVar<VarStr>(loc, vm.getSelfBase()));
+	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
 
 	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, VERSION_MAJOR));
 	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, VERSION_MINOR));
