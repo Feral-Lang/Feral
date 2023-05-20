@@ -1,0 +1,139 @@
+let map = import('std/map');
+let vec = import('std/vec');
+let lang = import('std/lang');
+
+let DependenceTree = lang.struct(
+	nodes = map.new(refs = true) # <string, DependenceTreeNode>
+);
+DependenceTree.setTypeName('DependenceTree');
+
+let DependenceTreeNode = lang.struct(
+	data = '',
+	deps = vec.new(refs = true) # each is a DependenceTreeNode
+);
+DependenceTreeNode.setTypeName('DependenceTreeNode');
+
+let newDependenceTree = fn() {
+	return DependenceTree();
+};
+
+# here data is simply a unique identifier for the node
+# it must have a str() member function to work with std/map
+let newNode in DependenceTree = fn(data) {
+	let node = DependenceTreeNode(data = data.str());
+	self.nodes.insert(data, node);
+	return ref(node);
+};
+
+let dependsOn in DependenceTreeNode = fn(nodes...) {
+	for node in nodes.each() {
+		self.deps.push(node);
+	}
+	return self;
+};
+
+# generates a list of frames, each frame's nodes can be 'executed' in parallel
+# without breaking dependence, and each frame must be executed sequentially in
+# ascending order
+# the data structure looks something like:
+#  Frames[
+#	Frame[
+#		Node,
+#		...
+#	],
+#	...
+# ]
+let generateParallelFrames in DependenceTree = fn() {
+	let frames = vec.new();
+	let frametmp = vec.new(refs = true);
+	for node in self.nodes.each() {
+		frametmp.push(node.1);
+	}
+	frames.push(frametmp);
+	let prevdata = vec.new(refs = true);
+	let currdata = vec.new(refs = true);
+	let anychange = true;
+	while anychange {
+		anychange = false;
+		for let i = 0; i < frames.len(); ++i {
+			for let j = 0; j < frames[i].len(); ++j {
+				prevdata.clear();
+				currdata.clear();
+				if i > 0 {
+					for node in frames[i - 1].each() {
+						prevdata.push(node.data);
+					}
+				}
+				for node in frames[i].each() {
+					currdata.push(node.data);
+				}
+				for dep in frames[i][j].deps.each() {
+					if currdata.find(dep.data) {
+						# move this node to next frame
+						if i + 1 >= frames.len() {
+							frames.push(vec.new(refs = true));
+						}
+						frames[i + 1].push(frames[i][j]);
+						frames[i].erase(j);
+						anychange = true;
+						break;
+					}
+				}
+				if anychange { break; }
+				let foundanyinprev = false;
+				for dep in frames[i][j].deps.each() {
+					if !prevdata.empty() && prevdata.find(dep.data) { foundanyinprev = true; break; }
+				}
+				if !foundanyinprev && i > 0 {
+					frames[i - 1].push(frames[i][j]);
+					frames[i].erase(j);
+					anychange = true;
+					break;
+				}
+				if anychange { break; }
+			}
+			if anychange { break; }
+		}
+	}
+	let dataframes = vec.new(refs = true);
+	for frame in frames.each() {
+		let dataframe = vec.new(refs = true);
+		for node in frame.each() {
+			dataframe.push(node.data);
+		}
+		dataframes.push(dataframe);
+	}
+	return dataframes;
+};
+
+let str in DependenceTree = fn() {
+	let res = '<DependenceTree: headers: ';
+	res += self.headers.str();
+	res += '; nodes: {';
+	for node in self.nodes.each() {
+		res += node.0;
+		res += ', ';
+	}
+	if !self.nodes.empty() {
+		res.pop();
+		res.pop();
+	}
+	res += '}>';
+	return res;
+};
+
+let str in DependenceTreeNode = fn() {
+	let res = '<DependenceTreeNode: ';
+	res += self.data;
+	res += '; deps: [';
+	for d in self.deps.each() {
+		res += d.data;
+		res += ', ';
+	}
+	if !self.deps.empty() {
+		res.pop();
+		res.pop();
+	}
+	res += ']>';
+	return res;
+};
