@@ -1,4 +1,6 @@
 mload('std/FS');
+
+let sys = import('std/sys');
 let stat = import('std/stat');
 
 let fopen = fn(file, mode = 'r') {

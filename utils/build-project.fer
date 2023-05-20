@@ -6,7 +6,7 @@ let os = import("std/os");
 let str = import("std/str");
 let sys = import("std/sys");
 
-let PROJ_DIR = os.get_env("PROJ_DIR");
+let PROJ_DIR = os.getEnv("PROJ_DIR");
 let PROJ_BUILD_DIR = PROJ_DIR + "/build";
 
 if PROJ_DIR.empty() {
