@@ -12,7 +12,7 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 endif()
 
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
-	set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral-new")
+	set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
 endif()
 set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
@@ -182,7 +182,7 @@ target_include_directories(feral-compiler PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(feral-compiler feral)
 set_target_properties(feral-compiler
 	PROPERTIES
-	OUTPUT_NAME feral-new
+	OUTPUT_NAME feral
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
