@@ -321,7 +321,7 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		}
 		vars->stash(kw_arg, m, false);
 	}
-	if(vm.execute(nullptr, body.feral.begin, body.feral.end) != 0) {
+	if(vm.execute(nullptr, body.feral.begin, body.feral.end) != 0 && !vm.isExitCalled()) {
 		vars->unstash();
 		vm.popModule();
 		return nullptr;

@@ -76,6 +76,7 @@ if !fs.exists("CMakeCache.txt") {
 
 # cmake
 if exec_cmake {
+	buildinfo.cmake += " -DDISABLE_INSTALL_MSG=true";
 	if debugrelease == "r" {
 		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=Release";
 	} elif debugrelease == "d" {

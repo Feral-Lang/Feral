@@ -1,3 +1,5 @@
+#!/usr/bin/env feral
+
 # executes all files in a given directory, depending on the config
 # ensures they all exit with return code zero
 # also performs cleanup as required
