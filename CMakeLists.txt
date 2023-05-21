@@ -15,13 +15,12 @@ if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
 	set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
 endif()
 set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
+set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
-set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
-
-# add cmake_modules path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules")
+# add external path
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external")
 
 set(SOURCE_VERSION_MAJOR 0)
 set(SOURCE_VERSION_MINOR 0)
@@ -122,8 +121,8 @@ endif()
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Config.hpp" @ONLY)
 
 # Install CMake modules
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/cmake_modules/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake_modules"
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/external"
 )
 
 # Install C++ Includes

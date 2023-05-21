@@ -177,7 +177,7 @@ public:
 	inline VarModule *getModule(StringRef path) { return allmodules[path]; }
 	inline VarModule *getCurrModule() { return modulestack.back(); }
 	inline void setTypeName(uiptr _typeid, StringRef name) { typenames[_typeid] = name; }
-	inline StringRef getTypeName(Var *var) { return getTypeName(var->getType()); }
+	inline StringRef getTypeName(Var *var) { return getTypeName(var->getTypeFnID()); }
 	inline Span<String> getImportDirs() { return includelocs; }
 	inline Span<String> getModuleDirs() { return dlllocs; }
 	inline StringRef getSelfBin() { return selfbin; }
