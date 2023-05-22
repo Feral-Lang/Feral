@@ -1,0 +1,60 @@
+let assert = import('std/assert');
+
+let json = import('std/json');
+let lang = import('std/lang');
+
+let jsonOneLine = '{"first": {"one": "two"}, "second": ["a", "b", 1.27, true, {"key": null}], "third": -1.27}';
+let jsonPretty =
+`{
+	"first": {
+		"one": "two"
+	},
+	"second": [
+		"a",
+		"b",
+		1.27,
+		true,
+		{
+			"key": null
+		}
+	],
+	"third": -1.27
+}`;
+
+let js = json.loads(jsonPretty);
+assert.eq(js['first']['one'], 'two');
+assert.eq(js['second'][0], 'a');
+assert.eq(js['second'][1], 'b');
+assert.eq(js['second'][2], 1.27);
+assert.eq(js['second'][3], true);
+assert.eq(js['second'][4]['key'], nil);
+assert.eq(js['third'], -1.27);
+
+let jsonOneLineDump = json.dumps(js);
+let jsonOneLineDump2 = json.dumps(js);
+let jsonPrettyDump = json.dumps(js, true, '\t');
+let jsonPrettyDump2 = json.dumps(js, true, '\t');
+assert.eq(jsonOneLineDump, jsonOneLineDump2);
+assert.eq(jsonPrettyDump, jsonPrettyDump2);
+
+let Struct = lang.struct(
+	name = 'name',
+	val = 5
+);
+
+let serializedJS1 = '{"val": 52, "some_field": 25}';
+let serializedJS2 = '{"val": 52}';
+let st = Struct();
+
+let js = json.loads(serializedJS1);
+let result = true;
+json.bind(st, js) or e {
+	e == "field name 'some_field' not found";
+	result = false;
+	return nil;
+};
+assert.eq(result, false);
+
+js = json.loads(serializedJS2);
+json.bind(st, js);
+assert.eq(st.val, js['val']);

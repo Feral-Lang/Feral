@@ -292,8 +292,8 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarFlt>(loc, ">", fltGT, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, "<=", fltLE, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, ">=", fltGE, 1);
-	vm.addNativeTypeFn<VarFlt>(loc, "==", fltEq, 1);
-	vm.addNativeTypeFn<VarFlt>(loc, "!=", fltNe, 1);
+	vm.addNativeTypeFn<VarFlt>(loc, "==", fltEQ, 1);
+	vm.addNativeTypeFn<VarFlt>(loc, "!=", fltNE, 1);
 
 	// string
 	vm.addNativeTypeFn<VarStr>(loc, "+", strAdd, 1);

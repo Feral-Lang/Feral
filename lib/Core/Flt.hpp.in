@@ -38,13 +38,13 @@
 		return nullptr;                                                                   \
 	}
 
-#define LOGICF_FUNC(name, symnamep, checksym)                                                     \
+#define LOGICF_FUNC(name, checksym)                                                               \
 	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
 		       const Map<String, AssnArgData> &assn_args)                                 \
 	{                                                                                         \
 		if(args[1]->is<VarFlt>()) {                                                       \
-			return mpfr_##symnamep(as<VarFlt>(args[0])->get(),                        \
-					       as<VarFlt>(args[1])->get()) checksym 0             \
+			return mpfr_cmp(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get())   \
+			       checksym 0                                                         \
 			       ? vm.getTrue()                                                     \
 			       : vm.getFalse();                                                   \
 		}                                                                                 \
@@ -63,28 +63,12 @@ ARITHF_ASSN_FUNC(Sub, sub, sub_z)
 ARITHF_ASSN_FUNC(Mul, mul, mul_z)
 ARITHF_ASSN_FUNC(Div, div, div_z)
 
-LOGICF_FUNC(LT, less_p, !=)
-LOGICF_FUNC(GT, greater_p, !=)
-LOGICF_FUNC(LE, lessequal_p, !=)
-LOGICF_FUNC(GE, greaterequal_p, !=)
-
-Var *fltEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarFlt>()) return vm.getFalse();
-	return mpfr_equal_p(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) == 0
-	       ? vm.getTrue()
-	       : vm.getFalse();
-}
-
-Var *fltNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarFlt>()) return vm.getTrue();
-	return mpfr_equal_p(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) != 0
-	       ? vm.getTrue()
-	       : vm.getFalse();
-}
+LOGICF_FUNC(EQ, ==)
+LOGICF_FUNC(NE, !=)
+LOGICF_FUNC(LT, <)
+LOGICF_FUNC(GT, >)
+LOGICF_FUNC(LE, <=)
+LOGICF_FUNC(GE, >=)
 
 Var *fltPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
