@@ -174,17 +174,16 @@ public:
 class StmtVar : public Stmt
 {
 	lex::Lexeme name; // can be STR in case of assn args
-	StmtSimple *in;
+	Stmt *in;
 	Stmt *val;   // expr or simple
 	bool is_arg; // fndef param / fncall arg or not
 
 public:
-	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
-		bool is_arg);
+	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);
 	~StmtVar();
 	// at least one of type or val must be present
-	static StmtVar *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name,
-			       StmtSimple *in, Stmt *val, bool is_arg);
+	static StmtVar *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in,
+			       Stmt *val, bool is_arg);
 
 	void disp(bool has_next);
 
@@ -192,7 +191,7 @@ public:
 
 	inline lex::Lexeme &getName() { return name; }
 	inline Stmt *&getVal() { return val; }
-	inline StmtSimple *&getIn() { return in; }
+	inline Stmt *&getIn() { return in; }
 	inline bool isArg() { return is_arg; }
 };
 

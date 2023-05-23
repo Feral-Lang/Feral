@@ -164,12 +164,11 @@ void StmtExpr::disp(bool has_next)
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in, Stmt *val,
-		 bool is_arg)
+StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg)
 	: Stmt(VAR, loc), name(name), in(in), val(val), is_arg(is_arg)
 {}
 StmtVar::~StmtVar() {}
-StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, StmtSimple *in,
+StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in,
 			 Stmt *val, bool is_arg)
 {
 	return c.allocStmt<StmtVar>(loc, name, in, val, is_arg);
@@ -178,15 +177,13 @@ StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &na
 void StmtVar::disp(bool has_next)
 {
 	tio::taba(has_next);
-	String in_str;
+	tio::print(has_next, {is_arg ? "Argument" : "Variable: ", name.getDataStr(), "\n"});
 	if(in) {
-		in_str += " [";
-		in_str += "in: ";
-		in_str += in->getLexDataStr();
-		in_str += "]";
+		tio::taba(val);
+		tio::print(val, {"In:\n"});
+		in->disp(val);
+		tio::tabr();
 	}
-	tio::print(has_next,
-		   {is_arg ? "Argument" : "Variable", in_str, ": ", name.getDataStr(), "\n"});
 	if(val) {
 		tio::taba(false);
 		tio::print(false, {"Value:\n"});

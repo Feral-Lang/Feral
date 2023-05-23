@@ -836,11 +836,11 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	}
 	lex::Lexeme &name = p.peek();
 	p.next();
-	Stmt *val      = nullptr;
-	StmtSimple *in = nullptr;
+	Stmt *val = nullptr;
+	Stmt *in  = nullptr;
 
 	if(p.acceptn(lex::IN) && !is_fn_arg) {
-		if(!parseSimple(p, (Stmt *&)in)) {
+		if(!parseExpr01(p, (Stmt *&)in, false)) {
 			err::out(p.peek(),
 				 "failed to parse in-type for variable: ", name.getDataStr());
 			return false;
@@ -855,11 +855,6 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	if(p.accept(lex::FN)) {
 		if(!parseFnDef(p, val)) return false;
 	} else if(!parseExpr16(p, val, false)) {
-		return false;
-	}
-
-	if(in && val->getStmtType() != FNDEF) {
-		err::out(name, "only functions can be created using let-in statements");
 		return false;
 	}
 
