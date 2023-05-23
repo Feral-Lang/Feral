@@ -36,7 +36,7 @@ VarIntIterator::VarIntIterator(const ModuleLoc *loc)
 VarIntIterator::VarIntIterator(const ModuleLoc *loc, mpz_srcptr _begin, mpz_srcptr _end,
 			       mpz_srcptr _step)
 	: Var(loc, typeID<VarIntIterator>(), false, false), started(false),
-	  reversed(mpz_cmp_si(step, 0) < 0)
+	  reversed(mpz_cmp_si(_step, 0) < 0)
 {
 	mpz_init_set(begin, _begin);
 	mpz_init_set(end, _end);
@@ -117,13 +117,16 @@ Var *range(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	VarIntIterator *res = vm.makeVar<VarIntIterator>(loc);
-	if(args.size() > 2) mpz_set(res->getBegin(), as<VarInt>(lhs_base)->getSrc());
-	else mpz_set_si(res->getBegin(), 0);
-	if(rhs_base) mpz_set(res->getEnd(), as<VarInt>(rhs_base)->getSrc());
-	else mpz_set(res->getEnd(), as<VarInt>(lhs_base)->getSrc());
-	if(step_base) mpz_set(res->getStep(), as<VarInt>(step_base)->getSrc());
-	else mpz_set_si(res->getStep(), 1);
+	mpz_t begin, end, step;
+	mpz_inits(begin, end, step, NULL);
+	if(args.size() > 2) mpz_set(begin, as<VarInt>(lhs_base)->getSrc());
+	else mpz_set_si(begin, 0);
+	if(rhs_base) mpz_set(end, as<VarInt>(rhs_base)->getSrc());
+	else mpz_set(end, as<VarInt>(lhs_base)->getSrc());
+	if(step_base) mpz_set(step, as<VarInt>(step_base)->getSrc());
+	else mpz_set_si(step, 1);
+	VarIntIterator *res = vm.makeVar<VarIntIterator>(loc, begin, end, step);
+	mpz_clears(begin, end, step, NULL);
 	return res;
 }
 
@@ -131,12 +134,13 @@ Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			const Map<String, AssnArgData> &assn_args)
 {
 	VarIntIterator *it = as<VarIntIterator>(args[0]);
-	VarInt *res	   = vm.makeVar<VarInt>(loc, 0);
-	res->setLoadAsRef();
-	if(!it->next(res->get())) {
-		vm.unmakeVar(res);
+	mpz_t _res;
+	if(!it->next(_res)) {
 		return vm.getNil();
 	}
+	VarInt *res = vm.makeVar<VarInt>(loc, _res);
+	mpz_clear(_res);
+	res->setLoadAsRef();
 	return res;
 }
 
