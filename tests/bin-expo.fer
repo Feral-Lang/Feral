@@ -1,0 +1,20 @@
+let assert = import('std/assert');
+
+let binexpo = fn(base, exp) {
+	let res = 1;
+	let a = base, b = exp;
+	while b > 0 {
+		if b % 2 != 0 {
+			res *= a;
+		}
+		a *= a;
+		b >>= 1;
+	}
+	return res;
+};
+
+
+assert.eq(binexpo(5, 5), 3125);
+assert.eq(binexpo(0, 5), 0);
+assert.eq(binexpo(5, 0), 1);
+assert.eq(binexpo(0, 0), 1);

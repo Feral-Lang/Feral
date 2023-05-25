@@ -1,3 +1,5 @@
+let assert = import('std/assert');
+
 let vec = import('std/vec');
 
 let v = vec.new(10, 5, 35, 8, 1, 70, 3, 40);
@@ -28,4 +30,4 @@ let qsort = fn(low, high) {
 
 let arr = vec.new(1, 3, 5, 8, 10, 35, 40, 70);
 qsort(0, v.len() - 1);
-assert(v == arr);
+assert.eq(v, arr);

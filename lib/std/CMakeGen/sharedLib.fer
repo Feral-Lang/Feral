@@ -1,0 +1,52 @@
+let vec = import('std/vec');
+let lang = import('std/lang');
+let findLib = import('./findLib');
+
+let sharedLibBase =
+`# {self.libName}
+set(mod "{self.libName}")
+add_library($\\{mod} SHARED "$\\{PROJECT_SOURCE_DIR}/{self.srcPath}/$\\{mod}.cpp" {self.otherSrcs})
+target_link_libraries($\\{mod}{depNames} $\\{GMP_LIBRARY} $\\{GMPXX_LIBRARY} $\\{MPFR_LIBRARY})
+set_target_properties($\\{mod}
+    PROPERTIES
+    PREFIX "libferal"
+    LINK_FLAGS "$\\{EXTRA_LD_FLAGS}"
+    LIBRARY_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/lib/feral"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS $\\{mod}
+	LIBRARY
+	  DESTINATION lib/feral/{self.projectName}
+	  COMPONENT Libraries
+)`;
+
+let feralvm = findLib.new('feralvm');
+feralvm.makeReqd().addPathSuffixes('feral');
+
+let SharedLib = lang.struct(
+	projectName = '',
+	libName = 'sampleSharedLib',
+	otherSrcs = '',
+	deps = vec.new(refs = true),
+	srcPath = 'src'
+);
+SharedLib.setTypeName('SharedLib');
+
+let new = fn(name, proj) { return SharedLib(libName = name, projectName = proj); };
+
+let addSrc in SharedLib = fn(src) { self.otherSrcs += ' ' + src; return self; };
+
+let addDep in SharedLib = fn(dep) { self.deps.push(dep); return self; };
+
+let gen in SharedLib = fn() {
+	let depNames = ' ';
+	for d in self.deps.each() {
+		depNames += d.getName() + ' ';
+	}
+	depNames.pop();
+	return sharedLibBase.fmt();
+};
+
+let getName in SharedLib = fn() {
+	return self.libName;
+};

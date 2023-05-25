@@ -1,33 +1,35 @@
+let assert = import('std/assert');
+
 # logical
-assert(0.1 < 1.0);
-assert(0.1 > 0.01);
-assert(0.1 <= 0.1);
-assert(0.1 >= 0.1);
-assert(0.1 == 0.1);
-assert(0.1 != 0.01);
+assert.lt(0.1, 1.0);
+assert.gt(0.1, 0.01);
+assert.le(0.1, 0.1);
+assert.ge(0.1, 0.1);
+assert.eq(0.1, 0.1);
+assert.ne(0.1, 0.01);
 
 # arithmetic
-assert(5.0 + 0.1 == 5.1);
-assert(5.2 - 0.2 == 5.0);
-assert(5.2 * 2.0 == 10.4);
-assert(5.2 / 2.0 == 2.6);
+assert.eq(5.0 + 0.1, 5.1);
+assert.eq(5.2 - 0.2, 5.0);
+assert.eq(5.2 * 2.0, 10.4);
+assert.eq(5.2 / 2.0, 2.6);
 
 let a = 5.0, b = 2.0;
-assert((a += b) == 7.0);
-assert((a -= b) == 5.0);
-assert((a *= b) == 10.0);
-assert((a /= b) == 5.0);
+assert.eq((a += b), 7.0);
+assert.eq((a -= b), 5.0);
+assert.eq((a *= b), 10.0);
+assert.eq((a /= b), 5.0);
 
 # others
-assert(++4.0 == 5.0);
-assert(4.0++ == 4.0);
-assert(--4.0 == 3.0);
-assert(4.0-- == 4.0);
+assert.eq(++4.0, 5.0);
+assert.eq(4.0++, 4.0);
+assert.eq(--4.0, 3.0);
+assert.eq(4.0--, 4.0);
 
-assert(2.5 ** 2 == 6.25);
-assert(6.25 // 2 == 2.5);
+assert.eq(2.5 ** 2, 6.25);
+assert.eq(6.25 // 2, 2.5);
 
-assert(-5 != -(-5));
+assert.ne(-5, -(-5));
 
-assert((5.2).round() == 5);
-assert((5.5).round() == 6);
+assert.eq((5.2).round(), 5);
+assert.eq((5.5).round(), 6);

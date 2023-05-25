@@ -1,3 +1,5 @@
+let assert = import('std/assert');
+
 # consider: | => up arrow
 
 # 3 |||| 4 => 3 ||| 3 ||| 3 ||| 3
@@ -27,4 +29,4 @@ let calc = fn(a, b, arrcnt) {
 	return res;
 };
 
-assert(calc(x, y, arrcount) == 7625597484987);
+assert.eq(calc(x, y, arrcount), 7625597484987);

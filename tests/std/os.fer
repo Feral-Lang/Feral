@@ -1,10 +1,12 @@
+let assert = import('std/assert');
+
 let fs = import('std/fs');
 let os = import('std/os');
 
-# 50 ms
-os.sleep(50);
-os.set_env('__tmp__', 'val');
-assert(os.get_env('__tmp__') == 'val');
+os.sleep(20);
+
+os.setEnv('__tmp__', 'val');
+assert.eq(os.getEnv('__tmp__'), 'val');
 
 # this script is probably running thanks to os.exec()
 
@@ -12,36 +14,36 @@ assert(os.get_env('__tmp__') == 'val');
 
 let insfile = '__testinsfile__';
 os.install(__SRC_PATH__, insfile);
-assert(fs.exists(insfile));
+assert.eq(fs.exists(insfile), true);
 os.rm(insfile);
-assert(!fs.exists(insfile));
+assert.eq(!fs.exists(insfile), true);
 
 os.name;
 
-let cwd = os.get_cwd();
-os.set_cwd('/');
-assert(os.get_cwd() != cwd);
-os.set_cwd(cwd);
-assert(os.get_cwd() == cwd);
+let cwd = os.getCWD();
+os.setCWD('/');
+assert.ne(os.getCWD(), cwd);
+os.setCWD(cwd);
+assert.eq(os.getCWD(), cwd);
 
 let dir = '__testdir__';
 os.mkdir(dir);
-assert(fs.exists(dir));
+assert.eq(fs.exists(dir), true);
 os.mv(dir, '__moved_testdir__');
-assert(fs.exists('__moved_testdir__'));
-assert(!fs.exists(dir));
+assert.eq(fs.exists('__moved_testdir__'), true);
+assert.eq(!fs.exists(dir), true);
 os.mv('__moved_testdir__', dir);
 os.rm(dir);
-assert(!fs.exists(dir));
+assert.eq(!fs.exists(dir), true);
 
 let cpfile = '__testcpfile__';
 os.cp(__SRC_PATH__, cpfile);
-assert(fs.exists(cpfile));
+assert.eq(fs.exists(cpfile), true);
 os.rm(cpfile);
-assert(!fs.exists(cpfile));
+assert.eq(!fs.exists(cpfile), true);
 
-# len == 0 => not found
-assert(os.find_exec('ls').len() > 0);
-assert(os.find_exec('randomword').empty());
+# len, 0 => not found
+assert.gt(os.findExec('ls').len(), 0);
+assert.eq(os.findExec('randomword').empty(), true);
 
 # chmod

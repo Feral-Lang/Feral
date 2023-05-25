@@ -1,0 +1,126 @@
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let sys = import('std/sys');
+let lang = import('std/lang');
+let cmakeBase = import('./CMakeGen/base');
+let install = import('./CMakeGen/install');
+let findLib = import('./CMakeGen/findLib');
+let sharedLib = import('./CMakeGen/sharedLib');
+let binary = import('./CMakeGen/binary');
+
+let defaultInstallRPaths = sys.installPrefix + '/lib/feral/std;' + sys.installPrefix  + '/lib/feral';
+
+let Core = lang.struct(
+	version = '3.24.3',
+	projectName = 'test',
+	cxxStd = '20',
+	prefix = sys.installPrefix,
+	installRPaths = defaultInstallRPaths,
+	deps = vec.new(refs = true),
+	installs = vec.new(refs = true),
+	sharedLibs = vec.new(refs = true),
+	binaries = vec.new(refs = true),
+	rpathFromOrigin = '../../',
+	useFeralVM = false
+);
+
+let new = fn(projectName) { return Core(projectName = projectName); };
+
+let gen in Core = fn(ret = false) {
+	let depsStr = '';
+	for d in self.deps.each() {
+		depsStr += d.gen() + '\n';
+	}
+	let installsStr = '';
+	for i in self.installs.each() {
+		installsStr += i.gen() + '\n';
+	}
+	let sharedLibsStr = '';
+	for sl in self.sharedLibs.each() {
+		sharedLibsStr += sl.gen() + '\n';
+	}
+	let binariesStr = '';
+	for bin in self.binaries.each() {
+		binariesStr += bin.gen() + '\n';
+	}
+	let data = cmakeBase.template.fmt();
+	if ret { return data; }
+	{ # this is inside a block as file must be closed before it is used
+		let file = fs.fopen(os.getCWD() + '/CMakeLists.txt', 'w+');
+		io.fprintln(file, data);
+	}
+	let buildtype = '';
+	if sys.args.len() > 1 && sys.args[1] == '--debug' {
+		buildtype = 'Debug';
+	} else {
+		buildtype = 'Release';
+	}
+	let cwd = os.getCWD();
+	let changed = false;
+	if !fs.exists('build/CMakeCache.txt') {
+		os.mkdir('build');
+		changed = true;
+	} elif os.exec('grep CMAKE_BUILD_TYPE build/CMakeCache.txt | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
+		os.rm('build');
+		os.mkdir('build');
+		changed = true;
+	}
+	os.setCWD('build');
+	if changed && os.exec('cmake .. -DCMAKE_BUILD_TYPE=' + buildtype) != 0 {
+		raise('failed to execute cmake');
+	}
+	let ins = '';
+	if sys.args.len() > 0 && sys.args[0] == 'install' {
+		ins = ' install';
+	}
+	if os.exec('make -j' + ins) != 0 {
+		raise('failed to execute make');
+	}
+	os.setCWD(cwd);
+	return nil;
+};
+
+let addDep in Core = fn(name) {
+	let lib = findLib.new(name);
+	self.deps.push(lib);
+	return ref(lib);
+};
+
+let addInstall in Core = fn(name) {
+	let ins = install.new(name, self.projectName);
+	self.installs.push(ins);
+	return ref(ins);
+};
+
+let addSharedLib in Core = fn(name, withFeralVM = true) {
+	let lib = sharedLib.new(name, self.projectName);
+	if withFeralVM { self.addFeralVMLibs(lib); }
+	self.sharedLibs.push(lib);
+	return ref(lib);
+};
+
+let addBin in Core = fn(name, withFeralVM = true) {
+	let bin = binary.new(name);
+	if withFeralVM { self.addFeralVMLibs(bin); }
+	self.binaries.push(bin);
+	return ref(bin);
+};
+
+let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return self; };
+
+let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return self; };
+
+let setPrefix in Core = fn(prefix) { self.prefix = prefix; return self; };
+
+# internal functions
+
+let addFeralVMLibs in Core = fn(obj) {
+	if !self.useFeralVM {
+		self.deps.push(sharedLib.feralvm);
+		self.useFeralVM = true;
+	}
+	obj.addDep(sharedLib.feralvm);
+	return self;
+};

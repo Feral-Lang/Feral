@@ -1,0 +1,88 @@
+let vec = import('std/vec');
+let str = import('std/str');
+let sys = import('std/sys');
+let lang = import('std/lang');
+
+let findLibBase =
+`include_directories({includeDirs})
+find_library({self.varName.upper()}_LIBRARY {self.libName}{self.pathSuffixes}{self.required}{prefixPath})
+`;
+
+let findLibTest =
+`if(NOT {self.varName.upper()}_LIBRARY)
+	message(FATAL_ERROR "{self.varName} is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
+else()
+	message("-- {self.varName} found at: $\\{{self.varName.upper()}_LIBRARY}")
+endif()
+`;
+
+let FindLib = lang.struct(
+	template = findLibBase,
+	libName = 'test',
+	varName = '',
+	pathSuffixes = '',
+	required = '',
+	useHomebrew = false,
+	homeBrewName = '',
+	extPrefixes = vec.new(),
+	feralLib = false
+);
+FindLib.setTypeName('FindLib');
+
+let new = fn(libName) { return FindLib(libName = libName); };
+
+let makeReqd in FindLib = fn() {
+	self.required = ' REQUIRED';
+	self.template += findLibTest;
+	return self;
+};
+
+let setVarName in FindLib = fn(varName) { self.varName = varName; return self; };
+
+let addPathSuffixes in FindLib = fn(pathSuffixes...) {
+	for pathSuffix in pathSuffixes.each() {
+		self.pathSuffixes += pathSuffix;
+	}
+	return self;
+};
+
+let getName in FindLib = fn() {
+	if !self.varName.empty() {
+		return '${' + self.varName.upper() + '_LIBRARY}';
+	}
+	return '${' + self.libName.upper() + '_LIBRARY}';
+};
+
+let addExtPrefixes in FindLib = fn(extPrefixes) {
+	for extPrefix in extPrefixes.each() {
+		self.extPrefixes.push(extPrefix);
+	}
+	return self;
+};
+
+let makeFeralLib in FindLib = fn() { self.feralLib = true; return self; };
+
+let gen in FindLib = fn() {
+	if self.varName == '' { self.varName = self.libName; }
+	if !self.pathSuffixes.empty() { self.pathSuffixes = ' PATH_SUFFIXES "' + self.pathSuffixes + '"'; }
+	let includeDirs = '';
+	let prefixPath = ' PATHS ';
+	for prefix in self.extPrefixes.each() {
+		includeDirs += prefix + '/include ';
+		prefixPath += prefix + '/lib ';
+	}
+	if !self.extPrefixes.empty() {
+		includeDirs.pop();
+	}
+	if self.feralLib {
+		prefixPath += sys.install_prefix + '/lib/feral ';
+		self.libName = 'feral' + self.libName;
+	}
+	if prefixPath == ' PATHS ' {
+		prefixPath.clear();
+	}
+	if !prefixPath.empty() {
+		prefixPath += 'NO_DEFAULT_PATH';
+	}
+	return self.template.fmt();
+};

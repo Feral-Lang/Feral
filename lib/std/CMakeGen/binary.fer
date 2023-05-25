@@ -1,0 +1,53 @@
+let vec = import('std/vec');
+let lang = import('std/lang');
+
+let binaryBase =
+`# {self.binName} binary
+set(mod "{self.binName}")
+add_executable($\\{mod} "$\\{PROJECT_SOURCE_DIR}/{self.srcdir}/{self.main_src}" {self.srcs})
+target_link_libraries($\\{mod}{depnames})
+set_target_properties($\\{mod}
+	PROPERTIES
+	OUTPUT_NAME {self.binName}
+	LINK_FLAGS "$\\{EXTRA_LD_FLAGS}"
+	RUNTIME_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/bin"
+	INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+install(TARGETS $\\{mod}
+	RUNTIME
+	  DESTINATION bin
+	  COMPONENT Binaries
+)`;
+
+let Binary = lang.struct(
+	binName = 'sampleBin',
+	srcs = '',
+	deps = vec.new(refs = true)
+);
+Binary.setTypeName('Binary');
+
+let new = fn(name) { return Binary(binName = name); };
+
+let addSrcs = fn(srcs...) {
+	for src in srcs.each() {
+		self.srcs += ' ';
+		self.srcs += src;
+	}
+	return self;
+};
+
+let addDeps in Binary = fn(deps) {
+	for dep in deps.each() {
+		self.deps.push(dep);
+	}
+	return self;
+};
+
+let gen in Binary = fn() {
+	let depnames = '';
+	for d in self.deps.each() {
+		depnames += ' ';
+		depnames += d.getName();
+	}
+	return binaryBase.fmt();
+};

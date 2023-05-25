@@ -1,16 +1,16 @@
 let io = import('std/io');
 
-io.print('hi');
+io.print('print');
 io.println();
-io.println('heya');
+io.println('println');
 
-io.fprint(io.stdout, 'hi again');
+io.fprint(io.stdout, 'fprint');
 io.fprintln(io.stdout);
-io.fprintln(io.stdout, 'heya again');
+io.fprintln(io.stdout, 'fprintln');
 
-io.cprint('{c}cyan {g}green{0}');
+io.cprint('cprint {c}cyan {g}green{0}');
 io.cprintln();
-io.cprintln('{y}yellow {m}magenta{0}');
+io.cprintln('cprintln {y}yellow {m}magenta{0}');
 
 # no need to print on stderr just yet
 # io.cdprint('{c}cyan {g}green{0}');

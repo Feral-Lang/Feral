@@ -1,9 +1,0 @@
-let x = 10, y = 20, z = 30;
-
-x = y = z = 100;
-y = z = 50;
-z = 25;
-
-assert(x == 100);
-assert(y == 50);
-assert(z == 25);

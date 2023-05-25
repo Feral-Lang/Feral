@@ -1,9 +1,0 @@
-mload('std/io');
-
-let scan = fn(prompt = '') {
-	return scan_native(prompt);
-};
-
-let scaneof = fn(prompt = '') {
-	return scaneof_native(prompt);
-};

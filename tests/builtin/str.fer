@@ -1,20 +1,22 @@
+let assert = import('std/assert');
+
 # logical
-assert('hello' < 'ifmmp');
-assert('hello' > 'gdkkn');
-assert('hello' <= 'hello');
-assert('hello' >= 'hello');
-assert('hello' == 'hello');
-assert('hello' != 'world');
+assert.lt('hello', 'ifmmp');
+assert.gt('hello', 'gdkkn');
+assert.le('hello', 'hello');
+assert.ge('hello', 'hello');
+assert.eq('hello', 'hello');
+assert.ne('hello', 'world');
 
 # arithmetic
-assert('hello ' + 'world' == 'hello world');
-assert('ab' * 3 == 'ababab');
+assert.eq('hello ' + 'world', 'hello world');
+assert.eq('ab' * 3, 'ababab');
 
 let a = 'ab', b = 'cd';
 
-assert((a += b) == 'abcd');
-assert((a *= 2) == 'abcdabcd');
+assert.eq((a += b), 'abcd');
+assert.eq((a *= 2), 'abcdabcd');
 
-assert(a[0] == 'a');
-assert(a[10] == nil);
-assert('a'[0] == 'a');
+assert.eq(a[0], 'a');
+assert.eq(a[10], nil);
+assert.eq('a'[0], 'a');
