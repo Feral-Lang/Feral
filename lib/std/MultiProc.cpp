@@ -79,17 +79,14 @@ int execCommand(const String &cmd)
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t nread;
-
 	while((nread = getline(&line, &len, pipe)) != -1) {
 		fprintf(stdout, "%s", line);
 	}
-
 	free(line);
 	int res = 0;
 	{
 		LockGuard<Mutex> lock(pipe_mtx);
 		res = pclose(pipe);
 	}
-	int exit_code = WEXITSTATUS(res);
 	return WEXITSTATUS(res);
 }

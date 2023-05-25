@@ -187,7 +187,7 @@ public:
 
 	void disp(bool has_next);
 
-	inline void setVal(Stmt *val) { val = val; }
+	inline void setVal(Stmt *newval) { val = newval; }
 
 	inline lex::Lexeme &getName() { return name; }
 	inline Stmt *&getVal() { return val; }

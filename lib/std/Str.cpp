@@ -445,8 +445,6 @@ Var *chr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 INIT_MODULE(Str)
 {
-	VarModule *mod = vm.getCurrModule();
-
 	vm.addNativeTypeFn<VarStr>(loc, "len", strSize, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "clear", strClear, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "empty", strEmpty, 0);

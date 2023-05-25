@@ -15,7 +15,6 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 	VarModule *varmod = getCurrModule();
 	Vars *vars	  = varmod->getVars();
 	Module *mod	  = varmod->getMod();
-	size_t modid	  = mod->getID();
 	Bytecode &bc	  = custombc ? *custombc : mod->getBytecode();
 	size_t bcsz	  = end == 0 ? bc.size() : end;
 
