@@ -342,27 +342,22 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 		}
 		if((ltok == lex::STR || rtok == lex::STR) && ltok != rtok) break;
 		comparisonOps(!=);
-		break;
 	}
 	case lex::LT: {
 		if(ltok == lex::STR || rtok == lex::STR) break;
 		comparisonOps(<);
-		break;
 	}
 	case lex::GT: {
 		if(ltok == lex::STR || rtok == lex::STR) break;
 		comparisonOps(>);
-		break;
 	}
 	case lex::LE: {
 		if(ltok == lex::STR || rtok == lex::STR) break;
 		comparisonOps(<=);
-		break;
 	}
 	case lex::GE: {
 		if(ltok == lex::STR || rtok == lex::STR) break;
 		comparisonOps(>=);
-		break;
 	}
 	case lex::BAND: {
 		if(ltok == lex::STR || rtok == lex::STR) break;

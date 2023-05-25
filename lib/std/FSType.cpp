@@ -45,9 +45,8 @@ bool VarFileIterator::next(VarStr *&val)
 	if(!val) return false;
 	char *lineptr	= NULL;
 	size_t len	= 0;
-	ssize_t read	= 0;
 	String &valdata = val->get();
-	if((read = getline(&lineptr, &len, file->getFile())) != -1) {
+	if(getline(&lineptr, &len, file->getFile()) != -1) {
 		valdata.clear();
 		valdata = lineptr;
 		free(lineptr);

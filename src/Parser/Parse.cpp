@@ -710,7 +710,6 @@ bool Parser::parseExpr01(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 		}
 	}
 
-begin:
 	if(p.acceptd() && !parseSimple(p, lhs)) {
 		err::out(p.peek(), "failed to parse simple");
 		return false;
@@ -806,7 +805,6 @@ begin_brack:
 		if(p.accept(lex::LBRACK, lex::LPAREN)) goto begin_brack;
 	}
 
-dot:
 	if(p.acceptn(lex::DOT, lex::ARROW)) {
 		if(lhs && rhs) {
 			lhs = StmtExpr::create(ctx, p.peek(-1).getLoc(), lhs, p.peek(-1), rhs);
@@ -816,7 +814,6 @@ dot:
 		goto after_dot;
 	}
 
-done:
 	if(lhs && rhs) {
 		lhs = StmtExpr::create(ctx, dot.getLoc(), lhs, dot, rhs);
 		rhs = nullptr;
@@ -948,7 +945,6 @@ bool Parser::parseFnDef(ParseHelper &p, Stmt *&fndef)
 
 	Stmt *sig	   = nullptr;
 	StmtBlock *blk	   = nullptr;
-	bool is_inline	   = false;
 	lex::Lexeme &start = p.peek();
 
 	if(!parseFnSig(p, sig)) return false;
@@ -1096,7 +1092,6 @@ bool Parser::parseFor(ParseHelper &p, Stmt *&f)
 		return false;
 	}
 
-init:
 	if(p.acceptn(lex::COLS)) goto cond;
 
 	if(p.accept(lex::LET)) {

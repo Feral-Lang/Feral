@@ -38,6 +38,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		resvcap = mpz_get_ui(as<VarInt>(capv)->getSrc());
 	}
 	StringMap<Var *> mapval;
+	mapval.reserve(resvcap);
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
