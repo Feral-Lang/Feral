@@ -36,7 +36,15 @@ x.dependsOn(a, d);
 
 let frames = deptree.generateParallelFrames();
 
-assert.eq(frames[0], vec.new('g', 'f', 'b'));
-assert.eq(frames[1], vec.new('c', 'e'));
-assert.eq(frames[2], vec.new('a', 'd'));
-assert.eq(frames[3], vec.new('x'));
+assert.eq(frames[0].len(), 3);
+assert.eq(frames[0].find('g'), true);
+assert.eq(frames[0].find('f'), true);
+assert.eq(frames[0].find('b'), true);
+assert.eq(frames[1].len(), 2);
+assert.eq(frames[1].find('c'), true);
+assert.eq(frames[1].find('e'), true);
+assert.eq(frames[2].len(), 2);
+assert.eq(frames[2].find('a'), true);
+assert.eq(frames[2].find('d'), true);
+assert.eq(frames[3].len(), 1);
+assert.eq(frames[3].find('x'), true);

@@ -9,13 +9,12 @@
 namespace fer
 {
 
-size_t MAX_RECURSE_COUNT = DEFAULT_MAX_RECURSE_COUNT;
-
 Interpreter::Interpreter(RAIIParser &parser)
 	: selfbin(env::getProcPath()), parser(parser), c(parser.getContext()),
 	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
-	  exitcode(0), recurse_count(0), exitcalled(false), recurse_count_exceeded(false)
+	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
+	  exitcalled(false), recurse_count_exceeded(false)
 {
 	initTypeNames();
 

@@ -33,8 +33,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		// dumpExecStack(std::cout);
 		// std::cout << "\n";
 
-		if(recurse_count >= MAX_RECURSE_COUNT) {
-			fail(ins.getLoc(), "stack overflow, current max: ", recurse_count);
+		if(recurse_count >= getMaxRecurseCount()) {
+			fail(ins.getLoc(), "stack overflow, current max: ", getMaxRecurseCount());
 			recurse_count_exceeded = true;
 			goto handle_err;
 		}
