@@ -12,10 +12,25 @@ exit_handler() {
     cd $CWD
 }
 
-# Get system cores for faster build
+# Get OS ID
 SYSNAME=$(uname)
 
+export CFLAGS="$CFLAGS -I/usr/local/include"
+export CXXFLAGS="$CXXFLAGS -I/usr/local/include"
+
+if [ "$SYSNAME" = "Darwin" ]; then
+    BREWGMP="$(brew --prefix gmp)"
+    BREWMPFR="$(brew --prefix mpfr)"
+    BREWMPC="$(brew --prefix mpc)"
+    echo "[INFO] GMP prefix: $BREWGMP"
+    echo "[INFO] MPFR prefix: $BREWMPFR"
+    echo "[INFO] MPC prefix: $BREWMPC"
+    export CFLAGS="$CFLAGS -I$BREWGMP/include -I$BREWMPFR/include -I$BREWMPC/include"
+    export CXXFLAGS="$CXXFLAGS -I$BREWGMP/include -I$BREWMPFR/include -I$BREWMPC/include"
+    export LDFLAGS="$LDFLAGS -L$BREWGMP/lib -L$BREWMPFR/lib -L$BREWMPC/lib"
+fi
 CORES=1
+# Get system cores for faster build
 if [ "$SYSNAME" = "Linux" ]; then
     CORES=$(nproc)
 else # for BSD and macOS
@@ -41,7 +56,7 @@ else
 fi
 
 # Check for sudo
-if [ "$sudo" = "sudo" ]; then
+if [ "$SUDO" = "sudo" ]; then
     if hash sudo 2>/dev/null; then
         echo '[INFO] sudo found.'
     else
@@ -64,11 +79,10 @@ trap exit_handler INT
 
 build() {
     mkdir build && cd build
-    DISABLE_MARCH_NATIVE=""
     if [ -n "$CI" ]; then
-        DISABLE_MARCH_NATIVE="-DDISABLE_MARCH_NATIVE_FLAG=true"
+        export DISABLE_MARCH_NATIVE="true"
     fi
-    cmake .. -DCMAKE_BUILD_TYPE=Release $DISABLE_MARCH_NATIVE
+    cmake .. -DCMAKE_BUILD_TYPE=Release
     if [ "$?" -ne 0 ]; then exit 1; fi
     make -j$CORES install
     if [ "$?" -ne 0 ]; then exit 1; fi
@@ -86,7 +100,7 @@ if [ -z "$CI" ]; then
     cd Feral
 fi
 
-echo '[INFO] Building language & standard library...'
+echo '[INFO] Building language compiler...'
 build
 
 echo '[INFO] Done! Cleaning up...'
