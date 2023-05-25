@@ -1,0 +1,41 @@
+Var *nilToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, 0);
+}
+
+Var *boolToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->get() ? 1 : 0);
+}
+
+Var *typeIDToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<String, AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->get());
+}
+
+Var *intToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	return args[0];
+}
+
+Var *fltToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	mpfr_get_z(res->get(), as<VarFlt>(args[0])->getSrc(), mpfr_get_default_rounding_mode());
+	return res;
+}
+
+Var *strToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	int tmp	    = mpz_set_str(res->get(), as<VarStr>(args[0])->get().c_str(), 0);
+	if(tmp == 0) return res;
+	vm.unmakeVar(res);
+	return vm.getNil();
+}

@@ -1,18 +1,20 @@
+let assert = import('std/assert');
+
 let sys = import('std/sys');
 
-assert(!sys.var_exists('a'));
-assert(sys.var_exists('sys'));
+assert.eq(!sys.varExists('a'), true);
+assert.eq(sys.varExists('sys'), true);
 
 sys.args;
-sys.install_prefix;
-sys.self_bin;
-sys.self_base;
+sys.installPrefix;
+sys.selfBin;
+sys.selfBase;
 
-sys.version_major;
-sys.version_minor;
-sys.version_patch;
+sys.versionMajor;
+sys.versionMinor;
+sys.versionPatch;
 
-sys.build_date;
-sys.build_compiler;
+sys.buildDate;
+sys.buildCompiler;
 
 sys.exit(0);

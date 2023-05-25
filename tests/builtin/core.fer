@@ -1,6 +1,8 @@
+let assert = import('std/assert');
+
 let sys = import('std/sys');
 
-assert('some string'._typestr_() == 'str');
+assert.eq('some string'._typestr_(), 'Str');
 
 # raise
 let div = fn(x, y) {
@@ -11,14 +13,14 @@ let div = fn(x, y) {
 };
 
 let x = div(5, 0) or e {
-	10 / 0 or e2 {
-		assert(e == 'div by zero');
-		assert(e2 == 'division by zero');
-		20 # set 20 as the value
-	}
+	return 10 / 0 or e2 {
+		assert.eq(e, 'raised: div by zero');
+		assert.eq(e2, 'division by zero');
+		return 20; # set 20 as the value
+	};
 };
-let y = div(div(12, 0) or { 10 }, 10);
-assert(x == 20);
-assert(y == 1);
-assert(!sys.var_exists('e2'));
-assert(!sys.var_exists('e'));
+let y = div(div(12, 0) or { return 10; }, 10);
+assert.eq(x, 20);
+assert.eq(y, 1);
+assert.eq(!sys.varExists('e2'), true);
+assert.eq(!sys.varExists('e'), true);

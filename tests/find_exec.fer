@@ -1,9 +1,0 @@
-let io = import('std/io');
-let os = import('std/os');
-
-let loc = os.find_exec('valgrind');
-if !loc.empty() {
-	io.println('valgrind available at: \'', loc, '\'!');
-} else {
-	io.println('valgrind not found!');
-}

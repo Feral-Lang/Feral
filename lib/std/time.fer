@@ -1,0 +1,54 @@
+# by default, {stdclk,sysclk}Now() provide nanosecond resolution
+
+mload('std/Time');
+
+let nano = 1.0; # equivalent to what *Now() provides
+let micro = nano / 1000;
+let milli = micro / 1000;
+let second = milli / 1000;
+let minute = second / 60;
+let hour = minute / 60;
+
+let resolution = micro; # set to micro by default
+let timeFormat = '%a %b %e %T %Z %Y';
+
+let setResolution = fn(num) {
+	resolution = num;
+};
+
+let now = fn() {
+	return systemClockNowNative();
+};
+
+let resolve = fn(time, resol = nil) {
+	let res = 0.0;
+	if resol == nil {
+		res = resolution;
+	} else {
+		res = resol;
+	}
+	return time.flt() * res;
+};
+
+let hours = fn(num) {
+	return num.flt() / hour;
+};
+
+let mins = fn(num) {
+	return num.flt() / minute;
+};
+
+let seconds = fn(num) {
+	return num.flt() / second;
+};
+
+let setFormat = fn(new_format) {
+	timeFormat = new_format;
+};
+
+let format = fn(time, fmt = nil) {
+	if fmt == nil {
+		return formatNative(time, timeFormat);
+	}
+	return formatNative(time, fmt);
+};

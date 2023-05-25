@@ -1,34 +1,36 @@
-# should not reach assert(false) function call
+# should not reach assert.eq(false, true) function call
 # tests include short circuiting
 
+let assert = import('std/assert');
+
 if 1 == 2 {
-	assert(false);
+	assert.eq(false, true);
 } elif 2 == 2 {
-	assert(true);
+	assert.eq(true, true);
 } else {
-	assert(false);
+	assert.eq(false, true);
 }
 
-if (1 == 1 && 2 == 2) || (assert(false) && (assert(false))) {
-	assert(true);
+if (1 == 1 && 2 == 2) || (assert.eq(false, true) && (assert.eq(false, true))) {
+	assert.eq(true, true);
 } else {
-	assert(false);
+	assert.eq(false, true);
 }
 
-if (1 == 2 || 2 == 1) && (assert(false) || (assert(false))) {
-	assert(false);
+if (1 == 2 || 2 == 1) && (assert.eq(false, true) || (assert.eq(false, true))) {
+	assert.eq(false, true);
 } else {
-	assert(true);
+	assert.eq(true, true);
 }
 
-if 1 == 1 || assert(false) {
-	assert(true);
+if 1 == 1 || assert.eq(false, true) {
+	assert.eq(true, true);
 } else {
-	assert(false);
+	assert.eq(false, true);
 }
 
-if 1 == 2 && assert(false) {
-	assert(false);
+if 1 == 2 && assert.eq(false, true) {
+	assert.eq(false, true);
 } else {
-	assert(true);
+	assert.eq(true, true);
 }

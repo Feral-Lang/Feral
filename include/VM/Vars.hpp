@@ -1,121 +1,100 @@
-/*
-	MIT License
+#pragma once
 
-	Copyright (c) 2020 Feral Language repositories
+#include "VarTypes.hpp"
 
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so.
-*/
-
-#ifndef VM_VARS_HPP
-#define VM_VARS_HPP
-
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "Vars/Base.hpp"
-
-class vars_frame_t
+namespace fer
 {
-	std::unordered_map<std::string, var_base_t *> m_vars;
+
+class VarFrame
+{
+	StringMap<Var *> vars;
 
 public:
-	vars_frame_t();
-	~vars_frame_t();
+	VarFrame();
+	~VarFrame();
 
-	inline const std::unordered_map<std::string, var_base_t *> &all() const { return m_vars; }
+	inline StringMap<Var *> &get() { return vars; }
+	inline bool exists(StringRef name) { return vars.find(name) != vars.end(); }
 
-	inline bool exists(const std::string &name) { return m_vars.find(name) != m_vars.end(); }
-	var_base_t *get(const std::string &name);
+	// use this instead of exists() if the Var* retrieval is actually required
+	Var *get(StringRef name);
 
-	void add(const std::string &name, var_base_t *val, const bool inc_ref);
-	void rem(const std::string &name, const bool dec_ref);
+	void add(StringRef name, Var *val, bool iref);
+	bool rem(StringRef name, bool dref);
 
-	static void *operator new(size_t sz);
-	static void operator delete(void *ptr, size_t sz);
-
-	vars_frame_t *thread_copy(const size_t &src_id, const size_t &idx);
+	VarFrame *threadCopy(const ModuleLoc *loc);
 };
 
-class vars_stack_t
+class VarStack
 {
-	std::vector<size_t> m_loops_from;
-	// each vars_frame_t is a stack frame
-	// it is a pointer to remove the issue of recreation of object when vector increases size
-	// since recreation will cause the object to be deleted (and destructor be called) and
-	// invalidate the variable pointers (since destructor contains var_dref() calls)
-	std::vector<vars_frame_t *> m_stack;
-	size_t m_top;
+	Vector<size_t> loops_from;
+	// each VarFrame is a stack frame
+	// Vector is not used here as VarFrame has to be stored as a pointer.
+	// This is so because otherwise, on vector resize, it will cause the VarFrame object to
+	// delete and reconstruct, therefore incorrectly calling the dref() calls
+	Vector<VarFrame *> stack;
 
 public:
-	vars_stack_t();
-	~vars_stack_t();
+	VarStack();
+	~VarStack();
 
-	// checks if a variable exists in CURRENT scope ONLY
-	bool exists(const std::string &name);
-	var_base_t *get(const std::string &name);
+	void pushStack(size_t count);
+	void popStack(size_t count);
 
-	void inc_top(const size_t &count);
-	void dec_top(const size_t &count);
+	inline bool exists(StringRef name) { return stack.back()->exists(name); }
+	// use this instead of exists() if the Var* retrieval is actually required
+	Var *get(StringRef name);
 
-	void push_loop();
+	void pushLoop();
 	// 'break' also uses this
-	void pop_loop();
-	void loop_continue();
+	void popLoop();
+	void continueLoop();
 
-	void add(const std::string &name, var_base_t *val, const bool inc_ref);
-	void rem(const std::string &name, const bool dec_ref);
+	inline void add(StringRef name, Var *val, bool iref) { stack.back()->add(name, val, iref); }
+	bool rem(StringRef name, bool dref);
 
-	vars_stack_t *thread_copy(const size_t &src_id, const size_t &idx);
+	VarStack *threadCopy(const ModuleLoc *loc);
 };
 
-/*
- * vars for each source file
- * stash exists to add variables to a function BEFORE the block of function starts
- * this is useful for declaring function variables inside the function without extra scope
- *
- * 0 cannot be a function id as it specifies source level scope and hence is created in constructor
- */
-class vars_t
+class Vars
 {
-	size_t m_fn_stack;
-	std::unordered_map<std::string, var_base_t *> m_stash;
-	// maps function id to vars_frame_t
-	std::unordered_map<size_t, vars_stack_t *> m_fn_vars;
+	Map<String, Var *> stashed;
+	// maps function ids to VarStack
+	// 0 is the id for global scope
+	Map<size_t, VarStack *> fnvars;
+	size_t fnstack;
 
 public:
-	vars_t();
-	~vars_t();
+	Vars();
+	~Vars();
 
-	// checks if a variable exists in CURRENT scope ONLY
-	bool exists(const std::string &name);
+	// checks if variable exists in current scope ONLY
+	inline bool exists(StringRef name) { return fnvars[fnstack]->exists(name); }
+	// use this instead of exists() if the Var* retrieval is actually required
+	// and current scope requirement is not present
+	Var *get(StringRef name);
 
-	var_base_t *get(const std::string &name);
+	void pushBlk(size_t count);
+	inline void popBlk(size_t count) { fnvars[fnstack]->popStack(count); }
 
-	void blk_add(const size_t &count);
-	void blk_rem(const size_t &count);
-
-	void push_fn();
-	void pop_fn();
-
-	void stash(const std::string &name, var_base_t *val, const bool &iref = true);
+	void pushFn();
+	void popFn();
+	void stash(StringRef name, Var *val, bool iref = true);
 	void unstash();
 
-	inline void push_loop() { m_fn_vars[m_fn_stack]->push_loop(); }
-	inline void pop_loop() { m_fn_vars[m_fn_stack]->pop_loop(); }
-	inline void loop_continue() { m_fn_vars[m_fn_stack]->loop_continue(); }
+	inline void pushLoop() { fnvars[fnstack]->pushLoop(); }
+	inline void popLoop() { fnvars[fnstack]->popLoop(); }
+	inline void continueLoop() { fnvars[fnstack]->continueLoop(); }
 
-	void add(const std::string &name, var_base_t *val, const bool inc_ref);
-	// add variable to module level unconditionally (for vm.register_new_type())
-	void addm(const std::string &name, var_base_t *val, const bool inc_ref);
-	void rem(const std::string &name, const bool dec_ref);
+	inline void add(StringRef name, Var *val, bool iref)
+	{
+		fnvars[fnstack]->add(name, val, iref);
+	}
+	// add variable to module level unconditionally (for vm.registerNewType())
+	inline void addm(StringRef name, Var *val, bool iref) { fnvars[0]->add(name, val, iref); }
+	inline bool rem(StringRef name, bool dref) { return fnvars[fnstack]->rem(name, dref); }
 
-	vars_t *thread_copy(const size_t &src_id, const size_t &idx);
+	Vars *threadCopy(const ModuleLoc *loc);
 };
 
-#endif // VM_VARS_HPP
+} // namespace fer

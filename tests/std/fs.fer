@@ -1,12 +1,14 @@
+let assert = import('std/assert');
+
 let io = import('std/io');
 let fs = import('std/fs');
 let vec = import('std/vec');
 
 /* sample comment block */
 
-assert(fs.exists(__SRC_PATH__));
+assert.eq(fs.exists(__SRC_PATH__), true);
 
-assert(fs.walkdir(__SRC_DIR__).len() > 0);
+assert.gt(fs.walkDir(__SRC_DIR__).len(), 0);
 
 /*
 sample comment block
@@ -15,14 +17,14 @@ multiline
 
 let file = fs.fopen(__SRC_PATH__);
 
-assert(file.lines().len() > 0);
+assert.gt(file.lines().len(), 0);
 
-for line in file.each_line() {
-	io.println('>', line, '<');
+for line in file.eachLine() {
+        io.println('>', line, '<');
 }
 file.seek(0, fs.SEEK_SET);
 
-let blocks = file.read_blocks('/*', '*/');
-assert(blocks[0] == ' sample comment block ');
-assert(blocks[1] == '\nsample comment block\nmultiline\n');
-assert(blocks[2] == '\', \''); # from read_blocks() itself
+let blocks = file.readBlocks('/*', '*/');
+assert.eq(blocks[0], ' sample comment block ');
+assert.eq(blocks[1], '\nsample comment block\nmultiline\n');
+assert.eq(blocks[2], '\', \''); # from readBlocks() itself

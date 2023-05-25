@@ -1,24 +1,25 @@
-let io = import('std/io');
+let assert = import('std/assert');
+
 let ptr = import('std/ptr');
 let vec = import('std/vec');
 let lang = import('std/lang');
 
-let node_t = lang.struct(d = 0, next = nil);
-let list_t = lang.struct(head = nil);
+let Node = lang.struct(d = 0, next = nil);
+let List = lang.struct(head = nil);
 
-let add in list_t = fn(data) {
+let add in List = fn(data) {
 	if self.head == nil {
-		let head in self = node_t(d = data);
+		let head in self = Node(d = data);
 		return;
 	}
 	let iter = ptr.new(self.head);
 	while iter.get().next != nil {
 		iter.set(iter.get().next);
 	}
-	let next in iter.get() = node_t(d = data);
+	let next in iter.get() = Node(d = data);
 };
 
-let to_vec in list_t = fn() {
+let toVec in List = fn() {
 	let v = vec.new();
 	if self.head == nil { return v; }
 	let iter = ptr.new(self.head);
@@ -29,10 +30,10 @@ let to_vec in list_t = fn() {
 	return v;
 };
 
-let l = list_t();
+let l = List();
 l.add(1);
 l.add(2);
 l.add(3);
 l.add(4);
 
-assert(l.to_vec() == vec.new(1, 2, 3, 4));
+assert.eq(l.toVec(), vec.new(1, 2, 3, 4));

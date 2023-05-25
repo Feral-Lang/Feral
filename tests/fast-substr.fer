@@ -1,0 +1,33 @@
+let assert = import('std/assert');
+
+# similar to rabin-karp algorithm
+
+let io = import('std/io');
+let str = import('std/str');
+let vec = import('std/vec');
+
+let str = 'abracadabra';
+
+# substring
+let ss = 'abra';
+let ssLen = ss.len();
+let ss_hash = 0;
+for let i = 0; i < ssLen; ++i { ss_hash += ss[i].byt() * 103; }
+
+let locs = vec.new();
+let window = '';
+let hash = 0;
+for let i = 0; i < str.len(); ++i {
+	window += str[i];
+	hash += str[i].byt() * 103;
+	if window.len() < ssLen { continue; }
+	if window.len() > ssLen {
+		hash -= window.front().byt() * 103;
+		window.erase(0);
+	}
+	if hash == ss_hash && ss == window {
+		locs.push(i - ssLen + 1);
+	}
+}
+
+assert.eq(locs, vec.new(0, 7));

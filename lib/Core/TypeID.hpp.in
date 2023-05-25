@@ -1,0 +1,19 @@
+Var *typeIDEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarTypeID>()) {
+		return vm.getFalse();
+	}
+	return as<VarTypeID>(args[0])->get() == as<VarTypeID>(args[1])->get() ? vm.getTrue()
+									      : vm.getFalse();
+}
+
+Var *typeIDNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarTypeID>()) {
+		return vm.getTrue();
+	}
+	return as<VarTypeID>(args[0])->get() != as<VarTypeID>(args[1])->get() ? vm.getTrue()
+									      : vm.getFalse();
+}

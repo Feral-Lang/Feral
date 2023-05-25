@@ -1,0 +1,168 @@
+#define ARITHF_FUNC(fn, name, namez)                                                          \
+	Var *flt##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                 \
+		     const Map<String, AssnArgData> &assn_args)                               \
+	{                                                                                     \
+		if(args[1]->is<VarInt>()) {                                                   \
+			VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->get());    \
+			mpfr_##namez(res->get(), res->getSrc(), as<VarInt>(args[1])->get(),   \
+				     mpfr_get_default_rounding_mode());                       \
+			return res;                                                           \
+		} else if(args[1]->is<VarFlt>()) {                                            \
+			VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->get());    \
+			mpfr_##name(res->get(), res->getSrc(), as<VarFlt>(args[1])->getSrc(), \
+				    mpfr_get_default_rounding_mode());                        \
+			return res;                                                           \
+		}                                                                             \
+		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) ", found: ",  \
+			vm.getTypeName(args[1]));                                             \
+		return nullptr;                                                               \
+	}
+
+#define ARITHF_ASSN_FUNC(fn, name, namez)                                                         \
+	Var *fltAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                 \
+			 const Map<String, AssnArgData> &assn_args)                               \
+	{                                                                                         \
+		if(args[1]->is<VarInt>()) {                                                       \
+			mpfr_##namez(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(),   \
+				     as<VarInt>(args[1])->get(),                                  \
+				     mpfr_get_default_rounding_mode());                           \
+			return args[0];                                                           \
+		} else if(args[1]->is<VarFlt>()) {                                                \
+			mpfr_##name(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(),    \
+				    as<VarFlt>(args[1])->getSrc(),                                \
+				    mpfr_get_default_rounding_mode());                            \
+			return args[0];                                                           \
+		}                                                                                 \
+		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) "-assn, found: ", \
+			vm.getTypeName(args[1]));                                                 \
+		return nullptr;                                                                   \
+	}
+
+#define LOGICF_FUNC(name, checksym)                                                               \
+	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
+		       const Map<String, AssnArgData> &assn_args)                                 \
+	{                                                                                         \
+		if(args[1]->is<VarFlt>()) {                                                       \
+			return mpfr_cmp(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get())   \
+			       checksym 0                                                         \
+			       ? vm.getTrue()                                                     \
+			       : vm.getFalse();                                                   \
+		}                                                                                 \
+		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) "-assn, found: ", \
+			vm.getTypeName(args[1]));                                                 \
+		return nullptr;                                                                   \
+	}
+
+ARITHF_FUNC(Add, add, add_z)
+ARITHF_FUNC(Sub, sub, sub_z)
+ARITHF_FUNC(Mul, mul, mul_z)
+ARITHF_FUNC(Div, div, div_z)
+
+ARITHF_ASSN_FUNC(Add, add, add_z)
+ARITHF_ASSN_FUNC(Sub, sub, sub_z)
+ARITHF_ASSN_FUNC(Mul, mul, mul_z)
+ARITHF_ASSN_FUNC(Div, div, div_z)
+
+LOGICF_FUNC(LT, <)
+LOGICF_FUNC(GT, >)
+LOGICF_FUNC(LE, <=)
+LOGICF_FUNC(GE, >=)
+
+Var *fltEQ(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarFlt>()) return vm.getFalse();
+	return mpfr_cmp(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) == 0
+	       ? vm.getTrue()
+	       : vm.getFalse();
+}
+
+Var *fltNE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarFlt>()) return vm.getTrue();
+	return mpfr_cmp(as<VarFlt>(args[0])->get(), as<VarFlt>(args[1])->get()) != 0
+	       ? vm.getTrue()
+	       : vm.getFalse();
+}
+
+Var *fltPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	mpfr_add_ui(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(), 1,
+		    mpfr_get_default_rounding_mode());
+	return args[0];
+}
+
+Var *fltPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const Map<String, AssnArgData> &assn_args)
+{
+	VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->get());
+	mpfr_add_ui(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(), 1,
+		    mpfr_get_default_rounding_mode());
+	return res;
+}
+
+Var *fltPreDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	mpfr_sub_ui(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(), 1,
+		    mpfr_get_default_rounding_mode());
+	return args[0];
+}
+
+Var *fltPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const Map<String, AssnArgData> &assn_args)
+{
+	VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->get());
+	mpfr_sub_ui(as<VarFlt>(args[0])->get(), as<VarFlt>(args[0])->getSrc(), 1,
+		    mpfr_get_default_rounding_mode());
+	return res;
+}
+
+Var *fltUSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const Map<String, AssnArgData> &assn_args)
+{
+	VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->get());
+	mpfr_neg(res->get(), as<VarFlt>(args[0])->getSrc(), mpfr_get_default_rounding_mode());
+	return res;
+}
+
+Var *fltRound(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const Map<String, AssnArgData> &assn_args)
+{
+	VarInt *res = vm.makeVar<VarInt>(loc, 0);
+	mpfr_get_z(res->get(), as<VarFlt>(args[0])->getSrc(), MPFR_RNDN);
+	return res;
+}
+
+Var *fltPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "power must be an integer, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarFlt *res = vm.makeVar<VarFlt>(loc, 0);
+	mpfr_pow_si(res->get(), as<VarFlt>(args[0])->getSrc(),
+		    mpz_get_si(as<VarInt>(args[1])->get()), MPFR_RNDN);
+	return res;
+}
+
+Var *fltRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "root must be an integer, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarFlt *res = vm.makeVar<VarFlt>(loc, 0);
+#if MPFR_VERSION_MAJOR >= 4
+	mpfr_rootn_ui(res->get(), as<VarFlt>(args[0])->get(),
+		      mpz_get_ui(as<VarInt>(args[1])->get()), MPFR_RNDN);
+#else
+	mpfr_root(res->get(), as<VarFlt>(args[0])->get(), mpz_get_ui(INT(args[1])->get()),
+		  MPFR_RNDN);
+#endif // MPFR_VERSION_MAJOR
+	return res;
+}

@@ -1,0 +1,42 @@
+let assert = import('std/assert');
+
+let sys = import('std/sys');
+
+let f = fn() {
+	++i;
+	f();
+};
+
+let expectErr1 = "stack overflow, current max: " + sys.getMaxCallstacks().str();
+
+let i = 1; # first element in function call (execution) stack is the global scope itself
+
+f() or err {
+	assert.eq(err, expectErr1);
+};
+
+assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
+
+sys.setMaxCallstacks(1000);
+assert.eq(sys.getMaxCallstacks(), 1000);
+
+let expect_err2 = "stack overflow, current max: 1000";
+
+i = 1;
+
+f() or err {
+	assert.eq(err, expect_err2);
+};
+
+assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
+
+# reset call stack max to default
+sys.setMaxCallstacks();
+
+i = 1;
+
+f() or err {
+	assert.eq(err, expectErr1);
+};
+
+assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)

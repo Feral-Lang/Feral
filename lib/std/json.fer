@@ -1,0 +1,339 @@
+/*
+	+===========+===========+
+	| Feral     | JSON      |
+	+===========+===========+
+	| nil       | null      |
+	+-----------+-----------+
+	| int, flt  | number    |
+	+-----------+-----------+
+	| str       | string    |
+	+-----------+-----------+
+	| true      | true      |
+	+-----------+-----------+
+	| false     | false     |
+	+-----------+-----------+
+	| vec       | array     |
+	+-----------+-----------+
+	| map       | object    |
+	+-----------+-----------+
+*/
+
+let map = import('std/map');
+let str = import('std/str');
+let vec = import('std/vec');
+let lang = import('std/lang');
+
+let dumps = fn(obj, indentation = false, indentChar = ' ') {
+	let indent = -1;
+	if indentation { indent = 0; }
+	let js = obj.jsonToStr(indent, indentChar);
+	if js.empty() {
+		raise('type ' + obj._typestr_() + ' does not implement JSON serialization');
+	}
+	return js;
+};
+
+let loads = fn(data) {
+	let toks = tokenize(data);
+	return parse(toks);
+};
+
+let bind = fn(structInst, jsonObj) {
+	for f in jsonObj.each() {
+		structInst.setField(f.0, f.1);
+	}
+};
+
+###########################################################################################
+# JSON token structs, enums, and string variants
+###########################################################################################
+
+let TokenType = lang.enum(
+	.UNKNOWN,
+	.NIL,
+	.INT,
+	.FLT,
+	.STR,
+	.TRUE,
+	.FALSE,
+
+	.COLON,
+	.COMMA,
+
+	.LBRACK,
+	.RBRACK,
+	.LBRACE,
+	.RBRACE
+);
+
+let TokenTypeStrs = vec.new(
+	'UNKNOWN',
+	'NIL',
+	'INT',
+	'FLT',
+	'STR',
+	'TRUE',
+	'FALSE',
+
+	'COLON',
+	'COMMA',
+
+	'LBRACK',
+	'RBRACK',
+	'LBRACE',
+	'RBRACE'
+);
+
+let Token = lang.struct(
+	type = 0,
+	val = ''
+);
+
+Token.setTypeName('Token');
+
+let str in Token = fn() {
+	let data = 'Token{type = ' + TokenTypeStrs[self.type];
+	if !self.val.empty() {
+		data += ', val = ' + self.val;
+	}
+	data += '}';
+	return data;
+};
+
+###########################################################################################
+# JSON tokenizer & helper functions
+###########################################################################################
+
+let tokenize = fn(data) {
+	let toks = vec.new();
+	let dataLen = data.len();
+	for let i = 0; i < dataLen; ++i {
+		if data[i] == '"' {
+			let s = getConstStr(data, i, dataLen);
+			toks.push(Token(TokenType.STR, s));
+			continue;
+		}
+		if data.isChAt(i, '\n\t ') { continue; }
+		if data[i] == ':' { toks.push(Token(TokenType.COLON)); continue; }
+		elif data[i] == ',' { toks.push(Token(TokenType.COMMA)); continue; }
+		elif data[i] == '[' { toks.push(Token(TokenType.LBRACK)); continue; }
+		elif data[i] == ']' { toks.push(Token(TokenType.RBRACK)); continue; }
+		elif data[i] == '{' { toks.push(Token(TokenType.LBRACE)); continue; }
+		elif data[i] == '}' { toks.push(Token(TokenType.RBRACE)); continue; }
+		elif data[i] == '-' || (data[i] >= '0' && data[i] <= '9') {
+			let isFloat = false; # false => int
+			let num = '';
+			if data[i] == '-' { num += data[i]; ++i; }
+			num += getNum(data, isFloat, i, dataLen);
+			if isFloat { toks.push(Token(TokenType.FLT, num)); }
+			else { toks.push(Token(TokenType.INT, num)); }
+			continue;
+		}
+		let t = getKeyword(data, i, dataLen);
+		toks.push(Token(t));
+	}
+	return toks;
+};
+
+let getConstStr = fn(data, i = 0, end = -1) {
+	if end == -1 { end = data.len(); }
+	let start = data[i++];
+	let res = '';
+	let found = false;
+	let continuousBackslash = 0;
+	while i < end {
+		if data[i] == '\\' {
+			++continuousBackslash;
+			res += data[i++];
+			continue;
+		}
+		if data[i] == start && continuousBackslash % 2 == 0 {
+			found = true;
+			break;
+		}
+		res += data[i++];
+		continuousBackslash = 0;
+	}
+	if !found {
+		raise('invalid json: no end quotes for data near: ' + res);
+	}
+	# i is now at end quote
+	return res;
+};
+
+let getNum = fn(data, isFloat, i = 0, end = -1) {
+	if end == -1 { end = data.len(); }
+	let res = '';
+	while i < end {
+		let ch = data[i];
+		if (ch < '0' || ch > '9') && ch != '.' { break; }
+		if ch == '.' {
+			if isFloat {
+				raise('invalid json: multiple dots in a number is not possible, near: ' + res);
+			}
+			isFloat = true;
+		}
+		res += ch; ++i;
+	}
+	--i;
+	return res;
+};
+
+let getKeyword = fn(data, i = 0, end = -1) {
+	if end == -1 { end = data.len(); }
+	let res = '';
+	while i < end {
+		let ch = data[i];
+		if (ch < 'A' || ch > 'Z') && (ch < 'a' || ch > 'z') && (ch < '0' || ch > '9') { break; }
+		res += ch; ++i;
+	}
+	--i;
+	if res == 'null' { return TokenType.NIL; }
+	elif res == 'true' { return TokenType.TRUE; }
+	elif res == 'false' { return TokenType.FALSE; }
+	raise('invalid json keyword: ' + res);
+	return nil;
+};
+
+let expect = fn(toks, end, i, type) {
+	if i >= end { raise('expected: ' + TokenTypeStrs[type] + ', found: EOF'); }
+	if toks[i].type != type {
+		raise('expected token at index ' + i.str() + ' to be of type: ' +
+		      TokenTypeStrs[type] + ', found: ' + TokenTypeStrs[toks[i].type]);
+	}
+};
+
+###########################################################################################
+# JSON parser & helper functions
+###########################################################################################
+
+let parse = fn(toks, i = 0) {
+	let sz = toks.len();
+	if toks[i].type == TokenType.NIL { return nil; }
+	elif toks[i].type == TokenType.INT { return toks[i].val.int(); }
+	elif toks[i].type == TokenType.FLT { return toks[i].val.flt(10); }
+	elif toks[i].type == TokenType.STR { return toks[i].val; }
+	elif toks[i].type == TokenType.TRUE { return true; }
+	elif toks[i].type == TokenType.FALSE { return false; }
+	elif toks[i].type == TokenType.LBRACE {
+		let m = map.new();
+		++i; # now after lbrace
+		parseMap(toks, sz, m, i);
+		++i; # now after map value
+		while toks[i].type == TokenType.COMMA {
+			++i; # now after comma
+			parseMap(toks, sz, m, i);
+			++i; # now after map value
+		}
+		expect(toks, sz, i, TokenType.RBRACE);
+		return m;
+	} elif toks[i].type == TokenType.LBRACK {
+		let v = vec.new();
+		++i; # now after lbrack
+		parseVec(toks, sz, v, i);
+		++i; # now after vec element
+		while toks[i].type == TokenType.COMMA {
+			++i; # now after comma
+			parseVec(toks, sz, v, i);
+			++i; # now after vec element
+		}
+		expect(toks, sz, i, TokenType.RBRACK);
+		return v;
+	}
+	return nil;
+};
+
+let parseMap = fn(toks, sz, m, i) {
+	expect(toks, sz, i, TokenType.STR);
+	let k = toks[i].val;
+	++i;
+	expect(toks, sz, i, TokenType.COLON);
+	++i;
+	let v = parse(toks, i);
+	m.insert(k, v);
+};
+
+let parseVec = fn(toks, sz, v, i) {
+	let e = parse(toks, i);
+	v.push(e);
+};
+
+###########################################################################################
+# functions for converting to JSON, used by dumps()
+###########################################################################################
+
+let jsonToStr in AllTy = fn(indent = -1, indentChar = ' ') {
+	return '';
+};
+
+let jsonToStr in BoolTy = fn(indent = -1, indentChar = ' ') {
+	return self.str();
+};
+
+let jsonToStr in FltTy = fn(indent = -1, indentChar = ' ') {
+	return self.str();
+};
+
+let jsonToStr in IntTy = fn(indent = -1, indentChar = ' ') {
+	return self.str();
+};
+
+let jsonToStr in MapTy = fn(indent = -1, indentChar = ' ') {
+	let res = '{';
+	if indent > -1 {
+		++indent;
+	}
+	for e in self.each() {
+		if indent > -1 { res += '\n' + indentChar * indent; }
+		res += '"' + e.0 + '": ' + e.1.jsonToStr(indent, indentChar) + ', ';
+		if indent > -1 { res.pop(); }
+	}
+	if self.len() > 0 {
+		res.pop();
+		if indent > -1 {
+			res += '\n';
+		} else {
+			res.pop();
+		}
+	}
+	if indent > -1 {
+		--indent;
+		res += indentChar * indent;
+	}
+	res += '}';
+	return res;
+};
+
+let jsonToStr in NilTy = fn(indent = -1, indentChar = ' ') {
+	return 'null';
+};
+
+let jsonToStr in StrTy = fn(indent = -1, indentChar = ' ') {
+	return '"' + self + '"';
+};
+
+let jsonToStr in VecTy = fn(indent = -1, indentChar = ' ') {
+	let res = '[';
+	if indent > -1 {
+		++indent;
+	}
+	for e in self.each() {
+		if indent > -1 { res += '\n' + indentChar * indent; }
+		res += e.jsonToStr(indent, indentChar) + ', ';
+		if indent > -1 { res.pop(); }
+	}
+	if self.len() > 0 {
+		res.pop();
+		if indent > -1 {
+			res += '\n';
+		} else {
+			res.pop();
+		}
+	}
+	if indent > -1 {
+		--indent;
+		res += indentChar * indent;
+	}
+	res += ']';
+	return res;
+};

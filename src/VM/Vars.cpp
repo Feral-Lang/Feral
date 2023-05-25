@@ -1,233 +1,171 @@
-/*
-	MIT License
-
-	Copyright (c) 2020 Feral Language repositories
-
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so.
-*/
-
 #include "VM/Vars.hpp"
 
-#include "VM/Memory.hpp"
-
-vars_frame_t::vars_frame_t() {}
-vars_frame_t::~vars_frame_t()
+namespace fer
 {
-	for(auto &var : m_vars) var_dref(var.second);
+
+VarFrame::VarFrame() {}
+VarFrame::~VarFrame()
+{
+	for(auto &v : vars) decref(v.second);
 }
 
-var_base_t *vars_frame_t::get(const std::string &name)
+Var *VarFrame::get(StringRef name)
 {
-	if(m_vars.find(name) == m_vars.end()) return nullptr;
-	return m_vars[name];
+	auto loc = vars.find(name);
+	if(loc == vars.end()) return nullptr;
+	return loc->second;
 }
 
-void vars_frame_t::add(const std::string &name, var_base_t *val, const bool inc_ref)
+void VarFrame::add(StringRef name, Var *val, bool iref)
 {
-	if(m_vars.find(name) != m_vars.end()) {
-		var_dref(m_vars[name]);
-	}
-	if(inc_ref) var_iref(val);
-	m_vars[name] = val;
+	auto loc = vars.find(name);
+	if(loc != vars.end()) decref(loc->second);
+	if(iref) incref(val);
+	vars.insert_or_assign(String(name), val);
 }
-void vars_frame_t::rem(const std::string &name, const bool dec_ref)
+bool VarFrame::rem(StringRef name, bool dref)
 {
-	if(m_vars.find(name) == m_vars.end()) return;
-	if(dec_ref) var_dref(m_vars[name]);
-	m_vars.erase(name);
+	auto loc = vars.find(name);
+	if(loc == vars.end()) return false;
+	if(dref) decref(loc->second);
+	vars.erase(loc);
+	return true;
 }
 
-void *vars_frame_t::operator new(size_t sz) { return mem::alloc(sz); }
-void vars_frame_t::operator delete(void *ptr, size_t sz) { mem::free(ptr, sz); }
-
-vars_frame_t *vars_frame_t::thread_copy(const size_t &src_id, const size_t &idx)
+VarFrame *VarFrame::threadCopy(const ModuleLoc *loc)
 {
-	vars_frame_t *f = new vars_frame_t;
-	for(auto &var : m_vars) {
-		var_iref(var.second);
-		f->m_vars[var.first] = var.second;
+	VarFrame *f = new VarFrame;
+	for(auto &v : vars) {
+		incref(v.second);
+		f->vars[v.first] = v.second;
 	}
 	return f;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-vars_stack_t::vars_stack_t() : m_top(0) { m_stack.push_back(new vars_frame_t()); }
-vars_stack_t::~vars_stack_t()
+VarStack::VarStack() { pushStack(1); }
+VarStack::~VarStack()
 {
-	for(auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer) {
-		delete *layer;
+	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) delete *layer;
+}
+
+void VarStack::pushStack(size_t count)
+{
+	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame);
+}
+void VarStack::popStack(size_t count)
+{
+	for(size_t i = 0; i < count; ++i) {
+		delete stack.back();
+		stack.pop_back();
 	}
 }
 
-bool vars_stack_t::exists(const std::string &name) { return m_stack.back()->exists(name); }
-
-var_base_t *vars_stack_t::get(const std::string &name)
+Var *VarStack::get(StringRef name)
 {
-	for(auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer) {
-		if((*layer)->exists(name)) {
-			return (*layer)->get(name);
-		}
+	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
+		Var *res = (*layer)->get(name);
+		if(res) return res;
 	}
 	return nullptr;
 }
 
-void vars_stack_t::inc_top(const size_t &count)
+void VarStack::pushLoop()
 {
-	for(size_t i = 0; i < count; ++i) {
-		m_stack.push_back(new vars_frame_t());
-		++m_top;
-	}
+	loops_from.push_back(stack.size());
+	stack.push_back(new VarFrame());
 }
-void vars_stack_t::dec_top(const size_t &count)
+void VarStack::popLoop()
 {
-	if(m_top == 0) return;
-	for(size_t i = 0; i < count && m_top > 0; ++i) {
-		delete m_stack.back();
-		m_stack.pop_back();
-		--m_top;
+	assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
+	if(stack.size() - 1 >= loops_from.back()) {
+		popStack(stack.size() - loops_from.back());
 	}
+	loops_from.pop_back();
+}
+void VarStack::continueLoop()
+{
+	assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
+	if(stack.size() - 1 > loops_from.back()) popStack(stack.size() - 1 - loops_from.back());
 }
 
-void vars_stack_t::push_loop()
+bool VarStack::rem(StringRef name, bool dref)
 {
-	m_loops_from.push_back(m_top + 1);
-	inc_top(1);
-}
-
-void vars_stack_t::pop_loop()
-{
-	assert(m_loops_from.size() > 0);
-	if(m_top >= m_loops_from.back()) {
-		dec_top(m_top - m_loops_from.back() + 1);
+	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
+		if((*layer)->rem(name, dref)) return true;
 	}
-	m_loops_from.pop_back();
+	return false;
 }
 
-void vars_stack_t::loop_continue()
+VarStack *VarStack::threadCopy(const ModuleLoc *loc)
 {
-	assert(m_loops_from.size() > 0);
-	if(m_top > m_loops_from.back()) {
-		dec_top(m_top - m_loops_from.back());
-	}
-}
-
-void vars_stack_t::add(const std::string &name, var_base_t *val, const bool inc_ref)
-{
-	m_stack.back()->add(name, val, inc_ref);
-}
-void vars_stack_t::rem(const std::string &name, const bool dec_ref)
-{
-	for(auto layer = m_stack.rbegin(); layer != m_stack.rend(); ++layer) {
-		if((*layer)->exists(name)) {
-			(*layer)->rem(name, dec_ref);
-			return;
-		}
-	}
-}
-
-vars_stack_t *vars_stack_t::thread_copy(const size_t &src_id, const size_t &idx)
-{
-	vars_stack_t *s = new vars_stack_t;
-	s->m_loops_from = m_loops_from;
-	s->m_top	= m_top;
-	for(auto &f : m_stack) {
-		s->m_stack.push_back(f->thread_copy(src_id, idx));
+	VarStack *s = new VarStack;
+	s->loops_from.reserve(loops_from.size());
+	s->loops_from.assign(loops_from.begin(), loops_from.end());
+	s->stack.reserve(stack.size());
+	for(auto &f : stack) {
+		s->stack.push_back(f->threadCopy(loc));
 	}
 	return s;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-vars_t::vars_t() : m_fn_stack(-1) { m_fn_vars[0] = new vars_stack_t; }
-vars_t::~vars_t()
+Vars::Vars() : fnstack(-1) { fnvars[0] = new VarStack; }
+Vars::~Vars()
 {
-	assert(m_fn_stack == 0 || m_fn_stack == -1);
-	delete m_fn_vars[0];
+	assert(fnstack == 0 || fnstack == -1);
+	delete fnvars[0];
 }
 
-bool vars_t::exists(const std::string &name) { return m_fn_vars[m_fn_stack]->exists(name); }
-
-var_base_t *vars_t::get(const std::string &name)
+Var *Vars::get(StringRef name)
 {
-	assert(m_fn_stack != -1);
-	var_base_t *res = m_fn_vars[m_fn_stack]->get(name);
-	if(res == nullptr && m_fn_stack != 0) {
-		res = m_fn_vars[0]->get(name);
+	assert(fnstack != -1);
+	Var *res = fnvars[fnstack]->get(name);
+	if(res == nullptr && fnstack != 0) {
+		res = fnvars[0]->get(name);
 	}
 	return res;
 }
 
-void vars_t::blk_add(const size_t &count)
+void Vars::pushBlk(size_t count)
 {
-	m_fn_vars[m_fn_stack]->inc_top(count);
-	for(auto &s : m_stash) {
-		m_fn_vars[m_fn_stack]->add(s.first, s.second, false);
-	}
-	m_stash.clear();
+	fnvars[fnstack]->pushStack(count);
+	for(auto &s : stashed) fnvars[fnstack]->add(s.first, s.second, false);
+	stashed.clear();
 }
 
-void vars_t::blk_rem(const size_t &count) { m_fn_vars[m_fn_stack]->dec_top(count); }
-
-void vars_t::push_fn()
+void Vars::pushFn()
 {
-	++m_fn_stack;
-	if(m_fn_stack == 0) return;
-	m_fn_vars[m_fn_stack] = new vars_stack_t;
+	++fnstack;
+	if(fnstack == 0) return;
+	fnvars[fnstack] = new VarStack;
 }
-void vars_t::pop_fn()
+void Vars::popFn()
 {
-	if(m_fn_stack == 0) return;
-	delete m_fn_vars[m_fn_stack];
-	m_fn_vars.erase(m_fn_stack);
-	--m_fn_stack;
+	if(fnstack == 0) return;
+	auto loc = fnvars.find(fnstack);
+	delete loc->second;
+	fnvars.erase(loc);
+	--fnstack;
 }
-
-void vars_t::stash(const std::string &name, var_base_t *val, const bool &iref)
+void Vars::stash(StringRef name, Var *val, bool iref)
 {
-	if(iref) var_iref(val);
-	m_stash[name] = val;
+	if(iref) incref(val);
+	stashed.insert({String(name), val});
 }
-
-void vars_t::unstash()
+void Vars::unstash()
 {
-	for(auto &s : m_stash) var_dref(s.second);
-	m_stash.clear();
+	for(auto &s : stashed) decref(s.second);
+	stashed.clear();
 }
 
-void vars_t::add(const std::string &name, var_base_t *val, const bool inc_ref)
+Vars *Vars::threadCopy(const ModuleLoc *loc)
 {
-	m_fn_vars[m_fn_stack]->add(name, val, inc_ref);
-}
-
-void vars_t::addm(const std::string &name, var_base_t *val, const bool inc_ref)
-{
-	m_fn_vars[0]->add(name, val, inc_ref);
-}
-
-void vars_t::rem(const std::string &name, const bool dec_ref)
-{
-	m_fn_vars[m_fn_stack]->rem(name, dec_ref);
-}
-
-vars_t *vars_t::thread_copy(const size_t &src_id, const size_t &idx)
-{
-	vars_t *v = new vars_t;
-	delete v->m_fn_vars[0];
-	v->m_fn_stack = m_fn_stack;
-	for(auto &s : m_stash) {
-		var_iref(s.second);
-		v->m_stash[s.first] = s.second;
-	}
-	for(auto &fv : m_fn_vars) {
-		v->m_fn_vars[fv.first] = fv.second->thread_copy(src_id, idx);
+	Vars *v = new Vars;
+	delete v->fnvars[0];
+	v->fnstack = fnstack;
+	for(auto &fv : fnvars) {
+		v->fnvars[fv.first] = fv.second->threadCopy(loc);
 	}
 	return v;
 }
+
+} // namespace fer

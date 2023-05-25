@@ -1,0 +1,130 @@
+#!/usr/bin/env feral
+
+let io = import("std/io");
+let fs = import("std/fs");
+let os = import("std/os");
+let str = import("std/str");
+let sys = import("std/sys");
+
+let PROJ_DIR = os.getEnv("PROJ_DIR");
+let PROJ_BUILD_DIR = PROJ_DIR + "/build";
+
+if PROJ_DIR.empty() {
+	io.println("PROJ_DIR env variable does not exist");
+	sys.exit(1);
+}
+
+if !fs.exists(PROJ_DIR) {
+	io.println("directory ", PROJ_DIR, " does not exist");
+	sys.exit(1);
+}
+
+os.setCWD(PROJ_DIR);
+
+let buildinfo = import(os.getCWD() + "/.buildinfo");
+
+if !fs.exists(PROJ_BUILD_DIR) {
+	os.mkdir(PROJ_BUILD_DIR);
+}
+os.setCWD(PROJ_BUILD_DIR);
+
+let debugrelease = "";
+let testing = false;
+let codecov = false;
+
+if sys.args.len() > 0 {
+	if sys.args.find("r") {
+		debugrelease = "r";
+	} elif sys.args.find("d") {
+		debugrelease = "d";
+	}
+	if sys.args.find("t") {
+		testing = true;
+	}
+	if sys.args.find("c") {
+		codecov = true;
+	}
+}
+let exec_cmake = false;
+if !fs.exists("CMakeCache.txt") {
+	# TODO: decide debug or release
+	exec_cmake = true;
+} elif !testing {
+	let f = fs.fopen("CMakeCache.txt", "r");
+	let newdebugrelease = "";
+	let withcodecov = false;
+
+	for line in f.eachLine() {
+		if line.startsWith("WITH_COVERAGE") {
+			withcodecov = true;
+			continue;
+		}
+		if line.startsWith("CMAKE_BUILD_TYPE") {
+			let eqpos = line.find("=");
+			if eqpos < 0 { continue; }
+			let buildtype = line.substr(eqpos + 1);
+			if buildtype == "Release" { newdebugrelease = "r"; }
+			elif buildtype == "Debug" { newdebugrelease = "d"; }
+			continue;
+		}
+	}
+
+	# if release/debug is not provided explicitly, don"t bother calling cmake again
+	if debugrelease.empty() { debugrelease = newdebugrelease; }
+	exec_cmake = debugrelease != newdebugrelease || codecov != withcodecov;
+}
+
+# cmake
+if exec_cmake {
+	buildinfo.cmake += " -DDISABLE_INSTALL_MSG=true";
+	if debugrelease == "r" {
+		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=Release";
+	} elif debugrelease == "d" {
+		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=Debug";
+	} else {
+		io.println("invalid build type (must be either release (r) or debug (d)");
+		sys.exit(1);
+	}
+	if codecov {
+		let cc = os.findExec("gcc");
+		if cc.empty() {
+			io.println("code coverage build requires gcc which was not found in PATH");
+			sys.exit(1);
+		}
+		let cxx = os.findExec("g++");
+		if cxx.empty() {
+			io.println("code coverage build requires g++ which was not found in PATH");
+			sys.exit(1);
+		}
+		cc = "-DCMAKE_C_COMPILER=" + cc;
+		cxx = "-DCMAKE_CXX_COMPILER=" + cxx;
+		buildinfo.cmake += " -DWITH_COVERAGE=true " + cc + " " + cxx;
+	}
+	os.setCWD(PROJ_DIR);
+	os.rm("build");
+	os.mkdir(PROJ_BUILD_DIR);
+	os.setCWD(PROJ_BUILD_DIR);
+	if buildinfo.compcommands {
+		buildinfo.cmake += " -DCMAKE_EXPORT_COMPILE_COMMANDS=1";
+	}
+	let res = os.system(buildinfo.cmake);
+	if res != 0 { sys.exit(res); }
+	if buildinfo.compcommands {
+		os.cp("compile_commands.json", "../");
+	}
+}
+
+# build
+let res = os.system(buildinfo.make);
+if res != 0 { sys.exit(res); }
+
+# test
+if testing {
+	let res = os.system(buildinfo.test);
+	if res != 0 { sys.exit(res); }
+}
+
+if codecov {
+	let res = os.system(buildinfo.codecov);
+	if res != 0 { sys.exit(res); }
+}

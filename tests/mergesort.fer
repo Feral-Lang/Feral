@@ -1,3 +1,5 @@
+let assert = import('std/assert');
+
 let vec = import('std/vec');
 
 let mergesort = fn(arr) {
@@ -23,4 +25,4 @@ let mergesort = fn(arr) {
 
 let list = vec.new(5, 2, 3, 1, 4, 9, 7);
 mergesort(list);
-assert(list == vec.new(1, 2, 3, 4, 5, 7, 9));
+assert.eq(list, vec.new(1, 2, 3, 4, 5, 7, 9));

@@ -1,2 +1,5 @@
-assert(nil == nil);
-assert(1 != nil);
+let assert = import('std/assert');
+
+assert.eq(nil, nil);
+assert.ne(nil, 1);
+assert.ne(1, nil);
