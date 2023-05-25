@@ -1,0 +1,19 @@
+let assert = import('std/assert');
+
+let sys = import('std/sys');
+
+for i in range(0, 10) {
+	if i == 1 { continue; }
+	if i == 5 { break; }
+
+	for j in range(0, 10) {
+		if j == 1 { continue; }
+		if j == 5 { break; }
+		assert.eq(sys.varExists('i'), true);
+		assert.eq(sys.varExists('j'), true);
+	}
+	assert.eq(sys.varExists('i'), true);
+	assert.eq(!sys.varExists('j'), true);
+}
+assert.eq(!sys.varExists('i'), true);
+assert.eq(!sys.varExists('j'), true);

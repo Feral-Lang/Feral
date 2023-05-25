@@ -1,0 +1,22 @@
+let io = import('std/io');
+
+# this is a comment
+
+/* this begins a comment
+
+this ends a comment */
+
+# /* nobody cares about this */
+
+/*
+# nobody cares about this
+*/
+
+/*
+
+/* nested block */
+
+*/
+
+/*
+# this should be fine too, even if there is a line comment at the beginning */

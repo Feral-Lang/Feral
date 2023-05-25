@@ -1,0 +1,18 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+
+let v = vec.new(4, 2, 5, 3, 1);
+
+for i in range(0, v.len()) {
+	for j in range(1, v.len() - i) {
+		if v[j] < v[j - 1] {
+			let tmp = v[j];
+			v[j] = v[j - 1];
+			v[j - 1] = tmp;
+		}
+	}
+}
+
+#io.println(v);
+assert.eq(v, vec.new(1, 2, 3, 4, 5));

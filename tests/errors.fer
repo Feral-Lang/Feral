@@ -1,0 +1,11 @@
+let assert = import('std/assert');
+
+let x = 5;
+x = y or e {
+	assert.eq(e, "variable 'y' does not exist");
+	return 1;
+};
+
+(x = y or e {}) or e {
+	assert.eq(e, "virtual machine stack has 1 item(s), required 2 for store operation");
+};

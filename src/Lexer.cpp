@@ -46,6 +46,8 @@ const char *TokStrs[_LAST] = {
 "*=",
 "/=",
 "%=",
+"**", // power
+"//", // root
 // Post/Pre Inc/Dec
 "x++",
 "++x",
@@ -292,7 +294,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 			++i;
 			continue;
 		}
-		if((CURR == '/' && NEXT == '/') || CURR == '#') {
+		if(CURR == '#') {
 			comment_line = true;
 			++i;
 			continue;
@@ -584,18 +586,20 @@ TokType Tokenizer::getOperator(StringRef data, size_t &i, size_t line, size_t li
 		SET_OP_TYPE_BRK(SUB);
 	case '*':
 		if(i < len - 1) {
-			if(NEXT == '=') {
+			if(NEXT == '=' || NEXT == '*') {
 				++i;
 				if(CURR == '=') op_type = MUL_ASSN;
+				else if(CURR == '*') op_type = POWER;
 				break;
 			}
 		}
 		SET_OP_TYPE_BRK(MUL);
 	case '/':
 		if(i < len - 1) {
-			if(NEXT == '=') {
+			if(NEXT == '=' || NEXT == '/') {
 				++i;
 				if(CURR == '=') op_type = DIV_ASSN;
+				else if(CURR == '/') op_type = ROOT;
 				break;
 			}
 		}

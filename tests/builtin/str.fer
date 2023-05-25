@@ -1,0 +1,22 @@
+let assert = import('std/assert');
+
+# logical
+assert.lt('hello', 'ifmmp');
+assert.gt('hello', 'gdkkn');
+assert.le('hello', 'hello');
+assert.ge('hello', 'hello');
+assert.eq('hello', 'hello');
+assert.ne('hello', 'world');
+
+# arithmetic
+assert.eq('hello ' + 'world', 'hello world');
+assert.eq('ab' * 3, 'ababab');
+
+let a = 'ab', b = 'cd';
+
+assert.eq((a += b), 'abcd');
+assert.eq((a *= 2), 'abcdabcd');
+
+assert.eq(a[0], 'a');
+assert.eq(a[10], nil);
+assert.eq('a'[0], 'a');

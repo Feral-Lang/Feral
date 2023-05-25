@@ -76,7 +76,6 @@ let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 			}
 			tpool.erase(i--);
 		}
-		if tpool.len() >= max_procs { os.sleep(10); } # 10 ms sleep
 	}
 };
 

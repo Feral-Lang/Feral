@@ -1,0 +1,14 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+let map = import('std/map');
+
+if false { assert.eq(false, true); }
+if nil { assert.eq(false, true); }
+if 0 { assert.eq(false, true); }
+if 0.0 { assert.eq(false, true); }
+if !''.empty() { assert.eq(false, true); }
+# empty vector/map = false
+if !vec.new().empty() { assert.eq(false, true); }
+if !map.new().empty() { assert.eq(false, true); }
+if 5._type_().bool() != true { assert.eq(false, true); }

@@ -35,7 +35,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		// std::cout << "\n";
 
 		if(recurse_count >= MAX_RECURSE_COUNT) {
-			fail(ins.getLoc(), "exceeded max recursion stack count: ", recurse_count);
+			fail(ins.getLoc(), "stack overflow, current max: ", recurse_count);
 			recurse_count_exceeded = true;
 			goto handle_err;
 		}
@@ -155,30 +155,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			}
 			break;
 		}
-		case Opcode::JMP_TRUE_POP: // fallthrough
-		case Opcode::JMP_TRUE: {
-			assert(!execstack.empty());
-			Var *var = execstack.back();
-			bool res = false;
-			if(var->is<VarInt>()) {
-				res = mpz_get_si(as<VarInt>(var)->get());
-			} else if(var->is<VarFlt>()) {
-				res = mpfr_get_si(as<VarFlt>(var)->get(),
-						  mpfr_get_default_rounding_mode());
-			} else if(var->is<VarBool>()) {
-				res = as<VarBool>(var)->get();
-			} else {
-				fail(ins.getLoc(),
-				     "conditional jump requires boolean"
-				     " (or int/float) data, found: ",
-				     getTypeName(var));
-				execstack.pop();
-				goto handle_err;
-			}
-			if(res) i = ins.getDataInt() - 1;
-			if(!res || ins.getOpcode() == Opcode::JMP_TRUE_POP) execstack.pop();
-			break;
-		}
+		case Opcode::JMP_TRUE_POP:  // fallthrough
+		case Opcode::JMP_TRUE:	    // fallthrough
 		case Opcode::JMP_FALSE_POP: // fallthrough
 		case Opcode::JMP_FALSE: {
 			assert(!execstack.empty());
@@ -191,6 +169,8 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 						  mpfr_get_default_rounding_mode());
 			} else if(var->is<VarBool>()) {
 				res = as<VarBool>(var)->get();
+			} else if(var->is<VarNil>()) {
+				res = false;
 			} else {
 				fail(ins.getLoc(),
 				     "conditional jump requires boolean"
@@ -199,8 +179,15 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 				execstack.pop();
 				goto handle_err;
 			}
-			if(!res) i = ins.getDataInt() - 1;
-			if(res || ins.getOpcode() == Opcode::JMP_FALSE_POP) execstack.pop();
+			if(ins.getOpcode() == Opcode::JMP_TRUE_POP ||
+			   ins.getOpcode() == Opcode::JMP_TRUE)
+			{
+				if(res) i = ins.getDataInt() - 1;
+				if(!res || ins.getOpcode() == Opcode::JMP_TRUE_POP) execstack.pop();
+			} else {
+				if(!res) i = ins.getDataInt() - 1;
+				if(res || ins.getOpcode() == Opcode::JMP_FALSE_POP) execstack.pop();
+			}
 			break;
 		}
 		case Opcode::BLOCK_TILL: {

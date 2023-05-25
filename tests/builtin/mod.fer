@@ -1,0 +1,11 @@
+let io = import('std/io');
+
+let f = fn(m) {
+	m.println();
+};
+
+io.println();
+let x = io;
+x.println();
+
+f(io);

@@ -561,7 +561,7 @@ bool Parser::parseExpr05(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 	return true;
 }
 // Left Associative
-// * / %
+// * / % ** //
 bool Parser::parseExpr04(ParseHelper &p, Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
@@ -577,7 +577,7 @@ bool Parser::parseExpr04(ParseHelper &p, Stmt *&expr, bool disable_brace_after_i
 		return false;
 	}
 
-	while(p.accept(lex::MUL, lex::DIV, lex::MOD)) {
+	while(p.accept(lex::MUL, lex::DIV, lex::MOD) || p.accept(lex::POWER, lex::ROOT)) {
 		oper = p.peek();
 		p.next();
 		if(!parseExpr03(p, rhs, disable_brace_after_iden)) {

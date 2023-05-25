@@ -1,0 +1,11 @@
+let assert = import('std/assert');
+
+let x = 10, y = 20, z = 30;
+
+x = y = z = 100;
+y = z = 50;
+z = 25;
+
+assert.eq(x, 100);
+assert.eq(y, 50);
+assert.eq(z, 25);

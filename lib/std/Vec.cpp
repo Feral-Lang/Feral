@@ -25,7 +25,7 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	if(caploc != assn_args.end()) {
 		Var *capv = caploc->second.val;
-		if(!capv->is<VarBool>()) {
+		if(!capv->is<VarInt>()) {
 			vm.fail(loc,
 				"expected 'cap' named argument to be"
 				" of type int for vec.new(), found: ",
