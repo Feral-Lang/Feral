@@ -70,6 +70,7 @@ INIT_MODULE(Sys)
 	mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
 	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_CXX_COMPILER));
 
-	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS", vm.makeVar<VarInt>(loc, MAX_RECURSE_COUNT));
+	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
+			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 	return true;
 }

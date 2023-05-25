@@ -16,9 +16,6 @@ static const char *MODULE_EXTENSION_NO_DOT	  = "fer";
 namespace fer
 {
 
-// this is the one that's used for checking, and it can be modified by Feral program
-extern size_t MAX_RECURSE_COUNT;
-
 typedef bool (*ModInitFn)(Interpreter &vm, const ModuleLoc *loc);
 typedef void (*ModDeinitFn)();
 #define INIT_MODULE(name) extern "C" bool Init##name(Interpreter &vm, const ModuleLoc *loc)
@@ -59,6 +56,8 @@ class Interpreter
 	VarBool *fals;
 	VarNil *nil;
 	size_t exitcode;
+	// this is the one that's used for checking, and it can be modified by Feral program
+	size_t max_recurse_count;
 	size_t recurse_count; // how many times execute() has been called by itself
 	bool exitcalled;      // mainly used by sys.exit()
 	bool recurse_count_exceeded;
@@ -191,8 +190,8 @@ public:
 	inline bool isExitCalled() { return exitcalled; }
 	inline void setExitCalled(bool called) { exitcalled = called; }
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
-	inline void setMaxRecurseCount(size_t count) { MAX_RECURSE_COUNT = count; }
-	inline size_t getMaxRecurseCount() { return MAX_RECURSE_COUNT; }
+	inline void setMaxRecurseCount(size_t count) { max_recurse_count = count; }
+	inline size_t getMaxRecurseCount() { return max_recurse_count; }
 	inline VarVec *getCLIArgs() { return cmdargs; }
 
 	inline StringRef getFeralImportExtension() { return ".fer"; }

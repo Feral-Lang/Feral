@@ -3,7 +3,13 @@ let assert = import('std/assert');
 let fs = import('std/fs');
 let os = import('std/os');
 
-os.sleep(20);
+# os.sleep() test is in testdir.fer itself
+# having it here caused this program to hang
+# probably because there were no interrupts
+# while the main thread (testdir) is waiting
+# for this thread; this is an issue with
+# how sleep_for/sleep_until (and possibly others)
+# work; at least that's what I understand
 
 os.setEnv('__tmp__', 'val');
 assert.eq(os.getEnv('__tmp__'), 'val');
