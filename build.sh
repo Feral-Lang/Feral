@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 echo '[INFO] Feral Installer - (c) Copyright 2020 Maximilian Götz (https://www.maxbits.net/)'
-echo '[INFO] Please make sure that Sudo, Git, CMake, LibGMP and LibMPFR are installed!'
-echo '[INFO] Installation started. Fetching system cores...'
+echo '[INFO] Please make sure that Git, CMake, LibGMP and LibMPFR are installed!'
 
 # Get current working directory
 CWD="$(pwd)"
@@ -29,23 +28,8 @@ if [ "$SYSNAME" = "Darwin" ]; then
     export CXXFLAGS="$CXXFLAGS -I$BREWGMP/include -I$BREWMPFR/include -I$BREWMPC/include"
     export LDFLAGS="$LDFLAGS -L$BREWGMP/lib -L$BREWMPFR/lib -L$BREWMPC/lib"
 fi
-CORES=1
-# Get system cores for faster build
-if [ "$SYSNAME" = "Linux" ]; then
-    CORES=$(nproc)
-else # for BSD and macOS
-    CORES=$(sysctl -n hw.ncpu)
-fi
-echo "[INFO] Using $CORES cores"
 
-echo '[INFO] Checking for Git, Sudo and CMake...'
-# No sudo on macOS since /usr/local is not usually root owned (as long as homebrew is installed)
-SUDO="sudo"
-if [ "$SYSNAME" = "Darwin" ] && hash brew 2>/dev/null || [ "$(id -u)" = "0" ]; then
-    SUDO=""
-else
-    echo '[INFO] Using sudo.'
-fi
+echo '[INFO] Checking for Git and CMake...'
 
 # Check for Git
 if hash git 2>/dev/null; then
@@ -53,16 +37,6 @@ if hash git 2>/dev/null; then
 else
     echo '[FATAL] Git not available! Install it to continue! Aborting...'
     exit
-fi
-
-# Check for sudo
-if [ "$SUDO" = "sudo" ]; then
-    if hash sudo 2>/dev/null; then
-        echo '[INFO] sudo found.'
-    else
-        echo '[FATAL] sudo not available! Install it to continue! Aborting...'
-        exit
-    fi
 fi
 
 # Check for CMake
@@ -79,12 +53,14 @@ trap exit_handler INT
 
 build() {
     mkdir build && cd build
+    CORES=""
     if [ -n "$CI" ]; then
         export DISABLE_MARCH_NATIVE="true"
+        CORES="$NPROC"
     fi
     cmake .. -DCMAKE_BUILD_TYPE=Release
     if [ "$?" -ne 0 ]; then exit 1; fi
-    make -j$CORES install
+    make -j$NPROC install
     if [ "$?" -ne 0 ]; then exit 1; fi
     cd ..
 }
