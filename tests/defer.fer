@@ -1,0 +1,13 @@
+let assert = import('std/assert');
+
+let fs = import('std/fs');
+let bytebuffer = import('std/bytebuffer');
+
+let file = fs.fdOpen(__SRC_PATH__);
+defer fs.fdClose(file);
+
+let bbuf = bytebuffer.new();
+bbuf.resize(200); # now 200 bytes capacity
+
+let count = fs.fdRead(file, bbuf);
+assert.gt(count, 0);
