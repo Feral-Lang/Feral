@@ -37,6 +37,8 @@ if sys.args.len() > 0 {
 		debugrelease = "r";
 	} elif sys.args.find("d") {
 		debugrelease = "d";
+	} elif sys.args.find("rd") {
+		debugrelease = "rd";
 	}
 	if sys.args.find("t") {
 		testing = true;
@@ -65,6 +67,7 @@ if !fs.exists("CMakeCache.txt") {
 			let buildtype = line.substr(eqpos + 1);
 			if buildtype == "Release" { newdebugrelease = "r"; }
 			elif buildtype == "Debug" { newdebugrelease = "d"; }
+			elif buildtype == "RelWithDebInfo" { newdebugrelease = "rd"; }
 			continue;
 		}
 	}
@@ -81,6 +84,8 @@ if exec_cmake {
 		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=Release";
 	} elif debugrelease == "d" {
 		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=Debug";
+	} elif debugrelease == "rd" {
+		buildinfo.cmake += " -DCMAKE_BUILD_TYPE=RelWithDebInfo";
 	} else {
 		io.println("invalid build type (must be either release (r) or debug (d)");
 		sys.exit(1);
