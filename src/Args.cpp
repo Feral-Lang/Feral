@@ -28,7 +28,7 @@ bool ArgParser::parse()
 	String expect_key;
 	bool expect_val	 = false;
 	bool source_done = false;
-	for(size_t i = 0; i < argv.size(); ++i) {
+	for(size_t i = 1; i < argv.size(); ++i) {
 		StringRef arg = argv[i];
 		if(expect_val) {
 			opts[expect_key] = arg;

@@ -5,6 +5,7 @@ let binaryBase =
 `# {self.binName} binary
 set(mod "{self.binName}")
 add_executable($\\{mod} "$\\{PROJECT_SOURCE_DIR}/{self.srcdir}/{self.main_src}" {self.srcs})
+target_include_directories($\\{mod} PRIVATE $\\{PROJECT_SOURCE_DIR}/include)
 target_link_libraries($\\{mod}{depnames})
 set_target_properties($\\{mod}
 	PROPERTIES

@@ -14,7 +14,7 @@ endif()
 
 set(CMAKE_INSTALL_PREFIX "{self.prefix}")
 set(CMAKE_PREFIX_PATH "$\\{CMAKE_INSTALL_PREFIX};$\\{CMAKE_BINARY_DIR}")
-include_directories($\\{CMAKE_INSTALL_PREFIX}/include)
+include_directories($\\{CMAKE_INSTALL_PREFIX}/include/feral)
 add_definitions(-DINSTALL_PREFIX=$\\{CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = $\\{CMAKE_INSTALL_PREFIX}")
 

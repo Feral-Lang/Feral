@@ -22,11 +22,14 @@ let Core = lang.struct(
 	installs = vec.new(refs = true),
 	sharedLibs = vec.new(refs = true),
 	binaries = vec.new(refs = true),
-	rpathFromOrigin = '../../',
-	useFeralVM = false
+	rpathFromOrigin = '../../'
 );
 
-let new = fn(projectName) { return Core(projectName = projectName); };
+let new = fn(projectName) {
+	let c = Core(projectName = projectName);
+	c.deps.push(sharedLib.feralLib);
+	return c;
+};
 
 let gen in Core = fn(ret = false) {
 	let depsStr = '';
@@ -68,7 +71,7 @@ let gen in Core = fn(ret = false) {
 		changed = true;
 	}
 	os.setCWD('build');
-	if changed && os.exec('cmake .. -DCMAKE_BUILD_TYPE=' + buildtype) != 0 {
+	if changed && os.exec('cmake .. -DDISABLE_INSTALL_MSG=true -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DCMAKE_BUILD_TYPE=' + buildtype) != 0 {
 		raise('failed to execute cmake');
 	}
 	let ins = '';
@@ -94,16 +97,16 @@ let addInstall in Core = fn(name) {
 	return ref(ins);
 };
 
-let addSharedLib in Core = fn(name, withFeralVM = true) {
+let addSharedLib in Core = fn(name) {
 	let lib = sharedLib.new(name, self.projectName);
-	if withFeralVM { self.addFeralVMLibs(lib); }
+	lib.addDep(sharedLib.feralLib);
 	self.sharedLibs.push(lib);
 	return ref(lib);
 };
 
-let addBin in Core = fn(name, withFeralVM = true) {
+let addBin in Core = fn(name) {
 	let bin = binary.new(name);
-	if withFeralVM { self.addFeralVMLibs(bin); }
+	lib.addDep(sharedLib.feralLib);
 	self.binaries.push(bin);
 	return ref(bin);
 };
@@ -113,14 +116,3 @@ let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return sel
 let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return self; };
 
 let setPrefix in Core = fn(prefix) { self.prefix = prefix; return self; };
-
-# internal functions
-
-let addFeralVMLibs in Core = fn(obj) {
-	if !self.useFeralVM {
-		self.deps.push(sharedLib.feralvm);
-		self.useFeralVM = true;
-	}
-	obj.addDep(sharedLib.feralvm);
-	return self;
-};

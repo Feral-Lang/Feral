@@ -75,7 +75,7 @@ let gen in FindLib = fn() {
 		includeDirs.pop();
 	}
 	if self.feralLib {
-		prefixPath += sys.install_prefix + '/lib/feral ';
+		prefixPath += sys.installPrefix + '/lib/feral ';
 		self.libName = 'feral' + self.libName;
 	}
 	if prefixPath == ' PATHS ' {
