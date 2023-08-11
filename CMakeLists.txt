@@ -127,21 +127,21 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
 
 # Install C++ Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/compiler"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
 	FILES_MATCHING PATTERN "*.hpp"
 )
 
 # Install Feral Imports
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
-	FILES_MATCHING PATTERN "*.fer"
+	FILES_MATCHING PATTERN "*.fer" PATTERN "*.hpp"
 	PATTERN "lib/Core" EXCLUDE
 )
 
-# Feral Compiler/VM Library
+# Feral Compiler Library
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
-list(REMOVE_ITEM SRCS "src/Main.cpp" "src/VMMain.cpp")
+list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(feral SHARED ${SRCS})
 target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(feral ${MPFR_LIBRARIES} ${GMP_LIBRARY})
@@ -156,23 +156,6 @@ install(TARGETS feral
 	LIBRARY
 	  DESTINATION lib/feral/
 	  COMPONENT Libraries
-)
-
-# Feral VM
-add_executable(feral-vm "${PROJECT_SOURCE_DIR}/src/VMMain.cpp" ${SRCS} ${INCS})
-target_include_directories(feral-vm PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feral-vm feral)
-set_target_properties(feral-vm
-	PROPERTIES
-	OUTPUT_NAME feral-vm
-	LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-	INSTALL_RPATH_USE_LINK_PATH TRUE
-)
-install(TARGETS feral-vm
-	RUNTIME
-	  DESTINATION bin
-	  COMPONENT Binaries
 )
 
 # Feral Compiler

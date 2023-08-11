@@ -39,7 +39,16 @@ int main(int argc, char **argv)
 		return execInteractive(args);
 	}
 
-	String file = String(args.getSource());
+	String file		    = String(args.getSource());
+	Vector<StringRef> &codeargs = args.getCodeExecArgs();
+
+	if(file == "build" || file == "install") {
+		if(file == "install") {
+			file = "build";
+			codeargs.insert(codeargs.begin(), "install");
+		}
+		file += ".fer";
+	}
 
 	if(!fs::exists(file.c_str())) {
 		String binfile(fs::parentDir(env::getProcPath()));

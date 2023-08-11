@@ -6,6 +6,7 @@ let sharedLibBase =
 `# {self.libName}
 set(mod "{self.libName}")
 add_library($\\{mod} SHARED "$\\{PROJECT_SOURCE_DIR}/{self.srcPath}/$\\{mod}.cpp" {self.otherSrcs})
+target_include_directories($\\{mod} PRIVATE $\\{PROJECT_SOURCE_DIR}/include)
 target_link_libraries($\\{mod}{depNames} $\\{GMP_LIBRARY} $\\{GMPXX_LIBRARY} $\\{MPFR_LIBRARY})
 set_target_properties($\\{mod}
     PROPERTIES
@@ -20,8 +21,8 @@ install(TARGETS $\\{mod}
 	  COMPONENT Libraries
 )`;
 
-let feralvm = findLib.new('feralvm');
-feralvm.makeReqd().addPathSuffixes('feral');
+let feralLib = findLib.new('feral');
+feralLib.makeReqd().addPathSuffixes('feral');
 
 let SharedLib = lang.struct(
 	projectName = '',

@@ -6,7 +6,6 @@
 #include "FailStack.hpp"
 #include "RAIIParser.hpp"
 #include "Utils.hpp"
-#include "VarMemory.hpp"
 #include "Vars.hpp"
 
 static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 400;
