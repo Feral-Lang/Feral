@@ -35,7 +35,13 @@ SharedLib.setTypeName('SharedLib');
 
 let new = fn(name, proj) { return SharedLib(libName = name, projectName = proj); };
 
-let addSrc in SharedLib = fn(src) { self.otherSrcs += ' ' + src; return self; };
+let addSrcs in SharedLib = fn(srcs...) {
+	for src in srcs.each() {
+		self.otherSrcs += ' ';
+		self.otherSrcs += src;
+	}
+	return self;
+};
 
 let addDep in SharedLib = fn(dep) { self.deps.push(dep); return self; };
 

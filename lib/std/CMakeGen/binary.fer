@@ -29,7 +29,7 @@ Binary.setTypeName('Binary');
 
 let new = fn(name) { return Binary(binName = name); };
 
-let addSrcs = fn(srcs...) {
+let addSrcs in Binary = fn(srcs...) {
 	for src in srcs.each() {
 		self.srcs += ' ';
 		self.srcs += src;
