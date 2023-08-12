@@ -75,6 +75,7 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	if(argparser.has("optparse")) mod->dumpParseTree();
 	if(!mod->genCode()) return 1;
 	if(argparser.has("ir")) mod->dumpCode();
+	if(argparser.has("dry")) return 0;
 
 	pushModule(loc, mod);
 	if(main_module) {
