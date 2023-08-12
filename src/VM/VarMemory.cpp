@@ -1,5 +1,8 @@
 #include "VM/VarMemory.hpp"
 
+// #define MEM_PROFILE
+// #define DEBUG_MODE
+
 namespace fer
 {
 
@@ -120,6 +123,7 @@ void *VarMemory::alloc(size_t sz)
 void VarMemory::free(void *data, size_t sz)
 {
 	if(data == nullptr || sz == 0) return;
+	sz = mult8Roundup(sz);
 	if(sz > POOL_SIZE) {
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf(stdout, "Deleting manually ... %zu\n", sz);
