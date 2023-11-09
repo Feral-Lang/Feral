@@ -416,7 +416,7 @@ void Interpreter::dumpExecStack(OStream &os)
 		} else if(e->is<VarBool>()) {
 			os << "bool:" << (as<VarBool>(e)->get() ? "true" : "false");
 		} else {
-			os << "unknown";
+			os << getTypeName(e);
 		}
 		std::cout << " ";
 	}

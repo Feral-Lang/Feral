@@ -1,5 +1,3 @@
-#include <charconv>
-
 #include "VM/Interpreter.hpp"
 
 using namespace fer;
@@ -323,7 +321,7 @@ Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.fail(loc, "failed to find ending brace for eval expr: ", expr);
 				return nullptr;
 			}
-			base = vm.eval(loc, expr);
+			base = vm.eval(loc, expr, true);
 			if(!base) {
 				vm.fail(loc, "failed to evaluate expr: ", expr);
 				return nullptr;

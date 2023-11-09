@@ -93,7 +93,8 @@ public:
 		return compileAndRun(loc, String(file), main_module);
 	}
 
-	void pushModule(const ModuleLoc *loc, Module *mod);
+	void addModule(const ModuleLoc *loc, Module *mod, Vars *varsnew = nullptr);
+	void removeModule(StringRef path);
 	void pushModule(StringRef path);
 	void popModule();
 
@@ -153,7 +154,7 @@ public:
 
 	// evaluate a given expression and return its result
 	// primarily used for templates
-	Var *eval(const ModuleLoc *loc, StringRef expr);
+	Var *eval(const ModuleLoc *loc, StringRef code, bool isExpr);
 
 	void initTypeNames();
 

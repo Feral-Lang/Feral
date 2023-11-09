@@ -1,12 +1,9 @@
 #include "RAIIParser.hpp"
 
-#include <iostream>
 #include <unistd.h>
 
 #include "Error.hpp"
 #include "FS.hpp"
-#include "Parser/Passes/Base.hpp"
-#include "Utils.hpp"
 
 namespace fer
 {
@@ -36,7 +33,6 @@ Module *RAIIParser::createModule(String &&path, bool ismain)
 Module *RAIIParser::createModule(String &&path, String &&code, bool ismain)
 {
 	Module *mod = new Module(ctx, modulestack.size(), std::move(path), std::move(code), ismain);
-	modulestack.push_back(mod->getPath());
 	modules[mod->getPath()] = mod;
 	return mod;
 }
@@ -49,12 +45,12 @@ void RAIIParser::removeModule(StringRef path)
 		modulestack.pop_back();
 	} else {
 		auto loc = std::find(modulestack.begin(), modulestack.end(), path);
-		if(loc == modulestack.end()) return;
-		modulestack.erase(loc);
+		if(loc != modulestack.end()) modulestack.erase(loc);
 	}
-	auto loc = modules.find(path);
-	delete loc->second;
+	auto loc    = modules.find(path);
+	Module *mod = loc->second;
 	modules.erase(loc);
+	delete mod;
 }
 
 Module *RAIIParser::getModule(StringRef path)
