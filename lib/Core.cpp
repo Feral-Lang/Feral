@@ -124,6 +124,24 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getModule(file);
 }
 
+Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		  const Map<String, AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef code = as<VarStr>(args[1])->get();
+	Var *res       = vm.eval(loc, code, false);
+	if(!res) {
+		vm.fail(loc, "failed to evaluate code: ", code);
+		return nullptr;
+	}
+	res->dref();
+	return res;
+}
+
 Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const Map<String, AssnArgData> &assn_args)
 {
@@ -133,7 +151,7 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	StringRef expr = as<VarStr>(args[1])->get();
-	Var *res       = vm.eval(loc, expr);
+	Var *res       = vm.eval(loc, expr, true);
 	if(!res) {
 		vm.fail(loc, "failed to evaluate expr: ", expr);
 		return nullptr;
@@ -155,7 +173,8 @@ INIT_MODULE(Core)
 	vm.addNativeFn(loc, "raise", raise, 1, true);
 	vm.addNativeFn(loc, "mload", loadModule, 1);
 	vm.addNativeFn(loc, "import", importFile, 1);
-	vm.addNativeFn(loc, "eval", evaluateExpr, 1);
+	vm.addNativeFn(loc, "evalCode", evaluateCode, 1);
+	vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);
 	vm.addNativeFn(loc, "_isMainModule_", isMainModule, 1);
 
 	// fundamental functions for builtin types

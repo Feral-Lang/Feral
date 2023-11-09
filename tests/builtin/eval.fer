@@ -1,11 +1,35 @@
 let assert = import('std/assert');
 
-let data1 = eval('1 + 1'); # 2
-let data2 = eval('data1'); # 2
-let data3 = eval("'data2'"); # 'data2'
-let data4 = eval(data3); # 2
+# expr evaluation
+
+let data1 = evalExpr('1 + 1'); # 2
+let data2 = evalExpr('data1'); # 2
+let data3 = evalExpr("'data2'"); # 'data2'
+let data4 = evalExpr(data3); # 2
 
 assert.eq(data1, 2);
 assert.eq(data2, 2);
 assert.eq(data3, 'data2');
 assert.eq(data4, 2);
+
+# code evaluation
+
+let factoCode = `
+let facto = fn(num) {
+	let fact = 1;
+	for i in range(num, 1, -1) {
+		fact *= i;
+	}
+	return fact;
+};
+
+return facto(5);
+`;
+
+let nilCode = `
+let io = import('std/io');
+io.println('hi there');
+`;
+
+let nilRes = evalCode(nilCode);
+assert.eq(nilRes, nil);

@@ -77,10 +77,13 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	if(argparser.has("ir")) mod->dumpCode();
 	if(argparser.has("dry")) return 0;
 
-	pushModule(loc, mod);
+	addModule(loc, mod);
+
+	pushModule(mod->getPath());
 	if(main_module) {
 		for(auto m : coremods) {
 			if(!loadNativeModule(loc, String(m))) {
+				removeModule(mod->getPath());
 				popModule();
 				return 1;
 			}
@@ -89,22 +92,21 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	}
 	int res = execute();
 	popModule();
-
 	return res;
 }
 
-void Interpreter::pushModule(const ModuleLoc *loc, Module *mod)
+void Interpreter::addModule(const ModuleLoc *loc, Module *mod, Vars *varsnew)
 {
-	auto mloc	= allmodules.find(mod->getPath());
-	VarModule *mvar = nullptr;
-	if(mloc == allmodules.end()) {
-		mvar = makeVarWithRef<VarModule>(loc, mod);
-		allmodules.insert({mod->getPath(), mvar});
-	} else {
-		mvar = mloc->second;
-	}
-	incref(mvar);
-	modulestack.push_back(mvar);
+	auto l = allmodules.find(mod->getPath());
+	if(l != allmodules.end()) decref(l->second);
+	allmodules[mod->getPath()] = makeVarWithRef<VarModule>(loc, mod, varsnew, !varsnew);
+}
+void Interpreter::removeModule(StringRef path)
+{
+	auto loc = allmodules.find(path);
+	if(loc == allmodules.end()) return;
+	decref(loc->second);
+	allmodules.erase(loc);
 }
 void Interpreter::pushModule(StringRef path)
 {
@@ -299,18 +301,27 @@ bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Sp
 	return true;
 }
 
-Var *Interpreter::eval(const ModuleLoc *loc, StringRef expr)
+Var *Interpreter::eval(const ModuleLoc *loc, StringRef code, bool isExpr)
 {
-	Module *mod = parser.createModule("<eval>", String(expr), false);
+	Module *mod  = parser.createModule("<eval>", String(code), false);
+	Var *res     = nullptr;
+	int exitcode = 1;
 
-	Var *res = nullptr;
-	if(!mod || !mod->tokenize() || !mod->parseTokens(true)) goto done;
+	if(!mod || !mod->tokenize() || !mod->parseTokens(isExpr)) goto done;
 	if(!mod->executeDefaultParserPasses()) {
-		err::out(loc, "Failed to apply default parser passes on module: ", mod->getPath());
+		fail(loc, "Failed to apply default parser passes on module: ", mod->getPath());
 		goto done;
 	}
-	if(!mod->genCode() || execute(&mod->getBytecode()) || execstack.empty()) goto done;
-	res = execstack.pop(false);
+	if(!mod->genCode()) goto done;
+
+	addModule(loc, mod, getCurrModule()->getVars());
+	pushModule(mod->getPath());
+	exitcode = execute(&mod->getBytecode());
+	popModule();
+	removeModule(mod->getPath());
+	if(exitcode) goto done;
+	if(!execstack.empty()) res = execstack.pop(false);
+	else res = getNil();
 done:
 	if(mod) parser.removeModule(mod->getPath());
 	return res;

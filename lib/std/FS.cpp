@@ -8,7 +8,6 @@
 
 #include "std/BytebufferType.hpp"
 #include "std/FSType.hpp"
-#include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
 enum WalkEntry
