@@ -13,7 +13,7 @@ Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 		loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return vm.makeVar<VarBytebuffer>(loc, mpz_get_ui(as<VarInt>(args[1])->getSrc()));
+	return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->get());
 }
 
 Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -27,7 +27,7 @@ Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-	self->resize(mpz_get_ui(as<VarInt>(args[1])->getSrc()));
+	self->resize(as<VarInt>(args[1])->get());
 	return args[0];
 }
 
@@ -40,7 +40,7 @@ Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-	self->setLen(mpz_get_ui(as<VarInt>(args[1])->getSrc()));
+	self->setLen(as<VarInt>(args[1])->get());
 	return args[0];
 }
 

@@ -8,9 +8,9 @@ Var *sysclkNow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, 0);
-	mpz_set_ui(res->get(), std::chrono::duration_cast<std::chrono::nanoseconds>(
-			       std::chrono::system_clock::now().time_since_epoch())
-			       .count());
+	res->set(std::chrono::duration_cast<std::chrono::nanoseconds>(
+		 std::chrono::system_clock::now().time_since_epoch())
+		 .count());
 	return res;
 }
 
@@ -27,7 +27,7 @@ Var *formatTime(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	unsigned long val = mpz_get_ui(as<VarInt>(args[1])->get());
+	unsigned long val = as<VarInt>(args[1])->get();
 	std::chrono::nanoseconds nsval(val);
 	std::chrono::system_clock::time_point tp(
 	std::chrono::duration_cast<std::chrono::system_clock::duration>(nsval));

@@ -21,14 +21,12 @@ Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs  = as<VarStr>(args[0])->get();
-	mpz_srcptr rhs = as<VarInt>(args[1])->getSrc();
-	VarStr *res    = vm.makeVar<VarStr>(loc, "");
-	mpz_t i;
-	for(mpz_init_set_si(i, 0); mpz_cmp(i, rhs) < 0; mpz_add_ui(i, i, 1)) {
+	StringRef lhs = as<VarStr>(args[0])->get();
+	int64_t rhs   = as<VarInt>(args[1])->get();
+	VarStr *res   = vm.makeVar<VarStr>(loc, "");
+	for(int64_t i = 1; i < rhs; ++i) {
 		res->get() += lhs;
 	}
-	mpz_clear(i);
 	return res;
 }
 
@@ -54,13 +52,11 @@ Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String lhs     = as<VarStr>(args[0])->get();
-	mpz_srcptr rhs = as<VarInt>(args[1])->getSrc();
-	mpz_t i;
-	for(mpz_init_set_si(i, 1); mpz_cmp(i, rhs) < 0; mpz_add_ui(i, i, 1)) {
+	String lhs  = as<VarStr>(args[0])->get();
+	int64_t rhs = as<VarInt>(args[1])->get();
+	for(int64_t i = 1; i < rhs; ++i) {
 		as<VarStr>(args[0])->get() += lhs;
 	}
-	mpz_clear(i);
 	return args[0];
 }
 
@@ -142,7 +138,7 @@ Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	StringRef str = as<VarStr>(args[0])->get();
-	size_t pos    = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	size_t pos    = as<VarInt>(args[1])->get();
 	if(pos >= str.size()) return vm.getNil();
 	return vm.makeVar<VarStr>(loc, str[pos]);
 }

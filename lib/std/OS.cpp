@@ -9,7 +9,6 @@
 
 #include "Env.hpp"
 #include "FS.hpp"
-#include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
 using namespace fer;
@@ -29,7 +28,7 @@ Var *sleepCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected integer argument for sleep time, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	size_t dur = mpz_get_ui(as<VarInt>(args[1])->get());
+	size_t dur = as<VarInt>(args[1])->get();
 	std::this_thread::sleep_for(std::chrono::milliseconds(dur));
 	return vm.getNil();
 }
@@ -183,7 +182,7 @@ Var *osStrErr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return vm.makeVar<VarStr>(loc, strerror(mpz_get_si(as<VarInt>(args[1])->get())));
+	return vm.makeVar<VarStr>(loc, strerror(as<VarInt>(args[1])->get()));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -368,8 +367,7 @@ int execInternal(const String &cmd)
 	size_t len = 0;
 	ssize_t nread;
 
-	while((nread = getline(&line, &len, pipe)) != -1)
-		;
+	while((nread = getline(&line, &len, pipe)) != -1);
 	free(line);
 	int res = pclose(pipe);
 	return WEXITSTATUS(res);

@@ -324,7 +324,7 @@ Var *readChar(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	int fd	= mpz_get_si(as<VarInt>(args[1])->getSrc());
+	int fd	= as<VarInt>(args[1])->get();
 	char c	= 0;
 	int res = read(fd, &c, 1);
 	if(res <= 0) {

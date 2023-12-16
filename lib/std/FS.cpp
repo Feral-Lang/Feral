@@ -77,7 +77,7 @@ Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	String dirstr = as<VarStr>(args[1])->get();
-	size_t flags  = mpz_get_ui(as<VarInt>(args[2])->getSrc());
+	size_t flags  = as<VarInt>(args[2])->get();
 
 	if(dirstr.empty()) {
 		vm.fail(loc, "empty directory path provided");
@@ -157,8 +157,8 @@ Var *fileSeek(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	long pos   = mpz_get_si(as<VarInt>(args[1])->getSrc());
-	int origin = mpz_get_si(as<VarInt>(args[2])->getSrc());
+	long pos   = as<VarInt>(args[1])->get();
+	int origin = as<VarInt>(args[2])->get();
 	return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
 }
 
@@ -265,7 +265,7 @@ Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &path = as<VarStr>(args[1])->get();
-	int res		   = creat(path.c_str(), mpz_get_si(as<VarInt>(args[2])->getSrc()));
+	int res		   = creat(path.c_str(), as<VarInt>(args[2])->get());
 	if(res < 0) {
 		vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
 		return nullptr;
@@ -286,7 +286,7 @@ Var *fdOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &path = as<VarStr>(args[1])->get();
-	int res		   = open(path.c_str(), mpz_get_si(as<VarInt>(args[2])->getSrc()));
+	int res		   = open(path.c_str(), as<VarInt>(args[2])->get());
 	if(res < 0) {
 		vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));
 		return nullptr;
@@ -309,11 +309,10 @@ Var *fdRead(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
 	errno		  = 0;
-	ssize_t res = read(mpz_get_si(as<VarInt>(args[1])->get()), bb->getBuf(), bb->capacity());
+	ssize_t res	  = read(as<VarInt>(args[1])->get(), bb->getBuf(), bb->capacity());
 	if(res < 0 || errno != 0) {
 		vm.fail(loc, "failed to read from the file descriptor: '",
-			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			"', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
 		return nullptr;
 	}
 	bb->setLen(res);
@@ -345,11 +344,10 @@ Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		data	  = s->get().data();
 		count	  = s->get().size();
 	}
-	ssize_t res = write(mpz_get_si(as<VarInt>(args[1])->get()), data, count);
+	ssize_t res = write(as<VarInt>(args[1])->get(), data, count);
 	if(res < 0 || errno != 0) {
 		vm.fail(loc, "failed to write to the file descriptor: '",
-			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			"', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -363,11 +361,10 @@ Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	int res = close(mpz_get_si(as<VarInt>(args[1])->getSrc()));
+	int res = close(as<VarInt>(args[1])->get());
 	if(res < 0) {
 		vm.fail(loc, "failed to close the file descriptor: '",
-			std::to_string(mpz_get_si(as<VarInt>(args[1])->getSrc())),
-			"', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);

@@ -1,3 +1,5 @@
+#include <cmath> // std::round()
+
 #include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
@@ -258,7 +260,6 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarInt>(loc, ">>=", intRShiftAssn, 1);
 
 	vm.addNativeTypeFn<VarInt>(loc, "**", intPow, 1);
-	vm.addNativeTypeFn<VarInt>(loc, "//", intRoot, 1);
 	vm.addNativeTypeFn<VarInt>(loc, "++x", intPreInc, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "x++", intPostInc, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "--x", intPreDec, 0);
@@ -270,18 +271,19 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarInt>(loc, ">", intGT, 1);
 	vm.addNativeTypeFn<VarInt>(loc, "<=", intLE, 1);
 	vm.addNativeTypeFn<VarInt>(loc, ">=", intGE, 1);
-	vm.addNativeTypeFn<VarInt>(loc, "==", intEq, 1);
-	vm.addNativeTypeFn<VarInt>(loc, "!=", intNe, 1);
+	vm.addNativeTypeFn<VarInt>(loc, "==", intEQ, 1);
+	vm.addNativeTypeFn<VarInt>(loc, "!=", intNE, 1);
 
 	vm.addNativeTypeFn<VarInt>(loc, "&", intBAnd, 1);
 	vm.addNativeTypeFn<VarInt>(loc, "|", intBOr, 1);
 	vm.addNativeTypeFn<VarInt>(loc, "^", intBXOr, 1);
 	vm.addNativeTypeFn<VarInt>(loc, "~", intBNot, 0);
 
-	vm.addNativeTypeFn<VarInt>(loc, "&=", intBAndAssn, 1);
-	vm.addNativeTypeFn<VarInt>(loc, "|=", intBOrAssn, 1);
-	vm.addNativeTypeFn<VarInt>(loc, "^=", intBXOrAssn, 1);
+	vm.addNativeTypeFn<VarInt>(loc, "&=", intAssnBAnd, 1);
+	vm.addNativeTypeFn<VarInt>(loc, "|=", intAssnBOr, 1);
+	vm.addNativeTypeFn<VarInt>(loc, "^=", intAssnBXOr, 1);
 
+	vm.addNativeTypeFn<VarInt>(loc, "sqrt", intSqRoot, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "popcnt", intPopCnt, 0);
 
 	// flt
@@ -302,10 +304,7 @@ INIT_MODULE(Core)
 
 	vm.addNativeTypeFn<VarFlt>(loc, "u-", fltUSub, 0);
 
-	vm.addNativeTypeFn<VarFlt>(loc, "round", fltRound, 0);
-
 	vm.addNativeTypeFn<VarFlt>(loc, "**", fltPow, 1);
-	vm.addNativeTypeFn<VarFlt>(loc, "//", fltRoot, 1);
 
 	vm.addNativeTypeFn<VarFlt>(loc, "<", fltLT, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, ">", fltGT, 1);
@@ -313,6 +312,9 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarFlt>(loc, ">=", fltGE, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, "==", fltEQ, 1);
 	vm.addNativeTypeFn<VarFlt>(loc, "!=", fltNE, 1);
+
+	vm.addNativeTypeFn<VarFlt>(loc, "round", fltRound, 0);
+	vm.addNativeTypeFn<VarFlt>(loc, "sqrt", fltSqRoot, 0);
 
 	// string
 	vm.addNativeTypeFn<VarStr>(loc, "+", strAdd, 1);

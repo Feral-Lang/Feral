@@ -76,53 +76,29 @@ void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
 ////////////////////////////////////////// VarInt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarInt::VarInt(const ModuleLoc *loc, int64_t _val) : Var(loc, typeID<VarInt>(), false, false)
-{
-	mpz_init_set_si(val, _val);
-}
-VarInt::VarInt(const ModuleLoc *loc, mpz_srcptr _val) : Var(loc, typeID<VarInt>(), false, false)
-{
-	mpz_init_set(val, _val);
-}
-VarInt::VarInt(const ModuleLoc *loc, mpfr_srcptr _val) : Var(loc, typeID<VarInt>(), false, false)
-{
-	mpz_init(val);
-	mpfr_get_z(val, _val, mpfr_get_default_rounding_mode());
-}
-VarInt::VarInt(const ModuleLoc *loc, const char *_val) : Var(loc, typeID<VarInt>(), false, false)
-{
-	mpz_init_set_str(val, _val, 0);
-}
-VarInt::~VarInt() { mpz_clear(val); }
+VarInt::VarInt(const ModuleLoc *loc, int64_t _val)
+	: Var(loc, typeID<VarInt>(), false, false), val(_val)
+{}
+VarInt::VarInt(const ModuleLoc *loc, const char *_val)
+	: Var(loc, typeID<VarInt>(), false, false), val(std::stoll(_val))
+{}
+VarInt::~VarInt() {}
 Var *VarInt::copy(const ModuleLoc *loc) { return new VarInt(loc, val); }
-void VarInt::set(Var *from) { mpz_set(val, as<VarInt>(from)->get()); }
+void VarInt::set(Var *from) { val = as<VarInt>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFlt::VarFlt(const ModuleLoc *loc, long double _val) : Var(loc, typeID<VarFlt>(), false, false)
-{
-	mpfr_init_set_ld(val, _val, mpfr_get_default_rounding_mode());
-}
-VarFlt::VarFlt(const ModuleLoc *loc, mpfr_srcptr _val) : Var(loc, typeID<VarFlt>(), false, false)
-{
-	mpfr_init_set(val, _val, mpfr_get_default_rounding_mode());
-}
-VarFlt::VarFlt(const ModuleLoc *loc, mpz_srcptr _val) : Var(loc, typeID<VarFlt>(), false, false)
-{
-	mpfr_init_set_z(val, _val, mpfr_get_default_rounding_mode());
-}
-VarFlt::VarFlt(const ModuleLoc *loc, const char *_val) : Var(loc, typeID<VarFlt>(), false, false)
-{
-	mpfr_init_set_str(val, _val, 0, mpfr_get_default_rounding_mode());
-}
-VarFlt::~VarFlt() { mpfr_clear(val); }
+VarFlt::VarFlt(const ModuleLoc *loc, long double _val)
+	: Var(loc, typeID<VarFlt>(), false, false), val(_val)
+{}
+VarFlt::VarFlt(const ModuleLoc *loc, const char *_val)
+	: Var(loc, typeID<VarFlt>(), false, false), val(std::stod(_val))
+{}
+VarFlt::~VarFlt() {}
 Var *VarFlt::copy(const ModuleLoc *loc) { return new VarFlt(loc, val); }
-void VarFlt::set(Var *from)
-{
-	mpfr_set(val, as<VarFlt>(from)->get(), mpfr_get_default_rounding_mode());
-}
+void VarFlt::set(Var *from) { val = as<VarFlt>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////

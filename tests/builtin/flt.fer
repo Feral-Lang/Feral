@@ -27,7 +27,7 @@ assert.eq(--4.0, 3.0);
 assert.eq(4.0--, 4.0);
 
 assert.eq(2.5 ** 2, 6.25);
-assert.eq(6.25 // 2, 2.5);
+assert.eq((6.25).sqrt(), 2.5);
 
 assert.ne(-5, -(-5));
 
