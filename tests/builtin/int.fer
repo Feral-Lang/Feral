@@ -28,7 +28,7 @@ assert.eq((a %= b), 0);
 
 # others
 assert.eq(4 ** 3, 64);
-assert.eq(64 // 3, 4);
+assert.eq((64).sqrt(), 8);
 assert.eq(++4, 5);
 assert.eq(4++, 4);
 assert.eq(--4, 3);

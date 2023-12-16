@@ -35,45 +35,13 @@ Var *typeIDToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *intToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<String, AssnArgData> &assn_args)
 {
-	typedef void (*gmp_freefunc_t)(void *, size_t);
-
-	char *_res  = mpz_get_str(NULL, 10, as<VarInt>(args[0])->getSrc());
-	VarStr *res = vm.makeVar<VarStr>(loc, _res);
-
-	gmp_freefunc_t freefunc;
-	mp_get_memory_functions(NULL, NULL, &freefunc);
-	freefunc(_res, strlen(_res) + 1);
-
-	return res;
+	return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->get()));
 }
 
 Var *fltToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<String, AssnArgData> &assn_args)
 {
-	mpfr_exp_t expo;
-	char *_res  = mpfr_get_str(NULL, &expo, 10, 0, as<VarFlt>(args[0])->getSrc(),
-				   mpfr_get_default_rounding_mode());
-	VarStr *res = vm.makeVar<VarStr>(loc, _res);
-	mpfr_free_str(_res);
-	if(res->get().empty() || expo == 0 || expo > 25) return res;
-	auto last_zero_from_end = res->get().find_last_of("123456789");
-	if(last_zero_from_end != String::npos) res->get().erase(last_zero_from_end + 1);
-	if(expo > 0) {
-		size_t sz = res->get().size();
-		while(expo > sz) {
-			res->get() += '0';
-		}
-		if(res->get()[0] == '-') ++expo;
-		res->get().insert(expo, ".");
-	} else {
-		String pre_zero(-expo, '0');
-		pre_zero.insert(pre_zero.begin(), '.');
-		pre_zero.insert(pre_zero.begin(), '0');
-		pre_zero += res->get();
-		using namespace std;
-		swap(res->get(), pre_zero);
-	}
-	return res;
+	return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->get()));
 }
 
 Var *strToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,

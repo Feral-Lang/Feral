@@ -35,7 +35,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(capv));
 			return nullptr;
 		}
-		resvcap = mpz_get_ui(as<VarInt>(capv)->getSrc());
+		resvcap = as<VarInt>(capv)->get();
 	}
 	StringMap<Var *> mapval;
 	mapval.reserve(resvcap);

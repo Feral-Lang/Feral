@@ -1,8 +1,10 @@
+#include <random>
+
 #include "VM/Interpreter.hpp"
 
 using namespace fer;
 
-gmp_randstate_t rngstate;
+static std::default_random_engine rng;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
@@ -15,7 +17,7 @@ Var *rngSeed(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected seed value to be integer, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	gmp_randseed(rngstate, as<VarInt>(args[1])->get());
+	rng.seed(as<VarInt>(args[1])->get());
 	return vm.getNil();
 }
 
@@ -28,20 +30,14 @@ Var *rngGet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected upper bound to be an integer, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	VarInt *res = vm.makeVar<VarInt>(loc, 0);
-	mpz_urandomm(res->get(), rngstate, as<VarInt>(args[1])->get());
-	return res;
+	std::uniform_int_distribution<int64_t> dist(0, as<VarInt>(args[1])->get());
+	return vm.makeVar<VarInt>(loc, dist(rng));
 }
 
 INIT_MODULE(RNG)
 {
-	gmp_randinit_default(rngstate);
-
 	VarModule *mod = vm.getCurrModule();
 	mod->addNativeFn("seed", rngSeed, 1);
 	mod->addNativeFn("getNative", rngGet, 1);
-
 	return true;
 }
-
-DEINIT_MODULE(RNG) { gmp_randclear(rngstate); }

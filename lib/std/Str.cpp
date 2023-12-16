@@ -83,7 +83,7 @@ Var *strIsChAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = mpz_get_ui(as<VarInt>(args[1])->get());
+	size_t pos   = as<VarInt>(args[1])->get();
 	String &dest = as<VarStr>(args[0])->get();
 	if(pos >= dest.size()) {
 		vm.fail(loc, "position ", pos, " is not within string of length: ", dest.size());
@@ -91,7 +91,7 @@ Var *strIsChAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	String chars;
 	if(args[2]->is<VarInt>()) {
-		chars = mpz_get_si(as<VarInt>(args[2])->get());
+		chars = as<VarInt>(args[2])->get();
 	} else if(args[2]->is<VarStr>()) {
 		chars = as<VarStr>(args[2])->get();
 	}
@@ -113,7 +113,7 @@ Var *strSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = mpz_get_ui(as<VarInt>(args[1])->get());
+	size_t pos   = as<VarInt>(args[1])->get();
 	String &dest = as<VarStr>(args[0])->get();
 	if(pos >= dest.size()) {
 		vm.fail(loc, "position ", pos, " is not within string of length: ", dest.size());
@@ -142,7 +142,7 @@ Var *strInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = mpz_get_ui(as<VarInt>(args[1])->get());
+	size_t pos   = as<VarInt>(args[1])->get();
 	String &dest = as<VarStr>(args[0])->get();
 	if(pos > dest.size()) {
 		vm.fail(loc, "position ", pos, " is greater than string length: ", dest.size());
@@ -161,7 +161,7 @@ Var *strErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->get());
+	size_t pos  = as<VarInt>(args[1])->get();
 	String &str = as<VarStr>(args[0])->get();
 	if(pos < str.size()) str.erase(str.begin() + pos);
 	return args[0];
@@ -217,8 +217,8 @@ Var *strSubstr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->get());
-	size_t len  = mpz_get_ui(as<VarInt>(args[2])->get());
+	size_t pos  = as<VarInt>(args[1])->get();
+	size_t len  = as<VarInt>(args[2])->get();
 	String &str = as<VarStr>(args[0])->get();
 	return vm.makeVar<VarStr>(loc, str.substr(pos, len));
 }
@@ -437,7 +437,7 @@ Var *byt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *chr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	 const Map<String, AssnArgData> &assn_args)
 {
-	u8 byt = (u8)mpz_get_si(as<VarInt>(args[0])->get());
+	u8 byt = (u8)as<VarInt>(args[0])->get();
 	return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 

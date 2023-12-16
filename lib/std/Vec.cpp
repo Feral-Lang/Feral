@@ -32,7 +32,7 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(capv));
 			return nullptr;
 		}
-		resvcap = mpz_get_ui(as<VarInt>(capv)->getSrc());
+		resvcap = as<VarInt>(capv)->get();
 	}
 	VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
 	if(refs) {
@@ -134,7 +134,7 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	size_t pos  = as<VarInt>(args[1])->get();
 	if(pos >= res->get().size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->get().size()));
@@ -159,7 +159,7 @@ Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	size_t pos  = as<VarInt>(args[1])->get();
 	if(pos >= res->get().size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->get().size()));
@@ -181,7 +181,7 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	size_t pos  = as<VarInt>(args[1])->get();
 	if(pos >= res->get().size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->get().size()));
@@ -219,7 +219,7 @@ Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = mpz_get_ui(as<VarInt>(args[1])->getSrc());
+	size_t pos  = as<VarInt>(args[1])->get();
 	if(pos >= res->get().size()) return vm.getNil();
 	return res->get()[pos];
 }
@@ -243,8 +243,8 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = mpz_get_ui(as<VarInt>(args[1])->getSrc());
-	size_t end = mpz_get_ui(as<VarInt>(args[2])->getSrc());
+	size_t beg = as<VarInt>(args[1])->get();
+	size_t end = as<VarInt>(args[2])->get();
 
 	if(beg >= v->get().size()) {
 		vm.fail(loc, "starting index is greater than vector size");
@@ -278,8 +278,8 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = mpz_get_ui(as<VarInt>(args[1])->getSrc());
-	size_t end = mpz_get_ui(as<VarInt>(args[2])->getSrc());
+	size_t beg = as<VarInt>(args[1])->get();
+	size_t end = as<VarInt>(args[2])->get();
 
 	if(beg >= v->get().size()) {
 		vm.fail(loc, "starting index is greater than vector size");

@@ -11,7 +11,7 @@ Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	vm.setExitCalled(true);
-	vm.setExitCode(mpz_get_si(as<VarInt>(args[1])->get()));
+	vm.setExitCode(as<VarInt>(args[1])->get());
 	return vm.getNil();
 }
 
@@ -36,7 +36,7 @@ Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected int argument for max count, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	vm.setMaxRecurseCount(mpz_get_ui(as<VarInt>(args[1])->get()));
+	vm.setMaxRecurseCount(as<VarInt>(args[1])->get());
 	return vm.getNil();
 }
 

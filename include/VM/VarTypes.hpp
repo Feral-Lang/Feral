@@ -1,8 +1,5 @@
 #pragma once
 
-#include <gmp.h>
-#include <mpfr.h>
-
 #include "Core.hpp"
 #include "Module.hpp"
 
@@ -156,40 +153,34 @@ public:
 
 class VarInt : public Var
 {
-	mpz_t val;
+	int64_t val;
 
 public:
 	VarInt(const ModuleLoc *loc, int64_t _val);
-	VarInt(const ModuleLoc *loc, mpz_srcptr _val);
-	VarInt(const ModuleLoc *loc, mpfr_srcptr _val);
 	VarInt(const ModuleLoc *loc, const char *_val);
 	~VarInt();
 
 	Var *copy(const ModuleLoc *loc) override;
-	void set(Var *from) override;
+	inline void set(Var *from) override;
 
-	inline mpz_ptr get() { return val; }
-	// mpz_srcptr is basically 'const mpz_ptr'
-	inline mpz_srcptr getSrc() { return val; }
+	inline void set(int64_t newval) { val = newval; }
+	inline int64_t get() { return val; }
 };
 
 class VarFlt : public Var
 {
-	mpfr_t val;
+	long double val;
 
 public:
 	VarFlt(const ModuleLoc *loc, long double _val);
-	VarFlt(const ModuleLoc *loc, mpfr_srcptr _val);
-	VarFlt(const ModuleLoc *loc, mpz_srcptr _val);
 	VarFlt(const ModuleLoc *loc, const char *_val);
 	~VarFlt();
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
-	inline mpfr_ptr get() { return val; }
-	// mpfr_srcptr is basically 'const mpfr_ptr'
-	inline mpfr_srcptr getSrc() { return val; }
+	inline void set(long double newval) { val = newval; }
+	inline long double get() { return val; }
 };
 
 class VarStr : public Var

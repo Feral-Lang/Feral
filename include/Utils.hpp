@@ -40,6 +40,7 @@ template<typename... Args> void appendToString(String &dest, char data, Args... 
 template<typename... Args> void appendToString(String &dest, u8 data, Args... args);
 template<typename... Args> void appendToString(String &dest, int data, Args... args);
 template<typename... Args> void appendToString(String &dest, size_t data, Args... args);
+template<typename... Args> void appendToString(String &dest, int64_t data, Args... args);
 template<typename... Args> void appendToString(String &dest, float data, Args... args);
 template<typename... Args> void appendToString(String &dest, double data, Args... args);
 
@@ -64,6 +65,11 @@ template<typename... Args> void appendToString(String &dest, int data, Args... a
 	appendToString(dest, args...);
 }
 template<typename... Args> void appendToString(String &dest, size_t data, Args... args)
+{
+	dest += std::to_string(data);
+	appendToString(dest, args...);
+}
+template<typename... Args> void appendToString(String &dest, int64_t data, Args... args)
 {
 	dest += std::to_string(data);
 	appendToString(dest, args...);

@@ -162,10 +162,9 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			Var *var = execstack.back();
 			bool res = false;
 			if(var->is<VarInt>()) {
-				res = mpz_get_si(as<VarInt>(var)->get());
+				res = as<VarInt>(var)->get();
 			} else if(var->is<VarFlt>()) {
-				res = mpfr_get_si(as<VarFlt>(var)->get(),
-						  mpfr_get_default_rounding_mode());
+				res = as<VarFlt>(var)->get();
 			} else if(var->is<VarBool>()) {
 				res = as<VarBool>(var)->get();
 			} else if(var->is<VarNil>()) {

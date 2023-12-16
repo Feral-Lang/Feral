@@ -48,15 +48,9 @@ set(CMAKE_MACOSX_RPATH TRUE)
 
 include(CheckCXXCompilerFlag)
 
-# For libGMP on macOS and BSD
+# For macOS and BSD
 if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	include_directories(/usr/local/include)
-endif()
-
-find_library(GMP_LIBRARY gmp REQUIRED)
-find_package(MPFR REQUIRED)
-if(NOT MPFR_FOUND)
-	message(FATAL_ERROR "MPFR library is required but missing")
 endif()
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -121,9 +115,9 @@ endif()
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Config.hpp" @ONLY)
 
 # Install CMake modules
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/external"
-)
+# install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
+# 	DESTINATION "${CMAKE_INSTALL_PREFIX}/external"
+# )
 
 # Install C++ Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
@@ -144,7 +138,7 @@ file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(feral SHARED ${SRCS})
 target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feral ${MPFR_LIBRARIES} ${GMP_LIBRARY})
+target_link_libraries(feral)
 set_target_properties(feral
     PROPERTIES
     PREFIX "lib"

@@ -40,22 +40,12 @@ set(CMAKE_MACOSX_RPATH TRUE)
 
 include(CheckCXXCompilerFlag)
 
-# For libGMP on macOS and BSD
+# For headers on macOS and BSD
 if(APPLE OR $\\{CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	include_directories(/usr/local/include)
 endif()
 
 # Dependencies
-
-find_library(GMP_LIBRARY gmp REQUIRED)
-if(NOT GMP_LIBRARY)
-	message(FATAL_ERROR "gmp is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
-endif()
-
-find_library(MPFR_LIBRARY mpfr REQUIRED)
-if(NOT MPFR_LIBRARY)
-	message(FATAL_ERROR "mpfr is required but missing, looked in: $\\{INCLUDE_INSTALL_DIR}")
-endif()
 
 {depsStr}
 

@@ -1,101 +1,120 @@
-#define ARITHI_FUNC(fn, name)                                                                  \
-	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                  \
-		     const Map<String, AssnArgData> &assn_args)                                \
-	{                                                                                      \
-		if(args[1]->is<VarInt>()) {                                                    \
-			VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());  \
-			mpz_##name(res->get(), res->getSrc(), as<VarInt>(args[1])->getSrc());  \
-			return res;                                                            \
-		} else if(args[1]->is<VarFlt>()) {                                             \
-			VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());  \
-			mpz_t tmp;                                                             \
-			mpz_init(tmp);                                                         \
-			mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(),                         \
-				   mpfr_get_default_rounding_mode());                          \
-			mpz_##name(res->get(), res->getSrc(), tmp);                            \
-			mpz_clear(tmp);                                                        \
-			return res;                                                            \
-		}                                                                              \
-		vm.fail(loc,                                                                   \
-			"expected int or float argument for int " STRINGIFY(name) ", found: ", \
-			vm.getTypeName(args[1]));                                              \
-		return nullptr;                                                                \
+#include <bit>
+
+#define ARITHI_FUNC(fn, oper)                                                                      \
+	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                      \
+		     const Map<String, AssnArgData> &assn_args)                                    \
+	{                                                                                          \
+		if(args[1]->is<VarInt>()) {                                                        \
+			return vm.makeVar<VarInt>(                                                 \
+			loc, as<VarInt>(args[0])->get() oper as<VarInt>(args[1])->get());          \
+		} else if(args[1]->is<VarFlt>()) {                                                 \
+			return vm.makeVar<VarInt>(                                                 \
+			loc, as<VarInt>(args[0])->get() oper(int64_t) as<VarFlt>(args[1])->get()); \
+		}                                                                                  \
+		vm.fail(loc, "expected int or float argument for int " STRINGIFY(fn) ", found: ",  \
+			vm.getTypeName(args[1]));                                                  \
+		return nullptr;                                                                    \
 	}
 
-#define ARITHI_ASSN_FUNC(fn, name)                                                               \
-	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                \
-			 const Map<String, AssnArgData> &assn_args)                              \
+#define ARITHI_ASSN_FUNC(fn, oper)                                                                \
+	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                 \
+			 const Map<String, AssnArgData> &assn_args)                               \
+	{                                                                                         \
+		if(args[1]->is<VarInt>()) {                                                       \
+			as<VarInt>(args[0])->set(                                                 \
+			as<VarInt>(args[0])->get() oper as<VarInt>(args[1])->get());              \
+			return args[0];                                                           \
+		} else if(args[1]->is<VarFlt>()) {                                                \
+			as<VarInt>(args[0])->set(                                                 \
+			as<VarInt>(args[0])->get() oper(int64_t) as<VarFlt>(args[1])->get());     \
+			return args[0];                                                           \
+		}                                                                                 \
+		vm.fail(loc,                                                                      \
+			"expected int or float argument for int " STRINGIFY(fn) "-assn, found: ", \
+			vm.getTypeName(args[1]));                                                 \
+		return nullptr;                                                                   \
+	}
+
+#define LOGICI_FUNC(fn, sym)                                                             \
+	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,            \
+		     const Map<String, AssnArgData> &assn_args)                          \
+	{                                                                                \
+		if(args[1]->is<VarInt>()) {                                              \
+			return as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get() \
+			       ? vm.getTrue()                                            \
+			       : vm.getFalse();                                          \
+		}                                                                        \
+		vm.fail(loc, "expected int argument for int " STRINGIFY(fn) ", found: ", \
+			vm.getTypeName(args[1]));                                        \
+		return nullptr;                                                          \
+	}
+
+#define BITWISE_FUNC(fn, sym)                                                                    \
+	Var *intB##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
+		      const Map<String, AssnArgData> &assn_args)                                 \
 	{                                                                                        \
 		if(args[1]->is<VarInt>()) {                                                      \
-			mpz_##name(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),    \
-				   as<VarInt>(args[1])->getSrc());                               \
-			return args[0];                                                          \
-		} else if(args[1]->is<VarFlt>()) {                                               \
-			mpz_t tmp;                                                               \
-			mpz_init(tmp);                                                           \
-			mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(),                           \
-				   mpfr_get_default_rounding_mode());                            \
-			mpz_##name(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),    \
-				   tmp);                                                         \
-			mpz_clear(tmp);                                                          \
-			return args[0];                                                          \
+			return vm.makeVar<VarInt>(                                               \
+			loc, as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get());         \
 		}                                                                                \
-		vm.fail(                                                                         \
-		loc, "expected int or float argument for int " STRINGIFY(name) "-assn, found: ", \
-		vm.getTypeName(args[1]));                                                        \
+		vm.fail(loc, "expected int argument for int bitwise " STRINGIFY(fn) ", found: ", \
+			vm.getTypeName(args[1]));                                                \
 		return nullptr;                                                                  \
 	}
 
-#define LOGICI_FUNC(fn, name, sym)                                                         \
-	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,              \
-		     const Map<String, AssnArgData> &assn_args)                            \
-	{                                                                                  \
-		if(args[1]->is<VarInt>()) {                                                \
-			return mpz_cmp(as<VarInt>(args[0])->getSrc(),                      \
-				       as<VarInt>(args[1])->getSrc()) sym 0                \
-			       ? vm.getTrue()                                              \
-			       : vm.getFalse();                                            \
-		}                                                                          \
-		vm.fail(loc, "expected int argument for int " STRINGIFY(name) ", found: ", \
-			vm.getTypeName(args[1]));                                          \
-		return nullptr;                                                            \
+#define BITWISE_ASSN_FUNC(fn, sym)                                                  \
+	Var *intAssnB##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,  \
+			  const Map<String, AssnArgData> &assn_args)                \
+	{                                                                           \
+		if(args[1]->is<VarInt>()) {                                         \
+			as<VarInt>(args[0])->set(                                   \
+			as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get()); \
+			return args[0];                                             \
+		}                                                                   \
+		vm.fail(loc,                                                        \
+			"expected int argument for int "                            \
+			"bitwise " STRINGIFY(fn) "-assn, found: ",                  \
+			vm.getTypeName(args[1]));                                   \
+		return nullptr;                                                     \
 	}
 
-ARITHI_FUNC(Add, add)
-ARITHI_FUNC(Sub, sub)
-ARITHI_FUNC(Mul, mul)
-ARITHI_FUNC(Mod, mod)
+ARITHI_FUNC(Add, +)
+ARITHI_FUNC(Sub, -)
+ARITHI_FUNC(Mul, *)
+ARITHI_FUNC(Mod, %)
 
-ARITHI_ASSN_FUNC(Add, add)
-ARITHI_ASSN_FUNC(Sub, sub)
-ARITHI_ASSN_FUNC(Mul, mul)
-ARITHI_ASSN_FUNC(Mod, mod)
+ARITHI_ASSN_FUNC(Add, +)
+ARITHI_ASSN_FUNC(Sub, -)
+ARITHI_ASSN_FUNC(Mul, *)
+ARITHI_ASSN_FUNC(Mod, %)
 
-LOGICI_FUNC(LT, lt, <)
-LOGICI_FUNC(GT, gt, >)
-LOGICI_FUNC(LE, le, <=)
-LOGICI_FUNC(GE, ge, >=)
+LOGICI_FUNC(LT, <)
+LOGICI_FUNC(GT, >)
+LOGICI_FUNC(LE, <=)
+LOGICI_FUNC(GE, >=)
 
-Var *intEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+BITWISE_FUNC(And, &)
+BITWISE_FUNC(Or, |)
+BITWISE_FUNC(XOr, ^)
+
+BITWISE_ASSN_FUNC(And, &)
+BITWISE_ASSN_FUNC(Or, |)
+BITWISE_ASSN_FUNC(XOr, ^)
+
+Var *intEQ(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
 {
-	if(args[1]->is<VarInt>()) {
-		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) == 0
-		       ? vm.getTrue()
-		       : vm.getFalse();
-	}
-	return vm.getFalse();
+	if(!args[1]->is<VarInt>()) return vm.getFalse();
+	return as<VarInt>(args[0])->get() == as<VarInt>(args[1])->get() ? vm.getTrue()
+									: vm.getFalse();
 }
 
-Var *intNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *intNE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
 {
-	if(args[1]->is<VarInt>()) {
-		return mpz_cmp(as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc()) != 0
-		       ? vm.getTrue()
-		       : vm.getFalse();
-	}
-	return vm.getTrue();
+	if(!args[1]->is<VarInt>()) return vm.getTrue();
+	return as<VarInt>(args[0])->get() == as<VarInt>(args[1])->get() ? vm.getFalse()
+									: vm.getTrue();
 }
 
 Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -103,30 +122,23 @@ Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
-		if(mpz_get_ui(as<VarInt>(args[1])->getSrc()) == 0) {
+		if(as<VarInt>(args[1])->get() == 0) {
 			vm.fail(loc, "division by zero");
 			return nullptr;
 		}
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_div(res->get(), res->getSrc(), as<VarInt>(args[1])->getSrc());
-		return res;
+		return vm.makeVar<VarInt>(loc,
+					  as<VarInt>(args[0])->get() / as<VarInt>(args[1])->get());
 	} else if(args[1]->is<VarFlt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
 		// rhs == 0
-		if(mpz_get_ui(tmp) == 0) {
+		if(as<VarFlt>(args[1])->get() == 0.0) {
 			vm.fail(loc, "division by zero");
-			mpz_clear(tmp);
 			return nullptr;
 		}
-		mpz_div(res->get(), res->getSrc(), tmp);
-		mpz_clear(tmp);
-		return res;
+		return vm.makeVar<VarInt>(loc,
+					  as<VarInt>(args[0])->get() / as<VarInt>(args[1])->get());
 	}
-	vm.fail(loc, "expected int or float argument for int " STRINGIFY(name) ", found: ",
-		vm.getTypeName(args[1]));
+	vm.fail(loc,
+		"expected int or float argument for int Div, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 
@@ -135,148 +147,54 @@ Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
-		if(mpz_get_ui(as<VarInt>(args[1])->getSrc()) == 0) {
+		if(as<VarInt>(args[1])->get() == 0) {
 			vm.fail(loc, "division by zero");
 			return nullptr;
 		}
-		mpz_div(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			as<VarInt>(args[1])->getSrc());
+		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() / as<VarInt>(args[1])->get());
 		return args[0];
 	} else if(args[1]->is<VarFlt>()) {
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
 		// rhs == 0
-		if(mpz_get_ui(tmp) == 0) {
+		if(as<VarFlt>(args[1])->get() == 0.0) {
 			vm.fail(loc, "division by zero");
-			mpz_clear(tmp);
 			return nullptr;
 		}
-		mpz_div(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), tmp);
-		mpz_clear(tmp);
+		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() / as<VarFlt>(args[1])->get());
 		return args[0];
 	}
-	vm.fail(loc, "expected int or float argument for int " STRINGIFY(name) "-assn, found: ",
-		vm.getTypeName(args[1]));
-	return nullptr;
-}
-
-Var *intBAnd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_and(res->get(), as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc());
-		return res;
-	}
-	vm.fail(loc, "expected int argument for int bitwise and, found: ", vm.getTypeName(args[1]));
-	return nullptr;
-}
-
-Var *intBOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_ior(res->get(), as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc());
-		return res;
-	}
-	vm.fail(loc, "expected int argument for int bitwise or, found: ", vm.getTypeName(args[1]));
-	return nullptr;
-}
-
-Var *intBXOr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_xor(res->get(), as<VarInt>(args[0])->getSrc(), as<VarInt>(args[1])->getSrc());
-		return res;
-	}
-	vm.fail(loc, "expected int argument for int bitwise xor, found: ", vm.getTypeName(args[1]));
+	vm.fail(
+	loc, "expected int or float argument for int Div-assn, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 
 Var *intBNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<String, AssnArgData> &assn_args)
 {
-	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-	mpz_com(res->get(), as<VarInt>(args[0])->getSrc());
-	return res;
-}
-
-Var *intBAndAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		mpz_and(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			as<VarInt>(args[1])->getSrc());
-		return args[0];
-	}
-	vm.fail(loc,
-		"expected int argument for int "
-		"bitwise and-assn, found: ",
-		vm.getTypeName(args[1]));
-	return nullptr;
-}
-
-Var *intBOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		mpz_ior(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			as<VarInt>(args[1])->getSrc());
-		return args[0];
-	}
-	vm.fail(loc,
-		"expected int argument for int bitwise or-assn, found: ", vm.getTypeName(args[1]));
-	return nullptr;
-}
-
-Var *intBXOrAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
-{
-	if(args[1]->is<VarInt>()) {
-		mpz_xor(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			as<VarInt>(args[1])->getSrc());
-		return args[0];
-	}
-	vm.fail(loc, "expected int argument for int bitwise xor, found: ", vm.getTypeName(args[1]));
-	return nullptr;
+	return vm.makeVar<VarInt>(loc, ~as<VarInt>(args[0])->get());
 }
 
 Var *intBNotAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		 const Map<String, AssnArgData> &assn_args)
 {
-	mpz_com(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc());
+	as<VarInt>(args[0])->set(~as<VarInt>(args[0])->get());
 	return args[0];
 }
 
 Var *intPopCnt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, mpz_popcount(as<VarInt>(args[0])->getSrc()));
+	return vm.makeVar<VarInt>(loc, std::popcount((uint64_t)as<VarInt>(args[0])->get()));
 }
 
 Var *intLShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_mul_2exp(res->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(as<VarInt>(args[1])->getSrc()));
-		return res;
-	} else if(args[1]->is<VarFlt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_mul_2exp(res->get(), as<VarInt>(args[0])->getSrc(), mpz_get_si(tmp));
-		mpz_clear(tmp);
-		return res;
+		return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get()
+					       << as<VarInt>(args[1])->get());
 	}
 	vm.fail(loc,
-		"expected int or float argument "
+		"expected int argument "
 		"for int leftshift, found: ",
 		vm.getTypeName(args[1]));
 	return nullptr;
@@ -286,21 +204,11 @@ Var *intRShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_div_2exp(res->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(as<VarInt>(args[1])->getSrc()));
-		return res;
-	} else if(args[1]->is<VarFlt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_div_2exp(res->get(), as<VarInt>(args[0])->getSrc(), mpz_get_si(tmp));
-		mpz_clear(tmp);
-		return res;
+		return vm.makeVar<VarInt>(loc,
+					  as<VarInt>(args[0])->get() >> as<VarInt>(args[1])->get());
 	}
 	vm.fail(loc,
-		"expected int or float argument "
+		"expected int argument "
 		"for int rightshift, found: ",
 		vm.getTypeName(args[1]));
 	return nullptr;
@@ -310,20 +218,11 @@ Var *intLShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
-		mpz_mul_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(as<VarInt>(args[1])->getSrc()));
-		return args[0];
-	} else if(args[1]->is<VarFlt>()) {
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_mul_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(tmp));
-		mpz_clear(tmp);
+		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() << as<VarInt>(args[1])->get());
 		return args[0];
 	}
-	vm.fail(loc, "expected int or float argument for int leftshift-assign, found: ",
-		vm.getTypeName(args[1]));
+	vm.fail(loc,
+		"expected int argument for int leftshift-assign, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 
@@ -331,99 +230,71 @@ Var *intRShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		   const Map<String, AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
-		mpz_div_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(as<VarInt>(args[1])->getSrc()));
-		return args[0];
-	} else if(args[1]->is<VarFlt>()) {
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_div_2exp(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(),
-			     mpz_get_si(tmp));
-		mpz_clear(tmp);
+		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() >> as<VarInt>(args[1])->get());
 		return args[0];
 	}
-	vm.fail(loc, "expected int or float argument for int rightshift-assign, found: ",
-		vm.getTypeName(args[1]));
+	vm.fail(
+	loc, "expected int argument for int rightshift-assign, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 
 Var *intPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<String, AssnArgData> &assn_args)
 {
-	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_pow_ui(res->get(), res->getSrc(), mpz_get_ui(as<VarInt>(args[1])->getSrc()));
-		return res;
-	} else if(args[1]->is<VarFlt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_pow_ui(res->get(), res->getSrc(), mpz_get_ui(tmp));
-		mpz_clear(tmp);
-		return res;
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc,
+			"expected int argument for int power, found: ", vm.getTypeName(args[1]));
+		return nullptr;
 	}
-	vm.fail(loc,
-		"expected int or float argument for int power, found: ", vm.getTypeName(args[1]));
-	return nullptr;
+	int64_t base = as<VarInt>(args[0])->get();
+	int64_t exp  = as<VarInt>(args[1])->get();
+	int64_t res  = 1;
+	if(exp < 0) {
+		vm.fail(loc, "int power only works with positive exponents, found: ", exp);
+		return nullptr;
+	}
+	while(exp-- > 0) res *= base;
+	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *intRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+Var *intSqRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
 {
-	if(args[1]->is<VarInt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_root(res->get(), res->getSrc(), mpz_get_ui(as<VarInt>(args[1])->getSrc()));
-		return res;
-	} else if(args[1]->is<VarFlt>()) {
-		VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-		mpz_t tmp;
-		mpz_init(tmp);
-		mpfr_get_z(tmp, as<VarFlt>(args[1])->getSrc(), mpfr_get_default_rounding_mode());
-		mpz_root(res->get(), res->getSrc(), mpz_get_ui(tmp));
-		mpz_clear(tmp);
-		return res;
-	}
-	vm.fail(loc,
-		"expected int or float argument for int root, found: ", vm.getTypeName(args[1]));
-	return nullptr;
+	return vm.makeVar<VarInt>(loc, std::sqrt(as<VarInt>(args[0])->get()));
 }
 
 Var *intPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-	mpz_add_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
+	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() + 1);
 	return args[0];
 }
 
 Var *intPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<String, AssnArgData> &assn_args)
 {
-	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-	mpz_add_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
+	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get());
+	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() + 1);
 	return res;
 }
 
 Var *intPreDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-	mpz_sub_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
+	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() - 1);
 	return args[0];
 }
 
 Var *intPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<String, AssnArgData> &assn_args)
 {
-	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-	mpz_sub_ui(as<VarInt>(args[0])->get(), as<VarInt>(args[0])->getSrc(), 1);
+	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get());
+	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() - 1);
 	return res;
 }
 
 Var *intUSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<String, AssnArgData> &assn_args)
 {
-	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getSrc());
-	mpz_neg(res->get(), res->getSrc());
-	return res;
+	return vm.makeVar<VarInt>(loc, -as<VarInt>(args[0])->get());
 }

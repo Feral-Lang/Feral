@@ -1,7 +1,6 @@
 #include <sys/errno.h> // errno
 #include <sys/stat.h>  // stat()
 
-#include "FS.hpp"
 #include "std/StructType.hpp"
 #include "VM/Interpreter.hpp"
 
@@ -51,19 +50,19 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	mpz_set_si(as<VarInt>(st->getAttr("dev"))->get(), _stat.st_dev);
-	mpz_set_si(as<VarInt>(st->getAttr("ino"))->get(), _stat.st_ino);
-	mpz_set_si(as<VarInt>(st->getAttr("mode"))->get(), _stat.st_mode);
-	mpz_set_si(as<VarInt>(st->getAttr("nlink"))->get(), _stat.st_nlink);
-	mpz_set_si(as<VarInt>(st->getAttr("uid"))->get(), _stat.st_uid);
-	mpz_set_si(as<VarInt>(st->getAttr("gid"))->get(), _stat.st_gid);
-	mpz_set_si(as<VarInt>(st->getAttr("rdev"))->get(), _stat.st_rdev);
-	mpz_set_si(as<VarInt>(st->getAttr("size"))->get(), _stat.st_size);
-	mpz_set_si(as<VarInt>(st->getAttr("atime"))->get(), _stat.st_atime);
-	mpz_set_si(as<VarInt>(st->getAttr("mtime"))->get(), _stat.st_mtime);
-	mpz_set_si(as<VarInt>(st->getAttr("ctime"))->get(), _stat.st_ctime);
-	mpz_set_si(as<VarInt>(st->getAttr("blksize"))->get(), _stat.st_blksize);
-	mpz_set_si(as<VarInt>(st->getAttr("blocks"))->get(), _stat.st_blocks);
+	as<VarInt>(st->getAttr("dev"))->set(_stat.st_dev);
+	as<VarInt>(st->getAttr("ino"))->set(_stat.st_ino);
+	as<VarInt>(st->getAttr("mode"))->set(_stat.st_mode);
+	as<VarInt>(st->getAttr("nlink"))->set(_stat.st_nlink);
+	as<VarInt>(st->getAttr("uid"))->set(_stat.st_uid);
+	as<VarInt>(st->getAttr("gid"))->set(_stat.st_gid);
+	as<VarInt>(st->getAttr("rdev"))->set(_stat.st_rdev);
+	as<VarInt>(st->getAttr("size"))->set(_stat.st_size);
+	as<VarInt>(st->getAttr("atime"))->set(_stat.st_atime);
+	as<VarInt>(st->getAttr("mtime"))->set(_stat.st_mtime);
+	as<VarInt>(st->getAttr("ctime"))->set(_stat.st_ctime);
+	as<VarInt>(st->getAttr("blksize"))->set(_stat.st_blksize);
+	as<VarInt>(st->getAttr("blocks"))->set(_stat.st_blocks);
 
 	return vm.getNil();
 }
@@ -72,7 +71,7 @@ Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISREG(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -80,7 +79,7 @@ Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISDIR(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -88,7 +87,7 @@ Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISCHR(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -96,7 +95,7 @@ Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISBLK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -104,7 +103,7 @@ Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISFIFO(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -112,7 +111,7 @@ Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISLNK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -120,7 +119,7 @@ Var *statIsSock(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const Map<String, AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
-	int mode      = mpz_get_si(as<VarInt>(st->getAttr("mode"))->getSrc());
+	int mode      = as<VarInt>(st->getAttr("mode"))->get();
 	return S_ISSOCK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
