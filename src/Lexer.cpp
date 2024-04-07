@@ -32,6 +32,7 @@ const char *TokStrs[_LAST] = {
 "or",
 "const",
 "defer",
+"inline",
 
 // Operators
 "=",
@@ -418,6 +419,7 @@ TokType Tokenizer::classifyStr(StringRef str)
 	if(str == TokStrs[OR]) return OR;
 	if(str == TokStrs[CONST]) return CONST;
 	if(str == TokStrs[DEFER]) return DEFER;
+	if(str == TokStrs[INLINE]) return INLINE;
 
 	// if string begins with dot, it's an atom (str), otherwise an identifier
 	return str[0] == '.' ? STR : IDEN;

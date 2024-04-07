@@ -304,8 +304,9 @@ StmtCond *StmtCond::create(Context &c, const ModuleLoc *loc, const Vector<Condit
 
 void StmtCond::disp(bool has_next)
 {
+	bool is_inline = conds.size() > 0 && conds[0].getBlk() && conds[0].getBlk()->isTop();
 	tio::taba(has_next);
-	tio::print(has_next, {"Conditional\n"});
+	tio::print(has_next, {"Conditional [is_inline: ", is_inline ? "true" : "false", "\n"});
 	for(size_t i = 0; i < conds.size(); ++i) {
 		tio::taba(i != conds.size() - 1);
 		tio::print(i != conds.size() - 1, {"Branch:\n"});

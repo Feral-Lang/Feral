@@ -35,6 +35,7 @@ enum TokType
 	OR,
 	CONST,
 	DEFER,
+	INLINE,
 
 	// Operators
 	ASSN,
