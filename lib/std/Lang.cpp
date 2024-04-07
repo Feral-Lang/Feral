@@ -1,9 +1,9 @@
 #include "std/StructType.hpp"
 #include "VM/Interpreter.hpp"
 
-static uiptr genStructEnumID()
+static size_t genStructEnumID()
 {
-	static uiptr id = 0;
+	static size_t id = 0;
 	return id++;
 }
 

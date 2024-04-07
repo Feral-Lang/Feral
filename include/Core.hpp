@@ -5,6 +5,7 @@
 #include <cstring>
 #include <deque>
 #include <forward_list>
+#include <fstream>
 #include <future>
 #include <initializer_list>
 #include <iostream>
@@ -19,23 +20,60 @@
 #include <variant>
 #include <vector>
 
-namespace fer
-{
-
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#define OS_WINDOWS
+#if defined(_WIN64)
+#define OS_WINDOWS64
+#endif
+#elif defined(__linux__)
+#define OS_LINUX
+#elif defined(__ANDROID__)
+#define OS_ANDROID
+#elif defined(__FreeBSD__)
+#define OS_BSD
+#define OS_FREEBSD
+#elif defined(__NetBSD__)
+#define OS_BSD
+#define OS_NETBSD
+#elif defined(__OpenBSD__)
+#define OS_BSD
+#define OS_OPENBSD
+#elif defined(__bsdi__)
+#define OS_BSD
+#define OS_BSDI
+#elif defined(__DragonFly__)
+#define OS_BSD
+#define OS_DRAGONFLYBSD
+#elif defined(__APPLE__)
+#define OS_APPLE
+#endif
+
+#if defined(OS_WINDOWS)
+#if defined(OS_WINDOWS64)
+using ssize_t = int64_t;
+#else
+using ssize_t = int;
+#endif
+#endif
+
+namespace fer
+{
+
 // the primitives have lower case name
 using u8	= unsigned char;
-using uiptr	= std::uintptr_t;
 using Mutex	= std::mutex;
 using Regex	= std::regex;
 using String	= std::string;
 using Thread	= std::thread;
 using IStream	= std::istream;
-using Nullptr	= std::nullptr_t;
 using OStream	= std::ostream;
+using FStream	= std::fstream;
+using Nullptr	= std::nullptr_t;
 using IOStream	= std::iostream;
+using IFStream	= std::ifstream;
 using StringRef = std::string_view;
 
 struct StringHash

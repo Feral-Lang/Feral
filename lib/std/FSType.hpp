@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FS.hpp"
 #include "VM/Interpreter.hpp"
 
 using namespace fer;

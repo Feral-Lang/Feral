@@ -159,11 +159,11 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 
 bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
 {
-	String mod	 = modfile.substr(modfile.find_last_of('/') + 1);
-	StringRef moddir = fs::parentDir(modfile);
+	String mod = modfile.substr(modfile.find_last_of('/') + 1);
 	modfile.insert(modfile.find_last_of('/') + 1, "libferal");
 	if(!findModule(modfile)) {
-		fail(loc, "module: ", modfile, " not found in locs: ", vecToStr(dlllocs));
+		fail(loc, "module: ", modfile, getNativeModuleExtension(),
+		     " not found in locs: ", vecToStr(dlllocs));
 		return false;
 	}
 
@@ -209,7 +209,7 @@ void Interpreter::addNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn,
 	for(size_t i = 0; i < args; ++i) f->pushParam("");
 	addGlobal(name, f, false);
 }
-void Interpreter::addTypeFn(uiptr _typeid, StringRef name, Var *fn, bool iref)
+void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
@@ -241,7 +241,7 @@ Var *Interpreter::getTypeFn(Var *var, StringRef name)
 	return typefns[typeID<VarAll>()]->get(name);
 }
 
-StringRef Interpreter::getTypeName(uiptr _typeid)
+StringRef Interpreter::getTypeName(size_t _typeid)
 {
 	auto loc = typenames.find(_typeid);
 	if(loc == typenames.end()) {

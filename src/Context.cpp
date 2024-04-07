@@ -10,22 +10,22 @@ namespace fer
 Context::Context() {}
 Context::~Context()
 {
-#ifdef MEM_COUNT
+#if defined(MEM_COUNT)
 	size_t loccount = 0, stmtcount = 0;
 #endif
 
-#ifdef MEM_COUNT
+#if defined(MEM_COUNT)
 	for(auto &loc : modlocmem) ++loccount;
 #endif
 
 	for(auto &s : stmtmem) {
-#ifdef MEM_COUNT
+#if defined(MEM_COUNT)
 		++stmtcount;
 #endif
 		delete s;
 	}
 
-#ifdef MEM_COUNT
+#if defined(MEM_COUNT)
 	printf("Total deallocation:\nModLocs: %zu\nStmts: %zu\n", loccount, stmtcount);
 #endif
 }

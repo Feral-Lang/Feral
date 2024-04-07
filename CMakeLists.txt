@@ -12,12 +12,24 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 endif()
 
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
-	set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
+	if(WIN32)
+		file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}/Programs/Feral" TMP_PREFIX)
+		set(ENV{PREFIX_DIR} ${TMP_PREFIX})
+	else()
+		set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
+	endif()
 endif()
 set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
 set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
+
+# disable deprecated warnings on Windows
+if(WIN32)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		add_compile_options("-Wno-deprecated-declarations")
+	endif()
+endif()
 
 # add external path
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external")
@@ -26,7 +38,8 @@ set(SOURCE_VERSION_MAJOR 0)
 set(SOURCE_VERSION_MINOR 0)
 set(SOURCE_VERSION_PATCH 1)
 
-execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
+
 execute_process(COMMAND git config --get remote.origin.url OUTPUT_VARIABLE REPO_URL OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND git log --format=%H -n 1 OUTPUT_VARIABLE COMMIT_ID OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND git diff --quiet RESULT_VARIABLE ret)
@@ -132,38 +145,40 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/"
 	PATTERN "lib/Core" EXCLUDE
 )
 
-# Feral Compiler Library
+# Feral Library
 file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
-add_library(feral SHARED ${SRCS})
-target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feral)
-set_target_properties(feral
+add_library(libferal SHARED ${SRCS} ${INCS})
+target_include_directories(libferal PRIVATE ${PROJECT_SOURCE_DIR}/include)
+set_target_properties(libferal
     PROPERTIES
-    PREFIX "lib"
     LINK_FLAGS "${EXTRA_LD_FLAGS}"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/$<0:>" # for so (non-windows)
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for dll (windows)
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for lib (windows)
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-install(TARGETS feral
+install(TARGETS libferal
 	LIBRARY
-	  DESTINATION lib/feral/
-	  COMPONENT Libraries
+	  DESTINATION "lib/feral/$<0:>"
+	RUNTIME
+	  DESTINATION "bin/$<0:>"
+	ARCHIVE
+	  DESTINATION "bin/$<0:>"
 )
 
-# Feral Compiler
-add_executable(feral-compiler "${PROJECT_SOURCE_DIR}/src/Main.cpp" ${SRCS} ${INCS})
-target_include_directories(feral-compiler PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(feral-compiler feral)
-set_target_properties(feral-compiler
+# Feral Binary
+add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp")
+target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(feral libferal)
+set_target_properties(feral
 	PROPERTIES
-	OUTPUT_NAME feral
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-install(TARGETS feral-compiler
+install(TARGETS feral
 	RUNTIME
 	  DESTINATION bin
 	  COMPONENT Binaries
@@ -175,9 +190,6 @@ foreach(mod ${mods})
 	string(SUBSTRING ${mod} 4 -1 m)
 	get_filename_component(modname ${m} NAME_WE)
 	get_filename_component(moddir ${m} DIRECTORY)
-	if(NOT "${moddir}" STREQUAL "")
-		string(APPEND moddir "/")
-	endif()
 	# add dependencies
 	set(dep "")
 	if("${modname}" STREQUAL "Bytebuffer")
@@ -212,18 +224,24 @@ foreach(mod ${mods})
 	endif()
 	add_library(${modname} SHARED "${mod}")
 	target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
-	target_link_libraries(${modname} feral ${dep})
+	target_link_libraries(${modname} libferal ${dep})
 	set_target_properties(${modname}
 	    PROPERTIES
 	    PREFIX "libferal"
+	    ARCHIVE_OUTPUT_NAME "libferal${modname}"
 	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}"
+	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for so (non-windows)
+	    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
+	    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
 	    INSTALL_RPATH_USE_LINK_PATH TRUE
 	)
 	install(TARGETS ${modname}
 		LIBRARY
-		  DESTINATION lib/feral/${moddir}
-		  COMPONENT Libraries
+		  DESTINATION "lib/feral/${moddir}$<0:>"
+		ARCHIVE
+		  DESTINATION "lib/feral/${moddir}$<0:>"
+		RUNTIME
+		  DESTINATION "lib/feral/${moddir}$<0:>"
 	)
 endforeach()
 

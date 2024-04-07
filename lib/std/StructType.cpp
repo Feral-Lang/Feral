@@ -6,8 +6,8 @@
 //////////////////////////////////////// VarStructDef ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount, uiptr id)
-	: Var(loc, typeID<VarStructDef>(), true, true), attrorder(attrscount, ""), id(id)
+VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id)
+	: Var(loc, true, true), attrorder(attrscount, ""), id(id)
 {
 	attrs.reserve(attrscount);
 }
@@ -123,8 +123,8 @@ Var *VarStructDef::getAttr(StringRef name)
 /////////////////////////////////////////// VarStruct ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, uiptr id)
-	: Var(loc, typeID<VarStruct>(), false, true), base(base), id(id)
+VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, size_t id)
+	: Var(loc, false, true), base(base), id(id)
 {
 	if(base) incref(base);
 	attrs.reserve(attrscount);
@@ -138,7 +138,7 @@ VarStruct::~VarStruct()
 	if(base) decref(base);
 }
 
-uiptr VarStruct::getTypeFnID() { return id; }
+size_t VarStruct::getTypeFnID() { return id; }
 
 Var *VarStruct::copy(const ModuleLoc *loc)
 {

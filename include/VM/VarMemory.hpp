@@ -25,7 +25,6 @@ class VarMemory
 {
 	Map<size_t, List<u8 *>> freechunks;
 	Vector<MemPool> pools;
-	List<uiptr> manualallocs; // to keep track of > MAX_ROUNDUP memory and free when needed
 
 	// works upto MAX_ROUNDUP
 	size_t mult8Roundup(size_t sz);

@@ -28,6 +28,10 @@ String toRawString(StringRef data)
 {
 	String res(data);
 	for(size_t i = 0; i < res.size(); ++i) {
+		if(res[i] == '\\') {
+			res.insert(i++, "\\");
+			continue;
+		}
 		if(res[i] == '\0') {
 			res.erase(res.begin() + i);
 			res.insert(i++, "\\0");
@@ -43,11 +47,13 @@ String toRawString(StringRef data)
 			res.insert(i++, "\\b");
 			continue;
 		}
+#if !defined(OS_WINDOWS)
 		if(res[i] == '\e') {
 			res.erase(res.begin() + i);
 			res.insert(i++, "\\e");
 			continue;
 		}
+#endif
 		if(res[i] == '\f') {
 			res.erase(res.begin() + i);
 			res.insert(i++, "\\f");
@@ -87,7 +93,9 @@ String fromRawString(StringRef from)
 		if(data[idx] == '0') data[idx] = '\0';
 		else if(data[idx] == 'a') data[idx] = '\a';
 		else if(data[idx] == 'b') data[idx] = '\b';
+#if !defined(OS_WINDOWS)
 		else if(data[idx] == 'e') data[idx] = '\e';
+#endif
 		else if(data[idx] == 'f') data[idx] = '\f';
 		else if(data[idx] == 'n') data[idx] = '\n';
 		else if(data[idx] == 'r') data[idx] = '\r';

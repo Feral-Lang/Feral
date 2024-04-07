@@ -3,7 +3,7 @@
 #include "std/StructType.hpp"
 
 VarMapIterator::VarMapIterator(const ModuleLoc *loc, VarMap *map)
-	: Var(loc, typeID<VarMapIterator>(), false, false), map(map), curr(map->get().begin())
+	: Var(loc, false, false), map(map), curr(map->get().begin())
 {
 	incref(map);
 }

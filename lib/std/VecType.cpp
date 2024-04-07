@@ -1,7 +1,7 @@
 #include "std/VecType.hpp"
 
 VarVecIterator::VarVecIterator(const ModuleLoc *loc, VarVec *vec)
-	: Var(loc, typeID<VarVecIterator>(), false, false), vec(vec), curr(0)
+	: Var(loc, false, false), vec(vec), curr(0)
 {
 	incref(vec);
 }

@@ -1,14 +1,18 @@
-#include "FS.hpp"
-
-#include <dirent.h>
 #include <fcntl.h>
+#include <filesystem>
 #include <regex>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #include "std/BytebufferType.hpp"
 #include "std/FSType.hpp"
 #include "VM/Interpreter.hpp"
+
+#if defined(OS_WINDOWS)
+#include <io.h>
+#else
+#include <dirent.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 enum WalkEntry
 {
@@ -418,16 +422,20 @@ INIT_MODULE(FS)
 	mod->addNativeVar("O_RDWR", vm.makeVar<VarInt>(loc, O_RDWR));
 	mod->addNativeVar("O_APPEND", vm.makeVar<VarInt>(loc, O_APPEND));
 	mod->addNativeVar("O_CREAT", vm.makeVar<VarInt>(loc, O_CREAT));
-#if __linux__ || __APPLE__
+#if defined(OS_LINUX) || defined(OS_APPLE)
 	mod->addNativeVar("O_DSYNC", vm.makeVar<VarInt>(loc, O_DSYNC));
 #endif
 	mod->addNativeVar("O_EXCL", vm.makeVar<VarInt>(loc, O_EXCL));
+#if !defined(OS_WINDOWS)
 	mod->addNativeVar("O_NOCTTY", vm.makeVar<VarInt>(loc, O_NOCTTY));
 	mod->addNativeVar("O_NONBLOCK", vm.makeVar<VarInt>(loc, O_NONBLOCK));
-#ifdef __linux__
+#endif
+#if defined(OS_LINUX)
 	mod->addNativeVar("O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
 #endif
+#if !defined(OS_WINDOWS)
 	mod->addNativeVar("O_SYNC", vm.makeVar<VarInt>(loc, O_SYNC));
+#endif
 	mod->addNativeVar("O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));
 	return true;
 }
@@ -435,24 +443,20 @@ INIT_MODULE(FS)
 void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dirstr, VarVec *v,
 			Regex regex, size_t flags)
 {
-	DIR *dir;
-	struct dirent *ent;
-	if((dir = opendir(dirstr.c_str())) == NULL) return;
-
-	char entry[MAX_PATH_CHARS];
-
-	while((ent = readdir(dir)) != NULL) {
-		if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) continue;
-		strcpy(entry, dirstr.c_str());
-		strcat(entry, ent->d_name);
-		if((!(flags & WalkEntry::RECURSE) || ent->d_type != DT_DIR) &&
+	namespace fs = std::filesystem;
+	String entry;
+	for(const auto &ent : fs::directory_iterator(dirstr)) {
+		if(ent.path() == "." || ent.path() == "..") continue;
+		entry.clear();
+		entry += ent.path().generic_string();
+		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
 		   !std::regex_match(entry, regex))
 		{
 			continue;
 		}
-		if(ent->d_type == DT_DIR) {
+		if(ent.is_directory()) {
 			if(flags & WalkEntry::RECURSE) {
-				getEntriesInternal(vm, loc, String(entry) + "/", v, regex, flags);
+				getEntriesInternal(vm, loc, entry + "/", v, regex, flags);
 			} else if(flags & WalkEntry::DIRS) {
 				v->push(vm.makeVarWithRef<VarStr>(loc, entry));
 			}
@@ -462,5 +466,4 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dir
 			v->push(vm.makeVarWithRef<VarStr>(loc, entry));
 		}
 	}
-	closedir(dir);
 }

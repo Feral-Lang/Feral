@@ -2,14 +2,21 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits.h>
-#include <sys/errno.h> // errno
-#include <sys/wait.h>
 #include <thread>
-#include <unistd.h>
 
 #include "Env.hpp"
 #include "FS.hpp"
 #include "VM/Interpreter.hpp"
+
+#if defined(OS_WINDOWS)
+// Windows doesn't have peopen/pclose, but it does have an underscore version!
+#define popen _popen
+#define pclose _pclose
+#else
+#include <sys/errno.h> // errno
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 using namespace fer;
 
@@ -108,7 +115,9 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(csline) free(csline);
 	int res = pclose(pipe);
 
+#if !defined(OS_WINDOWS)
 	res = WEXITSTATUS(res);
+#endif
 	return vm.makeVar<VarInt>(loc, res);
 }
 
@@ -123,8 +132,9 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	const String &cmd = as<VarStr>(args[1])->get();
 
 	int res = std::system(cmd.c_str());
-	res	= WEXITSTATUS(res);
-
+#if !defined(OS_WINDOWS)
+	res = WEXITSTATUS(res);
+#endif
 	return vm.makeVar<VarInt>(loc, res);
 }
 
@@ -147,9 +157,11 @@ Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 	if(execInternal("mkdir -p " + dest) != 0) return vm.makeVar<VarInt>(loc, -1);
 
-#if __linux__ || __ANDROID__
+#if defined(OS_WINDOWS)
+	String cmd_str = "cp -Recurse ";
+#elif defined(OS_LINUX) || defined(OS_ANDROID)
 	String cmd_str = "cp -r --remove-destination ";
-#elif __APPLE__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
+#else
 	String cmd_str = "cp -rf ";
 #endif
 	cmd_str += src;
@@ -161,13 +173,15 @@ Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-#if __ANDROID__
+#if defined(OS_WINDOWS)
+	return vm.makeVar<VarStr>(loc, "windows");
+#elif defined(OS_ANDROID)
 	return vm.makeVar<VarStr>(loc, "android");
-#elif __linux__
+#elif defined(OS_LINUX)
 	return vm.makeVar<VarStr>(loc, "linux");
-#elif __APPLE__
+#elif defined(OS_APPLE)
 	return vm.makeVar<VarStr>(loc, "macos");
-#elif __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
+#elif defined(OS_BSD)
 	return vm.makeVar<VarStr>(loc, "bsd");
 #else
 	return vm.makeVar<VarStr>(loc, "unknown");
@@ -367,10 +381,16 @@ int execInternal(const String &cmd)
 	size_t len = 0;
 	ssize_t nread;
 
-	while((nread = getline(&line, &len, pipe)) != -1);
+	while((nread = getline(&line, &len, pipe)) != -1)
+		;
 	free(line);
 	int res = pclose(pipe);
+
+#if defined(OS_WINDOWS)
+	return res;
+#else
 	return WEXITSTATUS(res);
+#endif
 }
 
 String dirPart(const String &full_loc)

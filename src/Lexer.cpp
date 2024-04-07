@@ -305,23 +305,29 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 		    PREV != '_' && PREV != ')' && PREV != ']' && PREV != '\'' && PREV != '"') ||
 		   isalpha(CURR) || CURR == '_')
 		{
+			String tmpstr; // used for __SRC_PATH__ and __SRC_DIR__
 			StringRef str = getName(data, i);
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
 			size_t strsz	  = str.size();
 			if(!str.empty() && str[0] == '.') str = str.substr(1);
 			if(str == "__SRC_PATH__") {
-				str	  = mod->getPath();
+				// toRawString() because in codegen, all strings are passed through
+				// fromRawString()
+				tmpstr	  = toRawString(mod->getPath());
+				str	  = tmpstr;
 				str_class = STR;
 			} else if(str == "__SRC_DIR__") {
-				str	  = mod->getDir();
+				tmpstr	  = toRawString(mod->getDir());
+				str	  = tmpstr;
 				str_class = STR;
 			}
-			if(str_class == STR || str_class == IDEN)
-			{ // place either the data itself (type = STR, IDEN)
+			if(str_class == STR || str_class == IDEN) {
+				// place either the data itself (type = STR, IDEN)
 				toks.emplace_back(locAlloc(line, i - line_start - strsz), str_class,
 						  str);
-			} else { // or the type
+			} else {
+				// or the type
 				toks.emplace_back(locAlloc(line, i - line_start - strsz),
 						  str_class);
 			}

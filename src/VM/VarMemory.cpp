@@ -11,7 +11,7 @@ namespace fer
 // arenas and allocate memory from that (therefore increasing speed, compared to a global mutex).
 static Mutex memmtx;
 
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE)
 static size_t tot_alloc	       = 0;
 static size_t tot_alloc_nopool = 0;
 static size_t tot_alloc_req    = 0;
@@ -32,7 +32,7 @@ VarMemory::~VarMemory()
 	}
 	freechunks.clear();
 	for(auto &p : pools) delete[] p.mem;
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE)
 	fprintf(stdout,
 		"Total allocated: %zu bytes, without mempool: %zu, requests: %zu, manually "
 		"allocated: %zu bytes\n",
@@ -55,7 +55,7 @@ size_t VarMemory::mult8Roundup(size_t sz)
 void VarMemory::allocPool()
 {
 	u8 *alloc = new u8[POOL_SIZE];
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE)
 	tot_alloc += POOL_SIZE;
 #endif
 	pools.push_back({alloc, alloc});
@@ -71,16 +71,16 @@ void *VarMemory::alloc(size_t sz)
 {
 	if(sz == 0) return nullptr;
 
-#ifdef MEM_PROFILE
+#if defined(MEM_PROFILE)
 	tot_alloc_nopool += sz;
 	++tot_alloc_req;
 #endif
 	sz = mult8Roundup(sz);
 	if(sz > POOL_SIZE) {
 #if defined(MEM_PROFILE)
-	#if defined(DEBUG_MODE)
+#if defined(DEBUG_MODE)
 		fprintf(stdout, "Allocating manually ... %zu\n", sz);
-	#endif
+#endif
 		tot_manual_alloc += sz;
 #endif
 		return new u8[sz];

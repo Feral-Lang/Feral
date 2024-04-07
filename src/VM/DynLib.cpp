@@ -1,9 +1,33 @@
 #include "VM/DynLib.hpp"
 
-#include <dlfcn.h>
-
 #include "Error.hpp"
 #include "FS.hpp"
+
+#if defined(OS_WINDOWS)
+// Windows dlfcn equivalent functions.
+// Thanks to this person's youth:
+// https://stackoverflow.com/questions/53530566/loading-dll-in-windows-c-for-cross-platform-design
+#include <Windows.h>
+
+#define RTLD_GLOBAL 0x100 /* do not hide entries in this module */
+#define RTLD_LOCAL 0x000  /* hide entries in this module */
+
+#define RTLD_LAZY 0x000	  /* accept unresolved externs */
+#define RTLD_NOW 0x001	  /* abort if module has unresolved externs */
+
+static struct
+{
+	long lasterror;
+	const char *err_rutin;
+} var = {0, NULL};
+
+void *dlopen(const char *filename, int flags);
+int dlclose(void *handle);
+void *dlsym(void *handle, const char *name);
+const char *dlerror();
+#else
+#include <dlfcn.h>
+#endif
 
 namespace fer
 {
@@ -27,7 +51,7 @@ void *DynLib::load(const char *filepath)
 	auto handle = handles.find(filepath);
 	if(handle != handles.end()) return handle->second;
 
-	// RTLD_GLOBAL is required for allowing unique type_id<>() across shared library
+	// RTLD_GLOBAL is required for allowing unique typeId<>() across shared library
 	// boundaries; see the following
 	// https://cpptruths.blogspot.com/2018/11/non-colliding-efficient.html (section:
 	// Dynamically Loaded Libraries) https://linux.die.net/man/3/dlopen (section:
@@ -38,9 +62,9 @@ void *DynLib::load(const char *filepath)
 	void *hndl = dlopen(filepath, RTLD_NOW | RTLD_GLOBAL);
 	if(hndl == nullptr) {
 		err::out(nullptr, "dyn lib failed to open ", filepath, ": ", dlerror());
-		return nullptr;
+	} else {
+		handles.insert({filepath, hndl});
 	}
-	handles.insert({filepath, hndl});
 	return hndl;
 }
 void DynLib::unload(StringRef filepath)
@@ -58,3 +82,54 @@ void *DynLib::get(StringRef filepath, const char *sym)
 }
 
 } // namespace fer
+
+// Windows dlfcn equivalent function definitions
+#if defined(OS_WINDOWS)
+void *dlopen(const char *filename, int flags)
+{
+	// We need to set current working directory to the module's directory because
+	// Windows can't find the dependent modules (assuming one is in the same directory)
+	// otherwise.
+	using namespace fer;
+	String prevdir = fs::getCWD();
+	fs::setCWD(String(fs::parentDir(filename)).c_str());
+	HINSTANCE hInst = LoadLibraryA(filename);
+	if(hInst == NULL) {
+		var.lasterror = GetLastError();
+		var.err_rutin = "dlopen";
+	}
+	fs::setCWD(prevdir.c_str());
+	return hInst;
+}
+
+int dlclose(void *handle)
+{
+	int rc = 0;
+	if(!FreeLibrary((HINSTANCE)handle)) {
+		var.lasterror = GetLastError();
+		var.err_rutin = "dlclose";
+		rc	      = -1;
+	}
+	return rc;
+}
+
+void *dlsym(void *handle, const char *name)
+{
+	FARPROC fp = GetProcAddress((HINSTANCE)handle, name);
+	if(!fp) {
+		var.lasterror = GetLastError();
+		var.err_rutin = "dlsym";
+	}
+	return (void *)(uintptr_t)fp;
+}
+
+const char *dlerror(void)
+{
+	static char errstr[88];
+	if(var.lasterror) {
+		sprintf(errstr, "%s error #%ld", var.err_rutin, var.lasterror);
+		return errstr;
+	}
+	return NULL;
+}
+#endif
