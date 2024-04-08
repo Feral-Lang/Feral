@@ -51,12 +51,16 @@ int main(int argc, char **argv)
 		file += ".fer";
 	}
 
-	if(!fs::exists(file.c_str())) {
+	if(!fs::exists(file)) {
 		String binfile(fs::parentDir(env::getProcPath()));
+#if defined(OS_WINDOWS)
+		binfile += "\\";
+#else
 		binfile += "/";
+#endif
 		binfile += file;
 		binfile += ".fer";
-		if(!fs::exists(binfile.c_str())) {
+		if(!fs::exists(binfile)) {
 			err::out(nullptr, "File ", file, " does not exist");
 			return 1;
 		}

@@ -10,7 +10,7 @@ let findLib = import('./CMakeGen/findLib');
 let sharedLib = import('./CMakeGen/sharedLib');
 let binary = import('./CMakeGen/binary');
 
-let defaultInstallRPaths = sys.installPrefix + '/lib/feral/std;' + sys.installPrefix  + '/lib/feral';
+let defaultInstallRPaths = fs.pathFrom(sys.installPrefix, 'lib', 'feral', 'std') + ';' + fs.pathFrom(sys.installPrefix, 'lib', 'feral');
 
 let Core = lang.struct(
 	version = '3.24.3',
@@ -22,7 +22,7 @@ let Core = lang.struct(
 	installs = vec.new(refs = true),
 	sharedLibs = vec.new(refs = true),
 	binaries = vec.new(refs = true),
-	rpathFromOrigin = '../../'
+	rpathFromOrigin = fs.pathFrom('..', '..', '') # empty at end so that a separator is appended
 );
 
 let new = fn(projectName) {
@@ -51,7 +51,7 @@ let gen in Core = fn(ret = false) {
 	let data = cmakeBase.template.fmt();
 	if ret { return data; }
 	{ # this is inside a block as file must be closed before it is used
-		let file = fs.fopen(os.getCWD() + '/CMakeLists.txt', 'w+');
+		let file = fs.fopen(path.from(os.getCWD(), 'CMakeLists.txt'), 'w+');
 		io.fprintln(file, data);
 	}
 	let buildtype = '';
@@ -62,10 +62,11 @@ let gen in Core = fn(ret = false) {
 	}
 	let cwd = os.getCWD();
 	let changed = false;
-	if !fs.exists('build/CMakeCache.txt') {
+	let cmakecache = fs.pathFrom('build', 'CMakeCache.txt');
+	if !fs.exists(cmakecache) {
 		os.mkdir('build');
 		changed = true;
-	} elif os.exec('grep CMAKE_BUILD_TYPE build/CMakeCache.txt | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
+	} elif os.exec('grep CMAKE_BUILD_TYPE ' + cmakecache + ' | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
 		os.rm('build');
 		os.mkdir('build');
 		changed = true;

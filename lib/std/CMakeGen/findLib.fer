@@ -1,6 +1,7 @@
-let vec = import('std/vec');
+let fs = import('std/fs');
 let str = import('std/str');
 let sys = import('std/sys');
+let vec = import('std/vec');
 let lang = import('std/lang');
 
 let findLibBase =
@@ -68,14 +69,14 @@ let gen in FindLib = fn() {
 	let includeDirs = '';
 	let prefixPath = ' PATHS ';
 	for prefix in self.extPrefixes.each() {
-		includeDirs += prefix + '/include ';
-		prefixPath += prefix + '/lib ';
+		includeDirs += fs.pathFrom(prefix, 'include ');
+		prefixPath += fs.pathFrom(prefix, 'lib ');
 	}
 	if !self.extPrefixes.empty() {
 		includeDirs.pop();
 	}
 	if self.feralLib {
-		prefixPath += sys.installPrefix + '/lib/feral ';
+		prefixPath += fs.pathFrom(sys.installPrefix, 'lib', 'feral ');
 		self.libName = 'feral' + self.libName;
 	}
 	if prefixPath == ' PATHS ' {

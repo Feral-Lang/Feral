@@ -1,8 +1,6 @@
 #include "FS.hpp"
 
-#include <cstdlib>
-#include <string>
-#include <vector>
+#include <filesystem>
 
 #include "Env.hpp"
 
@@ -20,14 +18,11 @@ namespace fs
 
 int total_lines = 0;
 
-bool exists(const char *loc)
+StringRef parentDir(StringRef path)
 {
-#if defined(OS_WINDOWS)
-	return GetFileAttributes(loc) != INVALID_FILE_ATTRIBUTES &&
-	       GetLastError() != ERROR_FILE_NOT_FOUND;
-#else
-	return access(loc, F_OK) != -1;
-#endif
+	auto loc = path.find_last_of("/\\");
+	if(loc == String::npos) return "";
+	return path.substr(0, loc);
 }
 
 bool read(const char *file, String &data)
@@ -89,6 +84,29 @@ String home()
 {
 	static String _home = env::get("HOME");
 	return _home;
+}
+
+bool exists(StringRef loc) { return std::filesystem::exists(loc); }
+
+int copy(StringRef src, StringRef dest, std::error_code &ec)
+{
+	std::filesystem::copy(src, dest, ec);
+	return ec.value();
+}
+int mkdir(StringRef dir, std::error_code &ec)
+{
+	std::filesystem::create_directories(dir, ec);
+	return ec.value();
+}
+int rename(StringRef from, StringRef to, std::error_code &ec)
+{
+	std::filesystem::rename(from, to, ec);
+	return ec.value();
+}
+int remove(StringRef path, std::error_code &ec)
+{
+	std::filesystem::remove_all(path, ec);
+	return ec.value();
 }
 
 } // namespace fs

@@ -12,8 +12,8 @@ if sys.args.len() < 1 {
 }
 
 let fileloc = os.getEnv('NOTES_DIR');
-if fileloc.empty() { fileloc = os.getEnv('HOME') + '/.notes.txt'; }
-else { os.mkdir(fileloc); fileloc += '/notes.txt'; }
+if fileloc.empty() { fileloc = fs.pathFrom(os.getEnv('HOME'), '.notes.txt'); }
+else { os.mkdir(fileloc); fs.pathAppend(fileloc, 'notes.txt'); }
 
 let file = fs.fopen(fileloc, 'a+');
 file.seek(0, fs.SEEK_SET);

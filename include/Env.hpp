@@ -11,7 +11,7 @@ String get(const char *key);
 String getProcPath();
 String getExeFromPath(const char *exe);
 
-int set(const char *key, const char *val, bool overwrite);
+bool set(const char *key, const char *val, bool overwrite);
 
 } // namespace env
 } // namespace fer

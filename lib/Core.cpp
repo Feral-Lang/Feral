@@ -111,7 +111,7 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	String file = as<VarStr>(args[1])->get();
 	if(!vm.findImport(file)) {
-		vm.fail(args[1]->getLoc(), "import: ", file,
+		vm.fail(args[1]->getLoc(), "import: ", file, vm.getFeralImportExtension(),
 			" not found in locs: ", vecToStr(vm.getImportDirs()));
 		return nullptr;
 	}

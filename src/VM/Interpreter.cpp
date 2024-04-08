@@ -123,7 +123,9 @@ void Interpreter::popModule()
 bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 {
 	static char testpath[MAX_PATH_CHARS];
-	if(name.front() != '~' && name.front() != '/' && name.front() != '.') {
+	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
+	   (name.size() < 2 || name[1] != ':'))
+	{
 		for(auto loc : dirs) {
 			strncpy(testpath, loc.data(), loc.size());
 			testpath[loc.size()] = '\0';

@@ -953,6 +953,14 @@ bool Parser::parseFnDef(ParseHelper &p, Stmt *&fndef)
 	if(!parseFnSig(p, sig)) return false;
 	if(!parseBlock(p, blk)) return false;
 
+	// append a return statement if the block doesn't already contain one at the end
+	if(blk) {
+		auto &stmts = blk->getStmts();
+		if(!stmts.empty() && !stmts.back()->isReturn()) {
+			stmts.emplace_back(StmtRet::create(ctx, blk->getLoc(), nullptr));
+		}
+	}
+
 	fndef = StmtFnDef::create(ctx, start.getLoc(), (StmtFnSig *)sig, blk);
 	return true;
 }

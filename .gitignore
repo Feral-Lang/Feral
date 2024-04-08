@@ -5,6 +5,10 @@
 compile_commands.json
 *.swp
 
+# Windows trash #
+##########################
+$null
+
 # TeX intermediate files #
 ##########################
 *.out

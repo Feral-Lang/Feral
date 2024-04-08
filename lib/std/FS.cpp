@@ -35,7 +35,7 @@ Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return fs::exists(as<VarStr>(args[1])->get().c_str()) ? vm.getTrue() : vm.getFalse();
+	return fs::exists(as<VarStr>(args[1])->get()) ? vm.getTrue() : vm.getFalse();
 }
 
 Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -91,7 +91,6 @@ Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	const String &regexstr = as<VarStr>(args[3])->get();
 	Regex regex(regexstr);
 
-	if(dirstr.size() > 0 && dirstr.back() != '/') dirstr += "/";
 	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
 	getEntriesInternal(vm, loc, dirstr, res, regex, flags);
 	return res;
@@ -448,7 +447,7 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dir
 	for(const auto &ent : fs::directory_iterator(dirstr)) {
 		if(ent.path() == "." || ent.path() == "..") continue;
 		entry.clear();
-		entry += ent.path().generic_string();
+		entry += ent.path().string();
 		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
 		   !std::regex_match(entry, regex))
 		{
@@ -456,7 +455,7 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dir
 		}
 		if(ent.is_directory()) {
 			if(flags & WalkEntry::RECURSE) {
-				getEntriesInternal(vm, loc, entry + "/", v, regex, flags);
+				getEntriesInternal(vm, loc, entry, v, regex, flags);
 			} else if(flags & WalkEntry::DIRS) {
 				v->push(vm.makeVarWithRef<VarStr>(loc, entry));
 			}

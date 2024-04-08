@@ -3,8 +3,8 @@
 
 static size_t genStructEnumID()
 {
-	static size_t id = 0;
-	return id++;
+	static size_t id = -1;
+	return id--;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	}
 	VarStructDef *def  = as<VarStructDef>(args[0]);
 	const String &name = as<VarStr>(args[1])->get();
-	vm.setTypeName(def->getTypeFnID(), name);
+	vm.setTypeName(def->getID(), name);
 	return vm.getNil();
 }
 

@@ -1,11 +1,13 @@
 mload('std/Str');
 
+let os = import('std/os');
+
 let substr in StrTy = fn(begin = 0, len = -1) {
 	if len == -1 { len = self.len(); }
 	return self.substrNative(begin, len);
 };
 
-let split in StrTy = fn(delim = ':') {
+let split in StrTy = fn(delim = ' ') {
 	return self.splitNative(delim);
 };
 

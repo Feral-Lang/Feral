@@ -8,9 +8,14 @@
 #include "Utils.hpp"
 #include "Vars.hpp"
 
+#if defined(OS_WINDOWS)
+// Windows' max recurse count seems to be ~200. So 100 should do.
+static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
+#else
 static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 400;
-static const char *MODULE_EXTENSION		  = ".fer";
-static const char *MODULE_EXTENSION_NO_DOT	  = "fer";
+#endif
+static const char *MODULE_EXTENSION	   = ".fer";
+static const char *MODULE_EXTENSION_NO_DOT = "fer";
 
 namespace fer
 {

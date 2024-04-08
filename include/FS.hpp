@@ -26,16 +26,19 @@ extern int total_lines;
 inline void setTotalLines(int lines) { total_lines = lines; }
 inline int getTotalLines() { return total_lines; }
 
-inline StringRef parentDir(StringRef path) { return path.substr(0, path.find_last_of("/\\")); }
+StringRef parentDir(StringRef path);
 
-bool exists(const char *loc);
+bool exists(StringRef loc);
 bool read(const char *file, String &data);
 String absPath(const char *loc);
 bool setCWD(const char *path);
 String getCWD();
 String home();
 
-inline int rename(const char *from, const char *to) { return std::rename(from, to); }
+int copy(StringRef src, StringRef dest, std::error_code &ec);
+int mkdir(StringRef dir, std::error_code &ec);
+int rename(StringRef from, StringRef to, std::error_code &ec);
+int remove(StringRef path, std::error_code &ec);
 
 } // namespace fs
 } // namespace fer

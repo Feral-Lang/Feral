@@ -3,6 +3,22 @@ mload('std/Stat');
 let os = import('std/os');
 let lang = import('std/lang');
 
+# Windows does not have blksize and blocks field in the stat struct.
+inline if os.name == 'windows' {
+let Stat = lang.struct(
+	dev = 0,
+	ino = 0,
+	mode = 0,
+	nlink = 0,
+	uid = 0,
+	gid = 0,
+	rdev = 0,
+	size = 0,
+	atime = 0,
+	mtime = 0,
+	ctime = 0
+);
+} else {
 let Stat = lang.struct(
 	dev = 0,
 	ino = 0,
@@ -18,16 +34,20 @@ let Stat = lang.struct(
 	blksize = 0,
 	blocks = 0
 );
+}
 
 Stat.setTypeName('Stat');
 
 let isReg  in Stat = fn() { return isRegNative(self);  };
 let isDir  in Stat = fn() { return isDirNative(self);  };
 let isChr  in Stat = fn() { return isChrNative(self);  };
+
+inline if os.name != 'windows' {
 let isBlk  in Stat = fn() { return isBlkNative(self);  };
 let isFifo in Stat = fn() { return isFifoNative(self); };
 let isLnk  in Stat = fn() { return isLnkNative(self);  };
 let isSock in Stat = fn() { return isSockNative(self); };
+}
 
 let stat = fn(of) {
 	let st = Stat();

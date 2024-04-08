@@ -21,17 +21,17 @@ namespace fer
 namespace env
 {
 
-int set(const char *key, const char *val, bool overwrite)
+bool set(const char *key, const char *val, bool overwrite)
 {
 #if defined(OS_WINDOWS)
 	if(!overwrite) {
 		size_t envsize = 0;
 		int errcode    = getenv_s(&envsize, NULL, 0, key);
-		if(errcode || envsize) return errcode;
+		if(!errcode && envsize) return false;
 	}
-	return _putenv_s(key, val);
+	return _putenv_s(key, val) == 0;
 #else
-	return setenv(key, val, overwrite);
+	return setenv(key, val, overwrite) == 0;
 #endif
 }
 
@@ -41,7 +41,7 @@ String get(const char *key)
 	static char envdata[MAX_ENV_CHARS];
 	size_t envsize = 0;
 	int errcode    = getenv_s(&envsize, envdata, MAX_ENV_CHARS, key);
-	return errcode || envsize ? "" : envdata;
+	return errcode || !envsize ? "" : envdata;
 #else
 	const char *env = getenv(key);
 	return env ? env : "";
@@ -87,7 +87,7 @@ String getExeFromPath(const char *exe)
 		pathstr = p;
 		pathstr += "/";
 		pathstr += exe;
-		if(fs::exists(pathstr.c_str())) return pathstr;
+		if(fs::exists(pathstr)) return pathstr;
 	}
 	return "";
 }
