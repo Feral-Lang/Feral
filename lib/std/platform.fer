@@ -1,0 +1,25 @@
+# Contains helper functions for a platform.
+# For example, finding the installation location of Visual Studio
+
+let fs = import('std/fs');
+let os = import('std/os');
+
+inline if os.name == 'windows' {
+
+let vsWhereCmd = '"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe" -latest -property installationPath';
+
+let getVSInstallPath = fn() {
+	let out = '';
+	os.exec(vsWhereCmd, out);
+	return out;
+};
+
+let getMSBuildPath = fn() {
+	let vs = getVSInstallPath();
+	if vs.empty() { return ''; }
+	let msbuild = fs.pathFrom(vs, 'MSBuild', 'Current', 'Bin', 'msbuild.exe');
+	if !fs.exists(msbuild) { return ''; }
+	return msbuild;
+};
+
+}

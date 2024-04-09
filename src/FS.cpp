@@ -80,9 +80,14 @@ String getCWD()
 	return "";
 }
 
-String home()
+StringRef home()
 {
+	// StringRef works because String _home is static.
+#if defined(OS_WINDOWS)
+	static String _home = env::get("USERPROFILE");
+#else
 	static String _home = env::get("HOME");
+#endif
 	return _home;
 }
 

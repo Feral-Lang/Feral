@@ -140,7 +140,7 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 	} else {
 		if(name.front() == '~') {
 			name.erase(name.begin());
-			static String home = env::get("HOME");
+			static StringRef home = fs::home();
 			name.insert(name.begin(), home.begin(), home.end());
 		} else if(name.front() == '.') {
 			assert(modulestack.size() > 0 &&

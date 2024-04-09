@@ -33,7 +33,7 @@ bool read(const char *file, String &data);
 String absPath(const char *loc);
 bool setCWD(const char *path);
 String getCWD();
-String home();
+StringRef home();
 
 int copy(StringRef src, StringRef dest, std::error_code &ec);
 int mkdir(StringRef dir, std::error_code &ec);

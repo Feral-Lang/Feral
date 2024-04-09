@@ -91,8 +91,6 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &cmd = as<VarStr>(args[1])->get();
-	VarVec *out	  = nullptr;
-	if(args[2]->is<VarVec>()) out = as<VarVec>(args[2]);
 
 	FILE *pipe = popen(cmd.c_str(), "r");
 	if(!pipe) return vm.makeVar<VarInt>(loc, 1);
@@ -100,15 +98,21 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t len   = 0;
 	ssize_t nread;
 
-	if(!out) {
+	if(args[2]->is<VarNil>()) {
 		while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
-	} else {
-		Vector<Var *> &resvec = out->get();
+	} else if(args[2]->is<VarVec>()) {
+		Vector<Var *> &resvec = as<VarVec>(args[2])->get();
 		String line;
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			line = csline;
 			while(line.back() == '\n' || line.back() == '\r') line.pop_back();
 			resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
+		}
+	} else if(args[2]->is<VarStr>()) {
+		String &resstr = as<VarStr>(args[2])->get();
+		while((nread = getline(&csline, &len, pipe)) != -1) {
+			resstr += csline;
+			while(resstr.back() == '\n' || resstr.back() == '\r') resstr.pop_back();
 		}
 	}
 	if(csline) free(csline);
