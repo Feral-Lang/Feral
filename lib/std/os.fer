@@ -6,6 +6,14 @@ let setEnv = fn(var, val, overwrite = false) {
 	return setEnvNative(var, val, overwrite);
 };
 
+let getEnvHome = fn() {
+	let var = 'HOME';
+	if name == 'windows' {
+		var = 'USERPROFILE';
+	}
+	return getEnv(var);
+};
+
 # OS name, current possible values:
 # windows
 # android
