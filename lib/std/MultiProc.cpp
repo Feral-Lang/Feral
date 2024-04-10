@@ -1,7 +1,7 @@
 #include "FS.hpp"
 #include "std/MultiProcType.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
@@ -95,7 +95,7 @@ int execCommand(const String &cmd)
 		LockGuard<Mutex> lock(pipe_mtx);
 		res = pclose(pipe);
 	}
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	return res;
 #else
 	return WEXITSTATUS(res);

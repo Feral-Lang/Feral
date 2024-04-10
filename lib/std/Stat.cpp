@@ -3,7 +3,7 @@
 #include "std/StructType.hpp"
 #include "VM/Interpreter.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <errno.h> // errno
 
 // Define S_IS*() macros since they're not present on Windows
@@ -35,7 +35,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	static const Array<StringRef, 11> reqdkeys = {
 #else
 	static const Array<StringRef, 13> reqdkeys = {
@@ -51,7 +51,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		"atime",
 		"mtime",
 		"ctime",
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 		"blksize",
 		"blocks"
 #endif
@@ -97,7 +97,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	as<VarInt>(st->getAttr("atime"))->set(_stat.st_atime);
 	as<VarInt>(st->getAttr("mtime"))->set(_stat.st_mtime);
 	as<VarInt>(st->getAttr("ctime"))->set(_stat.st_ctime);
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	as<VarInt>(st->getAttr("blksize"))->set(_stat.st_blksize);
 	as<VarInt>(st->getAttr("blocks"))->set(_stat.st_blocks);
 #endif
@@ -129,7 +129,7 @@ Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISCHR(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
@@ -171,7 +171,7 @@ INIT_MODULE(Stat)
 	mod->addNativeFn("isRegNative", statIsReg, 1);
 	mod->addNativeFn("isDirNative", statIsDir, 1);
 	mod->addNativeFn("isChrNative", statIsChr, 1);
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	mod->addNativeFn("isBlkNative", statIsBlk, 1);
 	mod->addNativeFn("isFifoNative", statIsFifo, 1);
 	mod->addNativeFn("isLnkNative", statIsLnk, 1);

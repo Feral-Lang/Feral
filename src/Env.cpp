@@ -5,11 +5,11 @@
 #include "FS.hpp"
 #include "Utils.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <Windows.h>
-#elif defined(OS_APPLE)
+#elif defined(FER_OS_APPLE)
 #include <mach-o/dyld.h> // for _NSGetExecutablePath()
-#elif defined(OS_FREEBSD)
+#elif defined(FER_OS_FREEBSD)
 #include <sys/sysctl.h>	 // for sysctl()
 #include <sys/types.h>
 #else
@@ -23,7 +23,7 @@ namespace env
 
 bool set(const char *key, const char *val, bool overwrite)
 {
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	if(!overwrite) {
 		size_t envsize = 0;
 		int errcode    = getenv_s(&envsize, NULL, 0, key);
@@ -37,7 +37,7 @@ bool set(const char *key, const char *val, bool overwrite)
 
 String get(const char *key)
 {
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	static char envdata[MAX_ENV_CHARS];
 	size_t envsize = 0;
 	int errcode    = getenv_s(&envsize, envdata, MAX_ENV_CHARS, key);
@@ -52,11 +52,11 @@ String getProcPath()
 {
 	char path[MAX_PATH_CHARS];
 	memset(path, 0, MAX_PATH_CHARS);
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	GetModuleFileNameA(NULL, path, MAX_PATH_CHARS);
-#elif defined(OS_LINUX) || defined(OS_ANDROID)
+#elif defined(FER_OS_LINUX) || defined(FER_OS_ANDROID)
 	(void)readlink("/proc/self/exe", path, MAX_PATH_CHARS);
-#elif defined(OS_FREEBSD)
+#elif defined(FER_OS_FREEBSD)
 	int mib[4];
 	mib[0]	  = CTL_KERN;
 	mib[1]	  = KERN_PROC;
@@ -64,11 +64,11 @@ String getProcPath()
 	mib[3]	  = -1;
 	size_t sz = MAX_PATH_CHARS;
 	sysctl(mib, 4, path, &sz, NULL, 0);
-#elif defined(OS_NETBSD)
+#elif defined(FER_OS_NETBSD)
 	readlink("/proc/curproc/exe", path, MAX_PATH_CHARS);
-#elif defined(OS_OPENBSD) || defined(OS_BSDI) || defined(OS_DRAGONFLYBSD)
+#elif defined(FER_OS_OPENBSD) || defined(FER_OS_BSDI) || defined(FER_OS_DRAGONFLYBSD)
 	readlink("/proc/curproc/file", path, MAX_PATH_CHARS);
-#elif defined(OS_APPLE)
+#elif defined(FER_OS_APPLE)
 	uint32_t sz = MAX_PATH_CHARS;
 	_NSGetExecutablePath(path, &sz);
 #endif

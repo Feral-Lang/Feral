@@ -4,9 +4,9 @@
 
 #define MAX_PATH_CHARS 4096
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #define MAX_ENV_CHARS MAX_PATH_CHARS
-// #define PATH_DELIM "\\"
+#define PATH_DELIM "\\"
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
@@ -14,7 +14,7 @@
 ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp);
 ssize_t getline(char **buf, size_t *bufsiz, FILE *fp);
 #else
-// #define PATH_DELIM "/"
+#define PATH_DELIM "/"
 #endif
 
 namespace fer

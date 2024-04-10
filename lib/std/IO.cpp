@@ -3,7 +3,7 @@
 #include "std/FSType.hpp"
 #include "VM/Interpreter.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <io.h>
 #else
 #include <termios.h>

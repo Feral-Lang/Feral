@@ -1,5 +1,10 @@
 #include "Utils.hpp"
 
+#if defined(FER_OS_WINDOWS)
+#include <AtlBase.h>
+#include <atlconv.h>
+#endif
+
 namespace fer
 {
 
@@ -47,7 +52,7 @@ String toRawString(StringRef data)
 			res.insert(i++, "\\b");
 			continue;
 		}
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 		if(res[i] == '\e') {
 			res.erase(res.begin() + i);
 			res.insert(i++, "\\e");
@@ -93,7 +98,7 @@ String fromRawString(StringRef from)
 		if(data[idx] == '0') data[idx] = '\0';
 		else if(data[idx] == 'a') data[idx] = '\a';
 		else if(data[idx] == 'b') data[idx] = '\b';
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 		else if(data[idx] == 'e') data[idx] = '\e';
 #endif
 		else if(data[idx] == 'f') data[idx] = '\f';
@@ -134,5 +139,16 @@ String vecToStr(Span<String> items)
 	res += "]";
 	return res;
 }
+
+#if defined(FER_OS_WINDOWS)
+// Windows' string to wstring functions
+WString toWString(StringRef data)
+{
+	size_t wstrLen = std::mbstowcs(nullptr, data.data(), data.size());
+	WString wstr(wstrLen, 0);
+	std::mbstowcs(wstr.data(), data.data(), data.size());
+	return wstr;
+}
+#endif
 
 } // namespace fer

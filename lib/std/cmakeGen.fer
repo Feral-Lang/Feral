@@ -51,7 +51,7 @@ let gen in Core = fn(ret = false) {
 	let data = cmakeBase.template.fmt();
 	if ret { return data; }
 	{ # this is inside a block as file must be closed before it is used
-		let file = fs.fopen(path.from(os.getCWD(), 'CMakeLists.txt'), 'w+');
+		let file = fs.fopen(fs.pathFrom(os.getCWD(), 'CMakeLists.txt'), 'w+');
 		io.fprintln(file, data);
 	}
 	let buildtype = '';

@@ -6,7 +6,7 @@
 #include "std/FSType.hpp"
 #include "VM/Interpreter.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <io.h>
 #else
 #include <dirent.h>
@@ -421,18 +421,18 @@ INIT_MODULE(FS)
 	mod->addNativeVar("O_RDWR", vm.makeVar<VarInt>(loc, O_RDWR));
 	mod->addNativeVar("O_APPEND", vm.makeVar<VarInt>(loc, O_APPEND));
 	mod->addNativeVar("O_CREAT", vm.makeVar<VarInt>(loc, O_CREAT));
-#if defined(OS_LINUX) || defined(OS_APPLE)
+#if defined(FER_OS_LINUX) || defined(FER_OS_APPLE)
 	mod->addNativeVar("O_DSYNC", vm.makeVar<VarInt>(loc, O_DSYNC));
 #endif
 	mod->addNativeVar("O_EXCL", vm.makeVar<VarInt>(loc, O_EXCL));
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	mod->addNativeVar("O_NOCTTY", vm.makeVar<VarInt>(loc, O_NOCTTY));
 	mod->addNativeVar("O_NONBLOCK", vm.makeVar<VarInt>(loc, O_NONBLOCK));
 #endif
-#if defined(OS_LINUX)
+#if defined(FER_OS_LINUX)
 	mod->addNativeVar("O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
 #endif
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	mod->addNativeVar("O_SYNC", vm.makeVar<VarInt>(loc, O_SYNC));
 #endif
 	mod->addNativeVar("O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));

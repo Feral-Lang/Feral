@@ -6,8 +6,18 @@
 #include "Utils.hpp"
 #include "VM/DynLib.hpp"
 
+#if defined(FER_OS_WINDOWS)
+#include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
+#endif
+
 namespace fer
 {
+
+#if defined(FER_OS_WINDOWS)
+static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
+bool addDLLDirectory(StringRef dir);
+void remDLLDirectories();
+#endif
 
 Interpreter::Interpreter(RAIIParser &parser)
 	: selfbin(env::getProcPath()), parser(parser), c(parser.getContext()),
@@ -16,6 +26,11 @@ Interpreter::Interpreter(RAIIParser &parser)
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
 {
+#if defined(FER_OS_WINDOWS)
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
+				 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
+				 LOAD_LIBRARY_SEARCH_USER_DIRS);
+#endif
 	initTypeNames();
 
 	// set core modules
@@ -33,14 +48,21 @@ Interpreter::Interpreter(RAIIParser &parser)
 		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
-	includelocs.push_back(selfbase + "/include/feral");
-	dlllocs.push_back(selfbase + "/lib/feral");
+	includelocs.push_back(selfbase + PATH_DELIM "include" PATH_DELIM "feral");
+	dlllocs.push_back(selfbase + PATH_DELIM "lib" PATH_DELIM "feral");
 
 	String feral_paths = env::get("FERAL_PATHS");
-	for(auto &path : stringDelim(feral_paths, ";")) {
-		includelocs.push_back(String(path) + "/include/feral");
-		dlllocs.push_back(String(path) + "/lib/feral");
+	for(auto &_path : stringDelim(feral_paths, ";")) {
+		String path(_path);
+		includelocs.push_back(path + PATH_DELIM "include" PATH_DELIM "feral");
+		dlllocs.push_back(path + PATH_DELIM "lib" PATH_DELIM "feral");
 	}
+
+#if defined(FER_OS_WINDOWS)
+	for(auto dllloc : dlllocs) {
+		addDLLDirectory(dllloc);
+	}
+#endif
 }
 
 // TODO:
@@ -57,6 +79,10 @@ Interpreter::~Interpreter()
 		deinitfn.second();
 	}
 	for(auto &mod : allmodules) decref(mod.second);
+
+#if defined(FER_OS_WINDOWS)
+	remDLLDirectories();
+#endif
 }
 
 int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_module)
@@ -176,6 +202,16 @@ bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
 		     " not found in locs: ", vecToStr(dlllocs));
 		return false;
 	}
+
+#if defined(FER_OS_WINDOWS)
+	// append the parent dir to dll search paths
+	StringRef parentdir = fs::parentDir(modfile);
+	if(!addDLLDirectory(parentdir)) {
+		fail(loc, "unable to add dir: ", parentdir,
+		     " as a DLL directory while loading module: ", modfile);
+		return false;
+	}
+#endif
 
 	DynLib &dlibs = DynLib::getInstance();
 	if(dlibs.exists(modfile)) return true;
@@ -365,5 +401,22 @@ void Interpreter::initTypeNames()
 	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarModule>()), false);
 	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarTypeID>()), false);
 }
+
+#if defined(FER_OS_WINDOWS)
+bool addDLLDirectory(StringRef dir)
+{
+	if(dllDirectories.find(dir) != dllDirectories.end()) return true;
+	DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(toWString(dir).c_str());
+	if(!dlldir) return false;
+	dllDirectories.insert({String(dir), dlldir});
+	return true;
+}
+void remDLLDirectories()
+{
+	for(auto dir : dllDirectories) {
+		RemoveDllDirectory(dir.second);
+	}
+}
+#endif
 
 } // namespace fer

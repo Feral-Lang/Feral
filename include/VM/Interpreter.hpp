@@ -8,7 +8,7 @@
 #include "Utils.hpp"
 #include "Vars.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 // Windows' max recurse count seems to be ~200. So 100 should do.
 static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
 #else
@@ -202,9 +202,9 @@ public:
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()
 	{
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 		return ".dll";
-#elif defined(OS_APPLE)
+#elif defined(FER_OS_APPLE)
 		return ".dylib";
 #else
 		return ".so";

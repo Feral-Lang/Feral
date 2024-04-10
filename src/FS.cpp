@@ -4,7 +4,7 @@
 
 #include "Env.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <direct.h>
 #include <Windows.h>
 #else
@@ -54,7 +54,7 @@ bool read(const char *file, String &data)
 String absPath(const char *loc)
 {
 	static char abs[MAX_PATH_CHARS];
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	_fullpath(abs, loc, MAX_PATH_CHARS);
 #else
 	realpath(loc, abs);
@@ -64,7 +64,7 @@ String absPath(const char *loc)
 
 bool setCWD(const char *path)
 {
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	return _chdir(path) != 0;
 #else
 	return chdir(path) != 0;
@@ -83,7 +83,7 @@ String getCWD()
 StringRef home()
 {
 	// StringRef works because String _home is static.
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	static String _home = env::get("USERPROFILE");
 #else
 	static String _home = env::get("HOME");
@@ -117,7 +117,7 @@ int remove(StringRef path, std::error_code &ec)
 } // namespace fs
 } // namespace fer
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 // getdelim and getline functions from NetBSD libnbcompat:
 // https://github.com/archiecobbs/libnbcompat
 

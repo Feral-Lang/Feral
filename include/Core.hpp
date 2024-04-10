@@ -24,35 +24,35 @@
 #define STRINGIFY(x) _STRINGIFY(x)
 
 #if defined(_WIN32) && defined(_MSC_VER)
-#define OS_WINDOWS
+#define FER_OS_WINDOWS
 #if defined(_WIN64)
-#define OS_WINDOWS64
+#define FER_OS_WINDOWS64
 #endif
 #elif defined(__linux__)
-#define OS_LINUX
+#define FER_OS_LINUX
 #elif defined(__ANDROID__)
-#define OS_ANDROID
+#define FER_OS_ANDROID
 #elif defined(__FreeBSD__)
-#define OS_BSD
-#define OS_FREEBSD
+#define FER_OS_BSD
+#define FER_OS_FREEBSD
 #elif defined(__NetBSD__)
-#define OS_BSD
-#define OS_NETBSD
+#define FER_OS_BSD
+#define FER_OS_NETBSD
 #elif defined(__OpenBSD__)
-#define OS_BSD
-#define OS_OPENBSD
+#define FER_OS_BSD
+#define FER_OS_OPENBSD
 #elif defined(__bsdi__)
-#define OS_BSD
-#define OS_BSDI
+#define FER_OS_BSD
+#define FER_OS_BSDI
 #elif defined(__DragonFly__)
-#define OS_BSD
-#define OS_DRAGONFLYBSD
+#define FER_OS_BSD
+#define FER_OS_DRAGONFLYBSD
 #elif defined(__APPLE__)
-#define OS_APPLE
+#define FER_OS_APPLE
 #endif
 
-#if defined(OS_WINDOWS)
-#if defined(OS_WINDOWS64)
+#if defined(FER_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS64)
 using ssize_t = int64_t;
 #else
 using ssize_t = int;
@@ -75,6 +75,11 @@ using Nullptr	= std::nullptr_t;
 using IOStream	= std::iostream;
 using IFStream	= std::ifstream;
 using StringRef = std::string_view;
+
+#if defined(FER_OS_WINDOWS)
+using WString	 = std::wstring;
+using WStringRef = std::wstring_view;
+#endif
 
 struct StringHash
 {

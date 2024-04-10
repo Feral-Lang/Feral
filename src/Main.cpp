@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
 	if(!fs::exists(file)) {
 		String binfile(fs::parentDir(env::getProcPath()));
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 		binfile += "\\";
 #else
 		binfile += "/";

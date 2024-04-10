@@ -8,7 +8,7 @@
 #include "FS.hpp"
 #include "VM/Interpreter.hpp"
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
@@ -20,7 +20,7 @@
 
 using namespace fer;
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 // only used for chmod
 int execInternal(const String &file);
 #endif
@@ -118,7 +118,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(csline) free(csline);
 	int res = pclose(pipe);
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	res = WEXITSTATUS(res);
 #endif
 	return vm.makeVar<VarInt>(loc, res);
@@ -135,7 +135,7 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	const String &cmd = as<VarStr>(args[1])->get();
 
 	int res = std::system(cmd.c_str());
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	res = WEXITSTATUS(res);
 #endif
 	return vm.makeVar<VarInt>(loc, res);
@@ -178,15 +178,15 @@ Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	return vm.makeVar<VarStr>(loc, "windows");
-#elif defined(OS_ANDROID)
+#elif defined(FER_OS_ANDROID)
 	return vm.makeVar<VarStr>(loc, "android");
-#elif defined(OS_LINUX)
+#elif defined(FER_OS_LINUX)
 	return vm.makeVar<VarStr>(loc, "linux");
-#elif defined(OS_APPLE)
+#elif defined(FER_OS_APPLE)
 	return vm.makeVar<VarStr>(loc, "macos");
-#elif defined(OS_BSD)
+#elif defined(FER_OS_BSD)
 	return vm.makeVar<VarStr>(loc, "bsd");
 #else
 	return vm.makeVar<VarStr>(loc, "unknown");
@@ -295,7 +295,7 @@ Var *osCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<String, AssnArgData> &assn_args)
 {
@@ -377,14 +377,14 @@ INIT_MODULE(OS)
 	mod->addNativeFn("cp", osCopy, 2, true);
 	mod->addNativeFn("mv", osMov, 2);
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 	mod->addNativeFn("chmodNative", osChmod, 3);
 #endif
 
 	return true;
 }
 
-#if !defined(OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 int execInternal(const String &cmd)
 {
 	FILE *pipe = popen(cmd.c_str(), "r");
@@ -398,7 +398,7 @@ int execInternal(const String &cmd)
 	free(line);
 	int res = pclose(pipe);
 
-#if defined(OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 	return res;
 #else
 	return WEXITSTATUS(res);
