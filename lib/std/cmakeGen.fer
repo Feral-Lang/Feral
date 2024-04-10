@@ -112,8 +112,8 @@ let addBin in Core = fn(name) {
 	return ref(bin);
 };
 
-let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return self; };
+let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return ref(self); };
 
-let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return self; };
+let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return ref(self); };
 
-let setPrefix in Core = fn(prefix) { self.prefix = prefix; return self; };
+let setPrefix in Core = fn(prefix) { self.prefix = prefix; return ref(self); };

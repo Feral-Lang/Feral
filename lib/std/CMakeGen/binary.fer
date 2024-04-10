@@ -34,14 +34,14 @@ let addSrcs in Binary = fn(srcs...) {
 		self.srcs += ' ';
 		self.srcs += src;
 	}
-	return self;
+	return ref(self);
 };
 
 let addDeps in Binary = fn(deps) {
 	for dep in deps.each() {
 		self.deps.push(dep);
 	}
-	return self;
+	return ref(self);
 };
 
 let gen in Binary = fn() {

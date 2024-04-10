@@ -35,16 +35,16 @@ let new = fn(libName) { return FindLib(libName = libName); };
 let makeReqd in FindLib = fn() {
 	self.required = ' REQUIRED';
 	self.template += findLibTest;
-	return self;
+	return ref(self);
 };
 
-let setVarName in FindLib = fn(varName) { self.varName = varName; return self; };
+let setVarName in FindLib = fn(varName) { self.varName = varName; return ref(self); };
 
 let addPathSuffixes in FindLib = fn(pathSuffixes...) {
 	for pathSuffix in pathSuffixes.each() {
 		self.pathSuffixes += pathSuffix;
 	}
-	return self;
+	return ref(self);
 };
 
 let getName in FindLib = fn() {
@@ -58,10 +58,10 @@ let addExtPrefixes in FindLib = fn(extPrefixes) {
 	for extPrefix in extPrefixes.each() {
 		self.extPrefixes.push(extPrefix);
 	}
-	return self;
+	return ref(self);
 };
 
-let makeFeralLib in FindLib = fn() { self.feralLib = true; return self; };
+let makeFeralLib in FindLib = fn() { self.feralLib = true; return ref(self); };
 
 let gen in FindLib = fn() {
 	if self.varName == '' { self.varName = self.libName; }

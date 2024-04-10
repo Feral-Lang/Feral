@@ -18,8 +18,8 @@ Install.setTypeName('Install');
 
 let new = fn(name, proj) { return Install(installName = name, projectName = proj); };
 
-let setSrcPath in Install = fn(path) { self.srcPath = path; return self; };
-let setPattern in Install = fn(pattern) { self.pattern = pattern; return self; };
+let setSrcPath in Install = fn(path) { self.srcPath = path; return ref(self); };
+let setPattern in Install = fn(pattern) { self.pattern = pattern; return ref(self); };
 
 let gen in Install = fn() {
 	return installBase.fmt();

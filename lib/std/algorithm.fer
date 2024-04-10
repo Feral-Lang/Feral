@@ -29,7 +29,7 @@ let dependsOn in DependenceTreeNode = fn(nodes...) {
 	for node in nodes.each() {
 		self.deps.push(node);
 	}
-	return self;
+	return ref(self);
 };
 
 # generates a list of frames, each frame's nodes can be 'executed' in parallel

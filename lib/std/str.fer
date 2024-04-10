@@ -7,8 +7,8 @@ let substr in StrTy = fn(begin = 0, len = -1) {
 	return self.substrNative(begin, len);
 };
 
-let split in StrTy = fn(delim = ' ') {
-	return self.splitNative(delim);
+let split in StrTy = fn(delim = ' ', maxDelimCount = -1) {
+	return self.splitNative(delim, maxDelimCount);
 };
 
 let isAlpha in StrTy = fn() {

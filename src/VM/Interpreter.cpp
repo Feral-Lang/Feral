@@ -142,12 +142,20 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 			name.erase(name.begin());
 			static StringRef home = fs::home();
 			name.insert(name.begin(), home.begin(), home.end());
-		} else if(name.front() == '.') {
+		} else if(name.front() == '.' && (name.size() == 1 || name[1] != '.')) {
 			assert(modulestack.size() > 0 &&
 			       "dot based module search cannot be done on empty modulestack");
 			StringRef dir = modulestack.back()->getMod()->getDir();
 			name.erase(name.begin());
 			name.insert(name.begin(), dir.begin(), dir.end());
+		} else if(name.size() > 1 && name[0] == '.' && name[1] == '.') {
+			assert(modulestack.size() > 0 &&
+			       "dot based module search cannot be done on empty modulestack");
+			StringRef dir = modulestack.back()->getMod()->getDir();
+			name.erase(name.begin());
+			name.erase(name.begin());
+			StringRef parentdir = fs::parentDir(dir);
+			name.insert(name.begin(), parentdir.begin(), parentdir.end());
 		}
 		strcpy(testpath, name.c_str());
 		if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
@@ -343,6 +351,19 @@ void Interpreter::initTypeNames()
 	registerType<VarFn>(nullptr, "Func");
 	registerType<VarModule>(nullptr, "Module");
 	registerType<VarTypeID>(nullptr, "TypeID");
+
+	globals.add("AllTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarAll>()), false);
+
+	globals.add("NilTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarNil>()), false);
+	globals.add("BoolTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarBool>()), false);
+	globals.add("IntTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarInt>()), false);
+	globals.add("FltTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFlt>()), false);
+	globals.add("StrTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarStr>()), false);
+	globals.add("VecTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarVec>()), false);
+	globals.add("MapTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarMap>()), false);
+	globals.add("FnTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFn>()), false);
+	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarModule>()), false);
+	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarTypeID>()), false);
 }
 
 } // namespace fer

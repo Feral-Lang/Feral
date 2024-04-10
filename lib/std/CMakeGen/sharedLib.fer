@@ -40,10 +40,10 @@ let addSrcs in SharedLib = fn(srcs...) {
 		self.otherSrcs += ' ';
 		self.otherSrcs += src;
 	}
-	return self;
+	return ref(self);
 };
 
-let addDep in SharedLib = fn(dep) { self.deps.push(dep); return self; };
+let addDep in SharedLib = fn(dep) { self.deps.push(dep); return ref(self); };
 
 let gen in SharedLib = fn() {
 	let depNames = ' ';
