@@ -35,6 +35,7 @@ public:
 	inline Span<String> getAttrOrder() { return attrorder; }
 	inline StringRef getAttrOrderAt(size_t idx) { return attrorder[idx]; }
 	inline size_t getID() { return id; }
+	inline size_t getAttrCount() { return attrs.size(); }
 };
 
 class VarStruct : public Var
@@ -59,4 +60,5 @@ public:
 
 	inline const StringMap<Var *> &getAttrs() { return attrs; }
 	inline VarStructDef *getBase() { return base; }
+	inline size_t getAttrCount() { return attrs.size(); }
 };

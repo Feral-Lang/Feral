@@ -127,6 +127,13 @@ Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> a
 	return res ? res : vm.getNil();
 }
 
+Var *structDefLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		  const Map<String, AssnArgData> &assn_args)
+{
+	VarStructDef *def = as<VarStructDef>(args[0]);
+	return vm.makeVar<VarInt>(loc, def->getAttrCount());
+}
+
 Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		     const Map<String, AssnArgData> &assn_args)
 {
@@ -164,6 +171,13 @@ Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 	return vm.getNil();
 }
 
+Var *structLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	VarStruct *st = as<VarStruct>(args[0]);
+	return vm.makeVar<VarInt>(loc, st->getAttrCount());
+}
+
 INIT_MODULE(Lang)
 {
 	VarModule *mod = vm.getCurrModule();
@@ -174,10 +188,12 @@ INIT_MODULE(Lang)
 	vm.addNativeTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName, 1);
 	vm.addNativeTypeFn<VarStructDef>(loc, "getFields", structDefGetFields, 0);
 	vm.addNativeTypeFn<VarStructDef>(loc, "[]", structDefGetFieldValue, 1);
+	vm.addNativeTypeFn<VarStructDef>(loc, "len", structDefLen, 0);
 
 	vm.addNativeTypeFn<VarStruct>(loc, "getFields", structGetFields, 0);
 	vm.addNativeTypeFn<VarStruct>(loc, "setField", structSetFieldValue, 2);
 	vm.addNativeTypeFn<VarStruct>(loc, "str", structToStr, 0);
+	vm.addNativeTypeFn<VarStruct>(loc, "len", structLen, 0);
 
 	return true;
 }
