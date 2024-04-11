@@ -2,19 +2,29 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits.h>
-#include <sys/errno.h> // errno
-#include <sys/wait.h>
 #include <thread>
-#include <unistd.h>
 
 #include "Env.hpp"
 #include "FS.hpp"
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+#if defined(FER_OS_WINDOWS)
+// Windows doesn't have peopen/pclose, but it does have an underscore version!
+#define popen _popen
+#define pclose _pclose
+#else
+#include <sys/errno.h> // errno
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
+namespace fer
+{
+
+#if !defined(FER_OS_WINDOWS)
+// only used for chmod
 int execInternal(const String &file);
-String dirPart(const String &full_loc);
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
@@ -42,8 +52,7 @@ Var *getEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &var = as<VarStr>(args[1])->get();
-	VarStr *res	  = vm.makeVar<VarStr>(loc, env::get(var.c_str()));
-	return res;
+	return vm.makeVar<VarStr>(loc, env::get(var.c_str()));
 }
 
 Var *setEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -83,8 +92,6 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &cmd = as<VarStr>(args[1])->get();
-	VarVec *out	  = nullptr;
-	if(args[2]->is<VarVec>()) out = as<VarVec>(args[2]);
 
 	FILE *pipe = popen(cmd.c_str(), "r");
 	if(!pipe) return vm.makeVar<VarInt>(loc, 1);
@@ -92,23 +99,29 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t len   = 0;
 	ssize_t nread;
 
-	if(!out) {
-		while((nread = getline(&csline, &len, pipe)) != -1) {
-			fprintf(stdout, "%s", csline);
-		}
-	} else {
-		Vector<Var *> &resvec = out->get();
+	if(args[2]->is<VarNil>()) {
+		while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
+	} else if(args[2]->is<VarVec>()) {
+		Vector<Var *> &resvec = as<VarVec>(args[2])->get();
 		String line;
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			line = csline;
 			while(line.back() == '\n' || line.back() == '\r') line.pop_back();
 			resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
 		}
+	} else if(args[2]->is<VarStr>()) {
+		String &resstr = as<VarStr>(args[2])->get();
+		while((nread = getline(&csline, &len, pipe)) != -1) {
+			resstr += csline;
+			while(resstr.back() == '\n' || resstr.back() == '\r') resstr.pop_back();
+		}
 	}
 	if(csline) free(csline);
 	int res = pclose(pipe);
 
+#if !defined(FER_OS_WINDOWS)
 	res = WEXITSTATUS(res);
+#endif
 	return vm.makeVar<VarInt>(loc, res);
 }
 
@@ -123,8 +136,9 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	const String &cmd = as<VarStr>(args[1])->get();
 
 	int res = std::system(cmd.c_str());
-	res	= WEXITSTATUS(res);
-
+#if !defined(FER_OS_WINDOWS)
+	res = WEXITSTATUS(res);
+#endif
 	return vm.makeVar<VarInt>(loc, res);
 }
 
@@ -145,29 +159,35 @@ Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	const String &dest = as<VarStr>(args[2])->get();
 	if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
 
-	if(execInternal("mkdir -p " + dest) != 0) return vm.makeVar<VarInt>(loc, -1);
+	StringRef parent = fs::parentDir(dest);
 
-#if __linux__ || __ANDROID__
-	String cmd_str = "cp -r --remove-destination ";
-#elif __APPLE__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
-	String cmd_str = "cp -rf ";
-#endif
-	cmd_str += src;
-	cmd_str += " ";
-	cmd_str += dest;
-	return vm.makeVar<VarInt>(loc, execInternal(cmd_str));
+	if(!parent.empty()) {
+		std::error_code ec;
+		if(fs::mkdir(parent, ec)) {
+			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
+	}
+	std::error_code ec;
+	if(fs::copy(src, dest, ec)) {
+		vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+		return nullptr;
+	}
+	return vm.getNil();
 }
 
 Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
-#if __ANDROID__
+#if defined(FER_OS_WINDOWS)
+	return vm.makeVar<VarStr>(loc, "windows");
+#elif defined(FER_OS_ANDROID)
 	return vm.makeVar<VarStr>(loc, "android");
-#elif __linux__
+#elif defined(FER_OS_LINUX)
 	return vm.makeVar<VarStr>(loc, "linux");
-#elif __APPLE__
+#elif defined(FER_OS_APPLE)
 	return vm.makeVar<VarStr>(loc, "macos");
-#elif __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
+#elif defined(FER_OS_BSD)
 	return vm.makeVar<VarStr>(loc, "bsd");
 #else
 	return vm.makeVar<VarStr>(loc, "unknown");
@@ -216,69 +236,67 @@ Var *osSetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *osMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<String, AssnArgData> &assn_args)
 {
-	String cmd = "mkdir -p";
-
-	bool anyarg = false;
 	for(size_t i = 1; i < args.size(); ++i) {
 		if(!args[i]->is<VarStr>()) {
 			vm.fail(loc, "expected string argument for directory creation, found: ",
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &tmpdest = as<VarStr>(args[i])->get();
-		if(tmpdest.empty()) continue;
-		anyarg = true;
-		cmd += " " + tmpdest;
+		const String &path = as<VarStr>(args[i])->get();
+		if(path.empty()) continue;
+		std::error_code ec;
+		if(fs::mkdir(path, ec)) {
+			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
 	}
-
-	if(!anyarg) return vm.makeVar<VarInt>(loc, 0);
-	return vm.makeVar<VarInt>(loc, execInternal(cmd));
+	return vm.getNil();
 }
 
 Var *osRem(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
 {
-	String cmd = "rm -r";
-
-	bool anyarg = false;
 	for(size_t i = 1; i < args.size(); ++i) {
 		if(!args[i]->is<VarStr>()) {
 			vm.fail(loc, "expected string argument for path to delete, found: ",
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &tmpdest = as<VarStr>(args[i])->get();
-		if(tmpdest.empty()) continue;
-		anyarg = true;
-		cmd += " " + tmpdest;
+		const String &path = as<VarStr>(args[i])->get();
+		if(path.empty()) continue;
+		std::error_code ec;
+		if(fs::remove(path, ec)) {
+			vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
 	}
-
-	if(!anyarg) return vm.makeVar<VarInt>(loc, 0);
-	return vm.makeVar<VarInt>(loc, execInternal(cmd));
+	return vm.getNil();
 }
 
 Var *osCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const Map<String, AssnArgData> &assn_args)
 {
-	String cmd = "cp -r";
-	// last element is the destination
-	bool anyarg = false;
-	for(size_t i = 1; i < args.size(); ++i) {
+	// args must have: nullptr, [src]+, dest
+	if(args.size() < 3) return vm.makeVar<VarInt>(loc, 0);
+	const String &dest = as<VarStr>(args[args.size() - 1])->get();
+	for(size_t i = 1; i < args.size() - 1; ++i) {
 		if(!args[i]->is<VarStr>()) {
 			vm.fail(loc, "expected string argument for copy argument, found: ",
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &tmpdest = as<VarStr>(args[i])->get();
-		if(tmpdest.empty()) continue;
-		anyarg = true;
-		cmd += " " + tmpdest;
+		const String &src = as<VarStr>(args[i])->get();
+		if(src.empty()) continue;
+		std::error_code ec;
+		if(fs::copy(src, dest, ec)) {
+			vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
 	}
-
-	if(!anyarg) return vm.makeVar<VarInt>(loc, 0);
-	return vm.makeVar<VarInt>(loc, execInternal(cmd));
+	return vm.getNil();
 }
 
+#if !defined(FER_OS_WINDOWS)
 Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const Map<String, AssnArgData> &assn_args)
 {
@@ -313,6 +331,7 @@ Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	cmd += dest;
 	return vm.makeVar<VarInt>(loc, execInternal(cmd));
 }
+#endif
 
 Var *osMov(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
@@ -325,9 +344,14 @@ Var *osMov(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const char *from = as<VarStr>(args[1])->get().c_str();
-	const char *to	 = as<VarStr>(args[2])->get().c_str();
-	return vm.makeVar<VarInt>(loc, fs::rename(from, to));
+	const String &from = as<VarStr>(args[1])->get().c_str();
+	const String &to   = as<VarStr>(args[2])->get().c_str();
+	std::error_code ec;
+	if(fs::rename(from, to, ec)) {
+		vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());
+		return nullptr;
+	}
+	return vm.getNil();
 }
 
 INIT_MODULE(OS)
@@ -354,11 +378,14 @@ INIT_MODULE(OS)
 	mod->addNativeFn("cp", osCopy, 2, true);
 	mod->addNativeFn("mv", osMov, 2);
 
+#if !defined(FER_OS_WINDOWS)
 	mod->addNativeFn("chmodNative", osChmod, 3);
+#endif
 
 	return true;
 }
 
+#if !defined(FER_OS_WINDOWS)
 int execInternal(const String &cmd)
 {
 	FILE *pipe = popen(cmd.c_str(), "r");
@@ -367,16 +394,17 @@ int execInternal(const String &cmd)
 	size_t len = 0;
 	ssize_t nread;
 
-	while((nread = getline(&line, &len, pipe)) != -1);
+	while((nread = getline(&line, &len, pipe)) != -1)
+		;
 	free(line);
 	int res = pclose(pipe);
-	return WEXITSTATUS(res);
-}
 
-String dirPart(const String &full_loc)
-{
-	auto loc = full_loc.find_last_of('/');
-	if(loc == String::npos) return ".";
-	if(loc == 0) return "/";
-	return full_loc.substr(0, loc);
+#if defined(FER_OS_WINDOWS)
+	return res;
+#else
+	return WEXITSTATUS(res);
+#endif
 }
+#endif
+
+} // namespace fer

@@ -9,46 +9,75 @@ target_include_directories($\\{mod} PRIVATE $\\{PROJECT_SOURCE_DIR}/include)
 target_link_libraries($\\{mod}{depnames})
 set_target_properties($\\{mod}
 	PROPERTIES
-	OUTPUT_NAME {self.binName}
 	LINK_FLAGS "$\\{EXTRA_LD_FLAGS}"
-	RUNTIME_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/bin"
+	RUNTIME_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/bin/$<0:>"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS $\\{mod}
+	RUNTIME_DEPENDENCY_SET RTDS_BIN_$\\{mod}
 	RUNTIME
 	  DESTINATION bin
 	  COMPONENT Binaries
+)
+{pkgDLLInstall}`;
+
+# for FindPkg dependencies
+let pkgDLLInstallBase =
+`install(RUNTIME_DEPENDENCY_SET RTDS_BIN_$\\{mod}
+	PRE_INCLUDE_REGEXES
+	  {pkgDLLRegexes}
+	PRE_EXCLUDE_REGEXES
+	 ".*"
+	LIBRARY
+	  DESTINATION bin
+	RUNTIME
+	  DESTINATION bin
 )`;
 
 let Binary = lang.struct(
+	projectName = '',
 	binName = 'sampleBin',
 	srcs = '',
 	deps = vec.new(refs = true)
 );
 Binary.setTypeName('Binary');
 
-let new = fn(name) { return Binary(binName = name); };
+let new = fn(name, proj) { return Binary(binName = name, projectName = proj); };
 
 let addSrcs in Binary = fn(srcs...) {
 	for src in srcs.each() {
 		self.srcs += ' ';
 		self.srcs += src;
 	}
-	return self;
+	return ref(self);
 };
 
 let addDeps in Binary = fn(deps) {
 	for dep in deps.each() {
 		self.deps.push(dep);
 	}
-	return self;
+	return ref(self);
 };
 
 let gen in Binary = fn() {
-	let depnames = '';
+	let depnames = ' ';
+	let pkgDLLRegexes = ' ';
 	for d in self.deps.each() {
 		depnames += ' ';
 		depnames += d.getName();
+		if os.name == 'windows' && d._typestr_() == 'FindPkg' {
+			let depList = d.getVCPkgDependenceList();
+			for dep in depList.each() {
+				pkgDLLRegexes += '".*' + dep + '.*" ';
+			}
+		}
+	}
+	# remove the space at the end
+	pkgDLLRegexes.pop();
+	depNames.pop();
+	let pkgDLLInstall = '';
+	if os.name == 'windows' {
+		pkgDLLInstall = pkgDLLInstallBase.fmt();
 	}
 	return binaryBase.fmt();
 };

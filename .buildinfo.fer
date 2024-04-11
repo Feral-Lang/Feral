@@ -1,4 +1,11 @@
+let os = import('std/os');
+
+inline if os.name == 'windows' {
+let cmake = 'cmake .. -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=True -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache';
+let make = '$msbuild /p:CL_MPCount=4 -m:8 /p:Configuration=Release .\\INSTALL.vcxproj';
+} else {
 let cmake = 'cmake ..';
 let make = 'make -j install';
+}
 let test = 'feral testdir ../tests';
 let compcommands = true;

@@ -4,13 +4,16 @@ let os = import('std/os');
 let vec = import('std/vec');
 let sys = import('std/sys');
 let lang = import('std/lang');
+let mproc = import('std/multiproc');
+let platform = import('std/platform');
 let cmakeBase = import('./CMakeGen/base');
 let install = import('./CMakeGen/install');
 let findLib = import('./CMakeGen/findLib');
+let findPkg = import('./CMakeGen/findPkg');
 let sharedLib = import('./CMakeGen/sharedLib');
 let binary = import('./CMakeGen/binary');
 
-let defaultInstallRPaths = sys.installPrefix + '/lib/feral/std;' + sys.installPrefix  + '/lib/feral';
+let defaultInstallRPaths = sys.installPrefix + '/lib/feral/std;' + sys.installPrefix + '/lib/feral';
 
 let Core = lang.struct(
 	version = '3.24.3',
@@ -24,10 +27,11 @@ let Core = lang.struct(
 	binaries = vec.new(refs = true),
 	rpathFromOrigin = '../../'
 );
+Core.setTypeName('CMakeGenerator');
 
 let new = fn(projectName) {
 	let c = Core(projectName = projectName);
-	c.deps.push(sharedLib.feralLib);
+	c.deps.push(findLib.feralLib);
 	return c;
 };
 
@@ -50,45 +54,50 @@ let gen in Core = fn(ret = false) {
 	}
 	let data = cmakeBase.template.fmt();
 	if ret { return data; }
-	{ # this is inside a block as file must be closed before it is used
-		let file = fs.fopen(os.getCWD() + '/CMakeLists.txt', 'w+');
+	{ # this is inside a block as file must be closed before it is used in cmake command
+		let file = fs.fopen(fs.pathFrom(os.getCWD(), 'CMakeLists.txt'), 'w+');
 		io.fprintln(file, data);
 	}
-	let buildtype = '';
+	let buildtype = sys.buildType;
 	if sys.args.len() > 1 && sys.args[1] == '--debug' {
 		buildtype = 'Debug';
-	} else {
-		buildtype = 'Release';
 	}
 	let cwd = os.getCWD();
 	let changed = false;
-	if !fs.exists('build/CMakeCache.txt') {
+	let cmakecache = fs.pathFrom('build', 'CMakeCache.txt');
+	# forces cmake to always execute and ignore grep command on windows
+	if os.name == 'windows' && fs.exists(cmakecache) {
+		os.rm('build');
+	}
+	if !fs.exists(cmakecache) {
 		os.mkdir('build');
 		changed = true;
-	} elif os.exec('grep CMAKE_BUILD_TYPE build/CMakeCache.txt | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
+	} elif os.exec('grep CMAKE_BUILD_TYPE ' + cmakecache + ' | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
 		os.rm('build');
 		os.mkdir('build');
 		changed = true;
 	}
 	os.setCWD('build');
-	if changed && os.exec('cmake .. -DDISABLE_INSTALL_MSG=true -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DCMAKE_BUILD_TYPE=' + buildtype) != 0 {
+	if changed && os.exec(self.getCMakeCmd(buildtype)) != 0 {
 		raise('failed to execute cmake');
 	}
-	let ins = '';
-	if sys.args.len() > 0 && sys.args[0] == 'install' {
-		ins = ' install';
-	}
-	if os.exec('make -j' + ins) != 0 {
+	if os.exec(self.getMakeCmd(buildtype)) != 0 {
 		raise('failed to execute make');
 	}
 	os.setCWD(cwd);
 	return nil;
 };
 
-let addDep in Core = fn(name) {
+let addLibDep in Core = fn(name) {
 	let lib = findLib.new(name);
 	self.deps.push(lib);
 	return ref(lib);
+};
+
+let addPkgDep in Core = fn(name) {
+	let pkg = findPkg.new(name);
+	self.deps.push(pkg);
+	return ref(pkg);
 };
 
 let addInstall in Core = fn(name) {
@@ -99,20 +108,53 @@ let addInstall in Core = fn(name) {
 
 let addSharedLib in Core = fn(name) {
 	let lib = sharedLib.new(name, self.projectName);
-	lib.addDep(sharedLib.feralLib);
+	lib.addDep(findLib.feralLib);
 	self.sharedLibs.push(lib);
 	return ref(lib);
 };
 
 let addBin in Core = fn(name) {
-	let bin = binary.new(name);
-	lib.addDep(sharedLib.feralLib);
+	let bin = binary.new(name, self.projectName);
+	bin.addDep(findLib.feralLib);
 	self.binaries.push(bin);
 	return ref(bin);
 };
 
-let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return self; };
+let addRPath in Core = fn(rpath) { self.installRPaths += ';' + rpath; return ref(self); };
 
-let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return self; };
+let setRelativeRPath in Core = fn(rpathFromOrigin) { self.rpathFromOrigin = rpathFromOrigin; return ref(self); };
 
-let setPrefix in Core = fn(prefix) { self.prefix = prefix; return self; };
+let setPrefix in Core = fn(prefix) { self.prefix = prefix; return ref(self); };
+
+let getCMakeCmd in Core = fn(buildtype) {
+	let cmd = 'cmake .. --no-warn-unused-cli -DDISABLE_INSTALL_MSG=true -DDISABLE_INSTALL_MSG=true -DCMAKE_EXPORT_COMPILE_COMMANDS=true -DCMAKE_BUILD_TYPE=' + buildtype;
+	if os.name == 'windows' {
+		cmd += ' -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true';
+	}
+	return cmd;
+};
+
+let getMakeCmd in Core = fn(buildtype) {
+	let cmd = '';
+	if os.name == 'windows' {
+		let msbuild = platform.getMSBuildPath();
+		if msbuild.empty() {
+			raise('msbuild not found! cannot build project');
+		}
+		cmd = '"' + msbuild + '" /p:CL_MPCount=2 /p:Configuration=' + buildtype + ' -m:';
+		cmd += mproc.getConcurrency().str();
+
+	} else {
+		cmd = 'make -j';
+	}
+	let suffix = '';
+	if os.name == 'windows' { suffix = ' .\\' + self.projectName + '.sln'; }
+	if sys.args.len() > 0 && sys.args[0] == 'install' {
+		if os.name == 'windows' {
+			suffix = ' .\\INSTALL.vcxproj';
+		} else {
+			suffix = ' install';
+		}
+	}
+	return cmd + suffix;
+};

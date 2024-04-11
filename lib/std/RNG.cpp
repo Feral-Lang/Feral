@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 static std::default_random_engine rng;
 
@@ -41,3 +42,5 @@ INIT_MODULE(RNG)
 	mod->addNativeFn("getNative", rngGet, 1);
 	return true;
 }
+
+} // namespace fer

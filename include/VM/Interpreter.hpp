@@ -8,9 +8,14 @@
 #include "Utils.hpp"
 #include "Vars.hpp"
 
+#if defined(FER_OS_WINDOWS)
+// Windows' max recurse count seems to be ~200. So 100 should do.
+static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
+#else
 static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 400;
-static const char *MODULE_EXTENSION		  = ".fer";
-static const char *MODULE_EXTENSION_NO_DOT	  = "fer";
+#endif
+static const char *MODULE_EXTENSION	   = ".fer";
+static const char *MODULE_EXTENSION_NO_DOT = "fer";
 
 namespace fer
 {
@@ -29,9 +34,9 @@ class Interpreter
 	// global vars/objects that are required
 	VarFrame globals;
 	// functions for all C++ types
-	Map<uiptr, VarFrame *> typefns;
+	Map<size_t, VarFrame *> typefns;
 	// names of types (optional)
-	Map<uiptr, String> typenames;
+	Map<size_t, String> typenames;
 	// all functions to call before unloading dlls
 	StringMap<ModDeinitFn> dlldeinitfns;
 	Map<StringRef, VarModule *> allmodules;
@@ -137,11 +142,11 @@ public:
 		addTypeFn(typeID<T>(), name, f, false);
 	}
 
-	void addTypeFn(uiptr _typeid, StringRef name, Var *fn, bool iref);
+	void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref);
 	Var *getTypeFn(Var *var, StringRef name);
 
 	// setTypeName is down (with inline functions)
-	StringRef getTypeName(uiptr _typeid);
+	StringRef getTypeName(size_t _typeid);
 
 	// supposed to call the overloaded delete operator in Var
 	Var *getConst(const ModuleLoc *loc, Instruction::Data &d, DataType dataty);
@@ -175,7 +180,7 @@ public:
 	inline bool hasModule(StringRef path) { return allmodules.find(path) != allmodules.end(); }
 	inline VarModule *getModule(StringRef path) { return allmodules[path]; }
 	inline VarModule *getCurrModule() { return modulestack.back(); }
-	inline void setTypeName(uiptr _typeid, StringRef name) { typenames[_typeid] = name; }
+	inline void setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
 	inline StringRef getTypeName(Var *var) { return getTypeName(var->getTypeFnID()); }
 	inline Span<String> getImportDirs() { return includelocs; }
 	inline Span<String> getModuleDirs() { return dlllocs; }
@@ -197,10 +202,12 @@ public:
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()
 	{
-#if __linux__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __bsdi__ || __DragonFly__
-		return ".so";
-#elif __APPLE__
+#if defined(FER_OS_WINDOWS)
+		return ".dll";
+#elif defined(FER_OS_APPLE)
 		return ".dylib";
+#else
+		return ".so";
 #endif
 	}
 };

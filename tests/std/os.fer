@@ -27,7 +27,11 @@ assert.eq(!fs.exists(insfile), true);
 os.name;
 
 let cwd = os.getCWD();
-os.setCWD('/');
+if os.name == 'windows' {
+	os.setCWD('C:\\');
+} else {
+	os.setCWD('/');
+}
 assert.ne(os.getCWD(), cwd);
 os.setCWD(cwd);
 assert.eq(os.getCWD(), cwd);
@@ -49,7 +53,11 @@ os.rm(cpfile);
 assert.eq(!fs.exists(cpfile), true);
 
 # len, 0 => not found
-assert.gt(os.findExec('ls').len(), 0);
-assert.eq(os.findExec('randomword').empty(), true);
+if os.name == 'windows' {
+	assert.gt(fs.findExec('ipconfig.exe').len(), 0);
+} else {
+	assert.gt(fs.findExec('ls').len(), 0);
+}
+assert.eq(fs.findExec('randomword').empty(), true);
 
 # chmod

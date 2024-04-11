@@ -19,30 +19,26 @@ class Interpreter;
 class Var
 {
 	const ModuleLoc *loc;
-	uiptr _typeid;
 	size_t ref;
 
 	// for VarInfo
 	size_t info;
 
-	template<typename T> static inline uiptr _typeID()
-	{
-		return reinterpret_cast<uiptr>(&_typeID<T>);
-	}
-	template<typename T>
-	typename std::enable_if<std::is_base_of<Var, T>::value, uiptr>::type friend typeID();
-
 public:
-	Var(const ModuleLoc *loc, uiptr _typeid, bool callable, bool attr_based);
+	Var(const ModuleLoc *loc, bool callable, bool attr_based);
 	virtual ~Var();
 
-	template<typename T> bool is() const { return _typeid == Var::_typeID<T>(); }
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const
+	{
+		return typeid(*this).hash_code() == typeid(T).hash_code();
+	}
 
 	inline void setLoc(const ModuleLoc *_loc) { loc = _loc; }
 
 	inline const ModuleLoc *getLoc() const { return loc; }
-	inline uiptr getType() const { return _typeid; }
-	virtual uiptr getTypeFnID();
+	inline size_t getType() { return typeid(*this).hash_code(); }
+	virtual size_t getTypeFnID();
 
 	inline void iref() { ++ref; }
 	inline size_t dref() { return --ref; }
@@ -70,9 +66,9 @@ public:
 
 template<typename T> T *as(Var *data) { return static_cast<T *>(data); }
 
-template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, uiptr>::type typeID()
+template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, size_t>::type typeID()
 {
-	return Var::_typeID<T>();
+	return typeid(T).hash_code();
 }
 
 template<typename T>
@@ -123,17 +119,17 @@ public:
 
 class VarTypeID : public Var
 {
-	uiptr val;
+	size_t val;
 
 public:
-	VarTypeID(const ModuleLoc *loc, uiptr val);
+	VarTypeID(const ModuleLoc *loc, size_t val);
 
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
-	inline void set(uiptr newval) { val = newval; }
+	inline void set(size_t newval) { val = newval; }
 
-	inline uiptr get() { return val; }
+	inline size_t get() { return val; }
 };
 
 class VarBool : public Var

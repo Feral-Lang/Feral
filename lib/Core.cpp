@@ -1,9 +1,12 @@
+#include <bit>
 #include <cmath> // std::round()
 
 #include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+
+namespace fer
+{
 
 #include "Core/Bool.hpp.in"
 #include "Core/Flt.hpp.in"
@@ -55,6 +58,11 @@ Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return copy;
 }
 
+// This is useful when a new (struct) instance is created and inserted into a container,
+// but must also be returned as a reference and not a copy.
+// If a new instance is created and simply returned without storing in a container,
+// there is no point in calling this since reference count of that object will be 1
+// and hence the VM won't create a copy of it when used in creating a new var.
 Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
 {
@@ -111,7 +119,7 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	String file = as<VarStr>(args[1])->get();
 	if(!vm.findImport(file)) {
-		vm.fail(args[1]->getLoc(), "import: ", file,
+		vm.fail(args[1]->getLoc(), "import: ", file, vm.getFeralImportExtension(),
 			" not found in locs: ", vecToStr(vm.getImportDirs()));
 		return nullptr;
 	}
@@ -335,3 +343,5 @@ INIT_MODULE(Core)
 
 	return true;
 }
+
+} // namespace fer

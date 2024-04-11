@@ -1,8 +1,10 @@
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
-Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, char delim);
+Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, StringRef delim,
+			int64_t maxDelimCount);
 
 static inline void trim(String &s);
 
@@ -261,10 +263,16 @@ Var *strSplit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "found empty delimiter for string split");
 		return nullptr;
 	}
-	char delim  = as<VarStr>(args[1])->get()[0];
-	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-	res->get()  = _strSplit(vm, loc, str->get(), delim);
-	return res;
+	if(!args[2]->is<VarInt>()) {
+		vm.fail(
+		loc, "expected int argument for max delim count, found: ", vm.getTypeName(args[2]));
+		return nullptr;
+	}
+	StringRef delim	      = as<VarStr>(args[1])->get();
+	int64_t maxDelimCount = as<VarInt>(args[2])->get();
+	if(maxDelimCount < 0) maxDelimCount = std::numeric_limits<int64_t>().max();
+	return vm.makeVar<VarVec>(
+	loc, std::move(_strSplit(vm, loc, str->get(), delim, maxDelimCount)), false);
 }
 
 Var *strStartsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -344,7 +352,7 @@ Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		decref(base);
 		str.erase(start, expr.size() + 2); // +2 for braces
 		str.insert(str.begin() + start, res.begin(), res.end());
-		i = start + res.size() - 1; // -1 for loop increment (++i)
+		i = start + res.size() - 1;	   // -1 for loop increment (++i)
 	}
 	return vm.makeVar<VarStr>(loc, std::move(str));
 }
@@ -460,7 +468,7 @@ INIT_MODULE(Str)
 	vm.addNativeTypeFn<VarStr>(loc, "lastIdx", strLast, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "trim", strTrim, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "upper", strUpper, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 1);
+	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "endsWith", strEndsWith, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "fmt", strFormat, 0, true);
@@ -473,22 +481,22 @@ INIT_MODULE(Str)
 	return true;
 }
 
-Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, char delim)
+Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, StringRef delim,
+			int64_t maxDelimCount)
 {
 	String temp;
 	Vector<Var *> vec;
-
+	int64_t delimCount = 0;
 	for(auto c : data) {
-		if(c == delim) {
+		if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
+			++delimCount;
 			if(temp.empty()) continue;
 			vec.push_back(vm.makeVarWithRef<VarStr>(loc, temp));
 			temp.clear();
 			continue;
 		}
-
 		temp += c;
 	}
-
 	if(!temp.empty()) vec.push_back(vm.makeVarWithRef<VarStr>(loc, temp));
 	return vec;
 }
@@ -537,3 +545,5 @@ size_t strToBin(StringRef str)
 	}
 	return bin;
 }
+
+} // namespace fer

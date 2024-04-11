@@ -31,5 +31,11 @@ Var *fltToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const Map<String, AssnArgData> &assn_args)
 {
+	StringRef num = as<VarStr>(args[0])->get();
+	for(auto c : num) {
+		if(c == '-' || (c >= '0' && c <= '9')) continue;
+		vm.fail(loc, "string '", num, "' is not a number");
+		return nullptr;
+	}
 	return vm.makeVar<VarInt>(loc, std::stoll(as<VarStr>(args[0])->get()));
 }

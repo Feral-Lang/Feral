@@ -38,7 +38,7 @@ if !st.isDir() {
 	sys.exit(1);
 }
 
-let cfgname = sys.args[0] + '/config.fecl';
+let cfgname = fs.pathFrom(sys.args[0], 'config.fecl');
 if !fs.exists(cfgname) {
 	io.println('error: test config: \'' + cfgname + '\' not found');
 	sys.exit(1);
@@ -56,7 +56,12 @@ let clean_cmd = cfg['CleanCmd'];
 let files = fs.walkDir(sys.args[0], fs.WALK_RECURSE, file_pattern);
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
+inline if os.name == 'windows' {
+# Apparently, $null cannot be accessed by more than one process at a time.
+let max_procs = 1;
+} else {
 let max_procs = mproc.getConcurrency();
+}
 
 let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 	while tpool.len() >= max_procs {
@@ -82,13 +87,13 @@ let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 
 let valgrind = '';
 if sys.args.find('--valgrind') {
-	valgrind = os.findExec('valgrind');
+	valgrind = fs.findExec('valgrind');
 	if valgrind.empty() {
 		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
 		sys.exit(1);
 	}
 	# --log-fd=1 to pour the valgrind output on stdout so that we
-	# don't have to redirect entire stderr to /dev/null
+	# don't have to redirect entire stderr to io.null
 	valgrind += ' --log-fd=1 ';
 }
 
@@ -103,7 +108,7 @@ for file in files.each() {
 		io.cprintln('{c}test{0}: {y}', cmd, '{0} ...');
 	}
 	io.fflush(io.stdout);
-	tpool.push(mproc.new(valgrind + cmd + ' >/dev/null'));
+	tpool.push(mproc.new(valgrind + cmd + ' >' + io.null));
 }
 waitProcs(1, !valgrind.empty());
 
@@ -115,7 +120,7 @@ if !clean_cmd.empty() {
 		let cmd = fs.fmtWithPath(clean_cmd, file);
 		io.cprintln('{c}clean{0}: {y}', cmd, '{0} ...');
 		io.fflush(io.stdout);
-		tpool.push(mproc.new(cmd + ' >/dev/null'));
+		tpool.push(mproc.new(cmd + ' >' + io.null));
 	}
 	waitProcs(1, !valgrind.empty(), false);
 }

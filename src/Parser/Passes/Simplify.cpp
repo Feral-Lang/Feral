@@ -84,15 +84,6 @@ bool SimplifyParserPass::visit(StmtBlock *stmt, Stmt **source)
 			--i;
 			continue;
 		}
-		// erase nested blocks if the current block is top level
-		if(stmts[i]->isBlock() && stmt->isTop()) {
-			StmtBlock *inner = as<StmtBlock>(stmts[i]);
-			stmts.erase(stmts.begin() + i);
-			stmts.insert(stmts.begin() + i, inner->getStmts().begin(),
-				     inner->getStmts().end());
-			i += inner->getStmts().size();
-			--i;
-		}
 	}
 	defers.applyDefers(stmts);
 	defers.popLayer();

@@ -2,8 +2,11 @@
 
 #include "std/StructType.hpp"
 
+namespace fer
+{
+
 VarMapIterator::VarMapIterator(const ModuleLoc *loc, VarMap *map)
-	: Var(loc, typeID<VarMapIterator>(), false, false), map(map), curr(map->get().begin())
+	: Var(loc, false, false), map(map), curr(map->get().begin())
 {
 	incref(map);
 }
@@ -30,3 +33,5 @@ bool VarMapIterator::next(Var *&val, Interpreter &vm, const ModuleLoc *loc)
 	++curr;
 	return true;
 }
+
+} // namespace fer

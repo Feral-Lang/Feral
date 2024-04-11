@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 class VarPtr : public Var
 {
@@ -19,3 +20,5 @@ public:
 
 	inline Var *get() { return val; }
 };
+
+} // namespace fer

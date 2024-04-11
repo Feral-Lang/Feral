@@ -1,6 +1,16 @@
-#include <sys/wait.h>
-
+#include "FS.hpp"
 #include "std/MultiProcType.hpp"
+
+#if defined(FER_OS_WINDOWS)
+// Windows doesn't have peopen/pclose, but it does have an underscore version!
+#define popen _popen
+#define pclose _pclose
+#else
+#include <sys/wait.h>
+#endif
+
+namespace fer
+{
 
 int execCommand(const String &cmd);
 
@@ -88,5 +98,11 @@ int execCommand(const String &cmd)
 		LockGuard<Mutex> lock(pipe_mtx);
 		res = pclose(pipe);
 	}
+#if defined(FER_OS_WINDOWS)
+	return res;
+#else
 	return WEXITSTATUS(res);
+#endif
 }
+
+} // namespace fer

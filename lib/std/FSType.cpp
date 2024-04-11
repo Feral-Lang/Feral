@@ -1,11 +1,16 @@
 #include "std/FSType.hpp"
 
+#include "FS.hpp"
+
+namespace fer
+{
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// VarFile ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFile::VarFile(const ModuleLoc *loc, FILE *const file, const String &mode, const bool owner)
-	: Var(loc, typeID<VarFile>(), false, false), file(file), mode(mode), owner(owner)
+	: Var(loc, false, false), file(file), mode(mode), owner(owner)
 {}
 VarFile::~VarFile()
 {
@@ -26,7 +31,7 @@ void VarFile::set(Var *from)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFileIterator::VarFileIterator(const ModuleLoc *loc, VarFile *file)
-	: Var(loc, typeID<VarFileIterator>(), false, false), file(file)
+	: Var(loc, false, false), file(file)
 {
 	incref(file);
 }
@@ -57,3 +62,5 @@ bool VarFileIterator::next(VarStr *&val)
 	if(lineptr) free(lineptr);
 	return false;
 }
+
+} // namespace fer

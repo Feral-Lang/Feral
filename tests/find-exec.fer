@@ -1,9 +1,9 @@
 let assert = import('std/assert');
 
 let io = import('std/io');
-let os = import('std/os');
+let fs = import('std/fs');
 
-let loc = os.findExec('valgrind');
+let loc = fs.findExec('valgrind');
 if !loc.empty() {
 	io.println('valgrind available at: \'', loc, '\'!');
 } else {

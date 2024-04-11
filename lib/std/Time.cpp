@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 Var *sysclkNow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
@@ -47,3 +48,5 @@ INIT_MODULE(Time)
 	mod->addNativeFn("formatNative", formatTime, 2);
 	return true;
 }
+
+} // namespace fer

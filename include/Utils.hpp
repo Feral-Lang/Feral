@@ -90,4 +90,9 @@ template<typename T, typename... Args> void appendToString(String &dest, Args...
 	static_cast<void>(tmp);
 }
 
+#if defined(FER_OS_WINDOWS)
+// Windows' string to wstring functions
+WString toWString(StringRef data);
+#endif
+
 } // namespace fer

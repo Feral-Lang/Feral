@@ -15,8 +15,8 @@ enum Stmts : uint8_t
 	SIMPLE,
 	EXPR,
 	FNARGS,
-	VAR,   // Var and Val (<var> = <value>)
-	FNSIG, // function signature
+	VAR,	 // Var and Val (<var> = <value>)
+	FNSIG,	 // function signature
 	FNDEF,
 	VARDECL, // <VAR>[, <VAR>]*
 	COND,
@@ -44,11 +44,8 @@ public:
 	inline const Stmts &getStmtType() const { return stype; }
 	inline StringRef getStmtTypeString() const { return getStmtTypeCString(); }
 
-#define isStmtX(X, ENUMVAL)              \
-	inline bool is##X()              \
-	{                                \
-		return stype == ENUMVAL; \
-	}
+#define isStmtX(X, ENUMVAL) \
+	inline bool is##X() { return stype == ENUMVAL; }
 	isStmtX(Block, BLOCK);
 	isStmtX(Simple, SIMPLE);
 	isStmtX(Expr, EXPR);
@@ -98,6 +95,7 @@ public:
 
 	void disp(bool has_next);
 
+	inline void setTop(bool istop) { is_top = istop; }
 	inline Vector<Stmt *> &getStmts() { return stmts; }
 	inline bool isTop() const { return is_top; }
 };
@@ -175,8 +173,8 @@ class StmtVar : public Stmt
 {
 	lex::Lexeme name; // can be STR in case of assn args
 	Stmt *in;
-	Stmt *val;   // expr or simple
-	bool is_arg; // fndef param / fncall arg or not
+	Stmt *val;	  // expr or simple
+	bool is_arg;	  // fndef param / fncall arg or not
 
 public:
 	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);

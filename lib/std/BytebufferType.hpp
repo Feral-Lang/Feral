@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 class VarBytebuffer : public Var
 {
@@ -24,3 +25,5 @@ public:
 	inline size_t capacity() { return bufsz; }
 	inline size_t len() { return buflen; }
 };
+
+} // namespace fer

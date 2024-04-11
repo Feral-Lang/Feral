@@ -23,18 +23,19 @@ enum TokType
 	ELIF,
 	ELSE,
 	FOR,
-	IN,
+	FIN, // IN but Windows APIs define a macro with that name
 	WHILE,
 	RETURN,
 	CONTINUE,
 	BREAK,
-	VOID,
-	TRUE,
-	FALSE,
+	FVOID,	// VOID but Windows APIs define a macro with that name
+	FTRUE,	// TRUE but Windows APIs define a macro with that name
+	FFALSE, // FALSE but Windows APIs define a macro with that name
 	NIL,
 	OR,
-	CONST,
+	FCONST, // CONST but Windows APIs define a macro with that name
 	DEFER,
+	INLINE,
 
 	// Operators
 	ASSN,
@@ -135,12 +136,12 @@ public:
 
 	inline bool isData() const
 	{
-		return val == INT || val == FLT || val == STR || val == IDEN || val == VOID ||
-		       val == TRUE || val == FALSE || val == NIL;
+		return val == INT || val == FLT || val == STR || val == IDEN || val == FVOID ||
+		       val == FTRUE || val == FFALSE || val == NIL;
 	}
 	inline bool isLiteral() const
 	{
-		return val == INT || val == FLT || val == STR || val == TRUE || val == FALSE;
+		return val == INT || val == FLT || val == STR || val == FTRUE || val == FFALSE;
 	}
 
 	inline bool isOper() const { return val >= ASSN && val <= RBRACK; }
