@@ -3,23 +3,28 @@ let lang = import('std/lang');
 
 let installBase =
 `# Install {self.installName}
-install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/{self.srcPath}/"
-	DESTINATION "$\\{CMAKE_INSTALL_PREFIX}/{self.srcPath}/feral/{self.projectName}"
+install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/{self.filePath}/"
+	DESTINATION "$\\{CMAKE_INSTALL_PREFIX}/{self.filePath}{self.projectSuffix}"
 	FILES_MATCHING PATTERN "{self.pattern}"
 )`;
 
 let Install = lang.struct(
 	projectName = '',
 	installName = 'sampleInstall',
-	srcPath = 'include',
-	pattern = '*.*'
+	filePath = 'include',
+	pattern = '*.*',
+	projectSuffix = ''
 );
 Install.setTypeName('Install');
 
-let new = fn(name, proj) { return Install(installName = name, projectName = proj); };
+let new = fn(name, proj) {
+	return Install(installName = name, projectName = proj, projectSuffix = '/feral/' + proj);
+};
 
-let setSrcPath in Install = fn(path) { self.srcPath = path; return ref(self); };
+let setFilePath in Install = fn(path) { self.filePath = path; return ref(self); };
 let setPattern in Install = fn(pattern) { self.pattern = pattern; return ref(self); };
+# Must be used for binaries to avoid attaching project suffix at the end of dest directory.
+let disableProjectSuffix in Install = fn() { self.projectSuffix.clear(); return ref(self); };
 
 let gen in Install = fn() {
 	return installBase.fmt();

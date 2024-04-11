@@ -95,7 +95,7 @@ bool exists(StringRef loc) { return std::filesystem::exists(loc); }
 
 int copy(StringRef src, StringRef dest, std::error_code &ec)
 {
-	std::filesystem::copy(src, dest, ec);
+	std::filesystem::copy(src, dest, std::filesystem::copy_options::update_existing, ec);
 	return ec.value();
 }
 int mkdir(StringRef dir, std::error_code &ec)

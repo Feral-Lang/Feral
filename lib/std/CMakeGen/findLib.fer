@@ -5,8 +5,10 @@ let vec = import('std/vec');
 let lang = import('std/lang');
 
 let findLibBase =
-`include_directories({includeDirs})
-find_library({self.varName.upper()}_LIBRARY {self.libName}{self.pathSuffixes}{self.required}{prefixPath})
+`if(NOT "{includeDirs}" MATCHES "")
+	include_directories({includeDirs})
+endif()
+find_library({self.varName.upper()}_LIBRARY $\\{WIN_LIB_PREFIX}{self.libName}{self.pathSuffixes}{self.required}{prefixPath})
 `;
 
 let findLibTest =

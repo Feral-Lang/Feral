@@ -49,15 +49,17 @@ else()
 	set(TREE_STATUS "Dirty")
 endif()
 
-set(ORIGIN "$ORIGIN")
-if(APPLE)
-	set(ORIGIN "@loader_path")
-endif()
-list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
 set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_MACOSX_RPATH TRUE)
+if(NOT WIN32)
+	set(ORIGIN "$ORIGIN")
+	if(APPLE)
+		set(ORIGIN "@loader_path")
+		set(CMAKE_MACOSX_RPATH TRUE)
+	endif()
+	list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 
 include(CheckCXXCompilerFlag)
 
@@ -79,10 +81,14 @@ else()
 	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
-find_program(CCACHE_PROGRAM ccache)
+if(WIN32)
+	find_program(CCACHE_PROGRAM sccache)
+else()
+	find_program(CCACHE_PROGRAM ccache)
+endif()
 if(CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-    message("-- Using ccache")
+    message("-- Using ccache: ${CCACHE_PROGRAM}")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
@@ -153,15 +159,16 @@ add_library(libferal SHARED ${SRCS} ${INCS})
 target_include_directories(libferal PRIVATE ${PROJECT_SOURCE_DIR}/include)
 set_target_properties(libferal
     PROPERTIES
+    PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
     LINK_FLAGS "${EXTRA_LD_FLAGS}"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/$<0:>" # for so (non-windows)
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/" # for so (non-windows)
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for dll (windows)
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for lib (windows)
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS libferal
 	LIBRARY
-	  DESTINATION "lib/feral/$<0:>"
+	  DESTINATION "lib/feral/"
 	RUNTIME
 	  DESTINATION "bin/$<0:>"
 	ARCHIVE
@@ -230,14 +237,14 @@ foreach(mod ${mods})
 	    PREFIX "libferal"
 	    ARCHIVE_OUTPUT_NAME "libferal${modname}"
 	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for so (non-windows)
+	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
 	    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
 	    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
 	    INSTALL_RPATH_USE_LINK_PATH TRUE
 	)
 	install(TARGETS ${modname}
 		LIBRARY
-		  DESTINATION "lib/feral/${moddir}$<0:>"
+		  DESTINATION "lib/feral/${moddir}"
 		ARCHIVE
 		  DESTINATION "lib/feral/${moddir}$<0:>"
 		RUNTIME

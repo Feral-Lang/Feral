@@ -9,9 +9,8 @@ target_include_directories($\\{mod} PRIVATE $\\{PROJECT_SOURCE_DIR}/include)
 target_link_libraries($\\{mod}{depnames})
 set_target_properties($\\{mod}
 	PROPERTIES
-	OUTPUT_NAME {self.binName}
 	LINK_FLAGS "$\\{EXTRA_LD_FLAGS}"
-	RUNTIME_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/bin"
+	RUNTIME_OUTPUT_DIRECTORY "$\\{CMAKE_BINARY_DIR}/bin/$<0:>"
 	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS $\\{mod}
