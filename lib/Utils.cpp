@@ -1,6 +1,7 @@
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 class VarIntIterator : public Var
 {
@@ -26,12 +27,12 @@ public:
 };
 
 VarIntIterator::VarIntIterator(const ModuleLoc *loc)
-	: Var(loc, typeID<VarIntIterator>(), false, false), started(false), reversed(false),
-	  begin(0), end(0), step(0), curr(0)
+	: Var(loc, false, false), started(false), reversed(false), begin(0), end(0), step(0),
+	  curr(0)
 {}
 VarIntIterator::VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _end, int64_t _step)
-	: Var(loc, typeID<VarIntIterator>(), false, false), started(false), reversed(_step < 0),
-	  begin(_begin), end(_end), step(_step), curr(_begin)
+	: Var(loc, false, false), started(false), reversed(_step < 0), begin(_begin), end(_end),
+	  step(_step), curr(_begin)
 {}
 VarIntIterator::~VarIntIterator() {}
 
@@ -130,3 +131,5 @@ INIT_MODULE(Utils)
 
 	return true;
 }
+
+} // namespace fer

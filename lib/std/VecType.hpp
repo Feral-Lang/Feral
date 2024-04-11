@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 class VarVecIterator : public Var
 {
@@ -18,3 +19,5 @@ public:
 
 	bool next(Var *&val);
 };
+
+} // namespace fer

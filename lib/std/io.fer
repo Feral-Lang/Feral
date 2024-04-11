@@ -1,1 +1,9 @@
 mload('std/IO');
+
+let os = import('std/os');
+
+inline if os.name == 'windows' {
+let null = '$null';
+} else {
+let null = '/dev/null';
+}

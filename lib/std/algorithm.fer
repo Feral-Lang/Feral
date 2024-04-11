@@ -29,7 +29,7 @@ let dependsOn in DependenceTreeNode = fn(nodes...) {
 	for node in nodes.each() {
 		self.deps.push(node);
 	}
-	return self;
+	return ref(self);
 };
 
 # generates a list of frames, each frame's nodes can be 'executed' in parallel
@@ -51,48 +51,21 @@ let generateParallelFrames in DependenceTree = fn() {
 	}
 	frames.push(frametmp);
 	let prevdata = vec.new(refs = true);
-	let currdata = vec.new(refs = true);
-	let anychange = true;
-	while anychange {
-		anychange = false;
-		for let i = 0; i < frames.len(); ++i {
-			prevdata.clear();
-			currdata.clear();
-			if i > 0 {
-				for node in frames[i - 1].each() {
-					prevdata.push(node.data);
-				}
+	for let i = 0; i < frames.len(); ++i {
+		prevdata.clear();
+		for let j = 0; j < i; ++j {
+			for node in frames[j].each() {
+				prevdata.push(node.data);
 			}
-			for node in frames[i].each() {
-				currdata.push(node.data);
-			}
-			for let j = 0; j < frames[i].len(); ++j {
-				for dep in frames[i][j].deps.each() {
-					if currdata.find(dep.data) {
-						# move this node to next frame
-						if i + 1 >= frames.len() {
-							frames.push(vec.new(refs = true));
-						}
-						frames[i + 1].push(frames[i][j]);
-						frames[i].erase(j);
-						currdata.erase(j);
-						anychange = true;
-						break;
-					}
-				}
-				if anychange { break; }
-				let foundanyinprev = false;
-				for dep in frames[i][j].deps.each() {
-					if !prevdata.empty() && prevdata.find(dep.data) { foundanyinprev = true; break; }
-				}
-				if !foundanyinprev && i > 0 {
-					frames[i - 1].push(frames[i][j]);
-					prevdata.push(frames[i][j].data);
-					frames[i].erase(j);
-					currdata.erase(j);
-					anychange = true;
-					break;
-				}
+		}
+		let currframe = ref(frames[i]);
+		for let j = 0; j < currframe.len(); ++j {
+			for dep in currframe[j].deps.each() {
+				if prevdata.find(dep.data) { continue; }
+				if i + 1 >= frames.len() { frames.push(vec.new(refs = true)); }
+				frames[i + 1].push(currframe[j]);
+				currframe.erase(j--);
+				break;
 			}
 		}
 	}

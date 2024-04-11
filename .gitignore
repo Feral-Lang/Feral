@@ -2,8 +2,13 @@
 ################
 .vscode/
 .clangd/
+.cache/
 compile_commands.json
 *.swp
+
+# Windows trash #
+##########################
+$null
 
 # TeX intermediate files #
 ##########################
@@ -12,8 +17,8 @@ compile_commands.json
 
 # Build files #
 ###############
+CMakeLists.txt
 testbin/
-bin/
 build/
 dockerbuild/
 buildfiles/
@@ -28,7 +33,6 @@ include/Config.hpp
 #######################
 tmp*
 tests/*.json
-/*.fer
 *.zip
 vgcore.*
 

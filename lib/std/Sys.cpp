@@ -1,7 +1,8 @@
 #include "Config.hpp"
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const Map<String, AssnArgData> &assn_args)
@@ -57,11 +58,11 @@ INIT_MODULE(Sys)
 
 	mod->addNativeVar("args", vm.getCLIArgs());
 
-	mod->addNativeVar("installPrefix", vm.makeVar<VarStr>(loc, STRINGIFY(INSTALL_PREFIX)));
-
 	mod->addNativeVar("selfBin", vm.makeVar<VarStr>(loc, vm.getSelfBin()));
 	mod->addNativeVar("selfBase", vm.makeVar<VarStr>(loc, vm.getSelfBase()));
 	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
+
+	mod->addNativeVar("installPrefix", vm.makeVar<VarStr>(loc, STRINGIFY(INSTALL_PREFIX)));
 
 	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, VERSION_MAJOR));
 	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, VERSION_MINOR));
@@ -69,8 +70,11 @@ INIT_MODULE(Sys)
 
 	mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
 	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_CXX_COMPILER));
+	mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, BUILD_TYPE));
 
 	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
 			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 	return true;
 }
+
+} // namespace fer

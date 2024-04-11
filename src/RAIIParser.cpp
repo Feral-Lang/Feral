@@ -1,7 +1,5 @@
 #include "RAIIParser.hpp"
 
-#include <unistd.h>
-
 #include "Error.hpp"
 #include "FS.hpp"
 

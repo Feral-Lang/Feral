@@ -37,7 +37,7 @@ bool Parser::parseBlock(ParseHelper &p, StmtBlock *&tree, bool with_brace)
 			if(!parseConds(p, stmt)) return false;
 			skip_cols = true;
 		} else if(p.accept(lex::FOR)) {
-			if(p.peekt(1) == lex::IDEN && p.peekt(2) == lex::IN) {
+			if(p.peekt(1) == lex::IDEN && p.peekt(2) == lex::FIN) {
 				if(!parseForIn(p, stmt)) return false;
 			} else {
 				if(!parseFor(p, stmt)) return false;
@@ -54,6 +54,9 @@ bool Parser::parseBlock(ParseHelper &p, StmtBlock *&tree, bool with_brace)
 			if(!parseBreak(p, stmt)) return false;
 		} else if(p.accept(lex::DEFER)) {
 			if(!parseDefer(p, stmt)) return false;
+		} else if(p.accept(lex::INLINE)) {
+			if(p.peekt(1) == lex::IF && !parseConds(p, stmt)) return false;
+			skip_cols = true;
 		} else if(p.accept(lex::LBRACE)) {
 			if(!parseBlock(p, (StmtBlock *&)stmt)) return false;
 			skip_cols = true;
@@ -836,7 +839,7 @@ bool Parser::parseVar(ParseHelper &p, StmtVar *&var, bool is_fn_arg)
 	Stmt *val = nullptr;
 	Stmt *in  = nullptr;
 
-	if(p.acceptn(lex::IN) && !is_fn_arg) {
+	if(p.acceptn(lex::FIN) && !is_fn_arg) {
 		if(!parseExpr01(p, (Stmt *&)in, false)) {
 			err::out(p.peek(),
 				 "failed to parse in-type for variable: ", name.getDataStr());
@@ -950,6 +953,14 @@ bool Parser::parseFnDef(ParseHelper &p, Stmt *&fndef)
 	if(!parseFnSig(p, sig)) return false;
 	if(!parseBlock(p, blk)) return false;
 
+	// append a return statement if the block doesn't already contain one at the end
+	if(blk) {
+		auto &stmts = blk->getStmts();
+		if(!stmts.empty() && !stmts.back()->isReturn()) {
+			stmts.emplace_back(StmtRet::create(ctx, blk->getLoc(), nullptr));
+		}
+	}
+
 	fndef = StmtFnDef::create(ctx, start.getLoc(), (StmtFnSig *)sig, blk);
 	return true;
 }
@@ -988,6 +999,8 @@ bool Parser::parseConds(ParseHelper &p, Stmt *&conds)
 
 	lex::Lexeme &start = p.peek();
 
+	bool is_inline = p.acceptn(lex::INLINE);
+
 cond:
 	if(!p.acceptn(lex::IF, lex::ELIF)) {
 		err::out(p.peek(), "expected 'if' here, found: ", p.peek().getTok().cStr());
@@ -1004,6 +1017,8 @@ blk:
 		err::out(p.peek(), "failed to parse block for conditional");
 		return false;
 	}
+	// If the conditional is inline, the block shouldn't generate PUSH/POP_BLK instructions.
+	if(is_inline) c.getBlk()->setTop(is_inline);
 
 	cvec.emplace_back(c.getCond(), c.getBlk());
 	c.reset();
@@ -1053,7 +1068,7 @@ bool Parser::parseForIn(ParseHelper &p, Stmt *&fin)
 	lex::Lexeme &iter = p.peek();
 	p.next();
 
-	if(!p.acceptn(lex::IN)) {
+	if(!p.acceptn(lex::FIN)) {
 		err::out(p.peek(), "expected 'in' here, found: ", p.peek().getTok().cStr());
 		return false;
 	}

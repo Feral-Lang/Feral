@@ -1,10 +1,13 @@
 #include "std/StructType.hpp"
 #include "VM/Interpreter.hpp"
 
-static uiptr genStructEnumID()
+namespace fer
 {
-	static uiptr id = 0;
-	return id++;
+
+static size_t genStructEnumID()
+{
+	static size_t id = -1;
+	return id--;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +100,7 @@ Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	}
 	VarStructDef *def  = as<VarStructDef>(args[0]);
 	const String &name = as<VarStr>(args[1])->get();
-	vm.setTypeName(def->getTypeFnID(), name);
+	vm.setTypeName(def->getID(), name);
 	return vm.getNil();
 }
 
@@ -125,6 +128,13 @@ Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> a
 	const String &name = as<VarStr>(args[1])->get();
 	Var *res	   = as<VarStructDef>(args[0])->getAttr(name);
 	return res ? res : vm.getNil();
+}
+
+Var *structDefLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		  const Map<String, AssnArgData> &assn_args)
+{
+	VarStructDef *def = as<VarStructDef>(args[0]);
+	return vm.makeVar<VarInt>(loc, def->getAttrCount());
 }
 
 Var *structGetFields(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -164,6 +174,13 @@ Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 	return vm.getNil();
 }
 
+Var *structLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const Map<String, AssnArgData> &assn_args)
+{
+	VarStruct *st = as<VarStruct>(args[0]);
+	return vm.makeVar<VarInt>(loc, st->getAttrCount());
+}
+
 INIT_MODULE(Lang)
 {
 	VarModule *mod = vm.getCurrModule();
@@ -174,10 +191,14 @@ INIT_MODULE(Lang)
 	vm.addNativeTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName, 1);
 	vm.addNativeTypeFn<VarStructDef>(loc, "getFields", structDefGetFields, 0);
 	vm.addNativeTypeFn<VarStructDef>(loc, "[]", structDefGetFieldValue, 1);
+	vm.addNativeTypeFn<VarStructDef>(loc, "len", structDefLen, 0);
 
 	vm.addNativeTypeFn<VarStruct>(loc, "getFields", structGetFields, 0);
 	vm.addNativeTypeFn<VarStruct>(loc, "setField", structSetFieldValue, 2);
 	vm.addNativeTypeFn<VarStruct>(loc, "str", structToStr, 0);
+	vm.addNativeTypeFn<VarStruct>(loc, "len", structLen, 0);
 
 	return true;
 }
+
+} // namespace fer

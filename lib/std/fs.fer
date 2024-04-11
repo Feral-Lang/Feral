@@ -1,7 +1,32 @@
 mload('std/FS');
 
+let os = import('std/os');
+let str = import('std/str');
 let sys = import('std/sys');
+let vec = import('std/vec');
 let stat = import('std/stat');
+
+inline if os.name == 'windows' {
+let pathSeparator = '\\';
+let envDelimiter = ';';
+} else {
+let pathSeparator = '/';
+let envDelimiter = ':';
+}
+
+let pathAppend = fn(fullpath, pathparts...) {
+	for let i = 0; i < pathparts.len(); ++i {
+		if !fullpath.empty() { fullpath += pathSeparator; }
+		fullpath += pathparts[i];
+	}
+};
+
+let pathFrom = fn(pathparts...) {
+	if pathparts.empty() { return ''; }
+	let fullpath = '';
+	pathAppend(fullpath, pathparts...);
+	return fullpath;
+};
 
 let fopen = fn(file, mode = 'r') {
 	return fopenNative(file, mode);
@@ -24,11 +49,23 @@ let dirExists = fn(name) {
 	return stat.stat(name).isDir();
 };
 
+# find the given file (exec) in the PATH variables
+# return the entire file path if found, empty string if not
+let findExec = fn(exec) {
+	let PATH = os.getEnv('PATH');
+	if PATH.empty() { return ''; }
+	for dir in PATH.split(envDelimiter).each() {
+		let p = pathFrom(dir, exec);
+		if exists(p) { return p; }
+	}
+	return '';
+};
+
 # can also be written as:
 #  fmtWithPath('$d', path)
 let parentDir = fn(path) {
 	let dirname = '';
-	let locslash = path.rfind('/');
+	let locslash = path.rfind(pathSeparator);
 	if locslash == -1 { dirname = '.'; }
 	else { dirname = path.substr(0, locslash); }
 	return dirname;
@@ -46,7 +83,7 @@ let fmtWithPath = fn(fmtstr, fpath) {
 	let dirname = '';
 	let filename = '';
 	let ext = '';
-	let locslash = fpath.rfind('/');
+	let locslash = fpath.rfind(pathSeparator);
 	let locdot = fpath.rfind('.');
 	if locslash == -1 {
 		dirname = '.';

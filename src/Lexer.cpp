@@ -32,6 +32,7 @@ const char *TokStrs[_LAST] = {
 "or",
 "const",
 "defer",
+"inline",
 
 // Operators
 "=",
@@ -305,23 +306,29 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 		    PREV != '_' && PREV != ')' && PREV != ']' && PREV != '\'' && PREV != '"') ||
 		   isalpha(CURR) || CURR == '_')
 		{
+			String tmpstr; // used for __SRC_PATH__ and __SRC_DIR__
 			StringRef str = getName(data, i);
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
 			size_t strsz	  = str.size();
 			if(!str.empty() && str[0] == '.') str = str.substr(1);
 			if(str == "__SRC_PATH__") {
-				str	  = mod->getPath();
+				// toRawString() because in codegen, all strings are passed through
+				// fromRawString()
+				tmpstr	  = toRawString(mod->getPath());
+				str	  = tmpstr;
 				str_class = STR;
 			} else if(str == "__SRC_DIR__") {
-				str	  = mod->getDir();
+				tmpstr	  = toRawString(mod->getDir());
+				str	  = tmpstr;
 				str_class = STR;
 			}
-			if(str_class == STR || str_class == IDEN)
-			{ // place either the data itself (type = STR, IDEN)
+			if(str_class == STR || str_class == IDEN) {
+				// place either the data itself (type = STR, IDEN)
 				toks.emplace_back(locAlloc(line, i - line_start - strsz), str_class,
 						  str);
-			} else { // or the type
+			} else {
+				// or the type
 				toks.emplace_back(locAlloc(line, i - line_start - strsz),
 						  str_class);
 			}
@@ -400,18 +407,19 @@ TokType Tokenizer::classifyStr(StringRef str)
 	if(str == TokStrs[ELIF]) return ELIF;
 	if(str == TokStrs[ELSE]) return ELSE;
 	if(str == TokStrs[FOR]) return FOR;
-	if(str == TokStrs[IN]) return IN;
+	if(str == TokStrs[FIN]) return FIN;
 	if(str == TokStrs[WHILE]) return WHILE;
 	if(str == TokStrs[RETURN]) return RETURN;
 	if(str == TokStrs[CONTINUE]) return CONTINUE;
 	if(str == TokStrs[BREAK]) return BREAK;
-	if(str == TokStrs[VOID]) return VOID;
-	if(str == TokStrs[TRUE]) return TRUE;
-	if(str == TokStrs[FALSE]) return FALSE;
+	if(str == TokStrs[FVOID]) return FVOID;
+	if(str == TokStrs[FTRUE]) return FTRUE;
+	if(str == TokStrs[FFALSE]) return FFALSE;
 	if(str == TokStrs[NIL]) return NIL;
 	if(str == TokStrs[OR]) return OR;
-	if(str == TokStrs[CONST]) return CONST;
+	if(str == TokStrs[FCONST]) return FCONST;
 	if(str == TokStrs[DEFER]) return DEFER;
+	if(str == TokStrs[INLINE]) return INLINE;
 
 	// if string begins with dot, it's an atom (str), otherwise an identifier
 	return str[0] == '.' ? STR : IDEN;

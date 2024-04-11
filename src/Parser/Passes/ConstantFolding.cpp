@@ -9,8 +9,8 @@ template<typename T> T getValueAs(const lex::Lexeme &tok)
 {
 	T res = 0;
 	switch(tok.getTokVal()) {
-	case lex::TRUE: res = 1; break;
-	case lex::FALSE: res = 0; break;
+	case lex::FTRUE: res = 1; break;
+	case lex::FFALSE: res = 0; break;
 	case lex::INT: res = tok.getDataInt(); break;
 	case lex::FLT: res = tok.getDataFlt(); break;
 	default: res = 0;
@@ -40,16 +40,16 @@ template<typename T> T getValueAs(const lex::Lexeme &tok)
 		return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);                 \
 	}
 
-#define comparisonOps(OPER)                                                             \
-	if(ltok == lex::FLT || rtok == lex::FLT) {                                      \
-		long double lhs = getValueAs<long double>(l->getLexValue());            \
-		long double rhs = getValueAs<long double>(r->getLexValue());            \
-		lex::Lexeme restok(l->getLoc(), lhs OPER rhs ? lex::TRUE : lex::FALSE); \
-		return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);              \
-	}                                                                               \
-	int64_t lhs = getValueAs<int64_t>(l->getLexValue());                            \
-	int64_t rhs = getValueAs<int64_t>(r->getLexValue());                            \
-	lex::Lexeme restok(l->getLoc(), lhs OPER rhs ? lex::TRUE : lex::FALSE);         \
+#define comparisonOps(OPER)                                                               \
+	if(ltok == lex::FLT || rtok == lex::FLT) {                                        \
+		long double lhs = getValueAs<long double>(l->getLexValue());              \
+		long double rhs = getValueAs<long double>(r->getLexValue());              \
+		lex::Lexeme restok(l->getLoc(), lhs OPER rhs ? lex::FTRUE : lex::FFALSE); \
+		return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);                \
+	}                                                                                 \
+	int64_t lhs = getValueAs<int64_t>(l->getLexValue());                              \
+	int64_t rhs = getValueAs<int64_t>(r->getLexValue());                              \
+	lex::Lexeme restok(l->getLoc(), lhs OPER rhs ? lex::FTRUE : lex::FFALSE);         \
 	return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 
 Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper)
@@ -193,55 +193,55 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	case lex::LAND: {
 		if(ltok == lex::INT && rtok == lex::INT) {
 			lex::TokType res =
-			l->getLexDataInt() && r->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			l->getLexDataInt() && r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::INT && rtok == lex::FLT) {
 			lex::TokType res = (long double)l->getLexDataInt() && r->getLexDataFlt()
-					   ? lex::TRUE
-					   : lex::FALSE;
+					   ? lex::FTRUE
+					   : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::FLT && rtok == lex::INT) {
 			lex::TokType res = l->getLexDataFlt() && (long double)r->getLexDataInt()
-					   ? lex::TRUE
-					   : lex::FALSE;
+					   ? lex::FTRUE
+					   : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::FLT && rtok == lex::FLT) {
 			lex::TokType res =
-			l->getLexDataFlt() && r->getLexDataFlt() ? lex::TRUE : lex::FALSE;
+			l->getLexDataFlt() && r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 
 		// with booleans
-		if(ltok == lex::FALSE || rtok == lex::FALSE) {
-			lex::Lexeme restok(l->getLoc(), lex::FALSE);
+		if(ltok == lex::FFALSE || rtok == lex::FFALSE) {
+			lex::Lexeme restok(l->getLoc(), lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::TRUE && rtok == lex::TRUE) {
-			lex::Lexeme restok(l->getLoc(), lex::TRUE);
+		if(ltok == lex::FTRUE && rtok == lex::FTRUE) {
+			lex::Lexeme restok(l->getLoc(), lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if((ltok == lex::TRUE && rtok == lex::FALSE) ||
-		   (ltok == lex::FALSE && rtok == lex::TRUE))
+		if((ltok == lex::FTRUE && rtok == lex::FFALSE) ||
+		   (ltok == lex::FFALSE && rtok == lex::FTRUE))
 		{
-			lex::Lexeme restok(l->getLoc(), lex::FALSE);
+			lex::Lexeme restok(l->getLoc(), lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::INT && rtok == lex::TRUE) {
+		if(ltok == lex::INT && rtok == lex::FTRUE) {
 			// && true is not required
-			lex::TokType res = l->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			lex::TokType res = l->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::FLT && rtok == lex::TRUE) {
+		if(ltok == lex::FLT && rtok == lex::FTRUE) {
 			// && true is not required
-			lex::TokType res = l->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			lex::TokType res = l->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
@@ -250,55 +250,55 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	case lex::LOR: {
 		if(ltok == lex::INT && rtok == lex::INT) {
 			lex::TokType res =
-			l->getLexDataInt() || r->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			l->getLexDataInt() || r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::INT && rtok == lex::FLT) {
 			lex::TokType res = (long double)l->getLexDataInt() || r->getLexDataFlt()
-					   ? lex::TRUE
-					   : lex::FALSE;
+					   ? lex::FTRUE
+					   : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::FLT && rtok == lex::INT) {
 			lex::TokType res = l->getLexDataFlt() || (long double)r->getLexDataInt()
-					   ? lex::TRUE
-					   : lex::FALSE;
+					   ? lex::FTRUE
+					   : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::FLT && rtok == lex::FLT) {
 			lex::TokType res =
-			l->getLexDataFlt() || r->getLexDataFlt() ? lex::TRUE : lex::FALSE;
+			l->getLexDataFlt() || r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 
 		// with booleans
-		if(ltok == lex::TRUE || rtok == lex::TRUE) {
-			lex::Lexeme restok(l->getLoc(), lex::TRUE);
+		if(ltok == lex::FTRUE || rtok == lex::FTRUE) {
+			lex::Lexeme restok(l->getLoc(), lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::FALSE && rtok == lex::FALSE) {
-			lex::Lexeme restok(l->getLoc(), lex::FALSE);
+		if(ltok == lex::FFALSE && rtok == lex::FFALSE) {
+			lex::Lexeme restok(l->getLoc(), lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if((ltok == lex::TRUE && rtok == lex::FALSE) ||
-		   (ltok == lex::FALSE && rtok == lex::TRUE))
+		if((ltok == lex::FTRUE && rtok == lex::FFALSE) ||
+		   (ltok == lex::FFALSE && rtok == lex::FTRUE))
 		{
-			lex::Lexeme restok(l->getLoc(), lex::TRUE);
+			lex::Lexeme restok(l->getLoc(), lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::INT && rtok == lex::FALSE) {
+		if(ltok == lex::INT && rtok == lex::FFALSE) {
 			// || false is not required
-			lex::TokType res = l->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			lex::TokType res = l->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::FLT && rtok == lex::FALSE) {
+		if(ltok == lex::FLT && rtok == lex::FFALSE) {
 			// || false is not required
-			lex::TokType res = l->getLexDataInt() ? lex::TRUE : lex::FALSE;
+			lex::TokType res = l->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
 			lex::Lexeme restok(l->getLoc(), res);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
@@ -307,20 +307,20 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	case lex::LNOT: {
 		if(ltok == lex::INT) {
 			lex::Lexeme restok(l->getLoc(),
-					   l->getLexDataInt() ? lex::FALSE : lex::TRUE);
+					   l->getLexDataInt() ? lex::FFALSE : lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if(ltok == lex::FLT) {
 			lex::Lexeme restok(l->getLoc(),
-					   l->getLexDataFlt() ? lex::FALSE : lex::TRUE);
+					   l->getLexDataFlt() ? lex::FFALSE : lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::TRUE) {
-			lex::Lexeme restok(l->getLoc(), lex::FALSE);
+		if(ltok == lex::FTRUE) {
+			lex::Lexeme restok(l->getLoc(), lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
-		if(ltok == lex::FALSE) {
-			lex::Lexeme restok(l->getLoc(), lex::TRUE);
+		if(ltok == lex::FFALSE) {
+			lex::Lexeme restok(l->getLoc(), lex::FTRUE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		break;
@@ -328,7 +328,7 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	case lex::EQ: {
 		if(ltok == lex::STR && rtok == lex::STR) {
 			bool res = l->getLexDataStr() == r->getLexDataStr();
-			lex::Lexeme restok(l->getLoc(), res ? lex::TRUE : lex::FALSE);
+			lex::Lexeme restok(l->getLoc(), res ? lex::FTRUE : lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if((ltok == lex::STR || rtok == lex::STR) && ltok != rtok) break;
@@ -337,7 +337,7 @@ Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, con
 	case lex::NE: {
 		if(ltok == lex::STR && rtok == lex::STR) {
 			bool res = l->getLexDataStr() == r->getLexDataStr();
-			lex::Lexeme restok(l->getLoc(), res ? lex::TRUE : lex::FALSE);
+			lex::Lexeme restok(l->getLoc(), res ? lex::FTRUE : lex::FFALSE);
 			return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 		}
 		if((ltok == lex::STR || rtok == lex::STR) && ltok != rtok) break;

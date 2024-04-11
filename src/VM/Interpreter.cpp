@@ -6,8 +6,18 @@
 #include "Utils.hpp"
 #include "VM/DynLib.hpp"
 
+#if defined(FER_OS_WINDOWS)
+#include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
+#endif
+
 namespace fer
 {
+
+#if defined(FER_OS_WINDOWS)
+static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
+bool addDLLDirectory(StringRef dir);
+void remDLLDirectories();
+#endif
 
 Interpreter::Interpreter(RAIIParser &parser)
 	: selfbin(env::getProcPath()), parser(parser), c(parser.getContext()),
@@ -16,6 +26,11 @@ Interpreter::Interpreter(RAIIParser &parser)
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
 {
+#if defined(FER_OS_WINDOWS)
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
+				 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
+				 LOAD_LIBRARY_SEARCH_USER_DIRS);
+#endif
 	initTypeNames();
 
 	// set core modules
@@ -33,14 +48,21 @@ Interpreter::Interpreter(RAIIParser &parser)
 		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
-	includelocs.push_back(selfbase + "/include/feral");
-	dlllocs.push_back(selfbase + "/lib/feral");
+	includelocs.push_back(selfbase + PATH_DELIM "include" PATH_DELIM "feral");
+	dlllocs.push_back(selfbase + PATH_DELIM "lib" PATH_DELIM "feral");
 
 	String feral_paths = env::get("FERAL_PATHS");
-	for(auto &path : stringDelim(feral_paths, ";")) {
-		includelocs.push_back(String(path) + "/include/feral");
-		dlllocs.push_back(String(path) + "/lib/feral");
+	for(auto &_path : stringDelim(feral_paths, ";")) {
+		String path(_path);
+		includelocs.push_back(path + PATH_DELIM "include" PATH_DELIM "feral");
+		dlllocs.push_back(path + PATH_DELIM "lib" PATH_DELIM "feral");
 	}
+
+#if defined(FER_OS_WINDOWS)
+	for(auto dllloc : dlllocs) {
+		addDLLDirectory(dllloc);
+	}
+#endif
 }
 
 // TODO:
@@ -57,6 +79,10 @@ Interpreter::~Interpreter()
 		deinitfn.second();
 	}
 	for(auto &mod : allmodules) decref(mod.second);
+
+#if defined(FER_OS_WINDOWS)
+	remDLLDirectories();
+#endif
 }
 
 int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_module)
@@ -123,7 +149,9 @@ void Interpreter::popModule()
 bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 {
 	static char testpath[MAX_PATH_CHARS];
-	if(name.front() != '~' && name.front() != '/' && name.front() != '.') {
+	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
+	   (name.size() < 2 || name[1] != ':'))
+	{
 		for(auto loc : dirs) {
 			strncpy(testpath, loc.data(), loc.size());
 			testpath[loc.size()] = '\0';
@@ -138,14 +166,22 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 	} else {
 		if(name.front() == '~') {
 			name.erase(name.begin());
-			static String home = env::get("HOME");
+			static StringRef home = fs::home();
 			name.insert(name.begin(), home.begin(), home.end());
-		} else if(name.front() == '.') {
+		} else if(name.front() == '.' && (name.size() == 1 || name[1] != '.')) {
 			assert(modulestack.size() > 0 &&
 			       "dot based module search cannot be done on empty modulestack");
 			StringRef dir = modulestack.back()->getMod()->getDir();
 			name.erase(name.begin());
 			name.insert(name.begin(), dir.begin(), dir.end());
+		} else if(name.size() > 1 && name[0] == '.' && name[1] == '.') {
+			assert(modulestack.size() > 0 &&
+			       "dot based module search cannot be done on empty modulestack");
+			StringRef dir = modulestack.back()->getMod()->getDir();
+			name.erase(name.begin());
+			name.erase(name.begin());
+			StringRef parentdir = fs::parentDir(dir);
+			name.insert(name.begin(), parentdir.begin(), parentdir.end());
 		}
 		strcpy(testpath, name.c_str());
 		if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
@@ -159,13 +195,23 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 
 bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
 {
-	String mod	 = modfile.substr(modfile.find_last_of('/') + 1);
-	StringRef moddir = fs::parentDir(modfile);
+	String mod = modfile.substr(modfile.find_last_of('/') + 1);
 	modfile.insert(modfile.find_last_of('/') + 1, "libferal");
 	if(!findModule(modfile)) {
-		fail(loc, "module: ", modfile, " not found in locs: ", vecToStr(dlllocs));
+		fail(loc, "module: ", modfile, getNativeModuleExtension(),
+		     " not found in locs: ", vecToStr(dlllocs));
 		return false;
 	}
+
+#if defined(FER_OS_WINDOWS)
+	// append the parent dir to dll search paths
+	StringRef parentdir = fs::parentDir(modfile);
+	if(!addDLLDirectory(parentdir)) {
+		fail(loc, "unable to add dir: ", parentdir,
+		     " as a DLL directory while loading module: ", modfile);
+		return false;
+	}
+#endif
 
 	DynLib &dlibs = DynLib::getInstance();
 	if(dlibs.exists(modfile)) return true;
@@ -209,7 +255,7 @@ void Interpreter::addNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn,
 	for(size_t i = 0; i < args; ++i) f->pushParam("");
 	addGlobal(name, f, false);
 }
-void Interpreter::addTypeFn(uiptr _typeid, StringRef name, Var *fn, bool iref)
+void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
@@ -241,7 +287,7 @@ Var *Interpreter::getTypeFn(Var *var, StringRef name)
 	return typefns[typeID<VarAll>()]->get(name);
 }
 
-StringRef Interpreter::getTypeName(uiptr _typeid)
+StringRef Interpreter::getTypeName(size_t _typeid)
 {
 	auto loc = typenames.find(_typeid);
 	if(loc == typenames.end()) {
@@ -341,6 +387,36 @@ void Interpreter::initTypeNames()
 	registerType<VarFn>(nullptr, "Func");
 	registerType<VarModule>(nullptr, "Module");
 	registerType<VarTypeID>(nullptr, "TypeID");
+
+	globals.add("AllTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarAll>()), false);
+
+	globals.add("NilTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarNil>()), false);
+	globals.add("BoolTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarBool>()), false);
+	globals.add("IntTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarInt>()), false);
+	globals.add("FltTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFlt>()), false);
+	globals.add("StrTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarStr>()), false);
+	globals.add("VecTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarVec>()), false);
+	globals.add("MapTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarMap>()), false);
+	globals.add("FnTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFn>()), false);
+	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarModule>()), false);
+	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarTypeID>()), false);
 }
+
+#if defined(FER_OS_WINDOWS)
+bool addDLLDirectory(StringRef dir)
+{
+	if(dllDirectories.find(dir) != dllDirectories.end()) return true;
+	DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(toWString(dir).c_str());
+	if(!dlldir) return false;
+	dllDirectories.insert({String(dir), dlldir});
+	return true;
+}
+void remDLLDirectories()
+{
+	for(auto dir : dllDirectories) {
+		RemoveDllDirectory(dir.second);
+	}
+}
+#endif
 
 } // namespace fer

@@ -2,7 +2,8 @@
 
 #include "VM/Interpreter.hpp"
 
-using namespace fer;
+namespace fer
+{
 
 class VarMultiProc : public Var
 {
@@ -25,3 +26,5 @@ public:
 	inline SharedFuture<int> *&getFuture() { return res; }
 	inline size_t getId() { return id; }
 };
+
+} // namespace fer

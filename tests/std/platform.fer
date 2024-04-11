@@ -1,0 +1,10 @@
+let assert = import('std/assert');
+
+let os = import('std/os');
+let platform = import('std/platform');
+
+inline if os.name == 'windows' {
+
+assert.gt(platform.getMSBuildPath().len(), 0);
+
+}

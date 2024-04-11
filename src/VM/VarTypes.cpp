@@ -10,15 +10,14 @@ namespace fer
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(const ModuleLoc *loc, uiptr _typeid, bool callable, bool attr_based)
-	: loc(loc), _typeid(_typeid), ref(1), info(0)
+Var::Var(const ModuleLoc *loc, bool callable, bool attr_based) : loc(loc), ref(1), info(0)
 {
 	if(callable) info |= (size_t)VarInfo::CALLABLE;
 	if(attr_based) info |= (size_t)VarInfo::ATTR_BASED;
 }
 Var::~Var() {}
 
-uiptr Var::getTypeFnID() { return _typeid; }
+size_t Var::getTypeFnID() { return getType(); }
 
 Var *Var::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const Map<String, AssnArgData> &assn_args)
@@ -36,7 +35,7 @@ void Var::operator delete(void *ptr, size_t sz) { VarMemory::getInstance().free(
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarAll::VarAll(const ModuleLoc *loc) : Var(loc, typeID<VarAll>(), false, false) {}
+VarAll::VarAll(const ModuleLoc *loc) : Var(loc, false, false) {}
 Var *VarAll::copy(const ModuleLoc *loc) { return new VarAll(loc); }
 void VarAll::set(Var *from) {}
 
@@ -44,7 +43,7 @@ void VarAll::set(Var *from) {}
 /////////////////////////////////////////// VarNil ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarNil::VarNil(const ModuleLoc *loc) : Var(loc, typeID<VarNil>(), false, false) {}
+VarNil::VarNil(const ModuleLoc *loc) : Var(loc, false, false) {}
 Var *VarNil::copy(const ModuleLoc *loc)
 {
 	this->iref();
@@ -56,9 +55,7 @@ void VarNil::set(Var *from) {}
 ///////////////////////////////////////// VarTypeID //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarTypeID::VarTypeID(const ModuleLoc *loc, uiptr val)
-	: Var(loc, typeID<VarTypeID>(), false, false), val(val)
-{}
+VarTypeID::VarTypeID(const ModuleLoc *loc, size_t val) : Var(loc, false, false), val(val) {}
 Var *VarTypeID::copy(const ModuleLoc *loc) { return new VarTypeID(loc, val); }
 void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
 
@@ -66,9 +63,7 @@ void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
 ////////////////////////////////////////// VarBool ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBool::VarBool(const ModuleLoc *loc, bool val)
-	: Var(loc, typeID<VarBool>(), false, false), val(val)
-{}
+VarBool::VarBool(const ModuleLoc *loc, bool val) : Var(loc, false, false), val(val) {}
 Var *VarBool::copy(const ModuleLoc *loc) { return new VarBool(loc, val); }
 void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
 
@@ -76,11 +71,9 @@ void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
 ////////////////////////////////////////// VarInt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarInt::VarInt(const ModuleLoc *loc, int64_t _val)
-	: Var(loc, typeID<VarInt>(), false, false), val(_val)
-{}
+VarInt::VarInt(const ModuleLoc *loc, int64_t _val) : Var(loc, false, false), val(_val) {}
 VarInt::VarInt(const ModuleLoc *loc, const char *_val)
-	: Var(loc, typeID<VarInt>(), false, false), val(std::stoll(_val))
+	: Var(loc, false, false), val(std::stoll(_val))
 {}
 VarInt::~VarInt() {}
 Var *VarInt::copy(const ModuleLoc *loc) { return new VarInt(loc, val); }
@@ -90,11 +83,9 @@ void VarInt::set(Var *from) { val = as<VarInt>(from)->get(); }
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFlt::VarFlt(const ModuleLoc *loc, long double _val)
-	: Var(loc, typeID<VarFlt>(), false, false), val(_val)
-{}
+VarFlt::VarFlt(const ModuleLoc *loc, long double _val) : Var(loc, false, false), val(_val) {}
 VarFlt::VarFlt(const ModuleLoc *loc, const char *_val)
-	: Var(loc, typeID<VarFlt>(), false, false), val(std::stod(_val))
+	: Var(loc, false, false), val(std::stod(_val))
 {}
 VarFlt::~VarFlt() {}
 Var *VarFlt::copy(const ModuleLoc *loc) { return new VarFlt(loc, val); }
@@ -104,19 +95,14 @@ void VarFlt::set(Var *from) { val = as<VarFlt>(from)->get(); }
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStr::VarStr(const ModuleLoc *loc, char val)
-	: Var(loc, typeID<VarStr>(), false, false), val(1, val)
-{}
-VarStr::VarStr(const ModuleLoc *loc, StringRef val)
-	: Var(loc, typeID<VarStr>(), false, false), val(val)
-{}
-VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val)
-	: Var(loc, typeID<VarStr>(), false, false)
+VarStr::VarStr(const ModuleLoc *loc, char val) : Var(loc, false, false), val(1, val) {}
+VarStr::VarStr(const ModuleLoc *loc, StringRef val) : Var(loc, false, false), val(val) {}
+VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val) : Var(loc, false, false)
 {
 	for(auto &e : _val) val += e;
 }
 VarStr::VarStr(const ModuleLoc *loc, const char *val, size_t count)
-	: Var(loc, typeID<VarStr>(), false, false), val(val, count)
+	: Var(loc, false, false), val(val, count)
 {}
 Var *VarStr::copy(const ModuleLoc *loc) { return new VarStr(loc, val); }
 void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
@@ -126,12 +112,12 @@ void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarVec::VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs)
-	: Var(loc, typeID<VarVec>(), false, false), asrefs(asrefs)
+	: Var(loc, false, false), asrefs(asrefs)
 {
 	val.reserve(reservesz);
 }
 VarVec::VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs)
-	: Var(loc, typeID<VarVec>(), false, false), val(std::move(val)), asrefs(asrefs)
+	: Var(loc, false, false), val(std::move(val)), asrefs(asrefs)
 {}
 VarVec::~VarVec()
 {
@@ -167,12 +153,12 @@ void VarVec::set(Span<Var *> newval)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarMap::VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs)
-	: Var(loc, typeID<VarMap>(), false, false), asrefs(asrefs)
+	: Var(loc, false, false), asrefs(asrefs)
 {
 	val.reserve(reservesz);
 }
 VarMap::VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs)
-	: Var(loc, typeID<VarMap>(), false, false), val(std::move(val)), asrefs(asrefs)
+	: Var(loc, false, false), val(std::move(val)), asrefs(asrefs)
 {}
 VarMap::~VarMap()
 {
@@ -209,8 +195,8 @@ void VarMap::set(const StringMap<Var *> &newval)
 
 VarFn::VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, const String &var_arg,
 	     size_t paramcount, size_t assn_params_count, FnBody body, bool is_native)
-	: Var(loc, typeID<VarFn>(), true, false), modpath(modpath), kw_arg(kw_arg),
-	  var_arg(var_arg), body(body), is_native(is_native)
+	: Var(loc, true, false), modpath(modpath), kw_arg(kw_arg), var_arg(var_arg), body(body),
+	  is_native(is_native)
 {
 	params.reserve(paramcount);
 	assn_params.reserve(assn_params_count);
@@ -312,7 +298,7 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 VarModule::VarModule(const ModuleLoc *loc, Module *mod, Vars *vars, bool is_owner,
 		     bool is_thread_copy)
-	: Var(loc, typeID<VarModule>(), false, true), mod(mod), vars(vars), is_owner(is_owner),
+	: Var(loc, false, true), mod(mod), vars(vars), is_owner(is_owner),
 	  is_thread_copy(is_thread_copy)
 {
 	if(vars == nullptr) this->vars = new Vars;

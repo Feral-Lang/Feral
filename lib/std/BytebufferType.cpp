@@ -1,7 +1,10 @@
 #include "std/BytebufferType.hpp"
 
+namespace fer
+{
+
 VarBytebuffer::VarBytebuffer(const ModuleLoc *loc, size_t bufsz)
-	: Var(loc, typeID<VarBytebuffer>(), false, false), buffer(nullptr), bufsz(bufsz), buflen(0)
+	: Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(0)
 {
 	if(bufsz > 0) buffer = (char *)malloc(bufsz);
 }
@@ -45,3 +48,5 @@ void VarBytebuffer::resize(size_t newsz)
 	else buffer = (char *)realloc(buffer, newsz);
 	bufsz = newsz;
 }
+
+} // namespace fer

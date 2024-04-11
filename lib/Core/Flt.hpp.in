@@ -1,4 +1,3 @@
-#include <cmath>
 #define ARITHF_FUNC(fn, oper)                                                              \
 	Var *flt##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,              \
 		     const Map<String, AssnArgData> &assn_args)                            \

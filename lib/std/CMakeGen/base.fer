@@ -14,35 +14,68 @@ endif()
 
 set(CMAKE_INSTALL_PREFIX "{self.prefix}")
 set(CMAKE_PREFIX_PATH "$\\{CMAKE_INSTALL_PREFIX};$\\{CMAKE_BINARY_DIR}")
+add_definitions(-DINSTALL_PREFIX=$\\{CMAKE_INSTALL_PREFIX})
 include_directories($\\{CMAKE_INSTALL_PREFIX}/include/feral)
+if(WIN32)
+	set(WIN_LIB_PREFIX "lib")
+	link_directories("$\\{CMAKE_INSTALL_PREFIX}/lib/feral" "$\\{CMAKE_INSTALL_PREFIX}/bin")
+endif()
 add_definitions(-DINSTALL_PREFIX=$\\{CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = $\\{CMAKE_INSTALL_PREFIX}")
 
+# disable deprecated warnings on Windows
+if(WIN32)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		add_compile_options("-Wno-deprecated-declarations")
+	endif()
+endif()
+
 # add extra path
-list(APPEND CMAKE_MODULE_PATH "$\\{PROJECT_SOURCE_DIR}/external"
-			      "{sys.installPrefix}/external")
+list(APPEND CMAKE_MODULE_PATH "$\\{PROJECT_SOURCE_DIR}/external" "{sys.installPrefix}/external")
 
 set(FERAL_VERSION_MAJOR {sys.versionMajor})
 set(FERAL_VERSION_MINOR {sys.versionMinor})
 set(FERAL_VERSION_PATCH {sys.versionPatch})
 
-execute_process(COMMAND date "+%a %b %d, %Y at %H:%M:%S" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
 
-set(ORIGIN "$ORIGIN")
-if(APPLE)
-	set(ORIGIN "@loader_path")
+execute_process(COMMAND git config --get remote.origin.url OUTPUT_VARIABLE REPO_URL OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git log --format=%H -n 1 OUTPUT_VARIABLE COMMIT_ID OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git diff --quiet RESULT_VARIABLE ret)
+if(ret EQUAL 0)
+	set(TREE_STATUS "Clean")
+else()
+	set(TREE_STATUS "Dirty")
 endif()
-set(CMAKE_INSTALL_RPATH "$\\{ORIGIN}/{self.rpathFromOrigin}lib/feral;$\\{ORIGIN}/.")
+
 set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-set(CMAKE_MACOSX_RPATH TRUE)
+if(NOT WIN32)
+	set(ORIGIN "$ORIGIN")
+	if(APPLE)
+		set(ORIGIN "@loader_path")
+		set(CMAKE_MACOSX_RPATH TRUE)
+	endif()
+	set(CMAKE_INSTALL_RPATH "$\\{ORIGIN}/{self.rpathFromOrigin}lib/feral;$\\{ORIGIN}/.")
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 
 include(CheckCXXCompilerFlag)
 
 # For headers on macOS and BSD
 if(APPLE OR $\\{CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	include_directories(/usr/local/include)
+endif()
+
+# Must have vcpkg installed on Windows to use third party libraries
+if(WIN32)
+	if(NOT DEFINED ENV\\{VCPKG_ROOT} OR "$ENV\\{VCPKG_ROOT}" STREQUAL "")
+		message(FATAL_ERROR "Could not find vcpkg. Ensure it is installed and $VCPKG_ROOT is set.")
+	endif()
+	set(VCPKG_CRT_LINKAGE "dynamic")
+	set(VCPKG_LIBRARY_LINKAGE "dynamic")
+	message("-- Loading vcpkg cmake: $ENV\\{VCPKG_ROOT}\\\\scripts\\\\toolchains\\\\windows.cmake")
+	include("$ENV\\{VCPKG_ROOT}\\\\scripts\\\\buildsystems\\\\vcpkg.cmake")
 endif()
 
 # Dependencies
@@ -62,10 +95,14 @@ else()
 	set(CMAKE_EXE_LINKER_FLAGS  "$\\{CMAKE_EXE_LINKER_FLAGS} $\\{CMAKE_THREAD_LIBS_INIT}")
 endif()
 
-find_program(CCACHE_PROGRAM ccache)
+if(WIN32)
+	find_program(CCACHE_PROGRAM sccache)
+else()
+	find_program(CCACHE_PROGRAM ccache)
+endif()
 if(CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "$\\{CCACHE_PROGRAM}")
-    message("-- Using ccache")
+    message("-- Using ccache: $\\{CCACHE_PROGRAM}")
 endif()
 
 if($\\{CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")

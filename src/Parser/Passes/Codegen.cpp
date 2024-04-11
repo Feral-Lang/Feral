@@ -73,8 +73,8 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 	case lex::FLT:
 		bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataFlt());
 		return true;
-	case lex::TRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
-	case lex::FALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
+	case lex::FTRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
+	case lex::FFALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
 	case lex::NIL: bc.addInstrNil(Opcode::LOAD_DATA, stmt->getLoc()); return true;
 	default: break;
 	}

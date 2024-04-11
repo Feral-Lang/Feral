@@ -1,9 +1,17 @@
 #include <iostream>
-#include <termios.h>
-#include <unistd.h>
 
 #include "std/FSType.hpp"
 #include "VM/Interpreter.hpp"
+
+#if defined(FER_OS_WINDOWS)
+#include <io.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#endif
+
+namespace fer
+{
 
 static constexpr size_t MAX_SCAN_LINE_LEN = 1024;
 
@@ -420,3 +428,5 @@ int applyColors(String &str)
 	}
 	return chars;
 }
+
+} // namespace fer
