@@ -186,6 +186,29 @@ Var *fileIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
+Var *fileReadAll(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const Map<String, AssnArgData> &assn_args)
+{
+	FILE *const file = as<VarFile>(args[0])->getFile();
+	char *lineptr	 = NULL;
+	size_t len	 = 0;
+	ssize_t read	 = 0;
+
+	VarStr *res = vm.makeVar<VarStr>(loc, "");
+	while((read = getline(&lineptr, &len, file)) != -1) {
+		String tmp = lineptr;
+		while(!tmp.empty() && (tmp.back() == '\n' || tmp.back() == '\r')) {
+			tmp.pop_back();
+		}
+		res->get() += tmp;
+		free(lineptr);
+		lineptr = NULL;
+	}
+	if(lineptr) free(lineptr);
+	fseek(file, 0, SEEK_SET);
+	return res;
+}
+
 Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		    const Map<String, AssnArgData> &assn_args)
 {
@@ -391,6 +414,7 @@ INIT_MODULE(FS)
 	vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines, 0);
 	vm.addNativeTypeFn<VarFile>(loc, "seek", fileSeek, 2);
 	vm.addNativeTypeFn<VarFile>(loc, "eachLine", fileEachLine, 0);
+	vm.addNativeTypeFn<VarFile>(loc, "readAll", fileReadAll, 0);
 	vm.addNativeTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks, 2);
 
 	vm.addNativeTypeFn<VarFileIterator>(loc, "next", fileIteratorNext, 0);
