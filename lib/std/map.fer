@@ -1,6 +1,7 @@
 mload('std/Map');
 
 let str = import('std/str');
+let vec = import('std/vec');
 
 let '==' in MapTy = fn(other) {
 	if self._type_() != other._type_() { return false; }
@@ -9,6 +10,14 @@ let '==' in MapTy = fn(other) {
 		if other[e.0] != e.1 { return false; }
 	}
 	return true;
+};
+
+let keys in MapTy = fn() {
+	let v = vec.new(refs = true);
+	for e in self.each() {
+		v.push(e.0);
+	}
+	return v;
 };
 
 let str in MapTy = fn() {

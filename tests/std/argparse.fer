@@ -1,0 +1,20 @@
+let assert = import('std/assert');
+
+let io = import('std/io');
+let vec = import('std/vec');
+let argparse = import('std/argparse');
+
+let args = argparse.new();
+args.add("help", "h").setHelp("prints program usage syntax");
+args.add("version", "v").setHelp("prints program version");
+args.add("value", "e").setValReqd(true).setHelp("Enter a value");
+args.parse(vec.new('1', '2', '3', '-vh', '--value', '4'));
+
+assert.eq(args.has('help'), true);
+assert.eq(args.has('version'), true);
+assert.eq(args.has('value'), true);
+assert.eq(args.getValue('value'), '4');
+assert.eq(args.getArgAt(1), '2');
+assert.eq(args.getArgsFrom(1), vec.new('2', '3'));
+
+args.printHelp(io.stdout);
