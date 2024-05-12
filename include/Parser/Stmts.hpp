@@ -15,8 +15,8 @@ enum Stmts : uint8_t
 	SIMPLE,
 	EXPR,
 	FNARGS,
-	VAR,	 // Var and Val (<var> = <value>)
-	FNSIG,	 // function signature
+	VAR,   // Var and Val (<var> = <value>)
+	FNSIG, // function signature
 	FNDEF,
 	VARDECL, // <VAR>[, <VAR>]*
 	COND,
@@ -173,8 +173,8 @@ class StmtVar : public Stmt
 {
 	lex::Lexeme name; // can be STR in case of assn args
 	Stmt *in;
-	Stmt *val;	  // expr or simple
-	bool is_arg;	  // fndef param / fncall arg or not
+	Stmt *val;   // expr or simple
+	bool is_arg; // fndef param / fncall arg or not
 
 public:
 	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);

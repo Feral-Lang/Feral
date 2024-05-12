@@ -10,7 +10,7 @@
 #elif defined(FER_OS_APPLE)
 #include <mach-o/dyld.h> // for _NSGetExecutablePath()
 #elif defined(FER_OS_FREEBSD)
-#include <sys/sysctl.h>	 // for sysctl()
+#include <sys/sysctl.h> // for sysctl()
 #include <sys/types.h>
 #else
 #include <unistd.h> // for readlink()

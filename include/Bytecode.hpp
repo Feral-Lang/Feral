@@ -81,11 +81,8 @@ public:
 	Instruction(Opcode opcode, const ModuleLoc *loc, bool data);
 	Instruction(Opcode opcode, const ModuleLoc *loc); // for nil
 
-#define isDataX(X, ENUMVAL)                        \
-	inline bool isData##X() const              \
-	{                                          \
-		return dtype == DataType::ENUMVAL; \
-	}
+#define isDataX(X, ENUMVAL) \
+	inline bool isData##X() const { return dtype == DataType::ENUMVAL; }
 	isDataX(Bool, BOOL);
 	isDataX(Nil, NIL);
 	isDataX(Int, INT);
