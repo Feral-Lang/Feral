@@ -58,7 +58,7 @@ public:
 
 class Vars
 {
-	Map<String, Var *> stashed;
+	StringMap<Var *> stashed;
 	// maps function ids to VarStack
 	// 0 is the id for global scope
 	Map<size_t, VarStack *> fnvars;

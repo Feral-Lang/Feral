@@ -1,53 +1,53 @@
 Var *allToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.getFalse();
 }
 
 Var *nilToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.getFalse();
 }
 
 Var *boolToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	return args[0];
 }
 
 Var *typeIDToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.getTrue();
 }
 
 Var *intToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarInt>(args[0])->get() == 0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *fltToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarFlt>(args[0])->get() == 0.0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *strToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return !as<VarStr>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return !as<VarVec>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return !as<VarMap>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }

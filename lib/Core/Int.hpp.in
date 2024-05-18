@@ -1,6 +1,6 @@
 #define ARITHI_FUNC(fn, oper)                                                                      \
 	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                      \
-		     const Map<String, AssnArgData> &assn_args)                                    \
+		     const StringMap<AssnArgData> &assn_args)                                      \
 	{                                                                                          \
 		if(args[1]->is<VarInt>()) {                                                        \
 			return vm.makeVar<VarInt>(                                                 \
@@ -16,7 +16,7 @@
 
 #define ARITHI_ASSN_FUNC(fn, oper)                                                                \
 	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                 \
-			 const Map<String, AssnArgData> &assn_args)                               \
+			 const StringMap<AssnArgData> &assn_args)                                 \
 	{                                                                                         \
 		if(args[1]->is<VarInt>()) {                                                       \
 			as<VarInt>(args[0])->set(                                                 \
@@ -35,7 +35,7 @@
 
 #define LOGICI_FUNC(fn, sym)                                                             \
 	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,            \
-		     const Map<String, AssnArgData> &assn_args)                          \
+		     const StringMap<AssnArgData> &assn_args)                            \
 	{                                                                                \
 		if(args[1]->is<VarInt>()) {                                              \
 			return as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get() \
@@ -49,7 +49,7 @@
 
 #define BITWISE_FUNC(fn, sym)                                                                    \
 	Var *intB##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
-		      const Map<String, AssnArgData> &assn_args)                                 \
+		      const StringMap<AssnArgData> &assn_args)                                   \
 	{                                                                                        \
 		if(args[1]->is<VarInt>()) {                                                      \
 			return vm.makeVar<VarInt>(                                               \
@@ -62,7 +62,7 @@
 
 #define BITWISE_ASSN_FUNC(fn, sym)                                                  \
 	Var *intAssnB##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,  \
-			  const Map<String, AssnArgData> &assn_args)                \
+			  const StringMap<AssnArgData> &assn_args)                  \
 	{                                                                           \
 		if(args[1]->is<VarInt>()) {                                         \
 			as<VarInt>(args[0])->set(                                   \
@@ -100,7 +100,7 @@ BITWISE_ASSN_FUNC(Or, |)
 BITWISE_ASSN_FUNC(XOr, ^)
 
 Var *intEQ(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) return vm.getFalse();
 	return as<VarInt>(args[0])->get() == as<VarInt>(args[1])->get() ? vm.getTrue()
@@ -108,7 +108,7 @@ Var *intEQ(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intNE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) return vm.getTrue();
 	return as<VarInt>(args[0])->get() == as<VarInt>(args[1])->get() ? vm.getFalse()
@@ -116,7 +116,7 @@ Var *intNE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
@@ -141,7 +141,7 @@ Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		// rhs == 0
@@ -166,26 +166,26 @@ Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intBNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, ~as<VarInt>(args[0])->get());
 }
 
 Var *intBNotAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
+		 const StringMap<AssnArgData> &assn_args)
 {
 	as<VarInt>(args[0])->set(~as<VarInt>(args[0])->get());
 	return args[0];
 }
 
 Var *intPopCnt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, std::popcount((uint64_t)as<VarInt>(args[0])->get()));
 }
 
 Var *intLShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get()
@@ -199,7 +199,7 @@ Var *intLShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intRShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		return vm.makeVar<VarInt>(loc,
@@ -213,7 +213,7 @@ Var *intRShift(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intLShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<String, AssnArgData> &assn_args)
+		   const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() << as<VarInt>(args[1])->get());
@@ -225,7 +225,7 @@ Var *intLShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intRShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<String, AssnArgData> &assn_args)
+		   const StringMap<AssnArgData> &assn_args)
 {
 	if(args[1]->is<VarInt>()) {
 		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() >> as<VarInt>(args[1])->get());
@@ -237,7 +237,7 @@ Var *intRShiftAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -256,20 +256,20 @@ Var *intPow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intSqRoot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, std::sqrt(as<VarInt>(args[0])->get()));
 }
 
 Var *intPreInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() + 1);
 	return args[0];
 }
 
 Var *intPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get());
 	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() + 1);
@@ -277,14 +277,14 @@ Var *intPostInc(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intPreDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() - 1);
 	return args[0];
 }
 
 Var *intPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->get());
 	as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() - 1);
@@ -292,7 +292,7 @@ Var *intPostDec(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *intUSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, -as<VarInt>(args[0])->get());
 }

@@ -5,7 +5,7 @@ namespace fer
 {
 
 Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected integer for exit code, found: ", vm.getTypeName(args[1]));
@@ -17,7 +17,7 @@ Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for variable name, found: ",
@@ -30,7 +30,7 @@ Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -42,7 +42,7 @@ Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *getMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
 }

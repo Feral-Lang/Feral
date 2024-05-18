@@ -36,7 +36,7 @@ test.func2(1, a = 10, b = 20);
 #################################################### ENUM #####################################################
 ###############################################################################################################
 
-let EXIT_CODE = lang.enum(
+let ExitCode = lang.enum(
 	.OK,
 	.FAIL,
 	.IO_ERR,
@@ -45,6 +45,5 @@ let EXIT_CODE = lang.enum(
 	.SOME_ERR = 20
 );
 
-#io.println(EXIT_CODE.PARSE_FAIL);
-assert.eq(EXIT_CODE.PARSE_FAIL, 4);
-assert.eq(EXIT_CODE.SOME_ERR, 20);
+assert.eq(ExitCode.PARSE_FAIL, 4);
+assert.eq(ExitCode.SOME_ERR, 20);

@@ -76,7 +76,7 @@ bool VarIntIterator::next(int64_t &val)
 }
 
 Var *intRange(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	Var *lhs_base  = args[1];
 	Var *rhs_base  = args.size() > 2 ? args[2] : nullptr;
@@ -110,7 +110,7 @@ Var *intRange(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<String, AssnArgData> &assn_args)
+			const StringMap<AssnArgData> &assn_args)
 {
 	VarIntIterator *it = as<VarIntIterator>(args[0]);
 	int64_t _res;

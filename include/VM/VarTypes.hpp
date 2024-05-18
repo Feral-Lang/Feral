@@ -55,7 +55,7 @@ public:
 	virtual void set(Var *from)		= 0;
 
 	virtual Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			  const Map<String, AssnArgData> &assn_args);
+			  const StringMap<AssnArgData> &assn_args);
 	virtual void setAttr(StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
 	virtual Var *getAttr(StringRef name);
@@ -242,7 +242,7 @@ struct AssnArgData
 };
 
 typedef Var *(*NativeFn)(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<String, AssnArgData> &assn_args);
+			 const StringMap<AssnArgData> &assn_args);
 
 struct FeralFnBody
 {
@@ -275,7 +275,7 @@ public:
 	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args) override;
+		  const StringMap<AssnArgData> &assn_args) override;
 
 	inline void pushParam(const String &param) { params.push_back(param); }
 	inline void setParams(Span<String> newparams)

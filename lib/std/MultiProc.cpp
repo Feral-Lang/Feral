@@ -19,13 +19,13 @@ int execCommand(const String &cmd);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *getConcurrency(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		    const Map<String, AssnArgData> &assn_args)
+		    const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, Thread::hardware_concurrency());
 }
 
 Var *mprocNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for multiproc execution, found: ",
@@ -39,13 +39,13 @@ Var *mprocNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mprocGetId(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarMultiProc>(args[0])->getId());
 }
 
 Var *mprocIsDone(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
+		 const StringMap<AssnArgData> &assn_args)
 {
 	SharedFuture<int> *&fut = as<VarMultiProc>(args[0])->getFuture();
 	if(!fut->valid()) return vm.getFalse();
@@ -54,7 +54,7 @@ Var *mprocIsDone(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mprocGetRes(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
+		 const StringMap<AssnArgData> &assn_args)
 {
 	SharedFuture<int> *&fut = as<VarMultiProc>(args[0])->getFuture();
 	if(!fut->valid() || fut->wait_for(std::chrono::seconds(0)) != std::future_status::ready)

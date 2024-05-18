@@ -4,7 +4,6 @@
 #include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
-
 namespace fer
 {
 
@@ -20,37 +19,37 @@ namespace fer
 #include "Core/TypeID.hpp.in"
 
 Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
 Var *allGetTypeFnID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		    const Map<String, AssnArgData> &assn_args)
+		    const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
 Var *allGetTypeStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<String, AssnArgData> &assn_args)
+		   const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
 Var *allEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	Var *copy = args[0]->copy(loc);
 	// decreased because system internally will increment it again
@@ -64,14 +63,14 @@ Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 // there is no point in calling this since reference count of that object will be 1
 // and hence the VM won't create a copy of it when used in creating a new var.
 Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	args[1]->setLoadAsRef();
 	return args[1];
 }
 
 Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	String res;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -94,7 +93,7 @@ Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -110,7 +109,7 @@ Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -135,7 +134,7 @@ Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -153,7 +152,7 @@ Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -171,7 +170,7 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.getCurrModule()->getMod()->isMainModule() ? vm.getTrue() : vm.getFalse();
 }
