@@ -155,7 +155,7 @@ public:
 	// used primarily within libraries & by toStr, toBool
 	// first arg must ALWAYS be self for memcall, nullptr otherwise
 	bool callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-		    const Map<String, AssnArgData> &assn_args);
+		    const StringMap<AssnArgData> &assn_args);
 
 	// evaluate a given expression and return its result
 	// primarily used for templates

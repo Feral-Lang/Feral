@@ -9,13 +9,13 @@
 // Define S_IS*() macros since they're not present on Windows
 #if defined(S_IFMT)
 #if !defined(S_ISREG) && defined(S_IFREG)
-#define S_ISREG(m) (((m)&S_IFMT) == S_IFREG)
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #endif
 #if !defined(S_ISDIR) && defined(S_IFDIR)
-#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
 #if !defined(S_ISCHR) && defined(S_IFCHR)
-#define S_ISCHR(m) (((m)&S_IFMT) == S_IFCHR)
+#define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
 #endif
 #endif
 #else
@@ -30,7 +30,7 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStruct>()) {
 		vm.fail(args[1]->getLoc(),
@@ -109,7 +109,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -117,7 +117,7 @@ Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -125,7 +125,7 @@ Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -134,7 +134,7 @@ Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 #if !defined(FER_OS_WINDOWS)
 Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -142,7 +142,7 @@ Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -150,7 +150,7 @@ Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();
@@ -158,7 +158,7 @@ Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *statIsSock(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
 	int mode      = as<VarInt>(st->getAttr("mode"))->get();

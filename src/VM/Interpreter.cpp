@@ -313,7 +313,7 @@ Var *Interpreter::getConst(const ModuleLoc *loc, Instruction::Data &d, DataType 
 }
 
 bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-			 const Map<String, AssnArgData> &assn_args)
+			 const StringMap<AssnArgData> &assn_args)
 {
 	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
 	bool memcall = args[0] != nullptr;

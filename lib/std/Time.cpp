@@ -6,7 +6,7 @@ namespace fer
 {
 
 Var *sysclkNow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, 0);
 	res->set(std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -16,7 +16,7 @@ Var *sysclkNow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *formatTime(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected integer argument as time for formatting, found: ",

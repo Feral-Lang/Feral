@@ -9,7 +9,7 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			 const Map<String, AssnArgData> &assn_args)
+			 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(
@@ -20,7 +20,7 @@ Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 }
 
 Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
@@ -35,7 +35,7 @@ Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(
@@ -48,19 +48,19 @@ Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *bytebufferCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<String, AssnArgData> &assn_args)
+			const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->capacity());
 }
 
 Var *bytebufferLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		   const Map<String, AssnArgData> &assn_args)
+		   const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->len());
 }
 
 Var *bytebufferToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		     const Map<String, AssnArgData> &assn_args)
+		     const StringMap<AssnArgData> &assn_args)
 {
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
 	if(self->len() == 0) return vm.makeVar<VarStr>(loc, "");

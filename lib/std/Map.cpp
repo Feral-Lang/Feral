@@ -8,7 +8,7 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if((args.size() - 1) % 2 != 0) {
 		vm.fail(loc, "argument count must be even to create a map");
@@ -69,25 +69,25 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mapSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->get().size());
 }
 
 Var *mapIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarMap>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	StringMap<Var *> &map = as<VarMap>(args[0])->get();
 	Var *v		      = nullptr;
@@ -116,7 +116,7 @@ Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	StringMap<Var *> &map = as<VarMap>(args[0])->get();
 	Var *v		      = nullptr;
@@ -140,7 +140,7 @@ Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const Map<String, AssnArgData> &assn_args)
+	   const StringMap<AssnArgData> &assn_args)
 {
 	StringMap<Var *> &map = as<VarMap>(args[0])->get();
 	Var *v		      = nullptr;
@@ -160,7 +160,7 @@ Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	StringMap<Var *> &map = as<VarMap>(args[0])->get();
 	Var *v		      = nullptr;
@@ -180,13 +180,13 @@ Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *mapEach(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
 }
 
 Var *mapIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		     const Map<String, AssnArgData> &assn_args)
+		     const StringMap<AssnArgData> &assn_args)
 {
 	VarMapIterator *it = as<VarMapIterator>(args[0]);
 	Var *res	   = nullptr;

@@ -48,7 +48,7 @@ void VarStructDef::set(Var *from)
 }
 
 Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-			const Map<String, AssnArgData> &assn_args)
+			const StringMap<AssnArgData> &assn_args)
 {
 	for(auto &aa : assn_args) {
 		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {

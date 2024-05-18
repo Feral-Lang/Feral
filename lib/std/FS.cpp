@@ -32,7 +32,7 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dir
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -42,7 +42,7 @@ Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -64,7 +64,7 @@ Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for directory name, found: ",
@@ -100,7 +100,7 @@ Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileReopen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const Map<String, AssnArgData> &assn_args)
+		const StringMap<AssnArgData> &assn_args)
 {
 	VarFile *filev = as<VarFile>(args[0]);
 	if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
@@ -127,7 +127,7 @@ Var *fileReopen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileLines(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	       const Map<String, AssnArgData> &assn_args)
+	       const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 	char *lineptr	 = NULL;
@@ -150,7 +150,7 @@ Var *fileLines(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileSeek(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 	if(!args[1]->is<VarInt>()) {
@@ -169,13 +169,13 @@ Var *fileSeek(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileEachLine(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args)
+		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
 }
 
 Var *fileIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const Map<String, AssnArgData> &assn_args)
+		      const StringMap<AssnArgData> &assn_args)
 {
 	VarFileIterator *it = as<VarFileIterator>(args[0]);
 	VarStr *res	    = vm.makeVar<VarStr>(loc, "");
@@ -187,7 +187,7 @@ Var *fileIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileReadAll(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		 const Map<String, AssnArgData> &assn_args)
+		 const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 	char *lineptr	 = NULL;
@@ -210,7 +210,7 @@ Var *fileReadAll(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		    const Map<String, AssnArgData> &assn_args)
+		    const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
 
@@ -283,7 +283,7 @@ Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 // equivalent to open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)
 Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const Map<String, AssnArgData> &assn_args)
+	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -303,7 +303,7 @@ Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fdOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -324,7 +324,7 @@ Var *fdOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fdRead(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(
@@ -349,7 +349,7 @@ Var *fdRead(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(
@@ -383,7 +383,7 @@ Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(

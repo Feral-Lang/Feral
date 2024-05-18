@@ -21,7 +21,7 @@ public:
 
 	// returns VarStruct
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const Map<String, AssnArgData> &assn_args) override;
+		  const StringMap<AssnArgData> &assn_args) override;
 
 	void setAttr(StringRef name, Var *val, bool iref) override;
 	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }

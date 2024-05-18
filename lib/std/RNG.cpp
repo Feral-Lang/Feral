@@ -12,7 +12,7 @@ static std::default_random_engine rng;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *rngSeed(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const Map<String, AssnArgData> &assn_args)
+	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc, "expected seed value to be integer, found: ", vm.getTypeName(args[1]));
@@ -24,7 +24,7 @@ Var *rngSeed(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 
 // [0, to)
 Var *rngGet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const Map<String, AssnArgData> &assn_args)
+	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
 		vm.fail(loc,
