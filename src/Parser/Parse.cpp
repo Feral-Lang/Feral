@@ -781,6 +781,8 @@ begin_brack:
 				p.sett(lex::PostVA);
 				p.next();
 				unpack_arg = true;
+			} else if(p.accept(lex::FN)) {
+				if(!parseFnDef(p, arg)) return false;
 			} else if(!parseExpr16(p, arg, false)) { // normal arg
 				return false;
 			}

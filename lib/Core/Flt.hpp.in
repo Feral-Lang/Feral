@@ -32,18 +32,23 @@
 		return nullptr;                                                                 \
 	}
 
-#define LOGICF_FUNC(name, checksym)                                                               \
-	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
-		       const StringMap<AssnArgData> &assn_args)                                   \
-	{                                                                                         \
-		if(args[1]->is<VarFlt>()) {                                                       \
-			return as<VarFlt>(args[0])->get() checksym as<VarFlt>(args[1])->get()     \
-			       ? vm.getTrue()                                                     \
-			       : vm.getFalse();                                                   \
-		}                                                                                 \
-		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) "-assn, found: ", \
-			vm.getTypeName(args[1]));                                                 \
-		return nullptr;                                                                   \
+#define LOGICF_FUNC(name, checksym)                                                           \
+	Var *flt##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,               \
+		       const StringMap<AssnArgData> &assn_args)                               \
+	{                                                                                     \
+		if(args[1]->is<VarFlt>()) {                                                   \
+			return as<VarFlt>(args[0])->get() checksym as<VarFlt>(args[1])->get() \
+			       ? vm.getTrue()                                                 \
+			       : vm.getFalse();                                               \
+		}                                                                             \
+		if(args[1]->is<VarInt>()) {                                                   \
+			return as<VarFlt>(args[0])->get() checksym as<VarInt>(args[1])->get() \
+			       ? vm.getTrue()                                                 \
+			       : vm.getFalse();                                               \
+		}                                                                             \
+		vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) ", found: ",  \
+			vm.getTypeName(args[1]));                                             \
+		return nullptr;                                                               \
 	}
 
 ARITHF_FUNC(Add, +)

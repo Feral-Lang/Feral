@@ -42,6 +42,42 @@ let sub in VecTy = fn(start, end = -1) {
 	return self.subNative(start, end);
 };
 
+let min in VecTy = fn(lt = fn(a, b) { return a < b; }) {
+	if self.empty() {
+		raise('cannot find min in an empty list');
+	}
+	let count = self.len();
+	let min = 0;
+	for let i = 1; i < count; ++i {
+		if lt(self[i], self[min]) { min = i; }
+	}
+	return min;
+};
+
+let max in VecTy = fn(gt = fn(a, b) { return a > b; }) {
+	if self.empty() {
+		raise('cannot find max in an empty list');
+	}
+	let count = self.len();
+	let max = 0;
+	for let i = 1; i < count; ++i {
+		if gt(self[i], self[max]) { max = i; }
+	}
+	return max;
+};
+
+let mean in VecTy = fn(onEach = fn(e) { return e; }) {
+	if self.empty() {
+		raise('cannot find mean of an empty list');
+	}
+	let count = self.len();
+	let sum = onEach(self[0]);
+	for let i = 1; i < count; ++i {
+		sum += onEach(self[i]);
+	}
+	return sum / count;
+};
+
 let str in VecTy = fn() {
 	let res = '[';
 	for elem in self.each() {
