@@ -9,42 +9,47 @@
 			return vm.makeVar<VarInt>(                                                 \
 			loc, as<VarInt>(args[0])->get() oper(int64_t) as<VarFlt>(args[1])->get()); \
 		}                                                                                  \
-		vm.fail(loc, "expected int or float argument for int " STRINGIFY(fn) ", found: ",  \
+		vm.fail(loc, "expected int or flt argument for int " STRINGIFY(fn) ", found: ",    \
 			vm.getTypeName(args[1]));                                                  \
 		return nullptr;                                                                    \
 	}
 
-#define ARITHI_ASSN_FUNC(fn, oper)                                                                \
-	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                 \
-			 const StringMap<AssnArgData> &assn_args)                                 \
-	{                                                                                         \
-		if(args[1]->is<VarInt>()) {                                                       \
-			as<VarInt>(args[0])->set(                                                 \
-			as<VarInt>(args[0])->get() oper as<VarInt>(args[1])->get());              \
-			return args[0];                                                           \
-		} else if(args[1]->is<VarFlt>()) {                                                \
-			as<VarInt>(args[0])->set(                                                 \
-			as<VarInt>(args[0])->get() oper(int64_t) as<VarFlt>(args[1])->get());     \
-			return args[0];                                                           \
-		}                                                                                 \
-		vm.fail(loc,                                                                      \
-			"expected int or float argument for int " STRINGIFY(fn) "-assn, found: ", \
-			vm.getTypeName(args[1]));                                                 \
-		return nullptr;                                                                   \
+#define ARITHI_ASSN_FUNC(fn, oper)                                                              \
+	Var *intAssn##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,               \
+			 const StringMap<AssnArgData> &assn_args)                               \
+	{                                                                                       \
+		if(args[1]->is<VarInt>()) {                                                     \
+			as<VarInt>(args[0])->set(                                               \
+			as<VarInt>(args[0])->get() oper as<VarInt>(args[1])->get());            \
+			return args[0];                                                         \
+		} else if(args[1]->is<VarFlt>()) {                                              \
+			as<VarInt>(args[0])->set(                                               \
+			as<VarInt>(args[0])->get() oper(int64_t) as<VarFlt>(args[1])->get());   \
+			return args[0];                                                         \
+		}                                                                               \
+		vm.fail(loc,                                                                    \
+			"expected int or flt argument for int " STRINGIFY(fn) "-assn, found: ", \
+			vm.getTypeName(args[1]));                                               \
+		return nullptr;                                                                 \
 	}
 
-#define LOGICI_FUNC(fn, sym)                                                             \
-	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,            \
-		     const StringMap<AssnArgData> &assn_args)                            \
-	{                                                                                \
-		if(args[1]->is<VarInt>()) {                                              \
-			return as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get() \
-			       ? vm.getTrue()                                            \
-			       : vm.getFalse();                                          \
-		}                                                                        \
-		vm.fail(loc, "expected int argument for int " STRINGIFY(fn) ", found: ", \
-			vm.getTypeName(args[1]));                                        \
-		return nullptr;                                                          \
+#define LOGICI_FUNC(fn, sym)                                                                    \
+	Var *int##fn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
+		     const StringMap<AssnArgData> &assn_args)                                   \
+	{                                                                                       \
+		if(args[1]->is<VarInt>()) {                                                     \
+			return as<VarInt>(args[0])->get() sym as<VarInt>(args[1])->get()        \
+			       ? vm.getTrue()                                                   \
+			       : vm.getFalse();                                                 \
+		}                                                                               \
+		if(args[1]->is<VarFlt>()) {                                                     \
+			return as<VarInt>(args[0])->get() sym as<VarFlt>(args[1])->get()        \
+			       ? vm.getTrue()                                                   \
+			       : vm.getFalse();                                                 \
+		}                                                                               \
+		vm.fail(loc, "expected int or flt argument for int " STRINGIFY(fn) ", found: ", \
+			vm.getTypeName(args[1]));                                               \
+		return nullptr;                                                                 \
 	}
 
 #define BITWISE_FUNC(fn, sym)                                                                    \
@@ -135,8 +140,7 @@ Var *intDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return vm.makeVar<VarInt>(loc,
 					  as<VarInt>(args[0])->get() / as<VarInt>(args[1])->get());
 	}
-	vm.fail(loc,
-		"expected int or float argument for int Div, found: ", vm.getTypeName(args[1]));
+	vm.fail(loc, "expected int or flt argument for int Div, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 
@@ -160,8 +164,8 @@ Var *intAssnDiv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		as<VarInt>(args[0])->set(as<VarInt>(args[0])->get() / as<VarFlt>(args[1])->get());
 		return args[0];
 	}
-	vm.fail(
-	loc, "expected int or float argument for int Div-assn, found: ", vm.getTypeName(args[1]));
+	vm.fail(loc,
+		"expected int or flt argument for int Div-assn, found: ", vm.getTypeName(args[1]));
 	return nullptr;
 }
 

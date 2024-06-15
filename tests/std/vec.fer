@@ -3,7 +3,6 @@ let assert = import('std/assert');
 let vec = import('std/vec');
 
 let v = vec.new(3, 2, 1, 4);
-let v2 = vec.new();
 
 assert.eq(v.capacity(), 4);
 assert.eq(v.len(), 4);
@@ -17,6 +16,8 @@ assert.eq(v.erase(1), vec.new(3, 2, 1, 4));
 assert.eq(v.set(2, 5), vec.new(3, 2, 5, 4));
 assert.eq(v.at(2), 5);
 assert.eq(v[2], 5);
+
+let v2 = vec.new();
 
 for e in v.each() {
 	v2.push(e);
@@ -32,3 +33,11 @@ for e in v.each() {
 	v3.push(e);
 }
 v.str();
+
+let v3 = vec.new(1, 2, 3, 4, 5.5, 6);
+
+assert.eq(v3.min(), 0);
+assert.eq(v3.max(), 5);
+assert.eq(v3[v3.min()], 1);
+assert.eq(v3[v3.max()], 6);
+assert.eq(v3.mean(fn(e) { return e.flt(); }), 3.583333);
