@@ -96,7 +96,9 @@ void VarFlt::set(Var *from) { val = as<VarFlt>(from)->get(); }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarStr::VarStr(const ModuleLoc *loc, char val) : Var(loc, false, false), val(1, val) {}
+VarStr::VarStr(const ModuleLoc *loc, String &&val) : Var(loc, false, false), val(std::move(val)) {}
 VarStr::VarStr(const ModuleLoc *loc, StringRef val) : Var(loc, false, false), val(val) {}
+VarStr::VarStr(const ModuleLoc *loc, const char *val) : Var(loc, false, false), val(val) {}
 VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val) : Var(loc, false, false)
 {
 	for(auto &e : _val) val += e;

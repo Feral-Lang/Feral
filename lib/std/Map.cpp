@@ -199,6 +199,8 @@ INIT_MODULE(Map)
 {
 	VarModule *mod = vm.getCurrModule();
 
+	vm.registerType<VarMapIterator>(loc, "MapIterator");
+
 	mod->addNativeFn("new", mapNew, 0, true);
 
 	vm.addNativeTypeFn<VarMap>(loc, "len", mapSize, 0);

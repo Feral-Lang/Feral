@@ -1,0 +1,9 @@
+mload('std/Regex');
+
+let new = fn(data, opts = ecmascript) {
+	return newNative(data, opts);
+};
+
+let match in RegexTy = fn(target, captures = nil) {
+	return self.matchNative(target, captures);
+};

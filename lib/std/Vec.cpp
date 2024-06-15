@@ -54,13 +54,13 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *vecSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().size());
+	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
 Var *vecCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().capacity());
+	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
 Var *vecIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -72,20 +72,19 @@ Var *vecIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *vecEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
+	return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecFront(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->get().empty() ? vm.getNil()
-						  : as<VarVec>(args[0])->get().front();
+	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
 Var *vecBack(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->get().empty() ? vm.getNil() : as<VarVec>(args[0])->get().back();
+	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
 Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -106,12 +105,12 @@ Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
-	if(res->get().empty()) {
+	if(res->isEmpty()) {
 		vm.fail(loc, "called pop() on an empty vector");
 		return nullptr;
 	}
-	decref(res->get().back());
-	res->get().pop_back();
+	decref(res->back());
+	res->pop();
 	return args[0];
 }
 
@@ -122,7 +121,7 @@ Var *vecClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(auto &e : v->get()) {
 		decref(e);
 	}
-	v->get().clear();
+	v->clear();
 	return args[0];
 }
 
@@ -138,17 +137,17 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarVec *res = as<VarVec>(args[0]);
 	size_t pos  = as<VarInt>(args[1])->get();
-	if(pos >= res->get().size()) {
+	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->get().size()));
+			std::to_string(res->size()));
 		return nullptr;
 	}
-	decref(res->get()[pos]);
+	decref(res->at(pos));
 	if(res->isRefVec()) {
 		incref(args[2]);
-		res->get()[pos] = args[2];
+		res->at(pos) = args[2];
 	} else {
-		res->get()[pos] = args[2]->copy(loc);
+		res->at(pos) = args[2]->copy(loc);
 	}
 	return args[0];
 }
@@ -163,13 +162,13 @@ Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarVec *res = as<VarVec>(args[0]);
 	size_t pos  = as<VarInt>(args[1])->get();
-	if(pos >= res->get().size()) {
+	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->get().size()));
+			std::to_string(res->size()));
 		return nullptr;
 	}
-	decref(res->get()[pos]);
-	res->get().erase(res->get().begin() + pos);
+	decref(res->at(pos));
+	res->erase(res->begin() + pos);
 	return args[0];
 }
 
@@ -185,16 +184,16 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarVec *res = as<VarVec>(args[0]);
 	size_t pos  = as<VarInt>(args[1])->get();
-	if(pos >= res->get().size()) {
+	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->get().size()));
+			std::to_string(res->size()));
 		return nullptr;
 	}
 	if(res->isRefVec()) {
 		incref(args[2]);
-		res->get().insert(res->get().begin() + pos, args[2]);
+		res->insert(res->begin() + pos, args[2]);
 	} else {
-		res->get().insert(res->get().begin() + pos, args[2]->copy(loc));
+		res->insert(res->begin() + pos, args[2]->copy(loc));
 	}
 	return args[0];
 }
@@ -203,14 +202,8 @@ Var *vecReverse(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
-	std::reverse(res->get().begin(), res->get().end());
+	std::reverse(res->begin(), res->end());
 	return args[0];
-}
-
-Var *vecLast(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
-{
-	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->get().size() - 1);
 }
 
 Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -223,8 +216,8 @@ Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarVec *res = as<VarVec>(args[0]);
 	size_t pos  = as<VarInt>(args[1])->get();
-	if(pos >= res->get().size()) return vm.getNil();
-	return res->get()[pos];
+	if(pos >= res->size()) return vm.getNil();
+	return res->at(pos);
 }
 
 Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -249,18 +242,18 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t beg = as<VarInt>(args[1])->get();
 	size_t end = as<VarInt>(args[2])->get();
 
-	if(beg >= v->get().size()) {
+	if(beg >= v->size()) {
 		vm.fail(loc, "starting index is greater than vector size");
 		return nullptr;
 	}
-	if(end > v->get().size()) {
+	if(end > v->size()) {
 		vm.fail(loc, "ending index is greater than vector size");
 		return nullptr;
 	}
 	VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
 	if(end <= beg) return res;
 	for(size_t i = beg; i < end; ++i) {
-		res->push(v->get()[i]->copy(loc));
+		res->push(v->at(i)->copy(loc));
 	}
 	return res;
 }
@@ -284,18 +277,18 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t beg = as<VarInt>(args[1])->get();
 	size_t end = as<VarInt>(args[2])->get();
 
-	if(beg >= v->get().size()) {
+	if(beg >= v->size()) {
 		vm.fail(loc, "starting index is greater than vector size");
 		return nullptr;
 	}
-	if(end > v->get().size()) {
+	if(end > v->size()) {
 		vm.fail(loc, "ending index is greater than vector size");
 		return nullptr;
 	}
 	VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, true);
 	if(end <= beg) return res;
 	for(size_t i = beg; i < end; ++i) {
-		Var *e = v->get()[i];
+		Var *e = v->at(i);
 		incref(e);
 		res->push(e);
 	}
@@ -322,6 +315,8 @@ INIT_MODULE(Vec)
 {
 	VarModule *mod = vm.getCurrModule();
 
+	vm.registerType<VarVecIterator>(loc, "VecIterator");
+
 	mod->addNativeFn("new", vecNew, 0, true);
 
 	vm.addNativeTypeFn<VarVec>(loc, "len", vecSize, 0);
@@ -335,7 +330,6 @@ INIT_MODULE(Vec)
 	vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);
 	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
-	vm.addNativeTypeFn<VarVec>(loc, "lastIdx", vecLast, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "at", vecAt, 1);
