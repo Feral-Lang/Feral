@@ -185,7 +185,9 @@ class VarStr : public Var
 
 public:
 	VarStr(const ModuleLoc *loc, char val);
+	VarStr(const ModuleLoc *loc, String &&val);
 	VarStr(const ModuleLoc *loc, StringRef val);
+	VarStr(const ModuleLoc *loc, const char *val);
 	VarStr(const ModuleLoc *loc, InitList<StringRef> _val);
 	VarStr(const ModuleLoc *loc, const char *val, size_t count);
 
@@ -201,6 +203,9 @@ class VarVec : public Var
 	Vector<Var *> val;
 	bool asrefs;
 
+	using Iterator	    = Vector<Var *>::iterator;
+	using ConstIterator = Vector<Var *>::const_iterator;
+
 public:
 	VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs);
 	VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs);
@@ -210,9 +215,25 @@ public:
 	void set(Span<Var *> newval);
 
 	inline void set(Var *from) override { set(as<VarVec>(from)->get()); }
-	inline Vector<Var *> &get() { return val; }
+
+	inline Iterator insert(ConstIterator iter, Var *data) { return val.insert(iter, data); }
+	inline Iterator erase(ConstIterator iter) { return val.erase(iter); }
 	inline void push(Var *v) { val.push_back(v); }
+	inline void pop() { val.pop_back(); }
+	inline void clear() { val.clear(); }
+	inline bool isEmpty() { return val.empty(); }
 	inline bool isRefVec() { return asrefs; }
+
+	inline Vector<Var *> &get() { return val; }
+	inline Var *&at(size_t idx) { return val[idx]; }
+	inline Var *&back() { return val.back(); }
+	inline Var *&front() { return val.front(); }
+	inline size_t size() { return val.size(); }
+	inline size_t capacity() { return val.capacity(); }
+	inline Iterator begin() { return val.begin(); }
+	inline ConstIterator begin() const { return val.begin(); }
+	inline Iterator end() { return val.end(); }
+	inline ConstIterator end() const { return val.end(); }
 };
 
 class VarMap : public Var

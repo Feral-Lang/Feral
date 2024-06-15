@@ -71,9 +71,9 @@ INIT_MODULE(Bytebuffer)
 {
 	VarModule *mod = vm.getCurrModule();
 
-	mod->addNativeFn("newNative", bytebufferNewNative, 1);
-
 	vm.registerType<VarBytebuffer>(loc, "Bytebuffer");
+
+	mod->addNativeFn("newNative", bytebufferNewNative, 1);
 
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "resize", bytebufferResize, 1);
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "setLen", bytebufferSetLen, 1);

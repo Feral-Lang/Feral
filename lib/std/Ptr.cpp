@@ -30,6 +30,9 @@ Var *ptrGet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 INIT_MODULE(Ptr)
 {
 	VarModule *mod = vm.getCurrModule();
+
+	vm.registerType<VarPtr>(loc, "Ptr");
+
 	mod->addNativeFn("new", ptrNewNative, 1);
 
 	vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet, 1);

@@ -66,6 +66,8 @@ INIT_MODULE(MultiProc)
 {
 	VarModule *mod = vm.getCurrModule();
 
+	vm.registerType<VarMultiProc>(loc, "MultiProc");
+
 	mod->addNativeFn("getConcurrency", getConcurrency);
 	mod->addNativeFn("new", mprocNew, 1);
 

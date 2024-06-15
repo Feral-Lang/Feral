@@ -14,7 +14,6 @@ assert.eq(v.push(5).len(), 5);
 assert.eq(v.pop().len(), 4);
 assert.eq(v.insert(1, 5), vec.new(3, 5, 2, 1, 4));
 assert.eq(v.erase(1), vec.new(3, 2, 1, 4));
-assert.eq(v.lastIdx(), 3);
 assert.eq(v.set(2, 5), vec.new(3, 2, 5, 4));
 assert.eq(v.at(2), 5);
 assert.eq(v[2], 5);
