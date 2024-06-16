@@ -14,20 +14,21 @@ VarRegex::~VarRegex() {}
 Var *VarRegex::copy(const ModuleLoc *loc) { return new VarRegex(loc, expr); }
 void VarRegex::set(Var *from) { expr = as<VarRegex>(from)->expr; }
 
-bool VarRegex::match(StringRef data, const ModuleLoc *loc, Var *captures)
+bool VarRegex::match(StringRef data, const ModuleLoc *loc, Var *captures, bool ignoreMatch)
 {
 	svmatch results;
 	bool found = std::regex_search(data.begin(), data.end(), results, expr);
 	if(!captures) return found;
+	size_t resCount = results.size();
 	if(captures->is<VarVec>()) {
 		VarVec *caps = as<VarVec>(captures);
-		for(const svsubmatch &res : results) {
-			caps->push(new VarStr(loc, res.str()));
+		for(size_t i = ignoreMatch; i < resCount; ++i) {
+			caps->push(new VarStr(loc, results[i].str()));
 		}
 	} else if(captures->is<VarStr>()) {
 		VarStr *caps = as<VarStr>(captures);
-		for(const svsubmatch &res : results) {
-			caps->get() += res.str();
+		for(size_t i = ignoreMatch; i < resCount; ++i) {
+			caps->get() += results[i].str();
 		}
 	}
 	return found;

@@ -25,7 +25,10 @@ public:
 
 	// loc can be nullptr if captures is not a VarVec (ie. no new strings will have to be
 	// created)
-	bool match(StringRef data, const ModuleLoc *loc = nullptr, Var *captures = nullptr);
+	// If ignoreMatch is true, it will ignore the first match, ie. the regex equivalent in
+	// string, and go directly for the capture groups if any.
+	bool match(StringRef data, const ModuleLoc *loc = nullptr, Var *captures = nullptr,
+		   bool ignoreMatch = false);
 };
 
 } // namespace fer

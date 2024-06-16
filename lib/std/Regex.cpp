@@ -31,10 +31,24 @@ Var *regexMatch(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected regex target to be a string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
+	if(!args[2]->is<VarStr>() && !args[2]->is<VarVec>() && !args[2]->is<VarNil>()) {
+		vm.fail(loc,
+			"expected regex capture destination "
+			"to be a string, vector, or nil, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[3]->is<VarBool>()) {
+		vm.fail(
+		loc, "expected ignore first match to be a bool, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
 	StringRef target = as<VarStr>(args[1])->get();
 	Var *matches	 = nullptr;
 	if(args[2]->is<VarVec>() || args[2]->is<VarStr>()) matches = args[2];
-	return as<VarRegex>(args[0])->match(target, loc, matches) ? vm.getTrue() : vm.getFalse();
+	bool ignoreMatch = as<VarBool>(args[3])->get();
+	return as<VarRegex>(args[0])->match(target, loc, matches, ignoreMatch) ? vm.getTrue()
+									       : vm.getFalse();
 }
 
 INIT_MODULE(Regex)
@@ -43,7 +57,7 @@ INIT_MODULE(Regex)
 
 	vm.registerType<VarRegex>(loc, "Regex");
 
-	vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch, 2);
+	vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch, 3);
 
 	mod->addNativeFn("newNative", regexNew, 2, false);
 
