@@ -23,8 +23,9 @@ public:
 	Var *copy(const ModuleLoc *loc);
 	void set(Var *from);
 
-	// loc can be nullptr if captures is nullptr (ie. no new strings will have to be created)
-	bool match(StringRef data, const ModuleLoc *loc = nullptr, VarVec *captures = nullptr);
+	// loc can be nullptr if captures is not a VarVec (ie. no new strings will have to be
+	// created)
+	bool match(StringRef data, const ModuleLoc *loc = nullptr, Var *captures = nullptr);
 };
 
 } // namespace fer
