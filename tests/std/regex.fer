@@ -4,10 +4,14 @@ let vec = import('std/vec');
 let regex = import('std/regex');
 
 let testString = 'here is a number: 12.54, and a word: test, and whatever else.';
-let captures = vec.new();
 let re = regex.new('.*: ([.\\d]+).*: ([a-z]+)');
 
-assert.eq(re.match(testString, captures), true);
-assert.eq(captures[0], 'here is a number: 12.54, and a word: test'); # captures[0] is the matched part of testString
-assert.eq(captures[1], '12.54');
-assert.eq(captures[2], 'test');
+let capturesVec = vec.new();
+assert.eq(re.match(testString, capturesVec), true);
+assert.eq(capturesVec[0], 'here is a number: 12.54, and a word: test'); # captures[0] is the matched part of testString
+assert.eq(capturesVec[1], '12.54');
+assert.eq(capturesVec[2], 'test');
+
+let capturesStr = '';
+assert.eq(re.match(testString, capturesStr), true);
+assert.eq(capturesStr, 'here is a number: 12.54, and a word: test12.54test');

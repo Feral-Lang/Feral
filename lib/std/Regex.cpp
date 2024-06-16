@@ -32,8 +32,8 @@ Var *regexMatch(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	StringRef target = as<VarStr>(args[1])->get();
-	VarVec *matches	 = nullptr;
-	if(args[2]->is<VarVec>()) matches = as<VarVec>(args[2]);
+	Var *matches	 = nullptr;
+	if(args[2]->is<VarVec>() || args[2]->is<VarStr>()) matches = args[2];
 	return as<VarRegex>(args[0])->match(target, loc, matches) ? vm.getTrue() : vm.getFalse();
 }
 
