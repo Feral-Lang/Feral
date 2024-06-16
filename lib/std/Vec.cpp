@@ -198,6 +198,47 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
+Var *vecAppend(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarVec>()) {
+		vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[2]->is<VarInt>()) {
+		vm.fail(loc, "expected start index to be of type int for vec.append(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[3]->is<VarInt>()) {
+		vm.fail(loc, "expected end index to be of type int for vec.append(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarVec *dest = as<VarVec>(args[0]);
+	VarVec *src  = as<VarVec>(args[1]);
+	size_t start = as<VarInt>(args[2])->get();
+	size_t end   = as<VarInt>(args[3])->get();
+	if(end == -1 || end > src->size()) end = src->size();
+	if(dest->isRefVec()) {
+		// for the loop, we are not using iterator format because self append will fail in
+		// that case
+		// ie. v.append(v) will fail if iterator format is used.
+		for(size_t i = start; i < end; ++i) {
+			Var *e = src->at(i);
+			incref(e);
+			dest->push(e);
+		}
+	} else {
+		for(size_t i = start; i < end; ++i) {
+			Var *e = src->at(i);
+			dest->push(e->copy(loc));
+		}
+	}
+	return dest;
+}
+
 Var *vecReverse(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
@@ -330,6 +371,7 @@ INIT_MODULE(Vec)
 	vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);
 	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
+	vm.addNativeTypeFn<VarVec>(loc, "appendNative", vecAppend, 3);
 	vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "at", vecAt, 1);
