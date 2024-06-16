@@ -218,7 +218,7 @@ INIT_MODULE(Core)
 	vm.addNativeTypeFn<VarBool>(loc, "flt", boolToFlt, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "flt", intToFlt, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "flt", fltToFlt, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "flt", strToFlt, 1);
+	vm.addNativeTypeFn<VarStr>(loc, "flt", strToFlt, 0);
 
 	// to string
 	vm.addNativeTypeFn<VarAll>(loc, "str", allToStr, 0);

@@ -57,7 +57,8 @@ INIT_MODULE(Regex)
 	mod->addNativeVar("awk", vm.makeVar<VarInt>(loc, std::regex_constants::awk));
 	mod->addNativeVar("grep", vm.makeVar<VarInt>(loc, std::regex_constants::grep));
 	mod->addNativeVar("egrep", vm.makeVar<VarInt>(loc, std::regex_constants::egrep));
-#if __cplusplus >= 201703L || !defined __STRICT_ANSI__
+	// Not sure why but multiline is undefined on Windows MSVC at the moment.
+#if !defined(FER_OS_WINDOWS) && (__cplusplus >= 201703L || !defined __STRICT_ANSI__)
 	mod->addNativeVar("multiline", vm.makeVar<VarInt>(loc, std::regex_constants::multiline));
 #endif
 	return true;
