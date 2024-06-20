@@ -124,15 +124,14 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	size_t beforelogicaljmplocscount = jmplocs.size();
 	lex::TokType oper		 = stmt->getOperTok().getVal();
 
-	size_t or_jmp_pos = 0;
+	size_t orInstrPos = 0;
 	if(stmt->getOrBlk()) {
 		StmtBlock *orblk = stmt->getOrBlk();
 		lex::Lexeme &var = stmt->getOrBlkVar();
-		or_jmp_pos	 = bc.size();
-		bc.addInstrInt(Opcode::PUSH_JMP, orblk->getLoc(), 0); // placeholder
-		if(!var.getDataStr().empty()) {
-			bc.addInstrStr(Opcode::PUSH_JMP_NAME, var.getLoc(), var.getDataStr());
-		}
+		orInstrPos	 = bc.size();
+		// Placeholder: The string in this instr will be modified later to encode the blk
+		// begin and end pos as well.
+		bc.addInstrStr(Opcode::PUSH_JMP, orblk->getLoc(), var.getDataStr());
 	}
 
 	// handle member function call - we don't want ATTR instr to be emitted so we take care
@@ -165,7 +164,7 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 
 	// for operator based memcall, the operator must come before RHS (AKA the memcall arg)
 	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::LAND &&
-	   oper != lex::LOR)
+	   oper != lex::LOR && oper != lex::INVALID)
 	{
 		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(),
 			       String(lex::TokStrs[oper]));
@@ -206,16 +205,26 @@ bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
 	}
 end:
 	if(stmt->getOrBlk()) {
-		StmtBlock *&orblk = stmt->getOrBlk();
-		bc.addInstrNil(Opcode::POP_JMP, orblk->getLoc());
-		size_t bypass_orblk = bc.size();
-		bc.addInstrInt(Opcode::JMP, orblk->getLoc(), 0);
-		bc.updateInstrInt(or_jmp_pos, bc.size());
+		StmtBlock *&orblk     = stmt->getOrBlk();
+		size_t OrBlkSkipInstr = bc.size();
+		bc.addInstrInt(Opcode::JMP, orblk->getLoc(), 0); // placeholder
+		size_t orBlkBegin = bc.size();
 		if(!visit(orblk, asStmt(&orblk))) {
 			err::out(orblk, "failed to generate bytecode for or-block of expression");
 			return false;
 		}
-		bc.updateInstrInt(bypass_orblk, bc.size());
+		size_t orBlkEnd = bc.size();
+		bc.updateInstrInt(OrBlkSkipInstr, orBlkEnd);
+		bc.addInstrNil(Opcode::POP_JMP, orblk->getLoc());
+		// Contains or block begin (size_t bytes) + or block end (size_t bytes) + error
+		// variable name encoded in a single string
+		String orInstrData;
+		orInstrData.resize(sizeof(size_t) * 2);
+		*((size_t *)orInstrData.data())	      = orBlkBegin;
+		*(((size_t *)orInstrData.data()) + 1) = orBlkEnd;
+		if(!stmt->getOrBlkVar().getDataStr().empty())
+			orInstrData += stmt->getOrBlkVar().getDataStr();
+		bc.updateInstrStr(orInstrPos, orInstrData);
 	}
 	return true;
 }

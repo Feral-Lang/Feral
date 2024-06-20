@@ -5,27 +5,44 @@
 namespace fer
 {
 
+struct ErrorHandlingInfo
+{
+	bool usable;
+	size_t recurseLevel;
+	StringRef varName;
+	size_t blkBegin, blkEnd;
+	Var *errMsg;
+};
+
 class FailStack
 {
-	Vector<Deque<Var *>> stack;
+	Vector<ErrorHandlingInfo> stack;
 
 public:
 	FailStack();
 	~FailStack();
 
-	inline void pushBlk() { stack.push_back({}); }
-	inline void popBlk()
+	inline void pushScope() { stack.emplace_back(); }
+	inline void popScope()
 	{
-		for(auto &e : stack.back()) decref(e);
+		reset(); // to decref errMsg if any
 		stack.pop_back();
 	}
 
-	void push(Var *var, bool iref = true);
-	Var *pop(bool dref = true);
+	void initFrame(size_t recurseLevel, StringRef varName, size_t blkBegin, size_t blkEnd);
+	void reset();
+
+	inline void setErr(Var *var) { stack.back().errMsg = var; }
+
+	inline bool isUsable() { return !stack.empty() && stack.back().usable; }
+	inline size_t getRecurseLevel() { return stack.back().recurseLevel; }
+	inline StringRef getVarName() { return stack.back().varName; }
+	inline size_t getBlkBegin() { return stack.back().blkBegin; }
+	inline size_t getBlkEnd() { return stack.back().blkEnd; }
+	inline Var *getErr() { return stack.back().errMsg; }
 
 	inline size_t size() { return stack.size(); }
 	inline bool empty() { return stack.empty(); }
-	inline bool emptyTop() { return stack.back().empty(); }
 };
 
 } // namespace fer

@@ -277,7 +277,7 @@ let ParseInternal = fn(toks, sz, i) {
 	}
 	if toks.getType(i) == TokType.STR { return toks.getData(i); }
 	if toks.getType(i) == TokType.INT { return toks.getData(i).int(); }
-	if toks.getType(i) == TokType.FLT { return toks.getData(i).flt(10); }
+	if toks.getType(i) == TokType.FLT { return toks.getData(i).flt(); }
 
 	if i > 0 {
 		raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i, ' encountered after: ', TokStr[toks.getType(i - 1)]);

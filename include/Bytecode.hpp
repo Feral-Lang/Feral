@@ -91,6 +91,7 @@ public:
 	isDataX(Iden, IDEN);
 
 	inline void setInt(int64_t dat) { data = dat; }
+	inline void setStr(StringRef dat) { std::get<String>(data) = dat; }
 
 	inline const ModuleLoc *getLoc() const { return loc; }
 	inline StringRef getDataStr() const { return std::get<String>(data); }
@@ -143,6 +144,10 @@ public:
 	}
 
 	inline void updateInstrInt(size_t instr_idx, int64_t data) { code[instr_idx].setInt(data); }
+	inline void updateInstrStr(size_t instr_idx, StringRef data)
+	{
+		code[instr_idx].setStr(data);
+	}
 
 	inline void pop() { code.pop_back(); }
 	inline void erase(size_t idx) { code.erase(code.begin() + idx); }

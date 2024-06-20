@@ -151,7 +151,8 @@ public:
 	// supposed to call the overloaded delete operator in Var
 	Var *getConst(const ModuleLoc *loc, Instruction::Data &d, DataType dataty);
 
-	int execute(Bytecode *custombc = nullptr, size_t begin = 0, size_t end = 0);
+	// Must pushModule before calling this function, and popModule after calling it.
+	int execute(bool addFunc = true, bool addBlk = false, size_t begin = 0, size_t end = 0);
 	// used primarily within libraries & by toStr, toBool
 	// first arg must ALWAYS be self for memcall, nullptr otherwise
 	bool callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
@@ -167,13 +168,15 @@ public:
 
 	template<typename... Args> void fail(const ModuleLoc *loc, Args &&...args)
 	{
-		if(failstack.empty() || exitcalled) {
+		if(!failstack.isUsable() || exitcalled) {
 			err::out(loc, std::forward<Args>(args)...);
-		} else {
+		} else if(!failstack.getVarName().empty() && !failstack.getErr()) {
 			VarStr *str = makeVarWithRef<VarStr>(loc, "");
 			appendToString(str->get(), std::forward<Args>(args)...);
-			failstack.push(str, false);
+			failstack.setErr(str);
 		}
+		// Lose the error msg to the void if the error is handled but not stored in a
+		// variable.
 	}
 	inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }
 	inline Var *popExecStack(bool dref = true) { return execstack.pop(dref); }

@@ -50,6 +50,11 @@ public:
 	void popLoop();
 	void continueLoop();
 
+	inline size_t size() { return stack.size(); }
+	inline void resizeTo(size_t count)
+	{
+		if(stack.size() > count) popStack(stack.size() - count);
+	}
 	inline void add(StringRef name, Var *val, bool iref) { stack.back()->add(name, val, iref); }
 	bool rem(StringRef name, bool dref);
 
@@ -76,6 +81,8 @@ public:
 
 	void pushBlk(size_t count);
 	inline void popBlk(size_t count) { fnvars[fnstack]->popStack(count); }
+	inline size_t getBlkSize() { return fnvars[fnstack]->size(); }
+	inline void resizeBlkTo(size_t count) { fnvars[fnstack]->resizeTo(count); }
 
 	void pushFn();
 	void popFn();

@@ -7,5 +7,5 @@ x = y or e {
 };
 
 (x = y or e {}) or e {
-	assert.eq(e, "virtual machine stack has 1 item(s), required 2 for store operation");
+	assert.eq(e, "execution stack has 1 item(s), required 2 for store operation");
 };
