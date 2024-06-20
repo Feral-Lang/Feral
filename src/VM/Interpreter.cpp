@@ -362,7 +362,7 @@ Var *Interpreter::eval(const ModuleLoc *loc, StringRef code, bool isExpr)
 
 	addModule(loc, mod, getCurrModule()->getVars());
 	pushModule(mod->getPath());
-	exitcode = execute(&mod->getBytecode());
+	exitcode = execute(false, false);
 	popModule();
 	removeModule(mod->getPath());
 	if(exitcode) goto done;

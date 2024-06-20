@@ -8,18 +8,20 @@ FailStack::~FailStack()
 	assert(stack.empty() && "Expected fail stack to be empty, but it is not");
 }
 
-void FailStack::push(Var *var, bool iref)
+void FailStack::initFrame(size_t recurseLevel, StringRef varName, size_t blkBegin, size_t blkEnd)
 {
-	if(iref) incref(var);
-	stack.back().push_back(var);
+	stack.back().usable	  = true;
+	stack.back().recurseLevel = recurseLevel;
+	stack.back().varName	  = varName;
+	stack.back().blkBegin	  = blkBegin;
+	stack.back().blkEnd	  = blkEnd;
+	stack.back().errMsg	  = nullptr;
 }
-Var *FailStack::pop(bool dref)
+
+void FailStack::reset()
 {
-	if(stack.empty() || stack.back().empty()) return nullptr;
-	Var *front = stack.back().front();
-	stack.back().pop_front();
-	if(dref) decref(front);
-	return front;
+	if(stack.back().errMsg) decref(stack.back().errMsg);
+	stack.back() = {};
 }
 
 } // namespace fer

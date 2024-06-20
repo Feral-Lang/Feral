@@ -211,7 +211,7 @@ let parse = fn(toks, i = 0) {
 	let sz = toks.len();
 	if toks[i].type == TokenType.NIL { return nil; }
 	elif toks[i].type == TokenType.INT { return toks[i].val.int(); }
-	elif toks[i].type == TokenType.FLT { return toks[i].val.flt(10); }
+	elif toks[i].type == TokenType.FLT { return toks[i].val.flt(); }
 	elif toks[i].type == TokenType.STR { return toks[i].val; }
 	elif toks[i].type == TokenType.TRUE { return true; }
 	elif toks[i].type == TokenType.FALSE { return false; }

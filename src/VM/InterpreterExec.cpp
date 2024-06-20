@@ -3,27 +3,23 @@
 namespace fer
 {
 
-struct JumpData
-{
-	StringRef name;
-	size_t pos;
-};
-
-int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
+int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurse_count;
 	VarModule *varmod = getCurrModule();
 	Vars *vars	  = varmod->getVars();
 	Module *mod	  = varmod->getMod();
-	Bytecode &bc	  = custombc ? *custombc : mod->getBytecode();
+	Bytecode &bc	  = mod->getBytecode();
 	size_t bcsz	  = end == 0 ? bc.size() : end;
 
-	Vector<JumpData> jmps;
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
 	StringMap<AssnArgData> assn_args;
+	size_t currBlkSize = 0;
 
-	if(!custombc) vars->pushFn();
+	if(addFunc) vars->pushFn();
+	else currBlkSize = vars->getBlkSize();
+	if(addBlk) vars->pushBlk(1);
 
 	for(size_t i = begin; i < bcsz; ++i) {
 		Instruction &ins = bc.getInstrAt(i);
@@ -33,7 +29,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		// dumpExecStack(std::cout);
 		// std::cout << "\n";
 
-		if(recurse_count >= getMaxRecurseCount()) {
+		if(addFunc && recurse_count >= getMaxRecurseCount()) {
 			fail(ins.getLoc(), "stack overflow, current max: ", getMaxRecurseCount());
 			recurse_count_exceeded = true;
 			goto handle_err;
@@ -115,7 +111,7 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 		case Opcode::STORE: {
 			if(execstack.size() < 2) {
 				fail(ins.getLoc(), "execution stack has ", execstack.size(),
-				     " item(s); required 2 for store operation");
+				     " item(s), required 2 for store operation");
 				goto handle_err;
 			}
 			Var *var = execstack.pop(false);
@@ -355,48 +351,64 @@ int Interpreter::execute(Bytecode *custombc, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::PUSH_JMP: {
-			// name is set in the PUSH_JMP_NAME instr
-			jmps.push_back({"", (size_t)ins.getDataInt()});
-			failstack.pushBlk();
+			// Decode the data from string.
+			// It contains blkBegin (size_t bytes) + blkEnd (size_t bytes) + var name.
+			StringRef data	= ins.getDataStr();
+			size_t blkBegin = *(size_t *)data.data();
+			size_t blkEnd	= *(((size_t *)data.data()) + 1);
+			data		= data.substr(sizeof(size_t) * 2);
+			failstack.pushScope();
+			failstack.initFrame(recurse_count, data, blkBegin, blkEnd);
 			break;
 		}
 		case Opcode::PUSH_JMP_NAME: {
-			jmps.back().name = ins.getDataStr();
 			break;
 		}
 		case Opcode::POP_JMP: {
-			jmps.pop_back();
-			failstack.popBlk();
+			failstack.popScope();
 			break;
 		}
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!jmps.empty() && !exitcalled) {
-				i = jmps.back().pos - 1;
-				if(!jmps.back().name.empty()) {
-					Var *dat =
-					!failstack.emptyTop()
-					? failstack.pop(false)
-					: makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
-					vars->stash(jmps.back().name, dat, false);
-				}
-				jmps.pop_back();
-				failstack.popBlk();
-				recurse_count_exceeded = false;
+			if(!failstack.isUsable() || recurse_count != failstack.getRecurseLevel())
+				goto fail;
+			StringRef varName = failstack.getVarName();
+			size_t blkBegin	  = failstack.getBlkBegin();
+			size_t blkEnd	  = failstack.getBlkEnd();
+			if(!varName.empty()) {
+				Var *err = failstack.getErr();
+				if(!err)
+					err =
+					makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
+				vars->stash(varName, err, false);
+			}
+			if(recurse_count_exceeded) {
 				break;
 			}
-			goto fail;
+			pushModule(getCurrModule()->getMod()->getPath());
+			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
+				if(!failstack.getVarName().empty()) vars->unstash();
+				popModule();
+				goto handle_err;
+			}
+			// POP_JMP instr will take care of popping from jmps and failstack.
+			i = blkEnd - 1;
+			popModule();
+			break;
 		}
 		}
 	}
 done:
-	assert(jmps.empty());
-	if(!custombc) vars->popFn();
+	if(addBlk) vars->popBlk(1);
+	if(addFunc) vars->popFn();
+	else vars->resizeBlkTo(currBlkSize);
 	--recurse_count;
 	return exitcode;
 fail:
-	if(!custombc) vars->popFn();
+	if(addBlk) vars->popBlk(1);
+	if(addFunc) vars->popFn();
+	else vars->resizeBlkTo(currBlkSize);
 	--recurse_count;
 	return 1;
 }
