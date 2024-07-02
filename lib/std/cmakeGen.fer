@@ -148,7 +148,7 @@ let getMakeCmd in Core = fn(buildtype) {
 		cmd = 'make -j';
 	}
 	let suffix = '';
-	if os.name == 'windows' { suffix = ' .\\' + self.projectName + '.sln'; }
+	if os.name == 'windows' { suffix = ' .\\ALL_BUILD.vcxproj'; }
 	if sys.args.len() > 0 && sys.args[0] == 'install' {
 		if os.name == 'windows' {
 			suffix = ' .\\INSTALL.vcxproj';
