@@ -28,8 +28,8 @@ let pathFrom = fn(pathparts...) {
 	return fullpath;
 };
 
-let fopen = fn(file, mode = 'r') {
-	return fopenNative(file, mode);
+let fopen = fn(file, mode = 'r', mustClose = true) {
+	return fopenNative(file, mode, mustClose);
 };
 
 let reopen in FileTy = fn(file, mode = 'r') {
