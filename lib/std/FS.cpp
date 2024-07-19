@@ -53,14 +53,20 @@ Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
+	if(!args[3]->is<VarBool>()) {
+		vm.fail(loc, "expected bool argument for file should be closed, found: ",
+			vm.getTypeName(args[2]));
+		return nullptr;
+	}
 	const String &filename = as<VarStr>(args[1])->get();
 	const String &mode     = as<VarStr>(args[2])->get();
+	bool mustClose	       = as<VarBool>(args[3])->get();
 	FILE *file	       = fopen(filename.c_str(), mode.c_str());
 	if(!file) {
 		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
 		return nullptr;
 	}
-	return vm.makeVar<VarFile>(loc, file, mode);
+	return vm.makeVar<VarFile>(loc, file, mode, mustClose);
 }
 
 Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -407,7 +413,7 @@ INIT_MODULE(FS)
 	vm.registerType<VarFileIterator>(loc, "FileIterator");
 
 	mod->addNativeFn("exists", fsExists, 1);
-	mod->addNativeFn("fopenNative", fsOpen, 2);
+	mod->addNativeFn("fopenNative", fsOpen, 3);
 	mod->addNativeFn("walkDirNative", fsWalkDir, 3);
 
 	vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopen, 2);

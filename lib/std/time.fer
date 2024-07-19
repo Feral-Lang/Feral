@@ -46,9 +46,6 @@ let setFormat = fn(new_format) {
 	timeFormat = new_format;
 };
 
-let format = fn(time, fmt = nil) {
-	if fmt == nil {
-		return formatNative(time, timeFormat);
-	}
+let format = fn(time, fmt = timeFormat) {
 	return formatNative(time, fmt);
 };

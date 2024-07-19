@@ -23,9 +23,9 @@ let keys in MapTy = fn() {
 let str in MapTy = fn() {
 	let res = '{';
 	for pair in self.each() {
-		res += pair.0;
+		res += pair.0.str();
 		res += ': ';
-		res += pair.1;
+		res += pair.1.str();
 		res += ', ';
 	}
 	if !self.empty() {
