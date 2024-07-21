@@ -2,6 +2,36 @@
 
 mload('std/OS');
 
+let fs = import('std/fs');
+
+# OS name, current possible values:
+#   windows
+#   android
+#   linux
+#   macos
+#   bsd
+let name = getOSName();
+# OS distro, current possible values:
+#   windows
+#   windows64
+#   android
+#   linux
+#   macos
+#   bsd
+#   freebsd
+#   netbsd
+#   openbsd
+#   bsdi
+#   dragonflybsd
+let distro = getOSDistro();
+
+# chmod command wrapper
+inline if name != 'windows' {
+let chmod = fn(dest, mode = '0755', recurse = true) {
+	return chmodNative(dest, mode, recurse);
+};
+}
+
 let setEnv = fn(var, val, overwrite = false) {
 	return setEnvNative(var, val, overwrite);
 };
@@ -14,23 +44,26 @@ let getEnvHome = fn() {
 	return getEnv(var);
 };
 
-# OS name, current possible values:
-# windows
-# android
-# linux
-# macos
-# bsd
-let name = getNameNative();
-
 # execute command, optionally get output in second argument
 # if it is a string or a vector
 let exec = fn(cmd, out = nil) {
 	return execNative(cmd, out);
 };
 
-# chmod command wrapper
-inline if name != 'windows' {
-let chmod = fn(dest, mode = '0755', recurse = true) {
-	return chmodNative(dest, mode, recurse);
-};
+inline if name == 'windows' {
+let envDelimiter = ';';
+} else {
+let envDelimiter = ':';
 }
+
+# find the given file (exec) in the PATH variables
+# return the entire file path if found, empty string if not
+let findExec = fn(exec) {
+	let PATH = getEnv('PATH');
+	if PATH.empty() { return ''; }
+	for dir in PATH.split(envDelimiter).each() {
+		let p = fs.pathFrom(dir, exec);
+		if fs.exists(p) { return p; }
+	}
+	return '';
+};

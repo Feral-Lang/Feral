@@ -1,10 +1,10 @@
 mload('std/Stat');
 
-let os = import('std/os');
+# Cannot import os as os depends on fs which depends on stat.
 let lang = import('std/lang');
 
 # Windows does not have blksize and blocks field in the stat struct.
-inline if os.name == 'windows' {
+inline if getOSName() == 'windows' {
 let Stat = lang.struct(
 	dev = 0,
 	ino = 0,
@@ -42,7 +42,7 @@ let isReg  in Stat = fn() { return isRegNative(self);  };
 let isDir  in Stat = fn() { return isDirNative(self);  };
 let isChr  in Stat = fn() { return isChrNative(self);  };
 
-inline if os.name != 'windows' {
+inline if getOSName() != 'windows' {
 let isBlk  in Stat = fn() { return isBlkNative(self);  };
 let isFifo in Stat = fn() { return isFifoNative(self); };
 let isLnk  in Stat = fn() { return isLnkNative(self);  };
