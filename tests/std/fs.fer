@@ -28,3 +28,27 @@ let blocks = file.readBlocks('/*', '*/');
 assert.eq(blocks[0], ' sample comment block ');
 assert.eq(blocks[1], '\nsample comment block\nmultiline\n');
 assert.eq(blocks[2], '\', \''); # from readBlocks() itself
+
+# File management stuff
+
+let insfile = '__testinsfile__';
+fs.install(__SRC_PATH__, insfile);
+assert.eq(fs.exists(insfile), true);
+fs.remove(insfile);
+assert.eq(!fs.exists(insfile), true);
+
+let dir = '__testdir__';
+fs.mkdir(dir);
+assert.eq(fs.exists(dir), true);
+fs.move(dir, '__moved_testdir__');
+assert.eq(fs.exists('__moved_testdir__'), true);
+assert.eq(!fs.exists(dir), true);
+fs.move('__moved_testdir__', dir);
+fs.remove(dir);
+assert.eq(!fs.exists(dir), true);
+
+let cpfile = '__testcpfile__';
+fs.copy(__SRC_PATH__, cpfile);
+assert.eq(fs.exists(cpfile), true);
+fs.remove(cpfile);
+assert.eq(!fs.exists(cpfile), true);

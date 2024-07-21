@@ -50,5 +50,6 @@ let multilineobj3 = fecl.loads(prettystr2);
 let prettystr3 = fecl.dumps(multilineobj3, 0, '\t');
 assert.eq(multilineobj2, multilineobj3);
 
+assert.eq(onelineobj['array'][1], 'data2');
 assert.eq(onelineobj['mapmap']['two']['data3'], 'data4');
 assert.eq(onelineobj['mapmap']['two']['data3'], multilineobj['mapmap']['two']['data3']);

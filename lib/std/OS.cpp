@@ -142,40 +142,6 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected string argument for source, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(
-		loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &src  = as<VarStr>(args[1])->get();
-	const String &dest = as<VarStr>(args[2])->get();
-	if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
-
-	StringRef parent = fs::parentDir(dest);
-
-	if(!parent.empty()) {
-		std::error_code ec;
-		if(fs::mkdir(parent, ec)) {
-			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	std::error_code ec;
-	if(fs::copy(src, dest, ec)) {
-		vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
-		return nullptr;
-	}
-	return vm.getNil();
-}
-
 Var *osGetName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
@@ -233,69 +199,6 @@ Var *osSetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarBool>(loc, fs::setCWD(dir.c_str()));
 }
 
-Var *osMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
-{
-	for(size_t i = 1; i < args.size(); ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for directory creation, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &path = as<VarStr>(args[i])->get();
-		if(path.empty()) continue;
-		std::error_code ec;
-		if(fs::mkdir(path, ec)) {
-			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
-}
-
-Var *osRem(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
-{
-	for(size_t i = 1; i < args.size(); ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for path to delete, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &path = as<VarStr>(args[i])->get();
-		if(path.empty()) continue;
-		std::error_code ec;
-		if(fs::remove(path, ec)) {
-			vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
-}
-
-Var *osCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
-{
-	// args must have: nullptr, [src]+, dest
-	if(args.size() < 3) return vm.makeVar<VarInt>(loc, 0);
-	const String &dest = as<VarStr>(args[args.size() - 1])->get();
-	for(size_t i = 1; i < args.size() - 1; ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for copy argument, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &src = as<VarStr>(args[i])->get();
-		if(src.empty()) continue;
-		std::error_code ec;
-		if(fs::copy(src, dest, ec)) {
-			vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
-}
-
 #if !defined(FER_OS_WINDOWS)
 Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
@@ -333,27 +236,6 @@ Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 #endif
 
-Var *osMov(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &from = as<VarStr>(args[1])->get().c_str();
-	const String &to   = as<VarStr>(args[2])->get().c_str();
-	std::error_code ec;
-	if(fs::rename(from, to, ec)) {
-		vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());
-		return nullptr;
-	}
-	return vm.getNil();
-}
-
 INIT_MODULE(OS)
 {
 	VarModule *mod = vm.getCurrModule();
@@ -365,18 +247,11 @@ INIT_MODULE(OS)
 
 	mod->addNativeFn("execNative", execCustom, 2);
 	mod->addNativeFn("system", systemCustom, 1);
-	mod->addNativeFn("install", install, 2);
 	mod->addNativeFn("strErr", osStrErr, 1);
 	mod->addNativeFn("getNameNative", osGetName);
 
 	mod->addNativeFn("getCWD", osGetCWD);
 	mod->addNativeFn("setCWD", osSetCWD, 1);
-
-	mod->addNativeFn("mkdir", osMkdir, 1, true);
-	mod->addNativeFn("rm", osRem, 1, true);
-
-	mod->addNativeFn("cp", osCopy, 2, true);
-	mod->addNativeFn("mv", osMov, 2);
 
 #if !defined(FER_OS_WINDOWS)
 	mod->addNativeFn("chmodNative", osChmod, 3);
