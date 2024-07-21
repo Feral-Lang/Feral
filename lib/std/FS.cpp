@@ -405,6 +405,124 @@ Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
+Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected string argument for source, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(
+		loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
+		return nullptr;
+	}
+	const String &src  = as<VarStr>(args[1])->get();
+	const String &dest = as<VarStr>(args[2])->get();
+	if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
+
+	StringRef parent = fs::parentDir(dest);
+
+	if(!parent.empty()) {
+		std::error_code ec;
+		if(fs::mkdir(parent, ec)) {
+			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
+	}
+	std::error_code ec;
+	if(fs::copy(src, dest, ec)) {
+		vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+		return nullptr;
+	}
+	return vm.getNil();
+}
+
+Var *fsMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const StringMap<AssnArgData> &assn_args)
+{
+	for(size_t i = 1; i < args.size(); ++i) {
+		if(!args[i]->is<VarStr>()) {
+			vm.fail(loc, "expected string argument for directory creation, found: ",
+				vm.getTypeName(args[i]));
+			return nullptr;
+		}
+		const String &path = as<VarStr>(args[i])->get();
+		if(path.empty()) continue;
+		std::error_code ec;
+		if(fs::mkdir(path, ec)) {
+			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
+	}
+	return vm.getNil();
+}
+
+Var *fsRemove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	for(size_t i = 1; i < args.size(); ++i) {
+		if(!args[i]->is<VarStr>()) {
+			vm.fail(loc, "expected string argument for path to delete, found: ",
+				vm.getTypeName(args[i]));
+			return nullptr;
+		}
+		const String &path = as<VarStr>(args[i])->get();
+		if(path.empty()) continue;
+		std::error_code ec;
+		if(fs::remove(path, ec)) {
+			vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
+	}
+	return vm.getNil();
+}
+
+Var *fsCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
+{
+	// args must have: nullptr, [src]+, dest
+	if(args.size() < 3) return vm.makeVar<VarInt>(loc, 0);
+	const String &dest = as<VarStr>(args[args.size() - 1])->get();
+	for(size_t i = 1; i < args.size() - 1; ++i) {
+		if(!args[i]->is<VarStr>()) {
+			vm.fail(loc, "expected string argument for copy argument, found: ",
+				vm.getTypeName(args[i]));
+			return nullptr;
+		}
+		const String &src = as<VarStr>(args[i])->get();
+		if(src.empty()) continue;
+		std::error_code ec;
+		if(fs::copy(src, dest, ec)) {
+			vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+			return nullptr;
+		}
+	}
+	return vm.getNil();
+}
+
+Var *fsMove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
+		return nullptr;
+	}
+	const String &from = as<VarStr>(args[1])->get().c_str();
+	const String &to   = as<VarStr>(args[2])->get().c_str();
+	std::error_code ec;
+	if(fs::rename(from, to, ec)) {
+		vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());
+		return nullptr;
+	}
+	return vm.getNil();
+}
+
 INIT_MODULE(FS)
 {
 	VarModule *mod = vm.getCurrModule();
@@ -430,6 +548,13 @@ INIT_MODULE(FS)
 	mod->addNativeFn("fdRead", fdRead, 2);
 	mod->addNativeFn("fdWrite", fdWrite, 2);
 	mod->addNativeFn("fdClose", fdClose, 1);
+
+	// files and dirs
+	mod->addNativeFn("install", install, 2);
+	mod->addNativeFn("mkdir", fsMkdir, 1, true);
+	mod->addNativeFn("remove", fsRemove, 1, true);
+	mod->addNativeFn("copy", fsCopy, 2, true);
+	mod->addNativeFn("move", fsMove, 2);
 
 	// constants
 

@@ -25,7 +25,7 @@ let buildinfo = import(fs.pathFrom(os.getCWD(), '.buildinfo'));
 let PROJ_BUILD_DIR = fs.pathFrom(PROJ_DIR, 'build');
 
 if !fs.exists(PROJ_BUILD_DIR) {
-	os.mkdir(PROJ_BUILD_DIR);
+	fs.mkdir(PROJ_BUILD_DIR);
 }
 os.setCWD(PROJ_BUILD_DIR);
 
@@ -107,8 +107,8 @@ if exec_cmake {
 		buildinfo.cmake += ' -DWITH_COVERAGE=true ' + cc + ' ' + cxx;
 	}
 	os.setCWD(PROJ_DIR);
-	os.rm('build');
-	os.mkdir(PROJ_BUILD_DIR);
+	fs.remove('build');
+	fs.mkdir(PROJ_BUILD_DIR);
 	os.setCWD(PROJ_BUILD_DIR);
 	if buildinfo.compcommands {
 		buildinfo.cmake += ' -DCMAKE_EXPORT_COMPILE_COMMANDS=1';
@@ -116,7 +116,7 @@ if exec_cmake {
 	let res = os.system(buildinfo.cmake);
 	if res != 0 { sys.exit(res); }
 	if buildinfo.compcommands {
-		os.cp('compile_commands.json', '..');
+		fs.copy('compile_commands.json', '..');
 	}
 }
 

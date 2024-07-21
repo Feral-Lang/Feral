@@ -67,14 +67,14 @@ let gen in Core = fn(ret = false) {
 	let cmakecache = fs.pathFrom('build', 'CMakeCache.txt');
 	# forces cmake to always execute and ignore grep command on windows
 	if os.name == 'windows' && fs.exists(cmakecache) {
-		os.rm('build');
+		fs.remove('build');
 	}
 	if !fs.exists(cmakecache) {
-		os.mkdir('build');
+		fs.mkdir('build');
 		changed = true;
 	} elif os.exec('grep CMAKE_BUILD_TYPE ' + cmakecache + ' | grep ' + buildtype + '>/dev/null 2>&1') != 0 {
-		os.rm('build');
-		os.mkdir('build');
+		fs.remove('build');
+		fs.mkdir('build');
 		changed = true;
 	}
 	os.setCWD('build');

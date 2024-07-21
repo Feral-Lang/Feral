@@ -1,6 +1,5 @@
 let assert = import('std/assert');
 
-let fs = import('std/fs');
 let os = import('std/os');
 
 # os.sleep() test is in testdir.fer itself
@@ -18,12 +17,6 @@ assert.eq(os.getEnv('__tmp__'), 'val');
 
 # TODO: add os.system() test
 
-let insfile = '__testinsfile__';
-os.install(__SRC_PATH__, insfile);
-assert.eq(fs.exists(insfile), true);
-os.rm(insfile);
-assert.eq(!fs.exists(insfile), true);
-
 os.name;
 
 let cwd = os.getCWD();
@@ -35,22 +28,6 @@ if os.name == 'windows' {
 assert.ne(os.getCWD(), cwd);
 os.setCWD(cwd);
 assert.eq(os.getCWD(), cwd);
-
-let dir = '__testdir__';
-os.mkdir(dir);
-assert.eq(fs.exists(dir), true);
-os.mv(dir, '__moved_testdir__');
-assert.eq(fs.exists('__moved_testdir__'), true);
-assert.eq(!fs.exists(dir), true);
-os.mv('__moved_testdir__', dir);
-os.rm(dir);
-assert.eq(!fs.exists(dir), true);
-
-let cpfile = '__testcpfile__';
-os.cp(__SRC_PATH__, cpfile);
-assert.eq(fs.exists(cpfile), true);
-os.rm(cpfile);
-assert.eq(!fs.exists(cpfile), true);
 
 # len, 0 => not found
 if os.name == 'windows' {
