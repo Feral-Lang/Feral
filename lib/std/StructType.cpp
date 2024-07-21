@@ -68,12 +68,15 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				"provided more arguments than existing in structure definition");
 			goto fail;
 		}
-		auto aloc = attrs.find(*it);
-		if(aloc->second->getType() != arg->getType()) {
-			vm.fail(arg->getLoc(), "expected type: ", vm.getTypeName(aloc->second),
-				", found: ", vm.getTypeName(arg));
-			goto fail;
-		}
+		// Don't check for types when creating struct. Otherwise, things like replacing
+		// nil with some actual data won't be possible without the `let attribute in
+		// structInstance = ...` shenanigans.
+		// auto aloc = attrs.find(*it);
+		// if(aloc->second->getType() != arg->getType()) {
+		// 	vm.fail(arg->getLoc(), "expected type: ", vm.getTypeName(aloc->second),
+		// 		", found: ", vm.getTypeName(arg));
+		// 	goto fail;
+		// }
 		res->setAttr(*it, arg->copy(loc), false);
 		++it;
 	}

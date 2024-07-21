@@ -92,12 +92,12 @@ if exec_cmake {
 		sys.exit(1);
 	}
 	if codecov {
-		let cc = os.findExec('gcc');
+		let cc = fs.findExec('gcc');
 		if cc.empty() {
 			io.println('code coverage build requires gcc which was not found in PATH');
 			sys.exit(1);
 		}
-		let cxx = os.findExec('g++');
+		let cxx = fs.findExec('g++');
 		if cxx.empty() {
 			io.println('code coverage build requires g++ which was not found in PATH');
 			sys.exit(1);

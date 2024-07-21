@@ -1,0 +1,80 @@
+let io = import('std/io');
+let fs = import('std/fs');
+let vec = import('std/vec');
+let lang = import('std/lang');
+let time = import('std/time');
+
+let Levels = lang.enum(
+	.FATAL,
+	.WARN,
+	.INFO,
+	.DEBUG,
+	.TRACE
+);
+
+let currLevel = Levels.WARN;
+
+# red, yellow, magenta, cyan, green
+# param type: Level (int)
+let lvlColToStr = fn(lvl) {
+	if lvl == Levels.FATAL { return '{r}'; }
+	if lvl == Levels.WARN { return '{y}'; }
+	if lvl == Levels.INFO { return '{g}'; }
+	if lvl == Levels.DEBUG { return '{c}'; }
+	if lvl == Levels.TRACE { return '{m}'; }
+	return '';
+};
+
+let lvlToStr = fn(lvl) {
+	if lvl == Levels.FATAL { return 'FATAL'; }
+	if lvl == Levels.WARN { return 'WARN'; }
+	if lvl == Levels.INFO { return 'INFO'; }
+	if lvl == Levels.DEBUG { return 'DEBUG'; }
+	if lvl == Levels.TRACE { return 'TRACE'; }
+	return 'INVALID';
+};
+
+let FileInfo = lang.struct(
+	f = nil,
+	withCol = true
+);
+FileInfo.setTypeName('FileInfo');
+
+# list of FileInfo
+let targets = vec.new(refs = true);
+
+let setLevel = fn(lvl) {
+	if lvl > Levels.TRACE { return; }
+	currLevel = lvl;
+};
+
+let getLevel = fn() { return currLevel; };
+
+let addTarget = fn(target, withCol = true) {
+	targets.push(FileInfo(target, withCol));
+};
+
+let addTargetByName = fn(name, withCol = true, mustClose = true) {
+	let file = fs.fopen(name, 'w+', mustClose);
+	targets.push(FileInfo(file, withCol));
+};
+
+let log = fn(lvl, data...) {
+	if currLevel < lvl { return; }
+	let lvlCol = lvlColToStr(lvl);
+	let lvlStr = lvlToStr(lvl);
+	let timeStr = time.format(time.now());
+	for t in targets.each() {
+		if t.withCol {
+			io.fcprintln(t.f, '{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ', data...);
+		} else {
+			io.fprintln(t.f, '[', timeStr, '][', lvlStr, ']: ', data...);
+		}
+	}
+};
+
+let fatal = fn(data...) { log(Levels.FATAL, data...); };
+let warn = fn(data...) { log(Levels.WARN, data...); };
+let info = fn(data...) { log(Levels.INFO, data...); };
+let debug = fn(data...) { log(Levels.DEBUG, data...); };
+let trace = fn(data...) { log(Levels.TRACE, data...); };
