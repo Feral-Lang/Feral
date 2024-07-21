@@ -1,4 +1,3 @@
-#include <bit>
 #include <cmath> // std::round()
 
 #include "Utils.hpp"
@@ -169,6 +168,61 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
+// getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
+// vice-versa.
+
+Var *getOSName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	String name;
+#if defined(FER_OS_WINDOWS)
+	name = "windows";
+#elif defined(FER_OS_LINUX)
+	name = "linux";
+#elif defined(FER_OS_ANDROID)
+	name = "android";
+#elif defined(FER_OS_BSD)
+	name = "bsd";
+#elif defined(FER_OS_APPLE)
+	name = "macos";
+#endif
+	return vm.makeVar<VarStr>(loc, name);
+}
+
+Var *getOSDistro(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		 const StringMap<AssnArgData> &assn_args)
+{
+	String distro;
+#if defined(FER_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS64)
+	distro = "windows64";
+#else
+	distro = "windows";
+#endif
+#elif defined(FER_OS_LINUX)
+	distro = "linux"; // arch,ubuntu,etc.
+#elif defined(FER_OS_ANDROID)
+	distro = "android"; // version name - lollipop, marshmellow, etc.
+#elif defined(FER_OS_BSD)
+#if defined(FER_OS_FREEBSD)
+	distro = "freebsd";
+#elif defined(FER_OS_NETBSD)
+	distro = "netbsd";
+#elif defined(FER_OS_OPENBSD)
+	distro = "openbsd";
+#elif defined(FER_OS_BSDI)
+	distro = "bsdi";
+#elif defined(FER_OS_DRAGONFLYBSD)
+	distro = "dragonflybsd";
+#else
+	distro = "bsd";
+#endif
+#elif defined(FER_OS_APPLE)
+	distro = "macos";
+#endif
+	return vm.makeVar<VarStr>(loc, distro);
+}
+
 Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
@@ -184,6 +238,8 @@ INIT_MODULE(Core)
 	vm.addNativeFn(loc, "import", importFile, 1);
 	vm.addNativeFn(loc, "evalCode", evaluateCode, 1);
 	vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);
+	vm.addNativeFn(loc, "getOSName", getOSName, 0);
+	vm.addNativeFn(loc, "getOSDistro", getOSDistro, 0);
 	vm.addNativeFn(loc, "_isMainModule_", isMainModule, 1);
 
 	// fundamental functions for builtin types

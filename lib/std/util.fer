@@ -7,13 +7,13 @@ let notify = fn(title, body = '') {
 	if !body.empty() { body = '\'' + body + '\''; }
 	let cmd = '';
 	if name == 'linux' {
-		let notify = fs.findExec('notify-send');
+		let notify = os.findExec('notify-send');
 		if notify.empty() {
 			raise('notification requires notify-send on Linux (could not find in $PATH)');
 		}
 		cmd = notify + ' -u normal -t 5000 ' + title + ' ' + body;
 	} elif name == 'macos' {
-		let notify = fs.findExec('osascript');
+		let notify = os.findExec('osascript');
 		if notify.empty() {
 			raise('notification requires osascript on macOS (could not find in $PATH)');
 		}
@@ -23,7 +23,7 @@ let notify = fn(title, body = '') {
 			cmd = notify + ' -e \'display notification ' + body + ' with title ' + title + '\'';
 		}
 	} elif name == 'android' {
-		let notify = fs.findExec('termux-notification');
+		let notify = os.findExec('termux-notification');
 		if notify.empty() {
 			raise('notification requires termux-notification on Android (could not find in $PATH)');
 		}

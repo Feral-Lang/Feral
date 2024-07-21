@@ -54,10 +54,10 @@ assert.eq(!fs.exists(cpfile), true);
 
 # len, 0 => not found
 if os.name == 'windows' {
-	assert.gt(fs.findExec('ipconfig.exe').len(), 0);
+	assert.gt(os.findExec('ipconfig.exe').len(), 0);
 } else {
-	assert.gt(fs.findExec('ls').len(), 0);
+	assert.gt(os.findExec('ls').len(), 0);
 }
-assert.eq(fs.findExec('randomword').empty(), true);
+assert.eq(os.findExec('randomword').empty(), true);
 
 # chmod

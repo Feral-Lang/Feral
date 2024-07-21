@@ -58,7 +58,7 @@ if os.name == 'windows' {
 	logging.info('System archive library found!');
 } elif os.name == 'macos' {
 } elif os.name == 'linux' {
-	let ldConfigBin = fs.findExec('ldconfig');
+	let ldConfigBin = os.findExec('ldconfig');
 	cmd = ldConfigBin;
 	cmd += ' -p | grep libcurl';
 	logging.info('Checking for system curl library: ', cmd);
@@ -81,9 +81,9 @@ if os.name == 'windows' {
 # Attempt to download and install Feral's LibCurl
 
 inline if os.name == 'windows' {
-let gitCmd = fs.findExec('git.exe');
+let gitCmd = os.findExec('git.exe');
 } else {
-let gitCmd = fs.findExec('git');
+let gitCmd = os.findExec('git');
 }
 
 # Download LibCurl

@@ -1,17 +1,14 @@
 mload('std/FS');
 
-let os = import('std/os');
 let str = import('std/str');
 let sys = import('std/sys');
 let vec = import('std/vec');
 let stat = import('std/stat');
 
-inline if os.name == 'windows' {
+inline if getOSName() == 'windows' {
 let pathSeparator = '\\';
-let envDelimiter = ';';
 } else {
 let pathSeparator = '/';
-let envDelimiter = ':';
 }
 
 let pathAppend = fn(fullpath, pathparts...) {
@@ -47,18 +44,6 @@ let fdOpen = fn(name, mode = O_RDONLY) {
 let dirExists = fn(name) {
 	if !exists(name) { return false; }
 	return stat.stat(name).isDir();
-};
-
-# find the given file (exec) in the PATH variables
-# return the entire file path if found, empty string if not
-let findExec = fn(exec) {
-	let PATH = os.getEnv('PATH');
-	if PATH.empty() { return ''; }
-	for dir in PATH.split(envDelimiter).each() {
-		let p = pathFrom(dir, exec);
-		if exists(p) { return p; }
-	}
-	return '';
 };
 
 # can also be written as:
