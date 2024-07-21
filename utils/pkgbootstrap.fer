@@ -1,0 +1,157 @@
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let sys = import('std/sys');
+let vec = import('std/vec');
+let logging = import('std/logging');
+
+logging.addTarget(io.stderr);
+
+if sys.args.find('--trace') {
+	logging.setLevel(logging.Levels.TRACE);
+} elif sys.args.find('--info') {
+	logging.setLevel(logging.Levels.INFO);
+}
+
+let tempDir = fs.pathFrom(sys.installPrefix, 'temp');
+let pkgExePath = fs.pathFrom(sys.installPrefix, 'bin', 'pkg.fer');
+
+logging.trace('Checking if directory exists: ', tempDir);
+if !fs.dirExists(tempDir) {
+	logging.info('Creating directory: ', tempDir);
+	os.mkdir(tempDir);
+}
+logging.trace('Checking if path exists: ', pkgExePath);
+if fs.exists(pkgExePath) {
+	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use feral pkg to manage packages');
+	sys.exit(0);
+}
+
+let cmd = '';
+let cmdOutLines = vec.new();
+# Check for system's libcurl and libarchive availability
+if os.name == 'windows' {
+	# Check if vcpkg is installed
+	let vcpkgRoot = os.getEnv('VCPKG_ROOT');
+	if vcpkgRoot == nil {
+		raise('Feral requires VCPKG_ROOT env variable to be set on Windows');
+	}
+	let vcpkgBin = fs.pathFrom(vcpkgRoot, 'vcpkg.exe');
+	logging.info('Using vcpkg executable: ', vcpkgBin);
+	# Check if libcurl is installed
+	cmd = vcpkgBin;
+	cmd += ' list curl';
+	logging.info('Checking for system curl library: ', cmd);
+	cmdOutLines.clear();
+	if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+		raise('Please install curl via vcpkg using command: ', vcpkgBin, ' install curl');
+	}
+	logging.info('System curl library found!');
+	# Check if libarchive is installed
+	cmd = vcpkgBin;
+	cmd += ' list libarchive';
+	logging.info('Checking for system archive library: ', cmd);
+	cmdOutLines.clear();
+	if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+		raise('Please install libarchive via vcpkg using command: ', vcpkgBin, ' install libarchive');
+	}
+	logging.info('System archive library found!');
+} elif os.name == 'macos' {
+} elif os.name == 'linux' {
+	let ldConfigBin = fs.findExec('ldconfig');
+	cmd = ldConfigBin;
+	cmd += ' -p | grep libcurl';
+	logging.info('Checking for system curl library: ', cmd);
+	if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+		raise('Failed to find libcurl using ldconfig');
+	}
+	for line in cmdOutLines.each() { line.trim(); }
+	logging.info('Found system curl library: ', cmdOutLines);
+	cmd = ldConfigBin;
+	cmd += ' -p | grep libarchive';
+	logging.info('Checking for system archive library: ', cmd);
+	cmdOutLines.clear();
+	if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+		raise('Failed to find libarchive using ldconfig');
+	}
+	for line in cmdOutLines.each() { line.trim(); }
+	logging.info('Found system archive library: ', cmdOutLines);
+}
+
+# Attempt to download and install Feral's LibCurl
+
+inline if os.name == 'windows' {
+let gitCmd = fs.findExec('git.exe');
+} else {
+let gitCmd = fs.findExec('git');
+}
+
+# Download LibCurl
+let libCurlRepo = fs.pathFrom(tempDir, 'LibCurl');
+cmd = gitCmd;
+if fs.dirExists(libCurlRepo) {
+	cmd += ' pull';
+} else {
+	cmd += ' clone --depth=1 https://github.com/Feral-Lang/LibCurl ';
+	cmd += libCurlRepo;
+}
+logging.info('Fetching git repository for Feral\'s LibCurl: ', cmd);
+cmdOutLines.clear();
+if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+	raise('Failed to fetch Feral\'s LibCurl git repository');
+}
+
+# Install LibCurl
+let cwd = os.getCWD();
+logging.trace('Setting current working directory to Feral\'s LibCurl repo: ', libCurlRepo);
+os.setCWD(libCurlRepo);
+cmd = sys.selfBin;
+cmd += ' install 2>&1';
+logging.info('Installing Feral\'s LibCurl from \'', libCurlRepo, '\': ', cmd);
+cmdOutLines.clear();
+if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+	raise('Failed to install Feral\'s LibCurl');
+}
+logging.trace('Resetting current working directory to: ', cwd);
+os.setCWD(cwd);
+for line in cmdOutLines.each() {
+	logging.trace(line);
+}
+logging.info('Successfully installed Feral\'s LibCurl!');
+
+# Download and Install Feral's Pkg
+
+# Download Pkg
+let pkgRepo = fs.pathFrom(tempDir, 'Pkg');
+cmd = gitCmd;
+if fs.dirExists(pkgRepo) {
+	cmd += ' pull';
+} else {
+	cmd += ' clone --depth=1 https://github.com/Feral-Lang/Pkg ';
+	cmd += pkgRepo;
+}
+logging.info('Fetching git repository for Pkg');
+cmdOutLines.clear();
+if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+	raise('Failed to fetch Pkg git repository');
+}
+
+# Install Pkg
+let cwd = os.getCWD();
+logging.trace('Setting current working directory to Pkg repo: ', pkgRepo);
+os.setCWD(pkgRepo);
+cmd = sys.selfBin;
+cmd += ' install 2>&1';
+logging.info('Installing Pkg from \'', pkgRepo, '\': ', cmd);
+cmdOutLines.clear();
+if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
+	raise('Failed to install Pkg');
+}
+logging.trace('Resetting current working directory to: ', cwd);
+os.setCWD(cwd);
+for line in cmdOutLines.each() {
+	logging.trace(line);
+}
+logging.info('Successfully installed Pkg!');
+
+io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager');

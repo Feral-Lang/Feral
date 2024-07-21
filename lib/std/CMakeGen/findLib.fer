@@ -52,6 +52,7 @@ let addExtPrefixes in FindLib = fn(extPrefixes) {
 	return ref(self);
 };
 
+# Adds a 'feral' prefix to the library name
 let makeFeralLib in FindLib = fn() { self.feralLib = true; return ref(self); };
 
 let gen in FindLib = fn() {
