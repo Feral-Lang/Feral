@@ -11,7 +11,7 @@ VarRegex::VarRegex(const ModuleLoc *loc, const std::regex &expr)
 {}
 VarRegex::~VarRegex() {}
 
-Var *VarRegex::copy(const ModuleLoc *loc) { return new VarRegex(loc, expr); }
+Var *VarRegex::copyImpl(const ModuleLoc *loc) { return new VarRegex(loc, expr); }
 void VarRegex::set(Var *from) { expr = as<VarRegex>(from)->expr; }
 
 bool VarRegex::match(StringRef data, const ModuleLoc *loc, Var *captures, bool ignoreMatch)

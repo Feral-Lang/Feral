@@ -23,7 +23,7 @@ VarMultiProc::~VarMultiProc()
 	}
 }
 
-Var *VarMultiProc::copy(const ModuleLoc *loc)
+Var *VarMultiProc::copyImpl(const ModuleLoc *loc)
 {
 	return new VarMultiProc(loc, thread, res, id, false);
 }

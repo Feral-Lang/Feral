@@ -11,8 +11,6 @@ let Levels = enum(
 	.TRACE
 );
 
-let currLevel = Levels.WARN;
-
 # red, yellow, magenta, cyan, green
 # param type: Level (int)
 let lvlColToStr = fn(lvl) {
@@ -35,6 +33,7 @@ let lvlToStr = fn(lvl) {
 
 let FileInfo = struct(
 	f = nil,
+	level = Levels.WARN,
 	withCol = true
 );
 FileInfo.setTypeName('FileInfo');
@@ -42,30 +41,23 @@ FileInfo.setTypeName('FileInfo');
 # list of FileInfo
 let targets = vec.new(refs = true);
 
-let setLevel = fn(lvl) {
-	if lvl > Levels.TRACE { return; }
-	currLevel = lvl;
+let addTarget = fn(target, level = Levels.WARN, withCol = true) {
+	targets.push(FileInfo(target, level, withCol));
 };
 
-let getLevel = fn() { return currLevel; };
-
-let addTarget = fn(target, withCol = true) {
-	targets.push(FileInfo(target, withCol));
-};
-
-let addTargetByName = fn(name, withCol = true, mustClose = true) {
+let addTargetByName = fn(name, level = Levels.WARN, withCol = true, mustClose = true) {
 	let file = fs.fopen(name, 'w+', mustClose);
-	targets.push(FileInfo(file, withCol));
+	targets.push(FileInfo(ref(file), level, withCol));
 };
 
 let log = fn(lvl, data...) {
-	if currLevel < lvl { return; }
 	let lvlCol = lvlColToStr(lvl);
 	let lvlStr = lvlToStr(lvl);
 	let timeStr = time.format(time.now());
 	let prefix = ''.append('[', timeStr, '][', lvlStr, ']: ');
 	let prefixCol = ''.append('{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ');
 	for t in targets.each() {
+		if t.level < lvl { continue; }
 		if t.withCol {
 			io.fcprintln(t.f, prefixCol, data...);
 		} else {

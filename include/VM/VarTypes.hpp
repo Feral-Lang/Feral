@@ -24,6 +24,12 @@ class Var
 	// for VarInfo
 	size_t info;
 
+	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
+	inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
+
+	// To be implemented by the Vars
+	virtual Var *copyImpl(const ModuleLoc *loc) = 0;
+
 public:
 	Var(const ModuleLoc *loc, bool callable, bool attr_based);
 	virtual ~Var();
@@ -46,13 +52,11 @@ public:
 
 	inline bool isCallable() const { return info & (size_t)VarInfo::CALLABLE; }
 	inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
-	inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
 
 	inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
-	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 
-	virtual Var *copy(const ModuleLoc *loc) = 0;
-	virtual void set(Var *from)		= 0;
+	Var *copy(const ModuleLoc *loc);
+	virtual void set(Var *from) = 0;
 
 	virtual Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);
@@ -101,19 +105,21 @@ typename std::enable_if<std::is_base_of<Var, T>::value, void>::type inline decre
 // dummy type to denote all other types
 class VarAll : public Var
 {
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarAll(const ModuleLoc *loc);
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 };
 
 class VarNil : public Var
 {
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarNil(const ModuleLoc *loc);
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 };
 
@@ -121,10 +127,11 @@ class VarTypeID : public Var
 {
 	size_t val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarTypeID(const ModuleLoc *loc, size_t val);
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	inline void set(size_t newval) { val = newval; }
@@ -136,10 +143,11 @@ class VarBool : public Var
 {
 	bool val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarBool(const ModuleLoc *loc, bool val);
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	inline void set(bool newval) { val = newval; }
@@ -151,12 +159,13 @@ class VarInt : public Var
 {
 	int64_t val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarInt(const ModuleLoc *loc, int64_t _val);
 	VarInt(const ModuleLoc *loc, const char *_val);
 	~VarInt();
 
-	Var *copy(const ModuleLoc *loc) override;
 	inline void set(Var *from) override;
 
 	inline void set(int64_t newval) { val = newval; }
@@ -169,13 +178,14 @@ class VarIntIterator : public Var
 	bool started;
 	bool reversed;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarIntIterator(const ModuleLoc *loc);
 	VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _end, int64_t _step);
 	~VarIntIterator();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	bool next(int64_t &val);
 
@@ -190,12 +200,13 @@ class VarFlt : public Var
 {
 	long double val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarFlt(const ModuleLoc *loc, long double _val);
 	VarFlt(const ModuleLoc *loc, const char *_val);
 	~VarFlt();
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	inline void set(long double newval) { val = newval; }
@@ -206,6 +217,8 @@ class VarStr : public Var
 {
 	String val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarStr(const ModuleLoc *loc, char val);
 	VarStr(const ModuleLoc *loc, String &&val);
@@ -214,7 +227,6 @@ public:
 	VarStr(const ModuleLoc *loc, InitList<StringRef> _val);
 	VarStr(const ModuleLoc *loc, const char *val, size_t count);
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	inline void set(StringRef newval) { val = newval; }
@@ -229,12 +241,13 @@ class VarVec : public Var
 	using Iterator	    = Vector<Var *>::iterator;
 	using ConstIterator = Vector<Var *>::const_iterator;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs);
 	VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs);
 	~VarVec();
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Span<Var *> newval);
 
 	inline void set(Var *from) override { set(as<VarVec>(from)->get()); }
@@ -264,12 +277,13 @@ class VarVecIterator : public Var
 	VarVec *vec;
 	size_t curr;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarVecIterator(const ModuleLoc *loc, VarVec *vec);
 	~VarVecIterator();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	bool next(Var *&val);
 };
@@ -280,12 +294,13 @@ class VarMap : public Var
 	Vector<String> pos; // Only used by kwargs.
 	bool asrefs;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs);
 	VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs);
 	~VarMap();
 
-	Var *copy(const ModuleLoc *loc) override;
 	inline void set(Var *from) override { set(as<VarMap>(from)->get()); }
 	void set(const StringMap<Var *> &newval);
 
@@ -308,12 +323,13 @@ class VarMapIterator : public Var
 	VarMap *map;
 	StringMap<Var *>::iterator curr;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarMapIterator(const ModuleLoc *loc, VarMap *map);
 	~VarMapIterator();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	bool next(Var *&val, Interpreter &vm, const ModuleLoc *loc);
 };
@@ -350,13 +366,14 @@ class VarFn : public Var
 	FnBody body;
 	bool is_native;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
 	VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
 	~VarFn();
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
@@ -393,12 +410,13 @@ class VarModule : public Var
 	bool is_owner;
 	bool is_thread_copy;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarModule(const ModuleLoc *loc, Module *mod, Vars *vars = nullptr, bool is_owner = true,
 		  bool is_thread_copy = false);
 	~VarModule();
 
-	Var *copy(const ModuleLoc *loc) override;
 	Var *threadCopy(const ModuleLoc *loc);
 	void set(Var *from) override;
 
@@ -423,12 +441,13 @@ class VarStructDef : public Var
 	// type id of struct (struct id) which will be used as typeID for struct objects
 	size_t id;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarStructDef(const ModuleLoc *loc, size_t attrscount);
 	VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id);
 	~VarStructDef();
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	// returns VarStruct
@@ -457,6 +476,8 @@ class VarStruct : public Var
 	VarStructDef *base;
 	size_t id;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	// base can be nullptr (as is the case for enums)
 	VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount);
@@ -466,7 +487,6 @@ public:
 
 	size_t getTypeFnID() override;
 
-	Var *copy(const ModuleLoc *loc) override;
 	void set(Var *from) override;
 
 	void setAttr(StringRef name, Var *val, bool iref) override;
@@ -484,13 +504,14 @@ class VarFile : public Var
 	String mode;
 	bool owner;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarFile(const ModuleLoc *loc, FILE *const file, const String &mode,
 		const bool owner = true);
 	~VarFile();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	inline void setMode(StringRef newmode) { mode = newmode; }
 	inline void setOwner(bool isowner) { owner = isowner; }
@@ -504,12 +525,13 @@ class VarFileIterator : public Var
 {
 	VarFile *file;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarFileIterator(const ModuleLoc *loc, VarFile *file);
 	~VarFileIterator();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	bool next(VarStr *&val);
 };
@@ -520,12 +542,13 @@ class VarBytebuffer : public Var
 	size_t bufsz;
 	size_t buflen;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarBytebuffer(const ModuleLoc *loc, size_t bufsz);
 	~VarBytebuffer();
 
-	Var *copy(const ModuleLoc *loc);
-	void set(Var *from);
+	void set(Var *from) override;
 
 	void resize(size_t newsz);
 

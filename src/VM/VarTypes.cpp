@@ -25,6 +25,16 @@ Var::~Var() {}
 
 size_t Var::getTypeFnID() { return getType(); }
 
+Var *Var::copy(const ModuleLoc *loc)
+{
+	if(isLoadAsRef()) {
+		unsetLoadAsRef();
+		incref(this);
+		return this;
+	}
+	return this->copyImpl(loc);
+}
+
 Var *Var::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
@@ -42,7 +52,7 @@ void Var::operator delete(void *ptr, size_t sz) { VarMemory::getInstance().free(
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarAll::VarAll(const ModuleLoc *loc) : Var(loc, false, false) {}
-Var *VarAll::copy(const ModuleLoc *loc) { return new VarAll(loc); }
+Var *VarAll::copyImpl(const ModuleLoc *loc) { return new VarAll(loc); }
 void VarAll::set(Var *from) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +60,7 @@ void VarAll::set(Var *from) {}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarNil::VarNil(const ModuleLoc *loc) : Var(loc, false, false) {}
-Var *VarNil::copy(const ModuleLoc *loc)
+Var *VarNil::copyImpl(const ModuleLoc *loc)
 {
 	this->iref();
 	return this;
@@ -62,7 +72,7 @@ void VarNil::set(Var *from) {}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarTypeID::VarTypeID(const ModuleLoc *loc, size_t val) : Var(loc, false, false), val(val) {}
-Var *VarTypeID::copy(const ModuleLoc *loc) { return new VarTypeID(loc, val); }
+Var *VarTypeID::copyImpl(const ModuleLoc *loc) { return new VarTypeID(loc, val); }
 void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +80,7 @@ void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarBool::VarBool(const ModuleLoc *loc, bool val) : Var(loc, false, false), val(val) {}
-Var *VarBool::copy(const ModuleLoc *loc) { return new VarBool(loc, val); }
+Var *VarBool::copyImpl(const ModuleLoc *loc) { return new VarBool(loc, val); }
 void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +92,7 @@ VarInt::VarInt(const ModuleLoc *loc, const char *_val)
 	: Var(loc, false, false), val(std::stoll(_val))
 {}
 VarInt::~VarInt() {}
-Var *VarInt::copy(const ModuleLoc *loc) { return new VarInt(loc, val); }
+Var *VarInt::copyImpl(const ModuleLoc *loc) { return new VarInt(loc, val); }
 void VarInt::set(Var *from) { val = as<VarInt>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +109,7 @@ VarIntIterator::VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _en
 {}
 VarIntIterator::~VarIntIterator() {}
 
-Var *VarIntIterator::copy(const ModuleLoc *loc)
+Var *VarIntIterator::copyImpl(const ModuleLoc *loc)
 {
 	return new VarIntIterator(loc, begin, end, step);
 }
@@ -147,7 +157,7 @@ VarFlt::VarFlt(const ModuleLoc *loc, const char *_val)
 	: Var(loc, false, false), val(std::stod(_val))
 {}
 VarFlt::~VarFlt() {}
-Var *VarFlt::copy(const ModuleLoc *loc) { return new VarFlt(loc, val); }
+Var *VarFlt::copyImpl(const ModuleLoc *loc) { return new VarFlt(loc, val); }
 void VarFlt::set(Var *from) { val = as<VarFlt>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,7 +175,7 @@ VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val) : Var(loc, false,
 VarStr::VarStr(const ModuleLoc *loc, const char *val, size_t count)
 	: Var(loc, false, false), val(val, count)
 {}
-Var *VarStr::copy(const ModuleLoc *loc) { return new VarStr(loc, val); }
+Var *VarStr::copyImpl(const ModuleLoc *loc) { return new VarStr(loc, val); }
 void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +194,7 @@ VarVec::~VarVec()
 {
 	for(auto &v : val) decref(v);
 }
-Var *VarVec::copy(const ModuleLoc *loc)
+Var *VarVec::copyImpl(const ModuleLoc *loc)
 {
 	VarVec *tmp = new VarVec(loc, val.size(), asrefs);
 	if(asrefs) {
@@ -220,7 +230,7 @@ VarVecIterator::VarVecIterator(const ModuleLoc *loc, VarVec *vec)
 }
 VarVecIterator::~VarVecIterator() { decref(vec); }
 
-Var *VarVecIterator::copy(const ModuleLoc *loc) { return new VarVecIterator(loc, vec); }
+Var *VarVecIterator::copyImpl(const ModuleLoc *loc) { return new VarVecIterator(loc, vec); }
 void VarVecIterator::set(Var *from)
 {
 	VarVecIterator *f = as<VarVecIterator>(from);
@@ -253,7 +263,7 @@ VarMap::~VarMap()
 {
 	for(auto &v : val) decref(v.second);
 }
-Var *VarMap::copy(const ModuleLoc *loc)
+Var *VarMap::copyImpl(const ModuleLoc *loc)
 {
 	VarMap *tmp = new VarMap(loc, val.size(), asrefs);
 	if(asrefs) {
@@ -307,7 +317,7 @@ VarMapIterator::VarMapIterator(const ModuleLoc *loc, VarMap *map)
 }
 VarMapIterator::~VarMapIterator() { decref(map); }
 
-Var *VarMapIterator::copy(const ModuleLoc *loc) { return new VarMapIterator(loc, map); }
+Var *VarMapIterator::copyImpl(const ModuleLoc *loc) { return new VarMapIterator(loc, map); }
 void VarMapIterator::set(Var *from)
 {
 	VarMapIterator *f = as<VarMapIterator>(from);
@@ -345,7 +355,7 @@ VarFn::~VarFn()
 {
 	for(auto &aa : assn_params) decref(aa.second);
 }
-Var *VarFn::copy(const ModuleLoc *loc)
+Var *VarFn::copyImpl(const ModuleLoc *loc)
 {
 	VarFn *tmp = new VarFn(loc, modpath, kw_arg, var_arg, params.size(), assn_params.size(),
 			       body, is_native);
@@ -451,7 +461,7 @@ VarModule::~VarModule()
 	if(is_owner && vars) delete vars;
 }
 
-Var *VarModule::copy(const ModuleLoc *loc) { return new VarModule(loc, mod, vars, false); }
+Var *VarModule::copyImpl(const ModuleLoc *loc) { return new VarModule(loc, mod, vars, false); }
 Var *VarModule::threadCopy(const ModuleLoc *loc)
 {
 	return new VarModule(loc, mod, vars->threadCopy(loc), true, true);
@@ -505,7 +515,7 @@ VarStructDef::~VarStructDef()
 	}
 }
 
-Var *VarStructDef::copy(const ModuleLoc *loc)
+Var *VarStructDef::copyImpl(const ModuleLoc *loc)
 {
 	VarStructDef *res = new VarStructDef(loc, attrs.size(), id);
 	std::unordered_map<std::string, Var *> attrs;
@@ -551,15 +561,6 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				"provided more arguments than existing in structure definition");
 			goto fail;
 		}
-		// Don't check for types when creating struct. Otherwise, things like replacing
-		// nil with some actual data won't be possible without the `let attribute in
-		// structInstance = ...` shenanigans.
-		// auto aloc = attrs.find(*it);
-		// if(aloc->second->getType() != arg->getType()) {
-		// 	vm.fail(arg->getLoc(), "expected type: ", vm.getTypeName(aloc->second),
-		// 		", found: ", vm.getTypeName(arg));
-		// 	goto fail;
-		// }
 		res->setAttr(*it, arg->copy(loc), false);
 		++it;
 	}
@@ -636,7 +637,7 @@ VarStruct::~VarStruct()
 
 size_t VarStruct::getTypeFnID() { return id; }
 
-Var *VarStruct::copy(const ModuleLoc *loc)
+Var *VarStruct::copyImpl(const ModuleLoc *loc)
 {
 	VarStruct *res = new VarStruct(loc, base, attrs.size(), id);
 	for(auto &attr : attrs) {
@@ -691,7 +692,7 @@ VarFile::~VarFile()
 	if(owner && file) fclose(file);
 }
 
-Var *VarFile::copy(const ModuleLoc *loc) { return new VarFile(loc, file, mode, false); }
+Var *VarFile::copyImpl(const ModuleLoc *loc) { return new VarFile(loc, file, mode, false); }
 
 void VarFile::set(Var *from)
 {
@@ -711,7 +712,7 @@ VarFileIterator::VarFileIterator(const ModuleLoc *loc, VarFile *file)
 }
 VarFileIterator::~VarFileIterator() { decref(file); }
 
-Var *VarFileIterator::copy(const ModuleLoc *loc) { return new VarFileIterator(loc, file); }
+Var *VarFileIterator::copyImpl(const ModuleLoc *loc) { return new VarFileIterator(loc, file); }
 void VarFileIterator::set(Var *from)
 {
 	decref(file);
@@ -751,7 +752,7 @@ VarBytebuffer::~VarBytebuffer()
 	if(bufsz > 0) free(buffer);
 }
 
-Var *VarBytebuffer::copy(const ModuleLoc *loc)
+Var *VarBytebuffer::copyImpl(const ModuleLoc *loc)
 {
 	VarBytebuffer *newbuf = new VarBytebuffer(loc, bufsz);
 	newbuf->set(this);

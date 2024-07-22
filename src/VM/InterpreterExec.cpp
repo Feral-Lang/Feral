@@ -65,10 +65,8 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			StringRef name = ins.getDataStr();
 			Var *val       = execstack.pop(false);
 			// only copy if reference count > 1 (no point in copying unique values)
-			// or if loadAsRef() of value is false
-			if(val->isLoadAsRef() || val->getRef() == 1) {
+			if(val->getRef() == 1) {
 				vars->add(name, val, true);
-				val->unsetLoadAsRef();
 			} else {
 				vars->add(name, val->copy(ins.getLoc()), false);
 			}
@@ -84,9 +82,8 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(in->isAttrBased()) {
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
-				if(val->isLoadAsRef() || val->getRef() == 1) {
+				if(val->getRef() == 1) {
 					in->setAttr(name, val, true);
-					val->unsetLoadAsRef();
 				} else {
 					in->setAttr(name, val->copy(ins.getLoc()), false);
 				}

@@ -5,12 +5,8 @@ let sys = import('std/sys');
 let vec = import('std/vec');
 let logging = import('std/logging');
 
-logging.addTarget(io.stderr);
-
-if sys.args.find('--trace') {
-	logging.setLevel(logging.Levels.TRACE);
-} elif sys.args.find('--info') {
-	logging.setLevel(logging.Levels.INFO);
+if sys.args.find('--stderr') {
+	logging.addTarget(io.stderr);
 }
 
 let tempDir = fs.pathFrom(sys.installPrefix, 'temp');

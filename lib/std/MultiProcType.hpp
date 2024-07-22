@@ -12,6 +12,8 @@ class VarMultiProc : public Var
 	size_t id;
 	bool owner;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarMultiProc(const ModuleLoc *loc, Thread *thread, SharedFuture<int> *res,
 		     bool owner = true);
@@ -19,7 +21,6 @@ public:
 		     bool owner = true);
 	~VarMultiProc();
 
-	Var *copy(const ModuleLoc *loc);
 	void set(Var *from);
 
 	inline Thread *&getThread() { return thread; }
