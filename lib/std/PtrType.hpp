@@ -9,11 +9,12 @@ class VarPtr : public Var
 {
 	Var *val;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarPtr(const ModuleLoc *loc, Var *val);
 	~VarPtr();
 
-	Var *copy(const ModuleLoc *loc);
 	void set(Var *from);
 
 	void update(Var *with);

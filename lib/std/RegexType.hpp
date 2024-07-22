@@ -1,7 +1,5 @@
 #pragma once
 
-#include <regex>
-
 #include "VM/Interpreter.hpp"
 
 namespace fer
@@ -9,18 +7,19 @@ namespace fer
 
 class VarRegex : public Var
 {
-	std::regex expr;
+	Regex expr;
 
 	using svmatch	 = std::match_results<StringRef::const_iterator>;
 	using svsubmatch = std::sub_match<StringRef::const_iterator>;
 
+	Var *copyImpl(const ModuleLoc *loc) override;
+
 public:
 	VarRegex(const ModuleLoc *loc, StringRef exprStr,
-		 std::regex::flag_type opts = std::regex_constants::ECMAScript);
-	VarRegex(const ModuleLoc *loc, const std::regex &expr);
+		 Regex::flag_type opts = std::regex_constants::ECMAScript);
+	VarRegex(const ModuleLoc *loc, const Regex &expr);
 	~VarRegex();
 
-	Var *copy(const ModuleLoc *loc);
 	void set(Var *from);
 
 	// loc can be nullptr if captures is not a VarVec (ie. no new strings will have to be

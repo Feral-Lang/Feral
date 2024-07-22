@@ -6,7 +6,7 @@ namespace fer
 VarPtr::VarPtr(const ModuleLoc *loc, Var *val) : Var(loc, false, false), val(val) { incref(val); }
 VarPtr::~VarPtr() { decref(val); }
 
-Var *VarPtr::copy(const ModuleLoc *loc) { return new VarPtr(loc, val); }
+Var *VarPtr::copyImpl(const ModuleLoc *loc) { return new VarPtr(loc, val); }
 void VarPtr::set(Var *from)
 {
 	decref(val);
