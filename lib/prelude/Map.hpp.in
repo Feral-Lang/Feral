@@ -1,12 +1,3 @@
-#include "std/MapType.hpp"
-
-namespace fer
-{
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////// Functions ////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
@@ -89,8 +80,8 @@ Var *mapEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	StringMap<Var *> &map = as<VarMap>(args[0])->get();
-	Var *v		      = nullptr;
+	VarMap *map = as<VarMap>(args[0]);
+	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
 	if(!v->is<VarStr>()) {
@@ -102,16 +93,11 @@ Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &key = as<VarStr>(v)->get();
-	if(map.find(key) != map.end()) {
-		decref(map[key]);
-	}
-	if(as<VarMap>(args[0])->isRefMap()) {
-		incref(args[2]);
-		map[key] = args[2];
+	if(map->isRefMap()) {
+		map->setAttr(key, args[2], true);
 	} else {
-		map[key] = args[2]->copy(loc);
+		map->setAttr(key, args[2]->copy(loc), false);
 	}
-	decref(v);
 	return args[0];
 }
 
@@ -142,8 +128,8 @@ Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
-	StringMap<Var *> &map = as<VarMap>(args[0])->get();
-	Var *v		      = nullptr;
+	VarMap *map = as<VarMap>(args[0]);
+	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
 	if(!v->is<VarStr>()) {
@@ -154,16 +140,16 @@ Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		decref(v);
 		return nullptr;
 	}
-	auto maploc = map.find(as<VarStr>(v)->get());
+	Var *res = map->getAttr(as<VarStr>(v)->get());
 	decref(v);
-	return maploc == map.end() ? vm.getNil() : maploc->second;
+	return res ? res : vm.getNil();
 }
 
 Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	StringMap<Var *> &map = as<VarMap>(args[0])->get();
-	Var *v		      = nullptr;
+	VarMap *map = as<VarMap>(args[0]);
+	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
 	if(!v->is<VarStr>()) {
@@ -174,9 +160,9 @@ Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		decref(v);
 		return nullptr;
 	}
-	auto maploc = map.find(as<VarStr>(v)->get());
+	bool res = map->existsAttr(as<VarStr>(v)->get());
 	decref(v);
-	return maploc == map.end() ? vm.getFalse() : vm.getTrue();
+	return res ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapEach(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -194,28 +180,3 @@ Var *mapIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	res->setLoadAsRef();
 	return res;
 }
-
-INIT_MODULE(Map)
-{
-	VarModule *mod = vm.getCurrModule();
-
-	vm.registerType<VarMapIterator>(loc, "MapIterator");
-
-	mod->addNativeFn("new", mapNew, 0, true);
-
-	vm.addNativeTypeFn<VarMap>(loc, "len", mapSize, 0);
-	vm.addNativeTypeFn<VarMap>(loc, "isRef", mapIsRef, 0);
-	vm.addNativeTypeFn<VarMap>(loc, "empty", mapEmpty, 0);
-	vm.addNativeTypeFn<VarMap>(loc, "insert", mapInsert, 2);
-	vm.addNativeTypeFn<VarMap>(loc, "erase", mapErase, 1);
-	vm.addNativeTypeFn<VarMap>(loc, "find", mapFind, 1);
-	vm.addNativeTypeFn<VarMap>(loc, "at", mapAt, 1);
-	vm.addNativeTypeFn<VarMap>(loc, "[]", mapAt, 1);
-
-	vm.addNativeTypeFn<VarMap>(loc, "each", mapEach, 0);
-	vm.addNativeTypeFn<VarMapIterator>(loc, "next", mapIteratorNext, 0);
-
-	return true;
-}
-
-} // namespace fer

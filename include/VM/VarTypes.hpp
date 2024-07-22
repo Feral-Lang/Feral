@@ -163,6 +163,29 @@ public:
 	inline int64_t get() { return val; }
 };
 
+class VarIntIterator : public Var
+{
+	int64_t begin, end, step, curr;
+	bool started;
+	bool reversed;
+
+public:
+	VarIntIterator(const ModuleLoc *loc);
+	VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _end, int64_t _step);
+	~VarIntIterator();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	bool next(int64_t &val);
+
+	inline void setReversed(int64_t step) { reversed = step < 0; }
+	inline int64_t getBegin() { return begin; }
+	inline int64_t getEnd() { return end; }
+	inline int64_t getStep() { return step; }
+	inline int64_t getCurr() { return curr; }
+};
+
 class VarFlt : public Var
 {
 	long double val;
@@ -236,6 +259,21 @@ public:
 	inline ConstIterator end() const { return val.end(); }
 };
 
+class VarVecIterator : public Var
+{
+	VarVec *vec;
+	size_t curr;
+
+public:
+	VarVecIterator(const ModuleLoc *loc, VarVec *vec);
+	~VarVecIterator();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	bool next(Var *&val);
+};
+
 class VarMap : public Var
 {
 	StringMap<Var *> val;
@@ -250,9 +288,29 @@ public:
 	inline void set(Var *from) override { set(as<VarMap>(from)->get()); }
 	void set(const StringMap<Var *> &newval);
 
+	// not inline because Vars is incomplete type
+	void setAttr(StringRef name, Var *val, bool iref) override;
+	bool existsAttr(StringRef name) override;
+	Var *getAttr(StringRef name) override;
+
 	inline StringMap<Var *> &get() { return val; }
 	inline void insert(StringRef key, Var *value) { val.insert({String(key), value}); }
 	inline bool isRefMap() { return asrefs; }
+};
+
+class VarMapIterator : public Var
+{
+	VarMap *map;
+	StringMap<Var *>::iterator curr;
+
+public:
+	VarMapIterator(const ModuleLoc *loc, VarMap *map);
+	~VarMapIterator();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	bool next(Var *&val, Interpreter &vm, const ModuleLoc *loc);
 };
 
 // used in native function calls
@@ -351,6 +409,125 @@ public:
 	inline Vars *getVars() { return vars; }
 	inline bool isOwner() { return is_owner; }
 	inline bool isThreadCopy() { return is_thread_copy; }
+};
+
+class VarStructDef : public Var
+{
+	StringMap<Var *> attrs;
+	Vector<String> attrorder;
+	// type id of struct (struct id) which will be used as typeID for struct objects
+	size_t id;
+
+public:
+	VarStructDef(const ModuleLoc *loc, size_t attrscount);
+	VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id);
+	~VarStructDef();
+
+	Var *copy(const ModuleLoc *loc) override;
+	void set(Var *from) override;
+
+	// returns VarStruct
+	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		  const StringMap<AssnArgData> &assn_args) override;
+
+	void setAttr(StringRef name, Var *val, bool iref) override;
+	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
+	Var *getAttr(StringRef name) override;
+
+	inline void pushAttrOrder(StringRef attr) { attrorder.emplace_back(attr); }
+	inline void setAttrOrderAt(size_t idx, StringRef attr) { attrorder[idx] = attr; }
+	inline void setAttrOrder(Span<StringRef> neworder)
+	{
+		attrorder.assign(neworder.begin(), neworder.end());
+	}
+	inline Span<String> getAttrOrder() { return attrorder; }
+	inline StringRef getAttrOrderAt(size_t idx) { return attrorder[idx]; }
+	inline size_t getID() { return id; }
+	inline size_t getAttrCount() { return attrs.size(); }
+};
+
+class VarStruct : public Var
+{
+	StringMap<Var *> attrs;
+	VarStructDef *base;
+	size_t id;
+
+public:
+	// base can be nullptr (as is the case for enums)
+	VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount);
+	// base can be nullptr (as is the case for enums)
+	VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, size_t id);
+	~VarStruct();
+
+	size_t getTypeFnID() override;
+
+	Var *copy(const ModuleLoc *loc) override;
+	void set(Var *from) override;
+
+	void setAttr(StringRef name, Var *val, bool iref) override;
+	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
+	Var *getAttr(StringRef name) override;
+
+	inline const StringMap<Var *> &getAttrs() { return attrs; }
+	inline VarStructDef *getBase() { return base; }
+	inline size_t getAttrCount() { return attrs.size(); }
+};
+
+class VarFile : public Var
+{
+	FILE *file;
+	String mode;
+	bool owner;
+
+public:
+	VarFile(const ModuleLoc *loc, FILE *const file, const String &mode,
+		const bool owner = true);
+	~VarFile();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	inline void setMode(StringRef newmode) { mode = newmode; }
+	inline void setOwner(bool isowner) { owner = isowner; }
+
+	inline FILE *&getFile() { return file; }
+	inline StringRef getMode() { return mode; }
+	inline bool isOwner() { return owner; }
+};
+
+class VarFileIterator : public Var
+{
+	VarFile *file;
+
+public:
+	VarFileIterator(const ModuleLoc *loc, VarFile *file);
+	~VarFileIterator();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	bool next(VarStr *&val);
+};
+
+class VarBytebuffer : public Var
+{
+	char *buffer;
+	size_t bufsz;
+	size_t buflen;
+
+public:
+	VarBytebuffer(const ModuleLoc *loc, size_t bufsz);
+	~VarBytebuffer();
+
+	Var *copy(const ModuleLoc *loc);
+	void set(Var *from);
+
+	void resize(size_t newsz);
+
+	inline void setLen(size_t newlen) { buflen = newlen; }
+	inline char *&getBuf() { return buffer; }
+	inline size_t capacity() { return bufsz; }
+	inline size_t len() { return buflen; }
 };
 
 } // namespace fer

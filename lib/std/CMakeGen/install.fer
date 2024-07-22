@@ -1,6 +1,3 @@
-let str = import('std/str');
-let lang = import('std/lang');
-
 let installBase =
 `# Install {self.installName}
 install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/{self.filePath}/"
@@ -8,7 +5,7 @@ install(DIRECTORY "$\\{CMAKE_SOURCE_DIR}/{self.filePath}/"
 	FILES_MATCHING PATTERN "{self.pattern}"
 )`;
 
-let Install = lang.struct(
+let Install = struct(
 	projectName = '',
 	installName = 'sampleInstall',
 	filePath = 'include',

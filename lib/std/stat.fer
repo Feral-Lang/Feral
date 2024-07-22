@@ -1,11 +1,8 @@
 mload('std/Stat');
 
-# Cannot import os as os depends on fs which depends on stat.
-let lang = import('std/lang');
-
 # Windows does not have blksize and blocks field in the stat struct.
 inline if getOSName() == 'windows' {
-let Stat = lang.struct(
+let Stat = struct(
 	dev = 0,
 	ino = 0,
 	mode = 0,
@@ -19,7 +16,7 @@ let Stat = lang.struct(
 	ctime = 0
 );
 } else {
-let Stat = lang.struct(
+let Stat = struct(
 	dev = 0,
 	ino = 0,
 	mode = 0,

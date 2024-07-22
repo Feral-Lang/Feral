@@ -1,8 +1,4 @@
-mload('std/FS');
-
-let str = import('std/str');
 let sys = import('std/sys');
-let vec = import('std/vec');
 let stat = import('std/stat');
 
 inline if getOSName() == 'windows' {
@@ -10,6 +6,70 @@ let pathSeparator = '\\';
 } else {
 let pathSeparator = '/';
 }
+
+################################# Some definitions #################################
+
+let fdRead = prelude.fsFdRead;
+let fdWrite = prelude.fsFdWrite;
+let fdClose = prelude.fsFdClose;
+
+let exists = prelude.fsExists;
+let install = prelude.fsInstall;
+let mkdir = prelude.fsMkdir;
+let remove = prelude.fsRemove;
+let copy = prelude.fsCopy;
+let move = prelude.fsMove;
+
+let stdin = prelude.fsStdin;
+let stdout = prelude.fsStdout;
+let stderr = prelude.fsStderr;
+
+# fs.walkdir()
+let WALK_FILES = prelude.FS_WALK_FILES;
+let WALK_DIRS = prelude.FS_WALK_DIRS;
+let WALK_RECURSE = prelude.FS_WALK_RECURSE;
+# <file>.seek()
+let SEEK_SET = prelude.FS_SEEK_SET;
+let SEEK_CUR = prelude.FS_SEEK_CUR;
+let SEEK_END = prelude.FS_SEEK_END;
+# file descriptor flags
+let O_RDONLY = prelude.FS_O_RDONLY;
+let O_WRONLY = prelude.FS_O_WRONLY;
+let O_RDWR = prelude.FS_O_RDWR;
+let O_APPEND = prelude.FS_O_APPEND;
+let O_CREAT = prelude.FS_O_CREAT;
+inline if getOSName() == 'linux' || getOSName() == 'macos' {
+let O_DSYNC = prelude.FS_O_DSYNC;
+}
+let O_EXCL = prelude.FS_O_EXCL;
+inline if getOSName() != 'windows' {
+let O_NOCTTY = prelude.FS_O_NOCTTY;
+let O_NONBLOCK = prelude.FS_O_NONBLOCK;
+let O_SYNC = prelude.FS_O_SYNC;
+}
+inline if getOSName() == 'linux' {
+let O_RSYNC = prelude.FS_O_RSYNC;
+}
+let O_TRUNC = prelude.FS_O_TRUNC;
+
+####################################################################################
+
+let fopen = fn(file, mode = 'r', mustClose = true) {
+	return prelude.fsFopen(file, mode, mustClose);
+};
+
+let walkDir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
+	return prelude.fsWalkDir(dir, mode, regex);
+};
+
+let fdOpen = fn(name, mode = O_RDONLY) {
+	return prelude.fsFdOpen(name, mode);
+};
+
+let dirExists = fn(name) {
+	if !exists(name) { return false; }
+	return stat.stat(name).isDir();
+};
 
 let pathAppend = fn(fullpath, pathparts...) {
 	for let i = 0; i < pathparts.len(); ++i {
@@ -23,27 +83,6 @@ let pathFrom = fn(pathparts...) {
 	let fullpath = '';
 	pathAppend(fullpath, pathparts...);
 	return fullpath;
-};
-
-let fopen = fn(file, mode = 'r', mustClose = true) {
-	return fopenNative(file, mode, mustClose);
-};
-
-let reopen in FileTy = fn(file, mode = 'r') {
-	return self.reopenNative(file, mode);
-};
-
-let walkDir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
-	return walkDirNative(dir, mode, regex);
-};
-
-let fdOpen = fn(name, mode = O_RDONLY) {
-	return fdOpenNative(name, mode);
-};
-
-let dirExists = fn(name) {
-	if !exists(name) { return false; }
-	return stat.stat(name).isDir();
 };
 
 # can also be written as:

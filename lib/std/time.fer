@@ -49,3 +49,20 @@ let setFormat = fn(new_format) {
 let format = fn(time, fmt = timeFormat) {
 	return formatNative(time, fmt);
 };
+
+let toSeconds = fn(.kwArgs) {
+	let totalSeconds = 0;
+	if kwArgs['days'] != nil {
+		totalSeconds += kwArgs.days * 24 * 60 * 60;
+	}
+	if kwArgs['hours'] != nil {
+		totalSeconds += kwArgs.hours * 60 * 60;
+	}
+	if kwArgs['minutes'] != nil {
+		totalSeconds += kwArgs.minutes * 60;
+	}
+	if kwArgs['seconds'] != nil {
+		totalSeconds += kwArgs.seconds;
+	}
+	return ref(totalSeconds);
+};

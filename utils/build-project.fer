@@ -3,7 +3,6 @@
 let io = import('std/io');
 let fs = import('std/fs');
 let os = import('std/os');
-let str = import('std/str');
 let sys = import('std/sys');
 
 let PROJ_DIR = os.getEnv('PROJ_DIR');

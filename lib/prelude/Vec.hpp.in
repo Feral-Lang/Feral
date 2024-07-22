@@ -1,13 +1,3 @@
-#include "std/VecType.hpp"
-#include "VM/Interpreter.hpp"
-
-namespace fer
-{
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////// Functions ////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
@@ -351,39 +341,3 @@ Var *vecIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	res->setLoadAsRef();
 	return res;
 }
-
-INIT_MODULE(Vec)
-{
-	VarModule *mod = vm.getCurrModule();
-
-	vm.registerType<VarVecIterator>(loc, "VecIterator");
-
-	mod->addNativeFn("new", vecNew, 0, true);
-
-	vm.addNativeTypeFn<VarVec>(loc, "len", vecSize, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "capacity", vecCapacity, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "isRef", vecIsRef, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "empty", vecEmpty, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "front", vecFront, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "back", vecBack, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "push", vecPush, 1);
-	vm.addNativeTypeFn<VarVec>(loc, "pop", vecPop, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);
-	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
-	vm.addNativeTypeFn<VarVec>(loc, "appendNative", vecAppend, 3);
-	vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt, 2);
-	vm.addNativeTypeFn<VarVec>(loc, "at", vecAt, 1);
-	vm.addNativeTypeFn<VarVec>(loc, "[]", vecAt, 1);
-
-	vm.addNativeTypeFn<VarVec>(loc, "subNative", vecSub, 2);
-	vm.addNativeTypeFn<VarVec>(loc, "sliceNative", vecSlice, 2);
-
-	vm.addNativeTypeFn<VarVec>(loc, "each", vecEach, 0);
-	vm.addNativeTypeFn<VarVecIterator>(loc, "next", vecIteratorNext, 0);
-
-	return true;
-}
-
-} // namespace fer

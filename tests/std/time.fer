@@ -1,0 +1,5 @@
+let assert = import('std/assert');
+
+let time = import('std/time');
+
+assert.eq(time.toSeconds(days = 1), 86400);

@@ -13,6 +13,9 @@
 namespace fer
 {
 
+Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const StringMap<AssnArgData> &assn_args);
+
 #if defined(FER_OS_WINDOWS)
 static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
 bool addDLLDirectory(StringRef dir);
@@ -20,8 +23,9 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(RAIIParser &parser)
-	: selfbin(env::getProcPath()), parser(parser), c(parser.getContext()),
-	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
+	: prelude("prelude/prelude"), selfbin(env::getProcPath()), parser(parser),
+	  c(parser.getContext()), argparser(parser.getCommandArgs()),
+	  tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
@@ -32,10 +36,6 @@ Interpreter::Interpreter(RAIIParser &parser)
 				 LOAD_LIBRARY_SEARCH_USER_DIRS);
 #endif
 	initTypeNames();
-
-	// set core modules
-	coremods.emplace_back("Core");
-	coremods.emplace_back("Utils");
 
 	// set feral base-directory
 	selfbase = fs::parentDir(fs::parentDir(selfbin));
@@ -65,7 +65,6 @@ Interpreter::Interpreter(RAIIParser &parser)
 #endif
 }
 
-// TODO:
 Interpreter::~Interpreter()
 {
 	decref(nil);
@@ -107,13 +106,22 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 
 	pushModule(mod->getPath());
 	if(main_module) {
-		for(auto m : coremods) {
-			if(!loadNativeModule(loc, String(m))) {
-				removeModule(mod->getPath());
-				popModule();
-				return 1;
-			}
+		// mload must be setup here because it is needed to load even the core module from
+		// prelude.
+		addNativeFn(nullptr, "mload", loadModule, 1);
+		if(!findImport(prelude)) {
+			err::out(loc, "Failed to find prelude: ", prelude);
+			return 1;
 		}
+		int res = compileAndRun(loc, prelude, false);
+		if(res != 0) {
+			err::out(loc, "Failed to import prelude: ", prelude);
+			removeModule(mod->getPath());
+			popModule();
+			return 1;
+		}
+		// set the prelude global variable
+		addGlobal("prelude", getModule(prelude));
 		mainmodulepath = mod->getPath();
 	}
 	int res = execute();
@@ -387,6 +395,14 @@ void Interpreter::initTypeNames()
 	registerType<VarFn>(nullptr, "Func");
 	registerType<VarModule>(nullptr, "Module");
 	registerType<VarTypeID>(nullptr, "TypeID");
+	registerType<VarStructDef>(nullptr, "StructDef");
+	registerType<VarStruct>(nullptr, "Struct");
+	registerType<VarFile>(nullptr, "File");
+	registerType<VarBytebuffer>(nullptr, "Bytebuffer");
+	registerType<VarIntIterator>(nullptr, "IntIterator");
+	registerType<VarVecIterator>(nullptr, "VecIterator");
+	registerType<VarMapIterator>(nullptr, "MapIterator");
+	registerType<VarFileIterator>(nullptr, "FileIterator");
 
 	globals.add("AllTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarAll>()), false);
 
@@ -418,5 +434,21 @@ void remDLLDirectories()
 	}
 }
 #endif
+
+Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!vm.loadNativeModule(loc, as<VarStr>(args[1])->get())) {
+		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get(),
+			"; look at the error above");
+		return nullptr;
+	}
+	return vm.getNil();
+}
 
 } // namespace fer

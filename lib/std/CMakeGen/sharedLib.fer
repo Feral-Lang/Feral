@@ -1,6 +1,5 @@
 let os = import('std/os');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
 let sharedLibBase =
 `# {self.libName}
@@ -42,7 +41,7 @@ let pkgDLLInstallBase =
 	  DESTINATION "lib/feral/{self.projectName}$<0:>"
 )`;
 
-let SharedLib = lang.struct(
+let SharedLib = struct(
 	projectName = '',
 	libName = 'sampleSharedLib',
 	otherSrcs = '',

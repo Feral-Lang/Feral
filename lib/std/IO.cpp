@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include "std/FSType.hpp"
 #include "VM/Interpreter.hpp"
 
 #if defined(FER_OS_WINDOWS)

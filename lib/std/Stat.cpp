@@ -1,6 +1,5 @@
 #include <sys/stat.h> // stat()
 
-#include "std/StructType.hpp"
 #include "VM/Interpreter.hpp"
 
 #if defined(FER_OS_WINDOWS)

@@ -300,3 +300,48 @@ Var *intUSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	return vm.makeVar<VarInt>(loc, -as<VarInt>(args[0])->get());
 }
+
+Var *intRange(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	Var *lhs_base  = args[1];
+	Var *rhs_base  = args.size() > 2 ? args[2] : nullptr;
+	Var *step_base = args.size() > 3 ? args[3] : nullptr;
+
+	if(!lhs_base->is<VarInt>()) {
+		vm.fail(lhs_base->getLoc(),
+			"expected argument 1 to be of type int, found: ", vm.getTypeName(lhs_base));
+		return nullptr;
+	}
+	if(rhs_base && !rhs_base->is<VarInt>()) {
+		vm.fail(rhs_base->getLoc(),
+			"expected argument 2 to be of type int, found: ", vm.getTypeName(rhs_base));
+		return nullptr;
+	}
+	if(step_base && !step_base->is<VarInt>()) {
+		vm.fail(step_base->getLoc(), "expected argument 3 to be of type int, found: ",
+			vm.getTypeName(step_base));
+		return nullptr;
+	}
+
+	int64_t begin, end, step;
+	if(args.size() > 2) begin = as<VarInt>(lhs_base)->get();
+	else begin = 0;
+	if(rhs_base) end = as<VarInt>(rhs_base)->get();
+	else end = as<VarInt>(lhs_base)->get();
+	if(step_base) step = as<VarInt>(step_base)->get();
+	else step = 1;
+	VarIntIterator *res = vm.makeVar<VarIntIterator>(loc, begin, end, step);
+	return res;
+}
+
+Var *getIntIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			const StringMap<AssnArgData> &assn_args)
+{
+	VarIntIterator *it = as<VarIntIterator>(args[0]);
+	int64_t _res;
+	if(!it->next(_res)) return vm.getNil();
+	VarInt *res = vm.makeVar<VarInt>(loc, _res);
+	res->setLoadAsRef();
+	return res;
+}

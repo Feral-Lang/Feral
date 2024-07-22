@@ -19,9 +19,7 @@
 */
 
 let map = import('std/map');
-let str = import('std/str');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
 let dumps = fn(obj, indentation = false, indentChar = ' ') {
 	let indent = -1;
@@ -48,7 +46,7 @@ let bind = fn(structInst, jsonObj) {
 # JSON token structs, enums, and string variants
 ###########################################################################################
 
-let TokenType = lang.enum(
+let TokenType = enum(
 	.UNKNOWN,
 	.NIL,
 	.INT,
@@ -84,7 +82,7 @@ let TokenTypeStrs = vec.new(
 	'RBRACE'
 );
 
-let Token = lang.struct(
+let Token = struct(
 	type = 0,
 	val = ''
 );

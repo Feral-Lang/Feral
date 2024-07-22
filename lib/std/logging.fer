@@ -1,10 +1,9 @@
 let io = import('std/io');
 let fs = import('std/fs');
 let vec = import('std/vec');
-let lang = import('std/lang');
 let time = import('std/time');
 
-let Levels = lang.enum(
+let Levels = enum(
 	.FATAL,
 	.WARN,
 	.INFO,
@@ -34,7 +33,7 @@ let lvlToStr = fn(lvl) {
 	return 'INVALID';
 };
 
-let FileInfo = lang.struct(
+let FileInfo = struct(
 	f = nil,
 	withCol = true
 );
@@ -64,11 +63,13 @@ let log = fn(lvl, data...) {
 	let lvlCol = lvlColToStr(lvl);
 	let lvlStr = lvlToStr(lvl);
 	let timeStr = time.format(time.now());
+	let prefix = ''.append('[', timeStr, '][', lvlStr, ']: ');
+	let prefixCol = ''.append('{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ');
 	for t in targets.each() {
 		if t.withCol {
-			io.fcprintln(t.f, '{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ', data...);
+			io.fcprintln(t.f, prefixCol, data...);
 		} else {
-			io.fprintln(t.f, '[', timeStr, '][', lvlStr, ']: ', data...);
+			io.fprintln(t.f, prefix, data...);
 		}
 	}
 };

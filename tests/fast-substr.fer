@@ -3,7 +3,6 @@ let assert = import('std/assert');
 # similar to rabin-karp algorithm
 
 let io = import('std/io');
-let str = import('std/str');
 let vec = import('std/vec');
 
 let str = 'abracadabra';

@@ -1,6 +1,5 @@
 let assert = import('std/assert');
 
-let str = import('std/str');
 let vec = import('std/vec');
 
 let num = 1025619;

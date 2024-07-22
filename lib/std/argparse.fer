@@ -1,9 +1,8 @@
 let io = import('std/io');
 let map = import('std/map');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
-let Arg = lang.struct(
+let Arg = struct(
 	reqd = false,
 	expectVal = false,
 	present = false,
@@ -15,19 +14,19 @@ let Arg = lang.struct(
 Arg.setTypeName('Arg');
 
 # args: bool
-let setReqd in Arg = fn(isReqd) { self.reqd = isReqd; return self; };
+let setReqd in Arg = fn(isReqd) { self.reqd = isReqd; return ref(self); };
 # args: bool
-let setValReqd in Arg = fn(expectsVal) { self.expectVal = expectsVal; return self; };
+let setValReqd in Arg = fn(expectsVal) { self.expectVal = expectsVal; return ref(self); };
 # args: bool
-let setPresent in Arg = fn(isPresent) { self.present = isPresent; return self; };
+let setPresent in Arg = fn(isPresent) { self.present = isPresent; return ref(self); };
 # args: string
-let setShort in Arg = fn(shortFlag) { self.short = shortFlag; return self; };
+let setShort in Arg = fn(shortFlag) { self.short = shortFlag; return ref(self); };
 # args: string
-let setLong in Arg = fn(longFlag) { self.long = longFlag; return self; };
+let setLong in Arg = fn(longFlag) { self.long = longFlag; return ref(self); };
 # args: string
-let setHelp in Arg = fn(helpString) { self.help = helpString; return self; };
+let setHelp in Arg = fn(helpString) { self.help = helpString; return ref(self); };
 # args: string
-let setValue in Arg = fn(valueString) { self.value = valueString; return self; };
+let setValue in Arg = fn(valueString) { self.value = valueString; return ref(self); };
 
 let isReqd in Arg = fn() { return self.reqd; };
 let expectsVal in Arg = fn() { return self.expectVal; };
@@ -40,7 +39,7 @@ let getValue in Arg = fn() { return self.value; };
 ###############################################################################################
 # ArgParser type
 ###############################################################################################
-let ArgParser = lang.struct(
+let ArgParser = struct(
 	nooptargs = vec.new(refs = true),
 	args = map.new(refs = true), # long -> Arg
 	shrtargs = map.new() # short -> long

@@ -1,13 +1,3 @@
-#include "BytebufferType.hpp"
-#include "VM/Interpreter.hpp"
-
-namespace fer
-{
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////// Functions ////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 {
@@ -66,21 +56,3 @@ Var *bytebufferToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(self->len() == 0) return vm.makeVar<VarStr>(loc, "");
 	return vm.makeVar<VarStr>(loc, self->getBuf(), self->len());
 }
-
-INIT_MODULE(Bytebuffer)
-{
-	VarModule *mod = vm.getCurrModule();
-
-	vm.registerType<VarBytebuffer>(loc, "Bytebuffer");
-
-	mod->addNativeFn("newNative", bytebufferNewNative, 1);
-
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "resize", bytebufferResize, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "setLen", bytebufferSetLen, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen, 0);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity, 0);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr, 0);
-	return true;
-}
-
-} // namespace fer

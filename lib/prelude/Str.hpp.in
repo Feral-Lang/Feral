@@ -1,7 +1,151 @@
-#include "VM/Interpreter.hpp"
-
-namespace fer
+Var *strAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
 {
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc,
+			"expected string/char argument"
+			" for string addition, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarStr *res = vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->get());
+	res->get() += as<VarStr>(args[1])->get();
+	return res;
+}
+
+Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected integer argument for string multiplication, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef lhs = as<VarStr>(args[0])->get();
+	int64_t rhs   = as<VarInt>(args[1])->get();
+	VarStr *res   = vm.makeVar<VarStr>(loc, "");
+	for(int64_t i = 1; i < rhs; ++i) {
+		res->get() += lhs;
+	}
+	return res;
+}
+
+Var *strAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for addition assignment, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarStr *res = as<VarStr>(args[0]);
+	res->get() += as<VarStr>(args[1])->get();
+	return args[0];
+}
+
+Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc,
+			"expected integer argument for string multiplication assignment, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	String lhs  = as<VarStr>(args[0])->get();
+	int64_t rhs = as<VarInt>(args[1])->get();
+	for(int64_t i = 1; i < rhs; ++i) {
+		as<VarStr>(args[0])->get() += lhs;
+	}
+	return args[0];
+}
+
+// logical functions
+
+Var *strLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string/stringref argument for '<', found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs < rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs > rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs <= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs >= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) return vm.getFalse();
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs == rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) return vm.getTrue();
+	StringRef lhs = as<VarStr>(args[0])->get();
+	StringRef rhs = as<VarStr>(args[1])->get();
+	return lhs != rhs ? vm.getTrue() : vm.getFalse();
+}
+
+Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected argument to be of type integer for string.at(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	StringRef str = as<VarStr>(args[0])->get();
+	size_t pos    = as<VarInt>(args[1])->get();
+	if(pos >= str.size()) return vm.getNil();
+	return vm.makeVar<VarStr>(loc, str[pos]);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// Utility /////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, StringRef delim,
 			int64_t maxDelimCount);
@@ -10,10 +154,6 @@ static inline void trim(String &s);
 
 size_t sizePow(size_t base, int exp);
 size_t strToBin(StringRef str);
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////// Functions ////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *strSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
@@ -449,38 +589,6 @@ Var *chr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 
-INIT_MODULE(Str)
-{
-	vm.addNativeTypeFn<VarStr>(loc, "len", strSize, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "clear", strClear, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "empty", strEmpty, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "front", strFront, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "back", strBack, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "push", strPush, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "pop", strPop, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "isChAt", strIsChAt, 2);
-	vm.addNativeTypeFn<VarStr>(loc, "set", strSetAt, 2);
-	vm.addNativeTypeFn<VarStr>(loc, "insert", strInsert, 2);
-	vm.addNativeTypeFn<VarStr>(loc, "erase", strErase, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "find", strFind, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "rfind", strRFind, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "substrNative", strSubstr, 2);
-	vm.addNativeTypeFn<VarStr>(loc, "lastIdx", strLast, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "trim", strTrim, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "upper", strUpper, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 2);
-	vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "endsWith", strEndsWith, 1);
-	vm.addNativeTypeFn<VarStr>(loc, "fmt", strFormat, 0, true);
-	vm.addNativeTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr, 0);
-
-	vm.addNativeTypeFn<VarStr>(loc, "byt", byt, 0);
-	vm.addNativeTypeFn<VarInt>(loc, "chr", chr, 0);
-
-	return true;
-}
-
 Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, StringRef delim,
 			int64_t maxDelimCount)
 {
@@ -545,5 +653,3 @@ size_t strToBin(StringRef str)
 	}
 	return bin;
 }
-
-} // namespace fer
