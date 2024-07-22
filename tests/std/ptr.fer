@@ -2,10 +2,9 @@ let assert = import('std/assert');
 
 let ptr = import('std/ptr');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
-let Node = lang.struct(d = 0, next = nil);
-let List = lang.struct(head = nil);
+let Node = struct(d = 0, next = nil);
+let List = struct(head = nil);
 
 let add in List = fn(data) {
 	if self.head == nil {

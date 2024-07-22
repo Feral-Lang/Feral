@@ -1,10 +1,6 @@
 let assert = import('std/assert');
 
-let vec = import('std/vec');
-let map = import('std/map');
-let lang = import('std/lang');
-
-let SomeTy = lang.struct(a = 10, b = 20);
+let SomeTy = struct(a = 10, b = 20);
 
 let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
 	assert.eq(self.a, 100);
@@ -14,7 +10,7 @@ let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
 	assert.eq(kw['a'], 10);
 	assert.eq(kw['b'], 20);
 	assert.eq(kw['c'], 30);
-	assert.eq(va, vec.new(3, 4));
+	assert.eq(va, prelude.vecNew(3, 4));
 };
 
 let func2 in SomeTy = fn(x, y = 10, .kw, va...) {
@@ -36,7 +32,7 @@ test.func2(1, a = 10, b = 20);
 #################################################### ENUM #####################################################
 ###############################################################################################################
 
-let ExitCode = lang.enum(
+let ExitCode = enum(
 	.OK,
 	.FAIL,
 	.IO_ERR,

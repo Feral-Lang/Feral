@@ -1,5 +1,4 @@
 let vec = import('std/vec');
-let lang = import('std/lang');
 
 let binaryBase =
 `# {self.binName} binary
@@ -34,7 +33,7 @@ let pkgDLLInstallBase =
 	  DESTINATION bin
 )`;
 
-let Binary = lang.struct(
+let Binary = struct(
 	projectName = '',
 	binName = 'sampleBin',
 	srcs = '',

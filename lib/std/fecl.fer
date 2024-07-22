@@ -1,8 +1,6 @@
 let io = import('std/io');
 let map = import('std/map');
 let vec = import('std/vec');
-let str = import('std/str');
-let lang = import('std/lang');
 
 ###################################################################################################
 # API
@@ -26,7 +24,7 @@ let dumps = fn(obj, indent = -1, indent_char = ' ') {
 # Token Type
 ###################################################################################################
 
-let TokType = lang.enum(
+let TokType = enum(
 	.INVALID,
 
 	.INT,
@@ -66,7 +64,7 @@ let TokStr = vec.new(
 # Token
 ###################################################################################################
 
-let Tok = lang.struct(
+let Tok = struct(
 	type = 0, # one of TokType
 	data = ''
 );
@@ -91,7 +89,7 @@ let str in Tok = fn() {
 	return res;
 };
 
-let Toks = lang.struct(
+let Toks = struct(
 	toks = vec.new(),
 	invalid = Tok(TokType.INVALID)
 );

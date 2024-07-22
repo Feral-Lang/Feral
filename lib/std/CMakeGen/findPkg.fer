@@ -1,9 +1,7 @@
 let fs = import('std/fs');
 let os = import('std/os');
-let str = import('std/str');
 let sys = import('std/sys');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
 let findPkgBase =
 `if(NOT "{includeDirs}" MATCHES "")
@@ -18,7 +16,7 @@ let findPkgTest =
 endif()
 `;
 
-let FindPkg = lang.struct(
+let FindPkg = struct(
 	template = findPkgBase,
 	pkgName = 'test',
 	varName = '',

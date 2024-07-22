@@ -2,8 +2,8 @@ let io = import('std/io');
 let ptr = import('std/ptr');
 let lang = import('std/lang');
 
-let node_t = lang.struct(d = 0, next = nil);
-let list_t = lang.struct(head = nil);
+let node_t = struct(d = 0, next = nil);
+let list_t = struct(head = nil);
 
 let add in list_t = fn(data) {
 	if self.head == nil {

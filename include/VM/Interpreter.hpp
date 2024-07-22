@@ -41,11 +41,11 @@ class Interpreter
 	StringMap<ModDeinitFn> dlldeinitfns;
 	Map<StringRef, VarModule *> allmodules;
 	Vector<VarModule *> modulestack;
-	// core modules that must be loaded before any program is executed
-	Vector<String> coremods;
 	// include and module locations - searches in increasing order of List elements
 	Vector<String> includelocs; // should be shared between multiple threads
 	Vector<String> dlllocs;	    // should be shared between multiple threads
+	// prelude must be imported before any program is executed
+	String prelude;
 	// path where feral binary exists (used by sys.selfBin())
 	String selfbin;
 	// parent directory of selfbin (used by sys.selfBase())
@@ -162,6 +162,8 @@ public:
 	// primarily used for templates
 	Var *eval(const ModuleLoc *loc, StringRef code, bool isExpr);
 
+	// Cannot be used to setup functions because the modulestack hasn't been populated at the
+	// time of this function's call.
 	void initTypeNames();
 
 	void dumpExecStack(OStream &os);

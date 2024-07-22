@@ -58,7 +58,7 @@ io.println('factorial of 5 is: ', facto(5));
 ## Creating an empty struct
 ```py
 let lang = import('std/lang');
-let struct_t = lang.struct(); # empty structure type (struct with no fields)
+let struct_t = struct(); # empty structure type (struct with no fields)
 ```
 
 ## Creating a struct with fields
@@ -66,7 +66,7 @@ let struct_t = lang.struct(); # empty structure type (struct with no fields)
 # fields `a` and `b` of type integers having default values `10`, and `20` respectively
 let lang = import('std/lang');
 
-let struct_t = lang.struct(a = 10, b = 20);
+let struct_t = struct(a = 10, b = 20);
 ```
 To create objects of this structure:
 ```py

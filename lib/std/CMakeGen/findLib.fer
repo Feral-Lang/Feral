@@ -1,7 +1,5 @@
-let str = import('std/str');
 let sys = import('std/sys');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
 let findLibBase =
 `if(NOT "{includeDirs}" MATCHES "")
@@ -16,7 +14,7 @@ let findLibTest =
 endif()
 `;
 
-let FindLib = lang.struct(
+let FindLib = struct(
 	template = findLibBase,
 	libName = 'test',
 	required = '',

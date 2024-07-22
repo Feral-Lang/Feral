@@ -3,9 +3,9 @@ let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
 let sys = import('std/sys');
-let lang = import('std/lang');
 let mproc = import('std/multiproc');
 let platform = import('std/platform');
+
 let cmakeBase = import('./CMakeGen/base');
 let install = import('./CMakeGen/install');
 let findLib = import('./CMakeGen/findLib');
@@ -15,7 +15,7 @@ let binary = import('./CMakeGen/binary');
 
 let defaultInstallRPaths = sys.installPrefix + '/lib/feral/std;' + sys.installPrefix + '/lib/feral';
 
-let Core = lang.struct(
+let Core = struct(
 	version = '3.24.3',
 	projectName = 'test',
 	cxxStd = '20',

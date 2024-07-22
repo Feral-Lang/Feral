@@ -6,6 +6,12 @@
 namespace fer
 {
 
+static size_t genStructEnumID()
+{
+	static size_t id = -1;
+	return id--;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,6 +86,59 @@ Var *VarInt::copy(const ModuleLoc *loc) { return new VarInt(loc, val); }
 void VarInt::set(Var *from) { val = as<VarInt>(from)->get(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// VarIntIterator ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarIntIterator::VarIntIterator(const ModuleLoc *loc)
+	: Var(loc, false, false), started(false), reversed(false), begin(0), end(0), step(0),
+	  curr(0)
+{}
+VarIntIterator::VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _end, int64_t _step)
+	: Var(loc, false, false), started(false), reversed(_step < 0), begin(_begin), end(_end),
+	  step(_step), curr(_begin)
+{}
+VarIntIterator::~VarIntIterator() {}
+
+Var *VarIntIterator::copy(const ModuleLoc *loc)
+{
+	return new VarIntIterator(loc, begin, end, step);
+}
+void VarIntIterator::set(Var *from)
+{
+	VarIntIterator *f = as<VarIntIterator>(from);
+
+	begin	 = f->begin;
+	end	 = f->end;
+	step	 = f->step;
+	curr	 = f->curr;
+	started	 = f->started;
+	reversed = f->reversed;
+}
+
+bool VarIntIterator::next(int64_t &val)
+{
+	if(reversed) {
+		if(curr <= end) return false;
+	} else {
+		if(curr >= end) return false;
+	}
+	if(!started) {
+		val	= curr;
+		started = true;
+		return true;
+	}
+	int64_t tmp = curr + step;
+	if(reversed) {
+		if(tmp <= end) return false;
+	} else {
+		if(tmp >= end) return false;
+	}
+	curr = tmp;
+	val  = curr;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -151,16 +210,44 @@ void VarVec::set(Span<Var *> newval)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// VarVecIterator ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarVecIterator::VarVecIterator(const ModuleLoc *loc, VarVec *vec)
+	: Var(loc, false, false), vec(vec), curr(0)
+{
+	incref(vec);
+}
+VarVecIterator::~VarVecIterator() { decref(vec); }
+
+Var *VarVecIterator::copy(const ModuleLoc *loc) { return new VarVecIterator(loc, vec); }
+void VarVecIterator::set(Var *from)
+{
+	VarVecIterator *f = as<VarVecIterator>(from);
+	decref(vec);
+	incref(f->vec);
+	vec  = f->vec;
+	curr = f->curr;
+}
+
+bool VarVecIterator::next(Var *&val)
+{
+	if(curr >= vec->get().size()) return false;
+	val = vec->get()[curr++];
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarMap ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarMap::VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs)
-	: Var(loc, false, false), asrefs(asrefs)
+	: Var(loc, false, true), asrefs(asrefs)
 {
 	val.reserve(reservesz);
 }
 VarMap::VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs)
-	: Var(loc, false, false), val(std::move(val)), asrefs(asrefs)
+	: Var(loc, false, true), val(std::move(val)), asrefs(asrefs)
 {}
 VarMap::~VarMap()
 {
@@ -189,6 +276,57 @@ void VarMap::set(const StringMap<Var *> &newval)
 	} else {
 		for(auto &v : newval) val.insert({v.first, v.second->copy(getLoc())});
 	}
+}
+void VarMap::setAttr(StringRef name, Var *val, bool iref)
+{
+	auto loc = this->val.find(name);
+	if(iref) incref(val);
+	if(loc == this->val.end()) {
+		this->val.insert({String(name), val});
+		return;
+	}
+	decref(loc->second);
+	loc->second = val;
+}
+bool VarMap::existsAttr(StringRef name) { return this->val.find(name) != this->val.end(); }
+Var *VarMap::getAttr(StringRef name)
+{
+	auto loc = this->val.find(name);
+	if(loc == this->val.end()) return nullptr;
+	return loc->second;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// VarMapIterator ///////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarMapIterator::VarMapIterator(const ModuleLoc *loc, VarMap *map)
+	: Var(loc, false, false), map(map), curr(map->get().begin())
+{
+	incref(map);
+}
+VarMapIterator::~VarMapIterator() { decref(map); }
+
+Var *VarMapIterator::copy(const ModuleLoc *loc) { return new VarMapIterator(loc, map); }
+void VarMapIterator::set(Var *from)
+{
+	VarMapIterator *f = as<VarMapIterator>(from);
+	decref(map);
+	incref(f->map);
+	map  = f->map;
+	curr = f->curr;
+}
+
+bool VarMapIterator::next(Var *&val, Interpreter &vm, const ModuleLoc *loc)
+{
+	if(curr == map->get().end()) return false;
+	StringMap<Var *> attrs;
+	incref(curr->second);
+	val = vm.makeVar<VarStruct>(loc, nullptr, 2, typeID<VarMapIterator>());
+	as<VarStruct>(val)->setAttr("0", vm.makeVarWithRef<VarStr>(loc, curr->first), false);
+	as<VarStruct>(val)->setAttr("1", curr->second, false);
+	++curr;
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -340,6 +478,311 @@ void VarModule::addNativeVar(StringRef name, Var *val, bool iref, bool module_le
 {
 	if(module_level) vars->addm(name, val, iref);
 	else vars->add(name, val, iref);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// VarStructDef ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount)
+	: Var(loc, true, true), attrorder(attrscount, ""), id(genStructEnumID())
+{
+	attrs.reserve(attrscount);
+}
+
+VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id)
+	: Var(loc, true, true), attrorder(attrscount, ""), id(id)
+{
+	attrs.reserve(attrscount);
+}
+
+VarStructDef::~VarStructDef()
+{
+	for(auto &attr : attrs) {
+		decref(attr.second);
+	}
+}
+
+Var *VarStructDef::copy(const ModuleLoc *loc)
+{
+	VarStructDef *res = new VarStructDef(loc, attrs.size(), id);
+	std::unordered_map<std::string, Var *> attrs;
+	for(auto &attr : attrs) {
+		res->attrs.insert({attr.first, attr.second->copy(loc)});
+	}
+	res->attrorder = attrorder;
+	return res;
+}
+
+void VarStructDef::set(Var *from)
+{
+	VarStructDef *st = as<VarStructDef>(from);
+	for(auto &attr : attrs) {
+		decref(attr.second);
+	}
+	for(auto &attr : st->attrs) {
+		incref(attr.second);
+		attrs[attr.first] = attr.second;
+	}
+	attrorder.assign(st->attrorder.begin(), st->attrorder.end());
+	id = st->id;
+}
+
+Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			const StringMap<AssnArgData> &assn_args)
+{
+	for(auto &aa : assn_args) {
+		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
+			vm.fail(aa.second.val->getLoc(), "no attribute named '", aa.first,
+				"' in the structure definition");
+			return nullptr;
+		}
+	}
+
+	VarStruct *res = vm.makeVar<VarStruct>(loc, this, attrs.size(), id);
+
+	auto it = attrorder.begin();
+	for(auto argit = args.begin() + 1; argit != args.end(); ++argit) {
+		auto &arg = *argit;
+		if(it == attrorder.end()) {
+			vm.fail(arg->getLoc(),
+				"provided more arguments than existing in structure definition");
+			goto fail;
+		}
+		// Don't check for types when creating struct. Otherwise, things like replacing
+		// nil with some actual data won't be possible without the `let attribute in
+		// structInstance = ...` shenanigans.
+		// auto aloc = attrs.find(*it);
+		// if(aloc->second->getType() != arg->getType()) {
+		// 	vm.fail(arg->getLoc(), "expected type: ", vm.getTypeName(aloc->second),
+		// 		", found: ", vm.getTypeName(arg));
+		// 	goto fail;
+		// }
+		res->setAttr(*it, arg->copy(loc), false);
+		++it;
+	}
+
+	for(auto &aa : assn_args) {
+		auto aloc = attrs.find(aa.first);
+		if(aloc == attrs.end()) {
+			vm.fail(aa.second.val->getLoc(), "attribute '", aa.first,
+				"' does not exist in this structure");
+			goto fail;
+		}
+		if(aloc->second->getType() != aa.second.val->getType()) {
+			vm.fail(aa.second.val->getLoc(),
+				"expected type: ", vm.getTypeName(aloc->second),
+				", found: ", vm.getTypeName(aa.second.val));
+			goto fail;
+		}
+		res->setAttr(aa.first, aa.second.val->copy(loc), false);
+	}
+
+	while(it < attrorder.end()) {
+		if(!res->existsAttr(*it)) res->setAttr(*it, attrs[*it]->copy(loc), false);
+		++it;
+	}
+
+	return res;
+fail:
+	vm.unmakeVar(res);
+	return nullptr;
+}
+
+void VarStructDef::setAttr(StringRef name, Var *val, bool iref)
+{
+	auto loc = attrs.find(name);
+	if(loc != attrs.end()) {
+		decref(loc->second);
+	}
+	if(iref) incref(val);
+	attrs.insert_or_assign(String(name), val);
+}
+
+Var *VarStructDef::getAttr(StringRef name)
+{
+	auto loc = attrs.find(name);
+	if(loc == attrs.end()) return nullptr;
+	return loc->second;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// VarStruct ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount)
+	: Var(loc, false, true), base(base), id(genStructEnumID())
+{
+	if(base) incref(base);
+	attrs.reserve(attrscount);
+}
+
+VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, size_t id)
+	: Var(loc, false, true), base(base), id(id)
+{
+	if(base) incref(base);
+	attrs.reserve(attrscount);
+}
+
+VarStruct::~VarStruct()
+{
+	for(auto &attr : attrs) {
+		decref(attr.second);
+	}
+	if(base) decref(base);
+}
+
+size_t VarStruct::getTypeFnID() { return id; }
+
+Var *VarStruct::copy(const ModuleLoc *loc)
+{
+	VarStruct *res = new VarStruct(loc, base, attrs.size(), id);
+	for(auto &attr : attrs) {
+		res->setAttr(attr.first, attr.second->copy(loc), false);
+	}
+	return res;
+}
+
+void VarStruct::set(Var *from)
+{
+	VarStruct *st = as<VarStruct>(from);
+
+	for(auto &attr : attrs) {
+		decref(attr.second);
+	}
+	for(auto &attr : st->attrs) {
+		incref(attr.second);
+		attrs[attr.first] = attr.second;
+	}
+	if(base) decref(base);
+	if(st->base) incref(st->base);
+	base = st->base;
+	id   = st->id;
+}
+
+void VarStruct::setAttr(StringRef name, Var *val, bool iref)
+{
+	auto loc = attrs.find(name);
+	if(loc != attrs.end()) {
+		decref(loc->second);
+	}
+	if(iref) incref(val);
+	attrs.insert_or_assign(String(name), val);
+}
+
+Var *VarStruct::getAttr(StringRef name)
+{
+	auto loc = attrs.find(name);
+	if(loc == attrs.end()) return base ? base->getAttr(name) : nullptr;
+	return loc->second;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// VarFile ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarFile::VarFile(const ModuleLoc *loc, FILE *const file, const String &mode, const bool owner)
+	: Var(loc, false, false), file(file), mode(mode), owner(owner)
+{}
+VarFile::~VarFile()
+{
+	if(owner && file) fclose(file);
+}
+
+Var *VarFile::copy(const ModuleLoc *loc) { return new VarFile(loc, file, mode, false); }
+
+void VarFile::set(Var *from)
+{
+	if(owner) fclose(file);
+	owner = false;
+	file  = as<VarFile>(from)->file;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// VarFileIterator //////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarFileIterator::VarFileIterator(const ModuleLoc *loc, VarFile *file)
+	: Var(loc, false, false), file(file)
+{
+	incref(file);
+}
+VarFileIterator::~VarFileIterator() { decref(file); }
+
+Var *VarFileIterator::copy(const ModuleLoc *loc) { return new VarFileIterator(loc, file); }
+void VarFileIterator::set(Var *from)
+{
+	decref(file);
+	file = as<VarFileIterator>(from)->file;
+	incref(file);
+}
+
+bool VarFileIterator::next(VarStr *&val)
+{
+	if(!val) return false;
+	char *lineptr	= NULL;
+	size_t len	= 0;
+	String &valdata = val->get();
+	if(getline(&lineptr, &len, file->getFile()) != -1) {
+		valdata.clear();
+		valdata = lineptr;
+		free(lineptr);
+		while(!valdata.empty() && valdata.back() == '\n') valdata.pop_back();
+		while(!valdata.empty() && valdata.back() == '\r') valdata.pop_back();
+		return true;
+	}
+	if(lineptr) free(lineptr);
+	return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// VarByteBuffer ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarBytebuffer::VarBytebuffer(const ModuleLoc *loc, size_t bufsz)
+	: Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(0)
+{
+	if(bufsz > 0) buffer = (char *)malloc(bufsz);
+}
+VarBytebuffer::~VarBytebuffer()
+{
+	if(bufsz > 0) free(buffer);
+}
+
+Var *VarBytebuffer::copy(const ModuleLoc *loc)
+{
+	VarBytebuffer *newbuf = new VarBytebuffer(loc, bufsz);
+	newbuf->set(this);
+	return newbuf;
+}
+
+void VarBytebuffer::set(Var *from)
+{
+	VarBytebuffer *tmp = as<VarBytebuffer>(from);
+	if(tmp->bufsz == 0) {
+		if(bufsz > 0) free(buffer);
+		bufsz = 0;
+		return;
+	}
+	if(bufsz != tmp->bufsz) {
+		if(bufsz == 0) buffer = (char *)malloc(tmp->bufsz);
+		else buffer = (char *)realloc(buffer, tmp->bufsz);
+	}
+	memcpy(buffer, tmp->buffer, tmp->bufsz);
+	bufsz  = tmp->bufsz;
+	buflen = tmp->buflen;
+}
+
+void VarBytebuffer::resize(size_t newsz)
+{
+	if(newsz == 0) {
+		if(bufsz > 0) free(buffer);
+		bufsz = 0;
+		return;
+	}
+	if(bufsz == 0) buffer = (char *)malloc(newsz);
+	else buffer = (char *)realloc(buffer, newsz);
+	bufsz = newsz;
 }
 
 } // namespace fer

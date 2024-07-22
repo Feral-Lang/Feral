@@ -1,22 +1,3 @@
-#include <fcntl.h>
-#include <filesystem>
-#include <regex>
-
-#include "std/BytebufferType.hpp"
-#include "std/FSType.hpp"
-#include "VM/Interpreter.hpp"
-
-#if defined(FER_OS_WINDOWS)
-#include <io.h>
-#else
-#include <dirent.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
-
-namespace fer
-{
-
 enum WalkEntry
 {
 	FILES	= 1 << 0,
@@ -25,21 +6,35 @@ enum WalkEntry
 };
 
 void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dirstr, VarVec *v,
-			Regex regex, size_t flags);
+			Regex regex, size_t flags)
+{
+	String entry;
+	for(const auto &ent : std::filesystem::directory_iterator(dirstr)) {
+		if(ent.path() == "." || ent.path() == "..") continue;
+		entry.clear();
+		entry += ent.path().string();
+		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
+		   !std::regex_match(entry, regex))
+		{
+			continue;
+		}
+		if(ent.is_directory()) {
+			if(flags & WalkEntry::RECURSE) {
+				getEntriesInternal(vm, loc, entry, v, regex, flags);
+			} else if(flags & WalkEntry::DIRS) {
+				v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+			}
+			continue;
+		}
+		if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
+			v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+		}
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	return fs::exists(as<VarStr>(args[1])->get()) ? vm.getTrue() : vm.getFalse();
-}
 
 Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
@@ -405,8 +400,18 @@ Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *install(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	return fs::exists(as<VarStr>(args[1])->get()) ? vm.getTrue() : vm.getFalse();
+}
+
+Var *fsInstall(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
 		vm.fail(loc,
@@ -522,107 +527,3 @@ Var *fsMove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	return vm.getNil();
 }
-
-INIT_MODULE(FS)
-{
-	VarModule *mod = vm.getCurrModule();
-
-	vm.registerType<VarFile>(loc, "File");
-	vm.registerType<VarFileIterator>(loc, "FileIterator");
-
-	mod->addNativeFn("exists", fsExists, 1);
-	mod->addNativeFn("fopenNative", fsOpen, 3);
-	mod->addNativeFn("walkDirNative", fsWalkDir, 3);
-
-	vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopen, 2);
-	vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines, 0);
-	vm.addNativeTypeFn<VarFile>(loc, "seek", fileSeek, 2);
-	vm.addNativeTypeFn<VarFile>(loc, "eachLine", fileEachLine, 0);
-	vm.addNativeTypeFn<VarFile>(loc, "readAll", fileReadAll, 0);
-	vm.addNativeTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks, 2);
-
-	vm.addNativeTypeFn<VarFileIterator>(loc, "next", fileIteratorNext, 0);
-
-	// file descriptor
-	mod->addNativeFn("fdOpenNative", fdOpen, 2);
-	mod->addNativeFn("fdRead", fdRead, 2);
-	mod->addNativeFn("fdWrite", fdWrite, 2);
-	mod->addNativeFn("fdClose", fdClose, 1);
-
-	// files and dirs
-	mod->addNativeFn("install", install, 2);
-	mod->addNativeFn("mkdir", fsMkdir, 1, true);
-	mod->addNativeFn("remove", fsRemove, 1, true);
-	mod->addNativeFn("copy", fsCopy, 2, true);
-	mod->addNativeFn("move", fsMove, 2);
-
-	// constants
-
-	// stdin, stdout, stderr file descriptors
-	mod->addNativeVar("stdin", vm.makeVar<VarInt>(loc, STDIN_FILENO));
-	mod->addNativeVar("stdout", vm.makeVar<VarInt>(loc, STDOUT_FILENO));
-	mod->addNativeVar("stderr", vm.makeVar<VarInt>(loc, STDERR_FILENO));
-
-	// fs.walkdir()
-	mod->addNativeVar("WALK_FILES", vm.makeVar<VarInt>(loc, WalkEntry::FILES));
-	mod->addNativeVar("WALK_DIRS", vm.makeVar<VarInt>(loc, WalkEntry::DIRS));
-	mod->addNativeVar("WALK_RECURSE", vm.makeVar<VarInt>(loc, WalkEntry::RECURSE));
-
-	// <file>.seek()
-	mod->addNativeVar("SEEK_SET", vm.makeVar<VarInt>(loc, SEEK_SET));
-	mod->addNativeVar("SEEK_CUR", vm.makeVar<VarInt>(loc, SEEK_CUR));
-	mod->addNativeVar("SEEK_END", vm.makeVar<VarInt>(loc, SEEK_END));
-
-	// file descriptor flags
-	mod->addNativeVar("O_RDONLY", vm.makeVar<VarInt>(loc, O_RDONLY));
-	mod->addNativeVar("O_WRONLY", vm.makeVar<VarInt>(loc, O_WRONLY));
-	mod->addNativeVar("O_RDWR", vm.makeVar<VarInt>(loc, O_RDWR));
-	mod->addNativeVar("O_APPEND", vm.makeVar<VarInt>(loc, O_APPEND));
-	mod->addNativeVar("O_CREAT", vm.makeVar<VarInt>(loc, O_CREAT));
-#if defined(FER_OS_LINUX) || defined(FER_OS_APPLE)
-	mod->addNativeVar("O_DSYNC", vm.makeVar<VarInt>(loc, O_DSYNC));
-#endif
-	mod->addNativeVar("O_EXCL", vm.makeVar<VarInt>(loc, O_EXCL));
-#if !defined(FER_OS_WINDOWS)
-	mod->addNativeVar("O_NOCTTY", vm.makeVar<VarInt>(loc, O_NOCTTY));
-	mod->addNativeVar("O_NONBLOCK", vm.makeVar<VarInt>(loc, O_NONBLOCK));
-#endif
-#if defined(FER_OS_LINUX)
-	mod->addNativeVar("O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
-#endif
-#if !defined(FER_OS_WINDOWS)
-	mod->addNativeVar("O_SYNC", vm.makeVar<VarInt>(loc, O_SYNC));
-#endif
-	mod->addNativeVar("O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));
-	return true;
-}
-
-void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dirstr, VarVec *v,
-			Regex regex, size_t flags)
-{
-	namespace fs = std::filesystem;
-	String entry;
-	for(const auto &ent : fs::directory_iterator(dirstr)) {
-		if(ent.path() == "." || ent.path() == "..") continue;
-		entry.clear();
-		entry += ent.path().string();
-		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
-		   !std::regex_match(entry, regex))
-		{
-			continue;
-		}
-		if(ent.is_directory()) {
-			if(flags & WalkEntry::RECURSE) {
-				getEntriesInternal(vm, loc, entry, v, regex, flags);
-			} else if(flags & WalkEntry::DIRS) {
-				v->push(vm.makeVarWithRef<VarStr>(loc, entry));
-			}
-			continue;
-		}
-		if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
-			v->push(vm.makeVarWithRef<VarStr>(loc, entry));
-		}
-	}
-}
-
-} // namespace fer

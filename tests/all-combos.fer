@@ -1,7 +1,5 @@
 let assert = import('std/assert');
 
-let str = import('std/str');
-
 let combinations = fn(tail, head = '') {
 	if tail.empty() {
 		++total;

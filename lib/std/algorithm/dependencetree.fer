@@ -1,13 +1,12 @@
 let map = import('std/map');
 let vec = import('std/vec');
-let lang = import('std/lang');
 
-let DependenceTree = lang.struct(
+let DependenceTree = struct(
 	nodes = map.new(refs = true) # <string, DependenceTreeNode>
 );
 DependenceTree.setTypeName('DependenceTree');
 
-let DependenceTreeNode = lang.struct(
+let DependenceTreeNode = struct(
 	data = '',
 	deps = vec.new(refs = true) # each is a DependenceTreeNode
 );
