@@ -417,9 +417,11 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	if(!kw_arg.empty()) {
 		VarMap *m = vm.makeVarWithRef<VarMap>(loc, assn_args.size(), false);
+		m->initializePos(assn_args.size());
 		for(auto &a : assn_args) {
 			incref(a.second.val);
 			m->insert(a.first, a.second.val);
+			m->setPos(a.second.pos, a.first);
 		}
 		vars->stash(kw_arg, m, false);
 	}

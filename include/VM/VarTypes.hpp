@@ -277,6 +277,7 @@ public:
 class VarMap : public Var
 {
 	StringMap<Var *> val;
+	Vector<String> pos; // Only used by kwargs.
 	bool asrefs;
 
 public:
@@ -294,7 +295,11 @@ public:
 	Var *getAttr(StringRef name) override;
 
 	inline StringMap<Var *> &get() { return val; }
+	inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }
+	// Make sure to initializePos() first.
+	inline void setPos(size_t idx, StringRef data) { pos[idx] = data; }
 	inline void insert(StringRef key, Var *value) { val.insert({String(key), value}); }
+	inline Span<const String> getPositions() const { return pos; }
 	inline bool isRefMap() { return asrefs; }
 };
 

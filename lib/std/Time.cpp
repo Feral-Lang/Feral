@@ -9,7 +9,8 @@ Var *sysclkNow(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, 0);
-	res->set(std::chrono::duration_cast<std::chrono::nanoseconds>(
+	// Not using nanoseconds because that's the same count of digits as int64_t::max
+	res->set(std::chrono::duration_cast<std::chrono::microseconds>(
 		 std::chrono::system_clock::now().time_since_epoch())
 		 .count());
 	return res;
@@ -29,9 +30,9 @@ Var *formatTime(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	unsigned long val = as<VarInt>(args[1])->get();
-	std::chrono::nanoseconds nsval(val);
+	std::chrono::microseconds usval(val);
 	std::chrono::system_clock::time_point tp(
-	std::chrono::duration_cast<std::chrono::system_clock::duration>(nsval));
+	std::chrono::duration_cast<std::chrono::system_clock::duration>(usval));
 	std::time_t time = std::chrono::system_clock::to_time_t(tp);
 	std::tm *t	 = std::localtime(&time);
 	char fmt[1024]	 = {0};

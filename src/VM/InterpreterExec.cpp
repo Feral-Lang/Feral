@@ -235,25 +235,49 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			assn_args.clear();
 			bool memcall	  = ins.getOpcode() == Opcode::MEM_CALL;
 			StringRef arginfo = ins.getDataStr();
+			size_t kwargpos	  = 0;
 			for(size_t i = 0; i < arginfo.size(); ++i) {
 				if(arginfo[i] == '2') { // unpack
 					Var *a = execstack.pop(false);
-					if(!a->is<VarVec>()) {
-						fail(ins.getLoc(),
-						     "expected a vector to unpack, found: ",
-						     getTypeName(a));
+					if(!a->is<VarVec>() &&
+					   (!a->is<VarMap>() ||
+					    as<VarMap>(a)->getPositions().empty()))
+					{
+						fail(
+						ins.getLoc(),
+						"expected a vector or kwarg to unpack, found: ",
+						getTypeName(a));
 						decref(a);
 						goto fncall_fail;
 					}
-					for(auto &va : as<VarVec>(a)->get()) {
-						incref(va);
-						args.push_back(va);
+					if(a->is<VarVec>()) {
+						for(auto &va : as<VarVec>(a)->get()) {
+							incref(va);
+							args.push_back(va);
+						}
+					} else if(a->is<VarMap>()) {
+						for(auto &k : as<VarMap>(a)->getPositions()) {
+							Var *v = as<VarMap>(a)->getAttr(k);
+							incref(v);
+							auto loc = assn_args.find(k);
+							if(loc != assn_args.end())
+								decref(loc->second.val);
+							assn_args[k] = {kwargpos++, v};
+						}
 					}
 					decref(a);
 				} else if(arginfo[i] == '1') {
 					String name = as<VarStr>(execstack.back())->get();
 					execstack.pop();
-					assn_args[name] = {i, execstack.pop(false)};
+					auto loc   = assn_args.find(name);
+					size_t pos = 0;
+					if(loc != assn_args.end()) {
+						pos = loc->second.pos;
+						decref(loc->second.val);
+					} else {
+						pos = kwargpos++;
+					}
+					assn_args[name] = {pos, execstack.pop(false)};
 				} else if(arginfo[i] == '0') {
 					args.push_back(execstack.pop(false));
 				}

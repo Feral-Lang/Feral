@@ -2,8 +2,7 @@
 
 mload('std/Time');
 
-let nano = 1.0; # equivalent to what *Now() provides
-let micro = nano / 1000;
+let micro = 1.0; # equivalent to what *Now() provides
 let milli = micro / 1000;
 let second = milli / 1000;
 let minute = second / 60;
@@ -65,4 +64,11 @@ let toSeconds = fn(.kwArgs) {
 		totalSeconds += kwArgs.seconds;
 	}
 	return ref(totalSeconds);
+};
+
+let toMilliSeconds = fn(.kwArgs) {
+	return toSeconds(kwArgs...) * 1000;
+};
+let toMicroSeconds = fn(.kwArgs) {
+	return toSeconds(kwArgs...) * 1000 * 1000;
 };
