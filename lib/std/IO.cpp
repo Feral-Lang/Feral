@@ -253,7 +253,7 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
 	}
-	count += write(STDOUT_FILENO, "\n", 1);
+	count += fwrite("\n", sizeof(char), 1, f);
 	return vm.makeVar<VarInt>(loc, count);
 }
 
