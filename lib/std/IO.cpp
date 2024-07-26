@@ -68,6 +68,151 @@ Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
+Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		String str = as<VarStr>(v)->get();
+		applyColors(str);
+		count += write(STDOUT_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	return vm.makeVar<VarInt>(loc, count);
+}
+
+Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		String str = as<VarStr>(v)->get();
+		applyColors(str);
+		count += write(STDOUT_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	count += write(STDOUT_FILENO, "\n", 1);
+	return vm.makeVar<VarInt>(loc, count);
+}
+
+Var *eprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	    const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		const String &str = as<VarStr>(v)->get();
+		count += write(STDERR_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	return vm.makeVar<VarInt>(loc, count);
+}
+
+Var *eprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		const String &str = as<VarStr>(v)->get();
+		count += write(STDERR_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	count += write(STDERR_FILENO, "\n", 1);
+	return vm.makeVar<VarInt>(loc, count);
+}
+
+Var *ecprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	     const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		String str = as<VarStr>(v)->get();
+		applyColors(str);
+		count += write(STDERR_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	return vm.makeVar<VarInt>(loc, count);
+}
+
+Var *ecprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	ssize_t count = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{args[i]};
+		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
+		if(!v->is<VarStr>()) {
+			vm.fail(loc,
+				"'str' member call did not return a"
+				" string, instead returned: ",
+				vm.getTypeName(v));
+			decref(v);
+			return nullptr;
+		}
+		String str = as<VarStr>(v)->get();
+		applyColors(str);
+		count += write(STDERR_FILENO, str.data(), str.size());
+		decref(v);
+	}
+	count += write(STDERR_FILENO, "\n", 1);
+	return vm.makeVar<VarInt>(loc, count);
+}
+
 Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
@@ -134,55 +279,6 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		decref(v);
 	}
 	count += fwrite("\n", sizeof(char), 1, f);
-	return vm.makeVar<VarInt>(loc, count);
-}
-
-Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
-{
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
-		String str = as<VarStr>(v)->get();
-		applyColors(str);
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
-	}
-	return vm.makeVar<VarInt>(loc, count);
-}
-
-Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
-{
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
-		String str = as<VarStr>(v)->get();
-		applyColors(str);
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
-	}
-	count += write(STDOUT_FILENO, "\n", 1);
 	return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -347,10 +443,14 @@ INIT_MODULE(IO)
 
 	mod->addNativeFn("print", print, 1, true);
 	mod->addNativeFn("println", println, 0, true);
-	mod->addNativeFn("fprint", fprint, 2, true);
-	mod->addNativeFn("fprintln", fprintln, 1, true);
 	mod->addNativeFn("cprint", cprint, 1, true);
 	mod->addNativeFn("cprintln", cprintln, 0, true);
+	mod->addNativeFn("eprint", eprint, 1, true);
+	mod->addNativeFn("eprintln", eprintln, 0, true);
+	mod->addNativeFn("ecprint", ecprint, 1, true);
+	mod->addNativeFn("ecprintln", ecprintln, 0, true);
+	mod->addNativeFn("fprint", fprint, 2, true);
+	mod->addNativeFn("fprintln", fprintln, 1, true);
 	mod->addNativeFn("fcprint", fcprint, 1, true);
 	mod->addNativeFn("fcprintln", fcprintln, 0, true);
 	mod->addNativeFn("scan", scan, 0, true);
