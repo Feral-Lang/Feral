@@ -67,15 +67,28 @@ let getValue in ArgParser = fn(long) {
 	return self.args[long].getValue();
 };
 
+let getArgs in ArgParser = fn() {
+	return ref(self.nooptargs);
+};
+
 let getArgAt in ArgParser = fn(index) {
 	if index >= self.nooptargs.len() {
 		raise('index ', index, ' out of bounds, max: ', self.nooptargs.len());
 	}
-	return self.nooptargs[index];
+	return ref(self.nooptargs[index]);
 };
 
 let getArgsCount in ArgParser = fn() {
 	return self.nooptargs.len();
+};
+
+let popArg in ArgParser = fn() {
+	if self.nooptargs.empty() {
+		raise('ArgParser.popArg() called but there is no arg in the list');
+	}
+	let data = ref(self.nooptargs[0]);
+	self.nooptargs.erase(0);
+	return ref(data);
 };
 
 let getArgsFrom in ArgParser = fn(index) {
@@ -108,7 +121,7 @@ let parse in ArgParser = fn(args) {
 			arg = arg.substr(2);
 			let found = false;
 			if !self.args.find(arg) {
-				raise('invalid option: --', args);
+				raise('invalid option: --', arg);
 			}
 			let a = ref(self.args[arg]);
 			a.setPresent(true);
