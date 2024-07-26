@@ -74,6 +74,10 @@ let getArgAt in ArgParser = fn(index) {
 	return self.nooptargs[index];
 };
 
+let getArgsCount in ArgParser = fn() {
+	return self.nooptargs.len();
+};
+
 let getArgsFrom in ArgParser = fn(index) {
 	if index >= self.nooptargs.len() {
 		raise('index ', index, ' out of bounds, max: ', self.nooptargs.len());
