@@ -198,9 +198,6 @@ Var *fileReadAll(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
 	while((read = getline(&lineptr, &len, file)) != -1) {
 		String tmp = lineptr;
-		while(!tmp.empty() && (tmp.back() == '\n' || tmp.back() == '\r')) {
-			tmp.pop_back();
-		}
 		res->get() += tmp;
 		free(lineptr);
 		lineptr = NULL;
