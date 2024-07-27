@@ -4,6 +4,7 @@
 #include "Error.hpp"
 #include "FS.hpp"
 #include "Utils.hpp"
+#include "VM/CoreFuncs.hpp"
 #include "VM/DynLib.hpp"
 
 #if defined(FER_OS_WINDOWS)
@@ -23,9 +24,11 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(RAIIParser &parser)
-	: prelude("prelude/prelude"), binaryPath(env::getProcPath()),
-	  installPath(STRINGIFY(INSTALL_PREFIX)), parser(parser), c(parser.getContext()),
-	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
+	: defaultModuleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
+	  moduleFinders(makeVarWithRef<VarVec>(nullptr, 2, false)), prelude("prelude/prelude"),
+	  binaryPath(env::getProcPath()), installPath(STRINGIFY(INSTALL_PREFIX)), parser(parser),
+	  c(parser.getContext()), argparser(parser.getCommandArgs()),
+	  tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
@@ -41,17 +44,17 @@ Interpreter::Interpreter(RAIIParser &parser)
 	cmdargs			 = makeVarWithRef<VarVec>(nullptr, _cmdargs.size(), false);
 	for(size_t i = 0; i < _cmdargs.size(); ++i) {
 		auto &a = _cmdargs[i];
-		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
+		cmdargs->push(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
-	includelocs.push_back(installPath + PATH_DELIM "include" PATH_DELIM "feral");
-	dlllocs.push_back(installPath + PATH_DELIM "lib" PATH_DELIM "feral");
-
+	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, installPath);
+	moduleLoc->get() += PATH_DELIM "lib" PATH_DELIM "feral";
+	defaultModuleDirs->push(moduleLoc);
 	String feral_paths = env::get("FERAL_PATHS");
 	for(auto &_path : stringDelim(feral_paths, ";")) {
-		String path(_path);
-		includelocs.push_back(path + PATH_DELIM "include" PATH_DELIM "feral");
-		dlllocs.push_back(path + PATH_DELIM "lib" PATH_DELIM "feral");
+		moduleLoc = makeVarWithRef<VarStr>(nullptr, _path);
+		moduleLoc->get() += PATH_DELIM "lib" PATH_DELIM "feral";
+		defaultModuleDirs->push(moduleLoc);
 	}
 
 #if defined(FER_OS_WINDOWS)
@@ -67,6 +70,8 @@ Interpreter::~Interpreter()
 	decref(fals);
 	decref(tru);
 	decref(cmdargs);
+	decref(moduleFinders);
+	decref(defaultModuleDirs);
 	for(auto &typefn : typefns) {
 		delete typefn.second;
 	}
@@ -102,10 +107,12 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 
 	pushModule(mod->getPath());
 	if(main_module) {
-		// mload must be setup here because it is needed to load even the core module from
+		moduleFinders->push(
+		genNativeFn(nullptr, "basicModuleFinder", basicModuleFinder, 2));
+		setupCoreFuncs(*this, nullptr);
+		// loadlib must be setup here because it is needed to load even the core module from
 		// <prelude>.
-		addNativeFn(nullptr, "mload", loadModule, 1);
-		if(!findImport(prelude)) {
+		if(!findImportModuleIn(defaultModuleDirs, prelude)) {
 			err::out(loc, "Failed to find prelude: ", prelude);
 			return 1;
 		}
@@ -150,13 +157,23 @@ void Interpreter::popModule()
 	modulestack.pop_back();
 }
 
-bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
+bool Interpreter::findImportModuleIn(VarVec *dirs, String &name)
+{
+	return findFileIn(dirs, name, getFeralImportExtension());
+}
+bool Interpreter::findNativeModuleIn(VarVec *dirs, String &name)
+{
+	name.insert(name.find_last_of('/') + 1, "libferal");
+	return findFileIn(dirs, name, getNativeModuleExtension());
+}
+bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext)
 {
 	static char testpath[MAX_PATH_CHARS];
 	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
 	   (name.size() < 2 || name[1] != ':'))
 	{
-		for(auto loc : dirs) {
+		for(auto locVar : dirs->get()) {
+			auto &loc = as<VarStr>(locVar)->get();
 			strncpy(testpath, loc.data(), loc.size());
 			testpath[loc.size()] = '\0';
 			strcat(testpath, "/");
@@ -197,52 +214,46 @@ bool Interpreter::findFileIn(Span<String> dirs, String &name, StringRef ext)
 	return false;
 }
 
-bool Interpreter::loadNativeModule(const ModuleLoc *loc, String modfile)
+bool Interpreter::loadNativeModule(const ModuleLoc *loc, const String &modpath, StringRef moduleStr)
 {
-	String mod = modfile.substr(modfile.find_last_of('/') + 1);
-	modfile.insert(modfile.find_last_of('/') + 1, "libferal");
-	if(!findModule(modfile)) {
-		fail(loc, "module: ", modfile, getNativeModuleExtension(),
-		     " not found in locs: ", vecToStr(dlllocs));
-		return false;
-	}
-
 #if defined(FER_OS_WINDOWS)
 	// append the parent dir to dll search paths
-	StringRef parentdir = fs::parentDir(modfile);
+	StringRef parentdir = fs::parentDir(modpath);
 	if(!addDLLDirectory(parentdir)) {
 		fail(loc, "unable to add dir: ", parentdir,
-		     " as a DLL directory while loading module: ", modfile);
+		     " as a DLL directory while loading module: ", modpath);
 		return false;
 	}
 #endif
 
 	DynLib &dlibs = DynLib::getInstance();
-	if(dlibs.exists(modfile)) return true;
+	if(dlibs.exists(modpath)) return true;
 
-	if(!dlibs.load(modfile.c_str())) {
-		fail(loc, "unable to load module file: ", modfile);
+	if(!dlibs.load(modpath.c_str())) {
+		fail(loc, "unable to load module file: ", modpath);
 		return false;
 	}
 
+	StringRef moduleName = moduleStr.substr(moduleStr.find_last_of('/') + 1);
+
 	String tmp = "Init";
-	tmp += mod;
-	ModInitFn initfn = (ModInitFn)dlibs.get(modfile, tmp.c_str());
+	tmp += moduleName;
+	ModInitFn initfn = (ModInitFn)dlibs.get(modpath, tmp.c_str());
 	if(initfn == nullptr) {
-		fail(loc, "unable to load init function '", tmp, "' from module file: ", modfile);
-		dlibs.unload(modfile);
+		fail(loc, "unable to load init function '", tmp, "' from module file: ", modpath);
+		dlibs.unload(modpath);
 		return false;
 	}
 	if(!initfn(*this, loc)) {
-		fail(loc, "init function in module: ", modfile, " failed to execute");
-		dlibs.unload(modfile);
+		fail(loc, "init function in module: ", modpath, " failed to execute");
+		dlibs.unload(modpath);
 		return false;
 	}
 	// set deinit function if available
 	tmp = "Deinit";
-	tmp += mod;
-	ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modfile, tmp.c_str());
-	if(deinitfn) dlldeinitfns[modfile] = deinitfn;
+	tmp += moduleName;
+	ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modpath, tmp.c_str());
+	if(deinitfn) dlldeinitfns[modpath] = deinitfn;
 	return true;
 }
 
@@ -254,10 +265,15 @@ void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
 void Interpreter::addNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
 			      bool is_va)
 {
+	addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
+}
+VarFn *Interpreter::genNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
+				bool is_va)
+{
 	VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getMod()->getPath(), "",
 					 is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
 	for(size_t i = 0; i < args; ++i) f->pushParam("");
-	addGlobal(name, f, false);
+	return f;
 }
 void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
@@ -316,8 +332,8 @@ Var *Interpreter::getConst(const ModuleLoc *loc, Instruction::Data &d, DataType 
 	return nullptr;
 }
 
-bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-			 const StringMap<AssnArgData> &assn_args)
+bool Interpreter::callVar(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
+			  const StringMap<AssnArgData> &assn_args)
 {
 	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
 	bool memcall = args[0] != nullptr;
@@ -339,7 +355,19 @@ bool Interpreter::callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Sp
 		}
 		return false;
 	}
-	if(!fn->call(*this, loc, args, assn_args)) {
+	if(!fn->isCallable()) {
+		fail(loc, "Variable '", name, "' of type '", getTypeName(fn), "' is not callable");
+		return false;
+	}
+	return callVar(loc, name, fn, retdata, args, assn_args);
+}
+
+bool Interpreter::callVar(const ModuleLoc *loc, StringRef name, Var *callable, Var *&retdata,
+			  Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+{
+	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
+	bool memcall = args[0] != nullptr;
+	if(!callable->call(*this, loc, args, assn_args)) {
 		if(memcall) {
 			fail(loc, "call to '", name, "' failed for type: ", getTypeName(args[0]));
 		} else {
@@ -409,9 +437,23 @@ void Interpreter::initTypeNames()
 	globals.add("StrTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarStr>()), false);
 	globals.add("VecTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarVec>()), false);
 	globals.add("MapTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarMap>()), false);
-	globals.add("FnTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFn>()), false);
+	globals.add("FuncTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFn>()), false);
 	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarModule>()), false);
 	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarTypeID>()), false);
+	globals.add("StructDefTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarStructDef>()),
+		    false);
+	globals.add("StructTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarStruct>()), false);
+	globals.add("FileTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFile>()), false);
+	globals.add("BytebufferTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarBytebuffer>()),
+		    false);
+	globals.add("IntIteratorTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarIntIterator>()),
+		    false);
+	globals.add("VecIteratorTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarVecIterator>()),
+		    false);
+	globals.add("MapIteratorTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarMapIterator>()),
+		    false);
+	globals.add("FileIteratorTy", makeVarWithRef<VarTypeID>(nullptr, typeID<VarFileIterator>()),
+		    false);
 }
 
 #if defined(FER_OS_WINDOWS)
@@ -430,21 +472,5 @@ void remDLLDirectories()
 	}
 }
 #endif
-
-Var *loadModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!vm.loadNativeModule(loc, as<VarStr>(args[1])->get())) {
-		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get(),
-			"; look at the error above");
-		return nullptr;
-	}
-	return vm.getNil();
-}
 
 } // namespace fer

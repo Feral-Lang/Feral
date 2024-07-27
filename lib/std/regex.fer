@@ -1,4 +1,4 @@
-mload('std/Regex');
+loadlib('std/Regex');
 
 let new = fn(data, opts = ecmascript) {
 	return newNative(data, opts);

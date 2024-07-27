@@ -18,7 +18,7 @@ if !fs.dirExists(tempDir) {
 }
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) {
-	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use feral pkg to manage packages');
+	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
 	feral.exit(0);
 }
 
@@ -52,7 +52,7 @@ if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
 	raise('Failed to fetch Pkg git repository');
 }
 for line in cmdOutLines.each() {
-	logging.trace(line);
+	logging.trace('-- ', line);
 }
 
 # Install Pkg

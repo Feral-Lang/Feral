@@ -1,0 +1,19 @@
+# Check if custom module finders work
+let assert = import('std/assert');
+
+let fs = import('std/fs');
+
+let customModuleFinder = fn(module, isimport) {
+	if !isimport { return nil; }
+	let testPath = fs.pathFrom(__SRC_DIR__, module + '.fer');
+	if fs.exists(testPath) { return testPath; }
+	return nil;
+};
+
+feral.moduleFinders.push(customModuleFinder);
+
+# import the test 'int.fer' in the current directory
+let intTest = import('int');
+
+assert.eq(feral.varExists("intTest"), true);
+assert.eq(feral.moduleFinders.len(), 2);

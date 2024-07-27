@@ -12,31 +12,30 @@
 
 #include "Config.hpp"
 #include "FS.hpp" // used by File.hpp.in
-#include "Utils.hpp"
 #include "VM/Interpreter.hpp"
 
 namespace fer
 {
 
-#include "Bool.hpp.in"
-#include "Bytebuffer.hpp.in"
-#include "Enum.hpp.in"
-#include "File.hpp.in"
-#include "Flt.hpp.in"
-#include "Int.hpp.in"
-#include "Map.hpp.in"
-#include "Nil.hpp.in"
-#include "Str.hpp.in"
-#include "Struct.hpp.in"
-#include "TypeID.hpp.in"
-#include "Vec.hpp.in"
+#include "Incs/Bool.hpp.in"
+#include "Incs/Bytebuffer.hpp.in"
+#include "Incs/Enum.hpp.in"
+#include "Incs/File.hpp.in"
+#include "Incs/Flt.hpp.in"
+#include "Incs/Int.hpp.in"
+#include "Incs/Map.hpp.in"
+#include "Incs/Nil.hpp.in"
+#include "Incs/Str.hpp.in"
+#include "Incs/Struct.hpp.in"
+#include "Incs/TypeID.hpp.in"
+#include "Incs/Vec.hpp.in"
 
 // Converters
 
-#include "ToBool.hpp.in"
-#include "ToFlt.hpp.in"
-#include "ToInt.hpp.in"
-#include "ToStr.hpp.in"
+#include "Incs/ToBool.hpp.in"
+#include "Incs/ToFlt.hpp.in"
+#include "Incs/ToInt.hpp.in"
+#include "Incs/ToStr.hpp.in"
 
 Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
@@ -96,45 +95,12 @@ Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		res += as<VarStr>(v)->get();
 		decref(v);
 	}
 	vm.fail(loc, "raised: ", res);
 	return nullptr;
-}
-
-Var *importFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	String file = as<VarStr>(args[1])->get();
-	if(!vm.findImport(file)) {
-		vm.fail(args[1]->getLoc(), "import: ", file, vm.getFeralImportExtension(),
-			" not found in locs: ", vecToStr(vm.getImportDirs()));
-		return nullptr;
-	}
-	if(!vm.hasModule(file)) {
-		int res = vm.compileAndRun(loc, file);
-		if(res != 0) {
-			vm.fail(args[1]->getLoc(),
-				"module import failed, look at error above (exit code: ", res, ")");
-			return nullptr;
-		}
-	}
-	return vm.getModule(file);
 }
 
 Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -279,14 +245,13 @@ Var *getMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
 }
 
-INIT_MODULE(Core)
+INIT_MODULE(Prelude)
 {
 	VarModule *mod = vm.getCurrModule(); // prelude module
 
 	// global functions
 	vm.addNativeFn(loc, "ref", reference, 1);
 	vm.addNativeFn(loc, "raise", raise, 1, true);
-	vm.addNativeFn(loc, "import", importFile, 1);
 	vm.addNativeFn(loc, "evalCode", evaluateCode, 1);
 	vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);
 	vm.addNativeFn(loc, "getOSName", getOSName, 0);
@@ -295,6 +260,9 @@ INIT_MODULE(Core)
 	// enum/struct
 	vm.addNativeFn(loc, "enum", createEnum, 0, true);
 	vm.addNativeFn(loc, "struct", createStruct, 0);
+
+	// VM altering variables
+	mod->addNativeVar("moduleFinders", vm.getModuleFinders());
 
 	// fundamental functions for builtin types
 	vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetTypeID, 0);

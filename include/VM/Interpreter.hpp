@@ -33,17 +33,20 @@ class Interpreter
 	ExecStack execstack;
 	// global vars/objects that are required
 	VarFrame globals;
-	// functions for all C++ types
-	Map<size_t, VarFrame *> typefns;
 	// names of types (optional)
 	Map<size_t, String> typenames;
+	Map<StringRef, VarModule *> allmodules;
 	// all functions to call before unloading dlls
 	StringMap<ModDeinitFn> dlldeinitfns;
-	Map<StringRef, VarModule *> allmodules;
+	// functions for all C++ types
+	Map<size_t, VarFrame *> typefns;
 	Vector<VarModule *> modulestack;
-	// include and module locations - searches in increasing order of List elements
-	Vector<String> includelocs; // should be shared between multiple threads
-	Vector<String> dlllocs;	    // should be shared between multiple threads
+	// Default dirs to search for modules. Used by basic{Import,Module}Finder()
+	VarVec *defaultModuleDirs;
+	// Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is
+	// attempted.
+	// Signature is: fn(moduleToResolve: str, isImport: bool): nil/str
+	VarVec *moduleFinders;
 	// prelude must be imported before any program is executed
 	String prelude;
 	// path where feral binary exists (used by <prelude>.binaryPath)
@@ -103,17 +106,13 @@ public:
 	void pushModule(StringRef path);
 	void popModule();
 
+	bool findImportModuleIn(VarVec *dirs, String &name);
+	bool findNativeModuleIn(VarVec *dirs, String &name);
 	// ext can be empty
-	bool findFileIn(Span<String> dirs, String &name, StringRef ext);
-	inline bool findImport(String &name)
-	{
-		return findFileIn(includelocs, name, getFeralImportExtension());
-	}
-	inline bool findModule(String &name)
-	{
-		return findFileIn(dlllocs, name, getNativeModuleExtension());
-	}
-	bool loadNativeModule(const ModuleLoc *loc, String modstr);
+	bool findFileIn(VarVec *dirs, String &name, StringRef ext);
+	// Here, modpath is the fully resolved module file path
+	// moduleStr is the string provided as the argument to loadlib()
+	bool loadNativeModule(const ModuleLoc *loc, const String &modpath, StringRef moduleStr);
 
 	void addGlobal(StringRef name, Var *val, bool iref = true);
 	inline Var *getGlobal(StringRef name) { return globals.get(name); }
@@ -130,6 +129,8 @@ public:
 
 	void addNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
 			 bool is_va = false);
+	VarFn *genNativeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
+			   bool is_va = false);
 
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
 	addNativeTypeFn(const ModuleLoc *loc, StringRef name, NativeFn fn, size_t args,
@@ -155,8 +156,42 @@ public:
 	int execute(bool addFunc = true, bool addBlk = false, size_t begin = 0, size_t end = 0);
 	// used primarily within libraries & by toStr, toBool
 	// first arg must ALWAYS be self for memcall, nullptr otherwise
-	bool callFn(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
-		    const StringMap<AssnArgData> &assn_args);
+	bool callVar(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
+		     const StringMap<AssnArgData> &assn_args);
+	bool callVar(const ModuleLoc *loc, StringRef name, Var *callable, Var *&retdata,
+		     Span<Var *> args, const StringMap<AssnArgData> &assn_args);
+
+	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+	callVarAndExpect(const ModuleLoc *loc, StringRef name, Var *&retdata, Span<Var *> args,
+			 const StringMap<AssnArgData> &assn_args)
+	{
+		if(!callVar(loc, name, retdata, args, assn_args)) return false;
+		if(!retdata->is<T>()) {
+			fail(loc, "'", name, "' ",
+			     !args.empty() && args[0] != nullptr ? "member" : "func",
+			     " call expected to return a '", getTypeName(typeID<T>()),
+			     "', instead returned: ", getTypeName(retdata));
+			decref(retdata);
+			return false;
+		}
+		return true;
+	}
+
+	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+	callVarAndExpect(const ModuleLoc *loc, StringRef name, Var *callable, Var *&retdata,
+			 Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+	{
+		if(!callVar(loc, name, callable, retdata, args, assn_args)) return false;
+		if(!retdata->is<T>()) {
+			fail(loc, "'", name, "' ",
+			     !args.empty() && args[0] != nullptr ? "member" : "func",
+			     " call expected to return a '", getTypeName(typeID<T>()),
+			     "', instead returned: ", getTypeName(retdata));
+			decref(retdata);
+			return false;
+		}
+		return true;
+	}
 
 	// evaluate a given expression and return its result
 	// primarily used for templates
@@ -187,8 +222,8 @@ public:
 	inline VarModule *getCurrModule() { return modulestack.back(); }
 	inline void setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
 	inline StringRef getTypeName(Var *var) { return getTypeName(var->getTypeFnID()); }
-	inline Span<String> getImportDirs() { return includelocs; }
-	inline Span<String> getModuleDirs() { return dlllocs; }
+	inline VarVec *getDefaultModuleDirs() { return defaultModuleDirs; }
+	inline VarVec *getModuleFinders() { return moduleFinders; }
 	inline StringRef getBinaryPath() { return binaryPath; }
 	inline StringRef getInstallPath() { return installPath; }
 	inline StringRef getMainModulePath() { return mainmodulepath; }

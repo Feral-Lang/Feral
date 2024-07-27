@@ -36,15 +36,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &key = as<VarStr>(v)->get();
 		auto maploc	  = mapval.find(key);
 		if(maploc != mapval.end()) decref(maploc->second);
@@ -83,15 +75,7 @@ Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarMap *map = as<VarMap>(args[0]);
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-	if(!v->is<VarStr>()) {
-		vm.fail(loc,
-			"'str' member call did not return a"
-			" string, instead returned: ",
-			vm.getTypeName(v));
-		decref(v);
-		return nullptr;
-	}
+	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	const String &key = as<VarStr>(v)->get();
 	if(map->isRefMap()) {
 		map->setAttr(key, args[2], true);
@@ -107,15 +91,7 @@ Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	StringMap<Var *> &map = as<VarMap>(args[0])->get();
 	Var *v		      = nullptr;
 	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-	if(!v->is<VarStr>()) {
-		vm.fail(loc,
-			"'str' member call did not return a"
-			" string, instead returned: ",
-			vm.getTypeName(v));
-		decref(v);
-		return nullptr;
-	}
+	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	auto maploc = map.find(as<VarStr>(v)->get());
 	if(maploc != map.end()) {
 		decref(maploc->second);
@@ -131,15 +107,7 @@ Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarMap *map = as<VarMap>(args[0]);
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-	if(!v->is<VarStr>()) {
-		vm.fail(loc,
-			"'str' member call did not return a"
-			" string, instead returned: ",
-			vm.getTypeName(v));
-		decref(v);
-		return nullptr;
-	}
+	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	Var *res = map->getAttr(as<VarStr>(v)->get());
 	decref(v);
 	return res ? res : vm.getNil();
@@ -151,15 +119,7 @@ Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarMap *map = as<VarMap>(args[0]);
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-	if(!v->is<VarStr>()) {
-		vm.fail(loc,
-			"'str' member call did not return a"
-			" string, instead returned: ",
-			vm.getTypeName(v));
-		decref(v);
-		return nullptr;
-	}
+	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	bool res = map->existsAttr(as<VarStr>(v)->get());
 	decref(v);
 	return res ? vm.getTrue() : vm.getFalse();

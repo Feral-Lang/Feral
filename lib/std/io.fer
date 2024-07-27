@@ -1,4 +1,4 @@
-mload('std/IO');
+loadlib('std/IO');
 
 inline if getOSName() == 'windows' {
 let null = '$null';
