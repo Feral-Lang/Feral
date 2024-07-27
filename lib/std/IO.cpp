@@ -28,15 +28,7 @@ Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
@@ -51,15 +43,7 @@ Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += write(STDOUT_FILENO, str.data(), str.size());
 		decref(v);
@@ -75,15 +59,7 @@ Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
@@ -99,15 +75,7 @@ Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
@@ -124,15 +92,7 @@ Var *eprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += write(STDERR_FILENO, str.data(), str.size());
 		decref(v);
@@ -147,15 +107,7 @@ Var *eprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += write(STDERR_FILENO, str.data(), str.size());
 		decref(v);
@@ -171,15 +123,7 @@ Var *ecprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDERR_FILENO, str.data(), str.size());
@@ -195,15 +139,7 @@ Var *ecprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 1; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += write(STDERR_FILENO, str.data(), str.size());
@@ -231,15 +167,7 @@ Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
@@ -265,15 +193,7 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		const String &str = as<VarStr>(v)->get();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
 		decref(v);
@@ -300,15 +220,7 @@ Var *fcprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
@@ -335,15 +247,7 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	for(size_t i = 2; i < args.size(); ++i) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
-			return nullptr;
-		}
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 		String str = as<VarStr>(v)->get();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);

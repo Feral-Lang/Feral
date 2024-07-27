@@ -1,1 +1,1 @@
-mload('std/Ptr');
+loadlib('std/Ptr');

@@ -1,4 +1,4 @@
-mload('std/Stat');
+loadlib('std/Stat');
 
 # Windows does not have blksize and blocks field in the stat struct.
 inline if getOSName() == 'windows' {

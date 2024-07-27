@@ -477,13 +477,7 @@ Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		}
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{base};
-		if(!vm.callFn(loc, "str", v, tmp, {})) return nullptr;
-		if(!v->is<VarStr>()) {
-			vm.fail(loc,
-				"'str' member call did not return a"
-				" string, instead returned: ",
-				vm.getTypeName(v));
-			decref(v);
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
 			decref(base);
 			return nullptr;
 		}

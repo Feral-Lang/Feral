@@ -139,16 +139,15 @@ configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_D
 # )
 
 # Install C++ Includes
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_SOURCE_DIR}/lib/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
 	FILES_MATCHING PATTERN "*.hpp"
 )
 
 # Install Feral Imports
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/"
-	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
-	FILES_MATCHING PATTERN "*.fer" PATTERN "*.hpp"
-	PATTERN "lib/Core" EXCLUDE
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/feral"
+	FILES_MATCHING PATTERN "*.fer"
 )
 
 # Feral Library

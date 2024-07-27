@@ -1,6 +1,6 @@
 # by default, {stdclk,sysclk}Now() provide nanosecond resolution
 
-mload('std/Time');
+loadlib('std/Time');
 
 let micro = 1.0; # equivalent to what *Now() provides
 let milli = micro / 1000;

@@ -1,4 +1,4 @@
-mload('prelude/Core');
+loadlib('prelude/Prelude');
 
 # Important stuff for core types and the VM (formerly std/sys module)
 # Setup as a global variable 'feral'
