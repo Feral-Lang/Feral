@@ -1,4 +1,3 @@
-let sys = import('std/sys');
 let vec = import('std/vec');
 
 let findLibBase =
@@ -65,7 +64,7 @@ let gen in FindLib = fn() {
 		includeDirs.pop();
 	}
 	if self.feralLib {
-		prefixPath += sys.installPrefix + '/lib/feral ';
+		prefixPath += feral.installPath + '/lib/feral ';
 		self.libName = 'feral' + self.libName;
 	}
 	if prefixPath == ' PATHS ' {

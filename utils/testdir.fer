@@ -16,32 +16,31 @@ let io = import('std/io');
 let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
-let sys = import('std/sys');
 let fecl = import('std/fecl');
 let stat = import('std/stat');
 let time = import('std/time');
 let mproc = import('std/multiproc');
 
-if sys.args.empty() {
-	io.println('Usage: ', sys.selfBin, ' ', __SRC_PATH__, ' <directory>');
-	sys.exit(1);
+if feral.args.empty() {
+	io.println('Usage: ', feral.binaryPath, ' ', __SRC_PATH__, ' <directory>');
+	feral.exit(1);
 }
 
-let st = stat.stat(sys.args[0]) or err {
+let st = stat.stat(feral.args[0]) or err {
 	io.println('error: stat failed on directory: ', err);
-	sys.exit(1);
+	feral.exit(1);
 	return nil; # unreachable
 };
 
 if !st.isDir() {
 	io.println('error: entered path is not a directory');
-	sys.exit(1);
+	feral.exit(1);
 }
 
-let cfgname = fs.pathFrom(sys.args[0], 'config.fecl');
+let cfgname = fs.pathFrom(feral.args[0], 'config.fecl');
 if !fs.exists(cfgname) {
 	io.println('error: test config: \'' + cfgname + '\' not found');
-	sys.exit(1);
+	feral.exit(1);
 }
 let cfgfile = fs.fopen(cfgname);
 let cfgstr = '';
@@ -53,7 +52,7 @@ let file_pattern = cfg['FilePattern'];
 let exec_cmd = cfg['ExecCmd'];
 let clean_cmd = cfg['CleanCmd'];
 
-let files = fs.walkDir(sys.args[0], fs.WALK_RECURSE, file_pattern);
+let files = fs.walkDir(feral.args[0], fs.WALK_RECURSE, file_pattern);
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
 inline if os.name == 'windows' {
@@ -86,11 +85,11 @@ let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 };
 
 let valgrind = '';
-if sys.args.find('--valgrind') {
+if feral.args.find('--valgrind') {
 	valgrind = os.findExec('valgrind');
 	if valgrind.empty() {
 		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
-		sys.exit(1);
+		feral.exit(1);
 	}
 	# --log-fd=1 to pour the valgrind output on stdout so that we
 	# don't have to redirect entire stderr to io.null
@@ -130,4 +129,4 @@ io.cprintln('total: {y}', files.len(),
 	    '{0}, failed: {r}', failed,
 	    '{0}, time: {b}', time.resolve(tot_time, time.milli).round(),
 	    '{0} ms');
-sys.exit(failed);
+feral.exit(failed);

@@ -1,16 +1,15 @@
 let io = import('std/io');
 let fs = import('std/fs');
 let os = import('std/os');
-let sys = import('std/sys');
 let vec = import('std/vec');
 let logging = import('std/logging');
 
-if sys.args.find('--stderr') {
+if feral.args.find('--stderr') {
 	logging.addTarget(io.stderr);
 }
 
-let tempDir = fs.pathFrom(sys.installPrefix, 'temp');
-let pkgExePath = fs.pathFrom(sys.installPrefix, 'bin', 'pkg.fer');
+let tempDir = fs.pathFrom(feral.installPath, 'temp');
+let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
 logging.trace('Checking if directory exists: ', tempDir);
 if !fs.dirExists(tempDir) {
@@ -20,7 +19,7 @@ if !fs.dirExists(tempDir) {
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) {
 	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use feral pkg to manage packages');
-	sys.exit(0);
+	feral.exit(0);
 }
 
 let cmd = '';
@@ -60,7 +59,7 @@ for line in cmdOutLines.each() {
 let cwd = os.getCWD();
 logging.trace('Setting current working directory to Pkg repo: ', pkgRepo);
 os.setCWD(pkgRepo);
-cmd = sys.selfBin;
+cmd = feral.binaryPath;
 cmd += ' install 2>&1';
 logging.info('Installing Pkg from \'', pkgRepo, '\': ', cmd);
 cmdOutLines.clear();

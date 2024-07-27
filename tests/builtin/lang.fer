@@ -10,7 +10,7 @@ let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
 	assert.eq(kw['a'], 10);
 	assert.eq(kw['b'], 20);
 	assert.eq(kw['c'], 30);
-	assert.eq(va, prelude.vecNew(3, 4));
+	assert.eq(va, feral.vecNew(3, 4));
 };
 
 let func2 in SomeTy = fn(x, y = 10, .kw, va...) {

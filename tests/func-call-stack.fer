@@ -1,7 +1,6 @@
 let assert = import('std/assert');
 
 let os = import('std/os');
-let sys = import('std/sys');
 
 let f = fn() {
 	++i;
@@ -10,13 +9,13 @@ let f = fn() {
 
 let i = 1; # first element in function call (execution) stack is the global scope itself
 
-let expectErr1 = "stack overflow, current max: " + sys.getMaxCallstacks().str();
+let expectErr1 = "stack overflow, current max: " + feral.getMaxCallstacks().str();
 
 f() or err {
 	assert.eq(err, expectErr1);
 };
 
-assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
+assert.eq(i, feral.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
 
 inline if os.name == 'windows' {
 # windows seems like it has a much smaller stack size.
@@ -25,21 +24,21 @@ let newmax = 200;
 let newmax = 1000;
 }
 
-sys.setMaxCallstacks(newmax);
-assert.eq(sys.getMaxCallstacks(), newmax);
+feral.setMaxCallstacks(newmax);
+assert.eq(feral.getMaxCallstacks(), newmax);
 
 i = 1;
 
-let expectErr2 = "stack overflow, current max: " + sys.getMaxCallstacks().str();
+let expectErr2 = "stack overflow, current max: " + feral.getMaxCallstacks().str();
 
 f() or err {
 	assert.eq(err, expectErr2);
 };
 
-assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
+assert.eq(i, feral.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
 
 # reset call stack max to default
-sys.setMaxCallstacks();
+feral.setMaxCallstacks();
 
 i = 1;
 
@@ -47,4 +46,4 @@ f() or err {
 	assert.eq(err, expectErr1);
 };
 
-assert.eq(i, sys.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)
+assert.eq(i, feral.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)

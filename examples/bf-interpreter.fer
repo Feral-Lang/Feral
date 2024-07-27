@@ -2,8 +2,6 @@ let io = import('std/io');
 let os = import('std/os');
 let map = import('std/map');
 let vec = import('std/vec');
-let str = import('std/str');
-let sys = import('std/sys');
 let prog = import('./bf-helloworld');
 
 let len = prog.data.len();
@@ -60,7 +58,7 @@ for let i = 0; i < len; ++i {
 		if data_ptr >= DATA_UPPER_LIMIT {
 			io.println('went above upper limit of data pointer (',
 				   data.len(), ') at character position: ', i);
-			sys.exit(1);
+			feral.exit(1);
 		}
 		++data_ptr;
 		if data_ptr >= data.len() {
@@ -70,7 +68,7 @@ for let i = 0; i < len; ++i {
 		if data_ptr <= 0 {
 			io.println('went below lower limit of data pointer (',
 				   0, ') at character position: ', i);
-			sys.exit(1);
+			feral.exit(1);
 		}
 		--data_ptr;
 	} elif prog.data[i] == '+' {

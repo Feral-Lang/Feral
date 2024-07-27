@@ -23,9 +23,9 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(RAIIParser &parser)
-	: prelude("prelude/prelude"), selfbin(env::getProcPath()), parser(parser),
-	  c(parser.getContext()), argparser(parser.getCommandArgs()),
-	  tru(makeVarWithRef<VarBool>(nullptr, true)),
+	: prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+	  installPath(STRINGIFY(INSTALL_PREFIX)), parser(parser), c(parser.getContext()),
+	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
@@ -37,10 +37,6 @@ Interpreter::Interpreter(RAIIParser &parser)
 #endif
 	initTypeNames();
 
-	// set feral base-directory
-	selfbase = fs::parentDir(fs::parentDir(selfbin));
-	selfbase = fs::absPath(selfbase.c_str());
-
 	Span<StringRef> _cmdargs = argparser.getCodeExecArgs();
 	cmdargs			 = makeVarWithRef<VarVec>(nullptr, _cmdargs.size(), false);
 	for(size_t i = 0; i < _cmdargs.size(); ++i) {
@@ -48,8 +44,8 @@ Interpreter::Interpreter(RAIIParser &parser)
 		cmdargs->get().push_back(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
-	includelocs.push_back(selfbase + PATH_DELIM "include" PATH_DELIM "feral");
-	dlllocs.push_back(selfbase + PATH_DELIM "lib" PATH_DELIM "feral");
+	includelocs.push_back(installPath + PATH_DELIM "include" PATH_DELIM "feral");
+	dlllocs.push_back(installPath + PATH_DELIM "lib" PATH_DELIM "feral");
 
 	String feral_paths = env::get("FERAL_PATHS");
 	for(auto &_path : stringDelim(feral_paths, ";")) {
@@ -107,7 +103,7 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	pushModule(mod->getPath());
 	if(main_module) {
 		// mload must be setup here because it is needed to load even the core module from
-		// prelude.
+		// <prelude>.
 		addNativeFn(nullptr, "mload", loadModule, 1);
 		if(!findImport(prelude)) {
 			err::out(loc, "Failed to find prelude: ", prelude);
@@ -120,8 +116,8 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 			popModule();
 			return 1;
 		}
-		// set the prelude global variable
-		addGlobal("prelude", getModule(prelude));
+		// set the prelude/feral global variable
+		addGlobal("feral", getModule(prelude));
 		mainmodulepath = mod->getPath();
 	}
 	int res = execute();

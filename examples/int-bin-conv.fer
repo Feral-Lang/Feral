@@ -1,5 +1,4 @@
 let io = import('std/io');
-let str = import('std/str');
 let vec = import('std/vec');
 
 let num = 1025619;

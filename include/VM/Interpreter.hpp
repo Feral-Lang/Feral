@@ -46,10 +46,10 @@ class Interpreter
 	Vector<String> dlllocs;	    // should be shared between multiple threads
 	// prelude must be imported before any program is executed
 	String prelude;
-	// path where feral binary exists (used by sys.selfBin())
-	String selfbin;
-	// parent directory of selfbin (used by sys.selfBase())
-	String selfbase;
+	// path where feral binary exists (used by <prelude>.binaryPath)
+	String binaryPath;
+	// Feral's install directory (used by <prelude>.installPath)
+	String installPath;
 	// path of the main module
 	StringRef mainmodulepath;
 	RAIIParser &parser;
@@ -63,7 +63,7 @@ class Interpreter
 	// this is the one that's used for checking, and it can be modified by Feral program
 	size_t max_recurse_count;
 	size_t recurse_count; // how many times execute() has been called by itself
-	bool exitcalled;      // mainly used by sys.exit()
+	bool exitcalled;      // mainly used by <prelude>.exit()
 	bool recurse_count_exceeded;
 
 public:
@@ -189,8 +189,8 @@ public:
 	inline StringRef getTypeName(Var *var) { return getTypeName(var->getTypeFnID()); }
 	inline Span<String> getImportDirs() { return includelocs; }
 	inline Span<String> getModuleDirs() { return dlllocs; }
-	inline StringRef getSelfBin() { return selfbin; }
-	inline StringRef getSelfBase() { return selfbase; }
+	inline StringRef getBinaryPath() { return binaryPath; }
+	inline StringRef getInstallPath() { return installPath; }
 	inline StringRef getMainModulePath() { return mainmodulepath; }
 	inline RAIIParser &getRAIIParser() { return parser; }
 	inline Context &getContext() { return c; }

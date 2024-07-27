@@ -1,6 +1,21 @@
 mload('prelude/Core');
 
-# Important stuff for core types
+# Important stuff for core types and the VM (formerly std/sys module)
+# Setup as a global variable 'feral'
+
+############################ Core Functions ###########################
+
+# From std/sys
+
+let exit = fn(code = 0) {
+	return exitNative(code);
+};
+
+let setMaxCallstacks = fn(size = DEFAULT_MAX_CALLSTACKS) {
+	setMaxCallstacksNative(size);
+};
+
+################################ Types ################################
 
 # Str
 
