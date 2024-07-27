@@ -31,11 +31,11 @@ if(WIN32)
 endif()
 
 # add extra path
-list(APPEND CMAKE_MODULE_PATH "$\\{PROJECT_SOURCE_DIR}/external" "{sys.installPrefix}/external")
+list(APPEND CMAKE_MODULE_PATH "$\\{PROJECT_SOURCE_DIR}/external" "{feral.installPath}/external")
 
-set(FERAL_VERSION_MAJOR {sys.versionMajor})
-set(FERAL_VERSION_MINOR {sys.versionMinor})
-set(FERAL_VERSION_PATCH {sys.versionPatch})
+set(FERAL_VERSION_MAJOR {feral.versionMajor})
+set(FERAL_VERSION_MINOR {feral.versionMinor})
+set(FERAL_VERSION_PATCH {feral.versionPatch})
 
 string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
 

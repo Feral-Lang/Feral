@@ -1,4 +1,3 @@
-let sys = import('std/sys');
 let stat = import('std/stat');
 
 inline if getOSName() == 'windows' {
@@ -9,61 +8,61 @@ let pathSeparator = '/';
 
 ################################# Some definitions #################################
 
-let fdRead = prelude.fsFdRead;
-let fdWrite = prelude.fsFdWrite;
-let fdClose = prelude.fsFdClose;
+let fdRead = feral.fsFdRead;
+let fdWrite = feral.fsFdWrite;
+let fdClose = feral.fsFdClose;
 
-let exists = prelude.fsExists;
-let install = prelude.fsInstall;
-let mkdir = prelude.fsMkdir;
-let remove = prelude.fsRemove;
-let copy = prelude.fsCopy;
-let move = prelude.fsMove;
+let exists = feral.fsExists;
+let install = feral.fsInstall;
+let mkdir = feral.fsMkdir;
+let remove = feral.fsRemove;
+let copy = feral.fsCopy;
+let move = feral.fsMove;
 
-let stdin = prelude.fsStdin;
-let stdout = prelude.fsStdout;
-let stderr = prelude.fsStderr;
+let stdin = feral.fsStdin;
+let stdout = feral.fsStdout;
+let stderr = feral.fsStderr;
 
 # fs.walkdir()
-let WALK_FILES = prelude.FS_WALK_FILES;
-let WALK_DIRS = prelude.FS_WALK_DIRS;
-let WALK_RECURSE = prelude.FS_WALK_RECURSE;
+let WALK_FILES = feral.FS_WALK_FILES;
+let WALK_DIRS = feral.FS_WALK_DIRS;
+let WALK_RECURSE = feral.FS_WALK_RECURSE;
 # <file>.seek()
-let SEEK_SET = prelude.FS_SEEK_SET;
-let SEEK_CUR = prelude.FS_SEEK_CUR;
-let SEEK_END = prelude.FS_SEEK_END;
+let SEEK_SET = feral.FS_SEEK_SET;
+let SEEK_CUR = feral.FS_SEEK_CUR;
+let SEEK_END = feral.FS_SEEK_END;
 # file descriptor flags
-let O_RDONLY = prelude.FS_O_RDONLY;
-let O_WRONLY = prelude.FS_O_WRONLY;
-let O_RDWR = prelude.FS_O_RDWR;
-let O_APPEND = prelude.FS_O_APPEND;
-let O_CREAT = prelude.FS_O_CREAT;
+let O_RDONLY = feral.FS_O_RDONLY;
+let O_WRONLY = feral.FS_O_WRONLY;
+let O_RDWR = feral.FS_O_RDWR;
+let O_APPEND = feral.FS_O_APPEND;
+let O_CREAT = feral.FS_O_CREAT;
 inline if getOSName() == 'linux' || getOSName() == 'macos' {
-let O_DSYNC = prelude.FS_O_DSYNC;
+let O_DSYNC = feral.FS_O_DSYNC;
 }
-let O_EXCL = prelude.FS_O_EXCL;
+let O_EXCL = feral.FS_O_EXCL;
 inline if getOSName() != 'windows' {
-let O_NOCTTY = prelude.FS_O_NOCTTY;
-let O_NONBLOCK = prelude.FS_O_NONBLOCK;
-let O_SYNC = prelude.FS_O_SYNC;
+let O_NOCTTY = feral.FS_O_NOCTTY;
+let O_NONBLOCK = feral.FS_O_NONBLOCK;
+let O_SYNC = feral.FS_O_SYNC;
 }
 inline if getOSName() == 'linux' {
-let O_RSYNC = prelude.FS_O_RSYNC;
+let O_RSYNC = feral.FS_O_RSYNC;
 }
-let O_TRUNC = prelude.FS_O_TRUNC;
+let O_TRUNC = feral.FS_O_TRUNC;
 
 ####################################################################################
 
 let fopen = fn(file, mode = 'r', mustClose = true) {
-	return prelude.fsFopen(file, mode, mustClose);
+	return feral.fsFopen(file, mode, mustClose);
 };
 
 let walkDir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
-	return prelude.fsWalkDir(dir, mode, regex);
+	return feral.fsWalkDir(dir, mode, regex);
 };
 
 let fdOpen = fn(name, mode = O_RDONLY) {
-	return prelude.fsFdOpen(name, mode);
+	return feral.fsFdOpen(name, mode);
 };
 
 let dirExists = fn(name) {
@@ -140,8 +139,8 @@ let fmtWithPath = fn(fmtstr, fpath) {
 		shorthand = false;
 		if res[i] == 's' {
 			res.erase(i);
-			res.insert(i, sys.selfBin);
-			i += sys.selfBin.len();
+			res.insert(i, feral.binaryPath);
+			i += feral.binaryPath.len();
 			--i;
 			continue;
 		}

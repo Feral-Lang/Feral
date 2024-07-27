@@ -1,6 +1,5 @@
 let fs = import('std/fs');
 let os = import('std/os');
-let sys = import('std/sys');
 let vec = import('std/vec');
 
 let findPkgBase =

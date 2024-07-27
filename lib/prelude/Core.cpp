@@ -10,6 +10,7 @@
 #include <unistd.h>
 #endif
 
+#include "Config.hpp"
 #include "FS.hpp" // used by File.hpp.in
 #include "Utils.hpp"
 #include "VM/Interpreter.hpp"
@@ -231,6 +232,51 @@ Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.getCurrModule()->getMod()->isMainModule() ? vm.getTrue() : vm.getFalse();
+}
+
+// Stuff from std/sys module
+
+Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	   const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected integer for exit code, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	vm.setExitCalled(true);
+	vm.setExitCode(as<VarInt>(args[1])->get());
+	return vm.getNil();
+}
+
+Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for variable name, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	Vars *moduleVars = vm.getCurrModule()->getVars();
+	StringRef var	 = as<VarStr>(args[1])->get();
+	return moduleVars->get(var) || vm.getGlobal(var) ? vm.getTrue() : vm.getFalse();
+}
+
+Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		      const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc,
+			"expected int argument for max count, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	vm.setMaxRecurseCount(as<VarInt>(args[1])->get());
+	return vm.getNil();
+}
+
+Var *getMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+		      const StringMap<AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
 }
 
 INIT_MODULE(Core)
@@ -552,6 +598,30 @@ INIT_MODULE(Core)
 	mod->addNativeVar("FS_O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
 #endif
 	mod->addNativeVar("FS_O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));
+
+	// From std/sys
+
+	mod->addNativeFn("exitNative", _exit, 1);
+	mod->addNativeFn("varExists", varExists, 1);
+	mod->addNativeFn("setMaxCallstacksNative", setMaxCallstacks, 1);
+	mod->addNativeFn("getMaxCallstacks", getMaxCallstacks, 0);
+
+	mod->addNativeVar("args", vm.getCLIArgs());
+
+	mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
+	mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, vm.getInstallPath()));
+	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
+
+	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, VERSION_MAJOR));
+	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, VERSION_MINOR));
+	mod->addNativeVar("versionPatch", vm.makeVar<VarInt>(loc, VERSION_PATCH));
+
+	mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
+	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_CXX_COMPILER));
+	mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, BUILD_TYPE));
+
+	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
+			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 
 	return true;
 }
