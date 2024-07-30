@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VM/Interpreter.hpp"
+#include "VM/VarTypes.hpp"
 
 namespace fer
 {
@@ -15,7 +15,7 @@ public:
 	VarPtr(const ModuleLoc *loc, Var *val);
 	~VarPtr();
 
-	void set(Var *from);
+	void set(Var *from) override;
 
 	void update(Var *with);
 

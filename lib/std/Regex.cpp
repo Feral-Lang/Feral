@@ -1,4 +1,5 @@
 #include "RegexType.hpp"
+#include "VM/Interpreter.hpp"
 
 namespace fer
 {

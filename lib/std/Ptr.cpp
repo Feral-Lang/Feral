@@ -1,4 +1,5 @@
 #include "PtrType.hpp"
+#include "VM/Interpreter.hpp"
 
 namespace fer
 {

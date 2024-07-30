@@ -548,7 +548,7 @@ bool Tokenizer::getConstStr(String &data, char &quote_type, size_t &len, size_t 
 		continuous_backslash = 0;
 	}
 	if(CURR != quote_type) {
-		err::out(loc(line, starting_at - line_start), "no matching quote for '", quote_type,
+		err::out(loc(line, i - line_start), "no matching quote for '", quote_type,
 			 "' found");
 		return false;
 	}
