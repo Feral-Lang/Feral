@@ -1,9 +1,5 @@
 #include "Parser/Parse.hpp"
 
-#include <unordered_set>
-
-#include "Error.hpp"
-
 namespace fer
 {
 
@@ -774,7 +770,9 @@ begin_brack:
 				p.next();
 				if(!parseExpr16(p, arg, false)) return false;
 				arg = StmtVar::create(ctx, name.getLoc(), name, nullptr, arg, true);
-			} else if(p.accept(lex::IDEN) && p.peekt(1) == lex::PreVA) {
+			} else if(p.accept(lex::IDEN) &&
+				  (p.peekt(1) == lex::PreVA || p.peekt(1) == lex::PostVA))
+			{
 				// variadic unpack
 				arg = StmtSimple::create(ctx, p.peek().getLoc(), p.peek());
 				p.next();
@@ -802,9 +800,10 @@ begin_brack:
 	post_args:
 		rhs =
 		StmtFnArgs::create(ctx, oper.getLoc(), std::move(args), std::move(unpack_vector));
-		lhs  = StmtExpr::create(ctx, oper.getLoc(), lhs, oper, rhs);
-		rhs  = nullptr;
-		args = {};
+		lhs	      = StmtExpr::create(ctx, oper.getLoc(), lhs, oper, rhs);
+		rhs	      = nullptr;
+		args	      = {};
+		unpack_vector = {};
 
 		if(!disable_brace_after_iden && p.accept(lex::LBRACE)) goto begin_brack;
 		if(p.accept(lex::LBRACK, lex::LPAREN)) goto begin_brack;

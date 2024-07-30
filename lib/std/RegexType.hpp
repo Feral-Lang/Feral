@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VM/Interpreter.hpp"
+#include "VM/VarTypes.hpp"
 
 namespace fer
 {
@@ -20,7 +20,7 @@ public:
 	VarRegex(const ModuleLoc *loc, const Regex &expr);
 	~VarRegex();
 
-	void set(Var *from);
+	void set(Var *from) override;
 
 	// loc can be nullptr if captures is not a VarVec (ie. no new strings will have to be
 	// created)

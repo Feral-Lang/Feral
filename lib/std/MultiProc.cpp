@@ -1,5 +1,5 @@
-#include "FS.hpp"
 #include "std/MultiProcType.hpp"
+#include "VM/Interpreter.hpp"
 
 #if defined(FER_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!

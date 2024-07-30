@@ -438,6 +438,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarStr>(loc, "substrNative", strSubstr, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "lastIdx", strLast, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "trim", strTrim, 0);
+	vm.addNativeTypeFn<VarStr>(loc, "lower", strLower, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "upper", strUpper, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith, 1);

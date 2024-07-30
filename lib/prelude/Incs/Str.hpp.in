@@ -379,6 +379,17 @@ Var *strTrim(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
+Var *strLower(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	String str = as<VarStr>(args[0])->get();
+	size_t len = str.size();
+	for(size_t i = 0; i < len; ++i) {
+		str[i] = str[i] >= 'A' && str[i] <= 'Z' ? str[i] | 0x60 : str[i];
+	}
+	return vm.makeVar<VarStr>(loc, str);
+}
+
 Var *strUpper(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {

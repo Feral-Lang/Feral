@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VM/Interpreter.hpp"
+#include "VM/VarTypes.hpp"
 
 namespace fer
 {
@@ -21,7 +21,7 @@ public:
 		     bool owner = true);
 	~VarMultiProc();
 
-	void set(Var *from);
+	void set(Var *from) override;
 
 	inline Thread *&getThread() { return thread; }
 	inline SharedFuture<int> *&getFuture() { return res; }

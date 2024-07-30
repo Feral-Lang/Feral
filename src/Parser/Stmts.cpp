@@ -177,7 +177,7 @@ StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &na
 void StmtVar::disp(bool has_next)
 {
 	tio::taba(has_next);
-	tio::print(has_next, {is_arg ? "Argument" : "Variable: ", name.getDataStr(), "\n"});
+	tio::print(has_next, {is_arg ? "Argument: " : "Variable: ", name.getDataStr(), "\n"});
 	if(in) {
 		tio::taba(val);
 		tio::print(val, {"In:\n"});
