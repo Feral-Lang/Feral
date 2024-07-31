@@ -578,7 +578,6 @@ INIT_MODULE(Prelude)
 	mod->addNativeVar("args", vm.getCLIArgs());
 
 	mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
-	mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, vm.getInstallPath()));
 	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
 
 	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, VERSION_MAJOR));
@@ -587,7 +586,11 @@ INIT_MODULE(Prelude)
 
 	mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
 	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_CXX_COMPILER));
-	mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, BUILD_TYPE));
+	mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
+	mod->addNativeVar("minCmakeVersion", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
+	mod->addNativeVar("cmakeVersion", vm.makeVar<VarStr>(loc, CMAKE_VERSION));
+
+	mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, INSTALL_PATH));
 
 	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
 			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));

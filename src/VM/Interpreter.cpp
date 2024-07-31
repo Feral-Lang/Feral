@@ -1,5 +1,6 @@
 #include "VM/Interpreter.hpp"
 
+#include "Config.hpp"
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -26,9 +27,8 @@ void remDLLDirectories();
 Interpreter::Interpreter(RAIIParser &parser)
 	: defaultModuleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(nullptr, 2, false)), prelude("prelude/prelude"),
-	  binaryPath(env::getProcPath()), installPath(STRINGIFY(INSTALL_PREFIX)), parser(parser),
-	  c(parser.getContext()), argparser(parser.getCommandArgs()),
-	  tru(makeVarWithRef<VarBool>(nullptr, true)),
+	  binaryPath(env::getProcPath()), parser(parser), c(parser.getContext()),
+	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
 	  fals(makeVarWithRef<VarBool>(nullptr, false)), nil(makeVarWithRef<VarNil>(nullptr)),
 	  exitcode(0), max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0),
 	  exitcalled(false), recurse_count_exceeded(false)
@@ -47,7 +47,7 @@ Interpreter::Interpreter(RAIIParser &parser)
 		cmdargs->push(makeVarWithRef<VarStr>(nullptr, a));
 	}
 
-	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, installPath);
+	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, INSTALL_PATH);
 	moduleLoc->get() += PATH_DELIM "lib" PATH_DELIM "feral";
 	defaultModuleDirs->push(moduleLoc);
 	String feral_paths = env::get("FERAL_PATHS");
