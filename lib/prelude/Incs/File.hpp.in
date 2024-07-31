@@ -485,8 +485,18 @@ Var *fsCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	// args must have: nullptr, [src]+, dest
-	if(args.size() < 3) return vm.makeVar<VarInt>(loc, 0);
-	const String &dest = as<VarStr>(args[args.size() - 1])->get();
+	if(args.size() < 3) {
+		vm.fail(loc, "Expected at least 2 arguments - source and destination, found: ",
+			args.size());
+		return nullptr;
+	}
+	Var *destArg = args[args.size() - 1];
+	if(!destArg->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for copy destination argument, found: ",
+			vm.getTypeName(destArg));
+		return nullptr;
+	}
+	const String &dest = as<VarStr>(destArg)->get();
 	for(size_t i = 1; i < args.size() - 1; ++i) {
 		if(!args[i]->is<VarStr>()) {
 			vm.fail(loc, "expected string argument for copy argument, found: ",

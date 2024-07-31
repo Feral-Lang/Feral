@@ -4,12 +4,17 @@ let os = import('std/os');
 let vec = import('std/vec');
 let logging = import('std/logging');
 
-if feral.args.find('--stderr') {
-	logging.addTarget(io.stderr);
-}
-
 let tempDir = fs.pathFrom(feral.installPath, 'temp');
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
+
+let pkgVersion = '0.0.1';
+
+inline if os.name == 'windows' {
+} else {
+let logFileName = '/tmp/feralPkgBootstrap.log';
+}
+
+logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
 
 logging.trace('Checking if directory exists: ', tempDir);
 if !fs.dirExists(tempDir) {
@@ -19,8 +24,11 @@ if !fs.dirExists(tempDir) {
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) {
 	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
+	io.println('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
 	feral.exit(0);
 }
+
+io.println('Bootstrapping Feral package manager ...');
 
 let cmd = '';
 let cmdOutLines = vec.new();
@@ -40,13 +48,14 @@ if gitCmd.empty() {
 let pkgRepo = fs.pathFrom(tempDir, 'Pkg');
 cmd = gitCmd;
 if fs.dirExists(pkgRepo) {
-	cmd += ' pull';
-} else {
-	cmd += ' clone --depth=1 https://github.com/Feral-Lang/Pkg ';
-	cmd += pkgRepo;
-	cmd += ' 2>&1';
+	fs.remove(pkgRepo);
 }
+cmd += ' clone --depth=1 https://github.com/Feral-Lang/Pkg --branch ';
+cmd += pkgVersion + ' ';
+cmd += pkgRepo;
+cmd += ' 2>&1';
 logging.info('Fetching git repository for Pkg: ', cmd);
+io.println('Downloading Pkg ...');
 cmdOutLines.clear();
 if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
 	raise('Failed to fetch Pkg git repository');
@@ -54,23 +63,49 @@ if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
 for line in cmdOutLines.each() {
 	logging.trace('-- ', line);
 }
+logging.info('Git repository successfully retrieved');
 
 # Install Pkg
-let cwd = os.getCWD();
-logging.trace('Setting current working directory to Pkg repo: ', pkgRepo);
-os.setCWD(pkgRepo);
-cmd = feral.binaryPath;
-cmd += ' install 2>&1';
-logging.info('Installing Pkg from \'', pkgRepo, '\': ', cmd);
-cmdOutLines.clear();
-if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
-	raise('Failed to install Pkg');
+
+logging.info('Copying files ...');
+let pkgInstallPath = fs.pathFrom(feral.installPath, 'lib', 'pkg', 'installed', 'Pkg', 'current');
+logging.info('Installing Pkg to: ', pkgInstallPath);
+io.println('Installing Pkg to: ', pkgInstallPath);
+if !fs.dirExists(pkgInstallPath) { fs.mkdir(pkgInstallPath); }
+# Copy stuff
+let srcBinPath = fs.pathFrom(pkgRepo, 'bin');
+let srcIncPath = fs.pathFrom(pkgRepo, 'include');
+let destBinPath = fs.pathFrom(pkgInstallPath, 'bin');
+let destIncPath = fs.pathFrom(pkgInstallPath, 'pkg');
+logging.trace('-- ', srcBinPath, ' -> ', destBinPath);
+fs.copy(srcBinPath, destBinPath);
+logging.trace('-- ', srcIncPath, ' -> ', destIncPath);
+fs.copy(srcIncPath, destIncPath);
+# Don't setup configs - let pkg itself take care of that when it's run for the first time.
+# Create the binary hook
+let binaryHookPath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
+logging.trace('Generating binary hook: ', binaryHookPath);
+let binaryHookDataTemplate =
+`let pkg = import('pkg/pkg');
+pkg.addModuleFinderPaths('{pkgInstallPath}');
+import('{pkgInstallPath}/bin/pkg');`;
+{
+	let binaryHookFile = fs.fopen(binaryHookPath, 'w+');
+	io.fprintln(binaryHookFile, binaryHookDataTemplate.fmt());
 }
-for line in cmdOutLines.each() {
-	logging.trace(line);
+logging.trace('Adding Pkg path to Feral module paths file ...');
+let modulePathsFilePath = fs.pathFrom(feral.installPath, '.modulePaths');
+let pkgPathExistsInFile = false;
+if fs.exists(modulePathsFilePath) {
+	let lines = fs.fopen(modulePathsFilePath).readAll();
+	for line in lines.each() {
+		if line.contains(pkgInstallPath) { pkgPathExistsInFile = true; }
+	}
 }
-logging.trace('Resetting current working directory to: ', cwd);
-os.setCWD(cwd);
+if !pkgPathExistsInFile {
+	let modulePathsFile = fs.fopen(modulePathsFilePath, 'a+');
+	io.fprintln(modulePathsFile, pkgInstallPath);
+}
 logging.info('Successfully installed Pkg!');
 
-io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager');
+io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager!');
