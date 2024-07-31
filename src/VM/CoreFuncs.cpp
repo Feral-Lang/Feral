@@ -39,7 +39,7 @@ Var *loadFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(!loadCommon(vm, loc, args[1], true, file)) return nullptr;
 	if(!vm.hasModule(file)) {
 		int res = vm.compileAndRun(loc, file);
-		if(res != 0) {
+		if(res != 0 && !vm.isExitCalled()) {
 			vm.fail(args[1]->getLoc(), "could not import: '", file,
 				"', look at error above (exit code: ", res, ")");
 			return nullptr;
