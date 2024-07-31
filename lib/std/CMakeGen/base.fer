@@ -14,13 +14,11 @@ endif()
 
 set(CMAKE_INSTALL_PREFIX "{self.prefix}")
 set(CMAKE_PREFIX_PATH "$\\{CMAKE_INSTALL_PREFIX};$\\{CMAKE_BINARY_DIR}")
-add_definitions(-DINSTALL_PREFIX=$\\{CMAKE_INSTALL_PREFIX})
 include_directories($\\{CMAKE_INSTALL_PREFIX}/include/feral)
 if(WIN32)
 	set(WIN_LIB_PREFIX "lib")
 	link_directories("$\\{CMAKE_INSTALL_PREFIX}/lib/feral" "$\\{CMAKE_INSTALL_PREFIX}/bin")
 endif()
-add_definitions(-DINSTALL_PREFIX=$\\{CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = $\\{CMAKE_INSTALL_PREFIX}")
 
 # disable deprecated warnings on Windows

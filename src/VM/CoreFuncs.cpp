@@ -24,8 +24,7 @@ bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImpo
 		ret = nullptr;
 	}
 	if(!ret || !ret->is<VarStr>()) {
-		vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->get(),
-			"; look at the error above");
+		vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->get());
 		return false;
 	}
 	result = as<VarStr>(ret)->get();
@@ -55,8 +54,7 @@ Var *loadLibrary(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	String file;
 	if(!loadCommon(vm, loc, args[1], false, file)) return nullptr;
 	if(!vm.loadNativeModule(loc, file, as<VarStr>(args[1])->get())) {
-		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get(),
-			"; look at the error above");
+		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get());
 		return nullptr;
 	}
 	return vm.getNil();

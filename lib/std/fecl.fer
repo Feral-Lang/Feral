@@ -11,8 +11,8 @@ let loads = fn(data) {
 	return Parse(toks, toks.len());
 };
 
-let dumps = fn(obj, indent = -1, indent_char = ' ') {
-	let res = obj.feclString(indent, indent_char, true);
+let dumps = fn(obj, indentLevel = -1, indentWith = ' ') {
+	let res = obj.feclString(indentLevel, indentWith, true);
 	if res.empty() {
 		raise('type ' + obj._typestr_() + ' does not implement FeCL serialization');
 	}
@@ -224,7 +224,7 @@ let GetIden = fn(data, i, end) {
 let Parse = fn(toks, sz, i = 0) {
 	let m = map.new();
 	while i < sz {
-		expect(toks, sz, i, TokType.IDEN);
+		expect2(toks, sz, i, TokType.IDEN, TokType.STR);
 		let var = toks.getData(i);
 		++i;
 		expect(toks, sz, i, TokType.ASSN);
@@ -241,9 +241,12 @@ let Parse = fn(toks, sz, i = 0) {
 let ParseInternal = fn(toks, sz, i) {
 	if toks.getType(i) == TokType.LBRACE {
 		++i;
-		expect(toks, sz, i, TokType.IDEN);
 		let m = map.new();
-		while toks.getType(i) == TokType.IDEN {
+		if toks.getType(i) == TokType.RBRACE {
+			return m;
+		}
+		expect2(toks, sz, i, TokType.IDEN, TokType.STR);
+		while toks.getType(i) == TokType.IDEN || toks.getType(i) == TokType.STR {
 			let var = toks.getData(i);
 			++i;
 			expect(toks, sz, i, TokType.ASSN);
@@ -260,6 +263,9 @@ let ParseInternal = fn(toks, sz, i) {
 	if toks.getType(i) == TokType.LBRACK {
 		++i;
 		let v = vec.new();
+		if toks.getType(i) == TokType.RBRACK {
+			return v;
+		}
 		while true {
 			let val = ParseInternal(toks, sz, i);
 			++i;
@@ -292,90 +298,102 @@ let expect = fn(toks, end, i, type) {
 	}
 };
 
+let expect2 = fn(toks, end, i, type1, type2) {
+	if i >= end { raise('expected: ', TokStr[type1], ' or ', TokStr[type2], ', found: EOF'); }
+	if toks.getType(i) != type1 && toks.getType(i) != type2 {
+		raise('expected token at index ', i.str(), ' to be of type: ',
+		      TokStr[type1], ' or ', TokStr[type2], ', found: ', TokStr[toks.getType(i)]);
+	}
+};
+
 ###########################################################################################
 # functions for converting from FeCL to string, used by dumps()
 ###########################################################################################
 
-let feclString in AllTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in AllTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return '';
 };
 
-let feclString in NilTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in NilTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return 'nil';
 };
 
-let feclString in BoolTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in BoolTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return self.str();
 };
 
-let feclString in FltTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in FltTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return self.str();
 };
 
-let feclString in IntTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in IntTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return self.str();
 };
 
-let feclString in StrTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in StrTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	return '\'' + self + '\'';
 };
 
-let feclString in VecTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in VecTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	let res = '[';
-	if indent > -1 {
-		++indent;
+	if indentLevel > -1 {
+		++indentLevel;
 	}
 	for e in self.each() {
-		if indent > -1 { res += '\n' + indent_char * indent; }
-		res += e.feclString(indent, indent_char) + ',';
-		if indent < 0 { res += ' '; }
+		if indentLevel > -1 { res += '\n' + indentWith * indentLevel; }
+		res += e.feclString(indentLevel, indentWith) + ',';
+		if indentLevel < 0 { res += ' '; }
 	}
 	if self.len() > 0 {
 		res.pop();
-		if indent > -1 {
+		if indentLevel > -1 {
 			res += '\n';
 		} else {
 			res.pop();
 		}
 	}
-	if indent > -1 {
-		--indent;
-		res += indent_char * indent;
+	if indentLevel > -1 {
+		--indentLevel;
+		res += indentWith * indentLevel;
 	}
 	res += ']';
 	return res;
 };
 
-let feclString in MapTy = fn(indent = -1, indent_char = ' ', top = false) {
+let feclString in MapTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 	let res = '';
 	if !top {
-		res += '{';
+		res += '{\n';
 	}
-	if indent > -1 && !top {
-		++indent;
+	if indentLevel > -1 {
+		++indentLevel;
 	}
 	let len = self.len();
 	for e in self.each() {
-		if indent > -1 {
-			res += '\n';
-			if !top { res += indent_char * indent; }
-		}
-		res += e.0 + ' = ' + e.1.feclString(indent, indent_char) + ';';
-		if indent < 0 { res += ' '; }
+		if indentLevel > -1 { res += indentWith * indentLevel; }
+		res += stringifyIfNeeded(e.0) + ' = ' + e.1.feclString(indentLevel, indentWith) + ';';
+		if indentLevel > -1 { res += '\n'; } else { res += ' '; }
 	}
-	if self.len() > 0 {
-		if indent > -1 {
-			res += '\n';
-		} else {
-			res.pop();
-		}
-	}
-	if indent > -1 && !top {
-		--indent;
-		res += indent_char * indent;
+	if indentLevel > -1 {
+		--indentLevel;
 	}
 	if !top {
+		if indentLevel > -1 { res += indentWith * indentLevel; }
 		res += '}';
 	}
 	return res;
+};
+
+let stringifyIfNeeded = fn(data) {
+	let len = data.len();
+	let stringify = false;
+	for let i = 0; i < len; ++i {
+		let ch = data[i];
+		if !ch.isAlpha() && !ch.isDigit() && ch != '_' {
+			stringify = true;
+			break;
+		}
+	}
+	if stringify { return '\'' + data + '\''; }
+	return data;
 };

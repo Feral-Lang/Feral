@@ -51,8 +51,6 @@ class Interpreter
 	String prelude;
 	// path where feral binary exists (used by <prelude>.binaryPath)
 	String binaryPath;
-	// Feral's install directory (used by <prelude>.installPath)
-	String installPath;
 	// path of the main module
 	StringRef mainmodulepath;
 	RAIIParser &parser;
@@ -225,7 +223,6 @@ public:
 	inline VarVec *getDefaultModuleDirs() { return defaultModuleDirs; }
 	inline VarVec *getModuleFinders() { return moduleFinders; }
 	inline StringRef getBinaryPath() { return binaryPath; }
-	inline StringRef getInstallPath() { return installPath; }
 	inline StringRef getMainModulePath() { return mainmodulepath; }
 	inline RAIIParser &getRAIIParser() { return parser; }
 	inline Context &getContext() { return c; }
