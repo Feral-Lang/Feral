@@ -52,3 +52,10 @@ fs.copy(__SRC_PATH__, cpfile);
 assert.eq(fs.exists(cpfile), true);
 fs.remove(cpfile);
 assert.eq(!fs.exists(cpfile), true);
+
+
+# Just... utility stuff?
+
+let suavePath = 'C:\\Users\\Some/file/here/and/a/double//here';
+let normiePath = fs.normalizePath(suavePath);
+assert.eq(normiePath, 'C:/Users/Some/file/here/and/a/double/here');

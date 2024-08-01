@@ -47,11 +47,12 @@ cmd += ' 2>&1';
 logging.info('Fetching git repository for Pkg: ', cmd);
 io.println('Downloading Pkg ...');
 cmdOutLines.clear();
-if os.exec(cmd, cmdOutLines) != 0 || cmdOutLines.empty() {
-	raise('Failed to fetch Pkg git repository');
-}
+let ec = os.exec(cmd, cmdOutLines);
 for line in cmdOutLines.each() {
 	logging.trace('-- ', line);
+}
+if ec != 0 || cmdOutLines.empty() {
+	raise('Failed to fetch Pkg git repository');
 }
 logging.info('Git repository successfully retrieved');
 
