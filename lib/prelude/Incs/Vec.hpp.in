@@ -81,12 +81,13 @@ Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
-	if(res->isRefVec()) {
-		incref(args[1]);
-
-		res->push(args[1]);
-	} else {
-		res->push(args[1]->copy(loc));
+	for(size_t i = 1; i < args.size(); ++i) {
+		if(res->isRefVec()) {
+			incref(args[i]);
+			res->push(args[i]);
+		} else {
+			res->push(args[i]->copy(loc));
+		}
 	}
 	return args[0];
 }

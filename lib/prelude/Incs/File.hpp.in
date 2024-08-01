@@ -12,7 +12,7 @@ void getEntriesInternal(Interpreter &vm, const ModuleLoc *loc, const String &dir
 	for(const auto &ent : std::filesystem::directory_iterator(dirstr)) {
 		if(ent.path() == "." || ent.path() == "..") continue;
 		entry.clear();
-		entry += ent.path().string();
+		entry += ent.path().generic_string();
 		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
 		   !std::regex_match(entry, regex))
 		{

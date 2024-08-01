@@ -167,18 +167,18 @@ set_target_properties(libferal
     PROPERTIES
     PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
     LINK_FLAGS "${EXTRA_LD_FLAGS}"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/" # for so (non-windows)
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for dll (windows)
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>" # for lib (windows)
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral" # for so (non-windows)
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for dll (windows)
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for lib (windows)
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS libferal
 	LIBRARY
-	  DESTINATION "lib/feral/"
+	  DESTINATION "lib/feral"
 	RUNTIME
-	  DESTINATION "bin/$<0:>"
+	  DESTINATION "bin$<0:>"
 	ARCHIVE
-	  DESTINATION "bin/$<0:>"
+	  DESTINATION "bin$<0:>"
 )
 
 # Feral Binary

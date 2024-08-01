@@ -4,15 +4,17 @@ let os = import('std/os');
 let vec = import('std/vec');
 let logging = import('std/logging');
 
+let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
 let pkgVersion = '0.0.1';
 
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
 let logFileName = fs.pathFrom(feral.tempPath, 'feralPkgBootstrap.log');
 logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
+io.println('Writing full logs to: ', logFileName);
 
 logging.trace('Checking if path exists: ', pkgExePath);
-if fs.exists(pkgExePath) {
+if fs.exists(pkgExePath) && !feral.args.find('--force') {
 	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
 	io.println('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
 	feral.exit(0);
@@ -20,8 +22,8 @@ if fs.exists(pkgExePath) {
 
 io.println('Bootstrapping Feral package manager ...');
 
-let cmd = '';
-let cmdOutLines = vec.new();
+let cmd = vec.new(refs = true);
+let cmdOutLines = vec.new(refs = true);
 inline if os.name == 'windows' {
 let gitCmd = os.findExec('git.exe');
 } else {
@@ -35,19 +37,15 @@ if gitCmd.empty() {
 # Download and Install Feral's Pkg
 
 # Download Pkg
-let pkgRepo = fs.pathFrom(feral.tempPath, 'Pkg');
-cmd = gitCmd;
-if fs.dirExists(pkgRepo) {
-	fs.remove(pkgRepo);
+let pkgRepoPath = fs.pathFrom(feral.tempPath, 'Pkg');
+if fs.dirExists(pkgRepoPath) {
+	fs.remove(pkgRepoPath);
 }
-cmd += ' clone --depth=1 https://github.com/Feral-Lang/Pkg --branch ';
-cmd += pkgVersion + ' ';
-cmd += pkgRepo;
-cmd += ' 2>&1';
+cmd.push(gitCmd, 'clone', '--depth=1', pkgRepo, '--branch', pkgVersion, pkgRepoPath, '^2>&1');
 logging.info('Fetching git repository for Pkg: ', cmd);
 io.println('Downloading Pkg ...');
 cmdOutLines.clear();
-let ec = os.exec(cmd, cmdOutLines);
+let ec = os.exec(cmd, out = cmdOutLines);
 for line in cmdOutLines.each() {
 	logging.trace('-- ', line);
 }
@@ -58,16 +56,20 @@ logging.info('Git repository successfully retrieved');
 
 # Install Pkg
 
-logging.info('Copying files ...');
-let pkgInstallPath = fs.pathFrom(feral.installPath, 'lib', 'pkg', 'installed', 'Pkg', 'current');
+let pkgBasePath = fs.pathFrom(feral.installPath, 'lib', 'pkg');
+if fs.dirExists(pkgBasePath) { fs.remove(pkgBasePath); }
+
+let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', 'current');
+
 logging.info('Installing Pkg to: ', pkgInstallPath);
 io.println('Installing Pkg to: ', pkgInstallPath);
-if !fs.dirExists(pkgInstallPath) { fs.mkdir(pkgInstallPath); }
+fs.mkdir(pkgInstallPath);
 # Copy stuff
-let srcBinPath = fs.pathFrom(pkgRepo, 'bin');
-let srcIncPath = fs.pathFrom(pkgRepo, 'include');
+let srcBinPath = fs.pathFrom(pkgRepoPath, 'bin');
+let srcIncPath = fs.pathFrom(pkgRepoPath, 'include');
 let destBinPath = fs.pathFrom(pkgInstallPath, 'bin');
 let destIncPath = fs.pathFrom(pkgInstallPath, 'pkg');
+logging.info('Copying files ...');
 logging.trace('-- ', srcBinPath, ' -> ', destBinPath);
 fs.copy(srcBinPath, destBinPath);
 logging.trace('-- ', srcIncPath, ' -> ', destIncPath);
