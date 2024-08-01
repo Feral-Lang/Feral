@@ -6,17 +6,9 @@ let logging = import('std/logging');
 
 let pkgVersion = '0.0.1';
 
-let tempDir = fs.pathFrom(feral.installPath, 'temp');
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
-if !fs.dirExists(tempDir) { fs.mkdir(tempDir); }
-
-inline if os.name == 'windows' {
-let logFileName = fs.pathFrom(tempDir, 'feralPkgBootstrap.log');
-} else {
-let logFileName = '/tmp/feralPkgBootstrap.log';
-}
-
+let logFileName = fs.pathFrom(feral.tempPath, 'feralPkgBootstrap.log');
 logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
 
 logging.trace('Checking if path exists: ', pkgExePath);
@@ -43,7 +35,7 @@ if gitCmd.empty() {
 # Download and Install Feral's Pkg
 
 # Download Pkg
-let pkgRepo = fs.pathFrom(tempDir, 'Pkg');
+let pkgRepo = fs.pathFrom(feral.tempPath, 'Pkg');
 cmd = gitCmd;
 if fs.dirExists(pkgRepo) {
 	fs.remove(pkgRepo);
