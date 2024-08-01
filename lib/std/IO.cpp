@@ -4,6 +4,8 @@
 
 #if defined(FER_OS_WINDOWS)
 #include <io.h>
+
+#include "FS.hpp" // For STDOUT_FILENO
 #else
 #include <termios.h>
 #include <unistd.h>

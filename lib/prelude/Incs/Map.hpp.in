@@ -101,6 +101,13 @@ Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
+Var *mapClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	as<VarMap>(args[0])->clear();
+	return vm.getNil();
+}
+
 Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {

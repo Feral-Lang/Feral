@@ -2,6 +2,11 @@
 #include <fcntl.h>
 #include <filesystem> // used by File.hpp.in
 
+#include "Config.hpp"
+#include "FS.hpp" // used by File.hpp.in
+#include "VM/Interpreter.hpp"
+
+// These headers are below the Feral headers (above), because FER_OS_WINDOWS is defined in them.
 #if defined(FER_OS_WINDOWS)
 #include <io.h>
 #else
@@ -9,10 +14,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
-
-#include "Config.hpp"
-#include "FS.hpp" // used by File.hpp.in
-#include "VM/Interpreter.hpp"
 
 namespace fer
 {
@@ -36,6 +37,8 @@ namespace fer
 #include "Incs/ToFlt.hpp.in"
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
+
+constexpr char modulePathListPath[] = INSTALL_PATH PATH_DELIM ".modulePaths";
 
 Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
@@ -245,6 +248,77 @@ Var *getMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
 }
 
+Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			  const StringMap<AssnArgData> &assn_args)
+{
+	for(size_t i = 1; i < args.size(); ++i) {
+		auto &arg = args[i];
+		if(!arg->is<VarStr>()) {
+			vm.fail(loc,
+				"expected string argument for path, found: ", vm.getTypeName(arg));
+			return nullptr;
+		}
+	}
+	if(!fs::exists(modulePathListPath)) {
+		FILE *f = fopen(modulePathListPath, "w");
+		fclose(f);
+	}
+	String data;
+	Vector<StringRef> existingData;
+	if(fs::read(modulePathListPath, data, true)) {
+		existingData = stringDelim(data, "\n");
+	}
+	FILE *f	     = fopen(modulePathListPath, "a+");
+	size_t added = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		VarStr *arg = as<VarStr>(args[i]);
+		auto exists = std::find(existingData.begin(), existingData.end(), arg->get());
+		if(exists != existingData.end()) continue;
+		fwrite(arg->get().data(), sizeof(char), arg->get().size(), f);
+		fwrite("\n", sizeof(char), 1, f);
+		++added;
+	}
+	fclose(f);
+	return vm.makeVar<VarInt>(loc, added);
+}
+
+Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+			     const StringMap<AssnArgData> &assn_args)
+{
+	for(size_t i = 1; i < args.size(); ++i) {
+		auto &arg = args[i];
+		if(!arg->is<VarStr>()) {
+			vm.fail(loc,
+				"expected string argument for path, found: ", vm.getTypeName(arg));
+			return nullptr;
+		}
+	}
+	if(!fs::exists(modulePathListPath)) {
+		FILE *f = fopen(modulePathListPath, "w");
+		fclose(f);
+	}
+	String data;
+	Vector<StringRef> existingData;
+	if(fs::read(modulePathListPath, data, true)) {
+		existingData = stringDelim(data, "\n");
+	}
+	size_t removed = 0;
+	for(size_t i = 1; i < args.size(); ++i) {
+		VarStr *arg = as<VarStr>(args[i]);
+		auto exists = std::find(existingData.begin(), existingData.end(), arg->get());
+		if(exists == existingData.end()) continue;
+		existingData.erase(exists);
+		++removed;
+	}
+	FILE *f = fopen(modulePathListPath, "w+");
+	for(auto &data : existingData) {
+		fwrite(data.data(), sizeof(char), data.size(), f);
+		fwrite("\n", sizeof(char), 1, f);
+	}
+	fclose(f);
+	return vm.makeVar<VarInt>(loc, removed);
+}
+
 INIT_MODULE(Prelude)
 {
 	VarModule *mod = vm.getCurrModule(); // prelude module
@@ -260,6 +334,10 @@ INIT_MODULE(Prelude)
 	// enum/struct
 	vm.addNativeFn(loc, "enum", createEnum, 0, true);
 	vm.addNativeFn(loc, "struct", createStruct, 0);
+
+	// module functions
+	mod->addNativeFn("addGlobalModulePaths", addGlobalModulePaths, 1, true);
+	mod->addNativeFn("removeGlobalModulePaths", removeGlobalModulePaths, 1, true);
 
 	// VM altering variables
 	mod->addNativeVar("moduleFinders", vm.getModuleFinders());
@@ -483,6 +561,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarMap>(loc, "empty", mapEmpty, 0);
 	vm.addNativeTypeFn<VarMap>(loc, "insert", mapInsert, 2);
 	vm.addNativeTypeFn<VarMap>(loc, "erase", mapErase, 1);
+	vm.addNativeTypeFn<VarMap>(loc, "clear", mapClear, 0);
 	vm.addNativeTypeFn<VarMap>(loc, "find", mapFind, 1);
 	vm.addNativeTypeFn<VarMap>(loc, "at", mapAt, 1);
 	vm.addNativeTypeFn<VarMap>(loc, "[]", mapAt, 1);
