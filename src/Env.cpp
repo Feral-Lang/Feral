@@ -53,6 +53,7 @@ String getProcPath()
 	char path[MAX_PATH_CHARS];
 	memset(path, 0, MAX_PATH_CHARS);
 #if defined(FER_OS_WINDOWS)
+	// TODO: Make this return normalized path instead of backslash on Windows
 	GetModuleFileNameA(NULL, path, MAX_PATH_CHARS);
 #elif defined(FER_OS_LINUX) || defined(FER_OS_ANDROID)
 	(void)readlink("/proc/self/exe", path, MAX_PATH_CHARS);

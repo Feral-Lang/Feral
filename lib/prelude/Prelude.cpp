@@ -536,7 +536,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarVec>(loc, "empty", vecEmpty, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "front", vecFront, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "back", vecBack, 0);
-	vm.addNativeTypeFn<VarVec>(loc, "push", vecPush, 1);
+	vm.addNativeTypeFn<VarVec>(loc, "push", vecPush, 1, true);
 	vm.addNativeTypeFn<VarVec>(loc, "pop", vecPop, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);

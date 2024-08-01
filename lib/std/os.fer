@@ -44,12 +44,6 @@ let getEnvHome = fn() {
 	return getEnv(var);
 };
 
-# execute command, optionally get output in second argument
-# if it is a string or a vector
-let exec = fn(cmd, out = nil) {
-	return execNative(cmd, out);
-};
-
 inline if name == 'windows' {
 let envDelimiter = ';';
 } else {

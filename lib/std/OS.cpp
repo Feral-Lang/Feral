@@ -86,12 +86,42 @@ Var *setEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected string argument for command, found: ", vm.getTypeName(args[1]));
-		return nullptr;
+	Span<Var *> argsToUse = args;
+	size_t startFrom      = 1;
+	if(args[1]->is<VarVec>()) {
+		auto &vec = as<VarVec>(args[1])->get();
+		argsToUse = vec;
+		startFrom = 0;
 	}
-	const String &cmd = as<VarStr>(args[1])->get();
+
+	for(size_t i = startFrom; i < argsToUse.size(); ++i) {
+		if(!argsToUse[i]->is<VarStr>()) {
+			vm.fail(loc, "expected string argument for command, found: ",
+				vm.getTypeName(argsToUse[i]));
+			return nullptr;
+		}
+	}
+
+	String cmd;
+	for(size_t i = startFrom; i < argsToUse.size(); ++i) {
+		if(i > startFrom) cmd += " ";
+		StringRef arg	   = as<VarStr>(argsToUse[i])->get();
+		bool isArgOperator = !arg.empty() && arg[0] == '^';
+		if(isArgOperator) arg = arg.substr(1);
+		if(!isArgOperator) cmd += "\"";
+		cmd += arg;
+		if(!isArgOperator) cmd += "\"";
+	}
+#if defined(FER_OS_WINDOWS)
+	// Apparently, popen on Windows eradicates the outermost quotes.
+	// If this is not present, any argument with space (including program name), will not be
+	// read as a single string.
+	cmd = "\"" + cmd + "\"";
+#endif
+
+	Var *outVar    = nullptr;
+	auto outVarLoc = assn_args.find("out");
+	if(outVarLoc != assn_args.end()) outVar = outVarLoc->second.val;
 
 	FILE *pipe = popen(cmd.c_str(), "r");
 	if(!pipe) return vm.makeVar<VarInt>(loc, 1);
@@ -99,18 +129,18 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t len   = 0;
 	ssize_t nread;
 
-	if(args[2]->is<VarNil>()) {
+	if(!outVar) {
 		while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
-	} else if(args[2]->is<VarVec>()) {
-		Vector<Var *> &resvec = as<VarVec>(args[2])->get();
+	} else if(outVar->is<VarVec>()) {
+		Vector<Var *> &resvec = as<VarVec>(outVar)->get();
 		String line;
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			line = csline;
 			while(line.back() == '\n' || line.back() == '\r') line.pop_back();
 			resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
 		}
-	} else if(args[2]->is<VarStr>()) {
-		String &resstr = as<VarStr>(args[2])->get();
+	} else if(outVar->is<VarStr>()) {
+		String &resstr = as<VarStr>(outVar)->get();
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			resstr += csline;
 			while(resstr.back() == '\n' || resstr.back() == '\r') resstr.pop_back();
@@ -245,7 +275,7 @@ INIT_MODULE(OS)
 	mod->addNativeFn("getEnv", getEnv, 1);
 	mod->addNativeFn("setEnvNative", setEnv, 3);
 
-	mod->addNativeFn("execNative", execCustom, 2);
+	mod->addNativeFn("exec", execCustom, 1);
 	mod->addNativeFn("system", systemCustom, 1);
 	mod->addNativeFn("strErr", osStrErr, 1);
 	mod->addNativeFn("getNameNative", osGetName);
