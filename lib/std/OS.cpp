@@ -88,6 +88,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	Span<Var *> argsToUse = args;
 	size_t startFrom      = 1;
+
 	if(args[1]->is<VarVec>()) {
 		auto &vec = as<VarVec>(args[1])->get();
 		argsToUse = vec;
@@ -275,7 +276,7 @@ INIT_MODULE(OS)
 	mod->addNativeFn("getEnv", getEnv, 1);
 	mod->addNativeFn("setEnvNative", setEnv, 3);
 
-	mod->addNativeFn("exec", execCustom, 1);
+	mod->addNativeFn("exec", execCustom, 1, true);
 	mod->addNativeFn("system", systemCustom, 1);
 	mod->addNativeFn("strErr", osStrErr, 1);
 	mod->addNativeFn("getNameNative", osGetName);
