@@ -308,6 +308,7 @@ public:
 	void setAttr(StringRef name, Var *val, bool iref) override;
 	bool existsAttr(StringRef name) override;
 	Var *getAttr(StringRef name) override;
+	void clear();
 
 	inline StringMap<Var *> &get() { return val; }
 	inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }

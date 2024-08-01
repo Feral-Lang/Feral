@@ -29,7 +29,7 @@ inline int getTotalLines() { return total_lines; }
 StringRef parentDir(StringRef path);
 
 bool exists(StringRef loc);
-bool read(const char *file, String &data);
+bool read(const char *file, String &data, bool ignoreErrorOut = false);
 String absPath(const char *loc);
 bool setCWD(const char *path);
 String getCWD();

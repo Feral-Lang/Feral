@@ -5,6 +5,7 @@
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
+#include "FS.hpp" // for getline()
 #else
 #include <sys/wait.h>
 #endif

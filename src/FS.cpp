@@ -25,7 +25,7 @@ StringRef parentDir(StringRef path)
 	return path.substr(0, loc);
 }
 
-bool read(const char *file, String &data)
+bool read(const char *file, String &data, bool ignoreErrorOut)
 {
 	FILE *fp;
 	char *line = NULL;
@@ -34,7 +34,9 @@ bool read(const char *file, String &data)
 
 	fp = fopen(file, "r");
 	if(fp == NULL) {
-		std::cerr << "Error: failed to open source file: " << file << "\n";
+		if(!ignoreErrorOut) {
+			std::cerr << "Error: failed to open source file: " << file << "\n";
+		}
 		return false;
 	}
 
@@ -44,7 +46,9 @@ bool read(const char *file, String &data)
 	if(line) free(line);
 
 	if(data.empty()) {
-		std::cerr << "Error: encountered empty file: " << file << "\n";
+		if(!ignoreErrorOut) {
+			std::cerr << "Error: encountered empty file: " << file << "\n";
+		}
 		return false;
 	}
 

@@ -67,8 +67,8 @@ Interpreter::Interpreter(RAIIParser &parser)
 	}
 
 #if defined(FER_OS_WINDOWS)
-	for(auto dllloc : dlllocs) {
-		addDLLDirectory(dllloc);
+	for(auto &modDir : defaultModuleDirs->get()) {
+		addDLLDirectory(as<VarStr>(modDir)->get());
 	}
 #endif
 }

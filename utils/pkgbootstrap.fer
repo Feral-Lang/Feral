@@ -4,23 +4,21 @@ let os = import('std/os');
 let vec = import('std/vec');
 let logging = import('std/logging');
 
+let pkgVersion = '0.0.1';
+
 let tempDir = fs.pathFrom(feral.installPath, 'temp');
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
-let pkgVersion = '0.0.1';
+if !fs.dirExists(tempDir) { fs.mkdir(tempDir); }
 
 inline if os.name == 'windows' {
+let logFileName = fs.pathFrom(tempDir, 'feralPkgBootstrap.log');
 } else {
 let logFileName = '/tmp/feralPkgBootstrap.log';
 }
 
 logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
 
-logging.trace('Checking if directory exists: ', tempDir);
-if !fs.dirExists(tempDir) {
-	logging.info('Creating directory: ', tempDir);
-	fs.mkdir(tempDir);
-}
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) {
 	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
@@ -93,19 +91,8 @@ import('{pkgInstallPath}/bin/pkg');`;
 	let binaryHookFile = fs.fopen(binaryHookPath, 'w+');
 	io.fprintln(binaryHookFile, binaryHookDataTemplate.fmt());
 }
-logging.trace('Adding Pkg path to Feral module paths file ...');
-let modulePathsFilePath = fs.pathFrom(feral.installPath, '.modulePaths');
-let pkgPathExistsInFile = false;
-if fs.exists(modulePathsFilePath) {
-	let lines = fs.fopen(modulePathsFilePath).readAll();
-	for line in lines.each() {
-		if line.contains(pkgInstallPath) { pkgPathExistsInFile = true; }
-	}
-}
-if !pkgPathExistsInFile {
-	let modulePathsFile = fs.fopen(modulePathsFilePath, 'a+');
-	io.fprintln(modulePathsFile, pkgInstallPath);
-}
+logging.trace('Adding Pkg path to the global module paths file ...');
+feral.addGlobalModulePaths(pkgInstallPath);
 logging.info('Successfully installed Pkg!');
 
 io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager!');

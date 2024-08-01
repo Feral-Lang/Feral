@@ -3,6 +3,10 @@
 #include "VM/Interpreter.hpp"
 #include "VM/VarMemory.hpp"
 
+#if defined(FER_OS_WINDOWS)
+#include "FS.hpp" // required for getline()
+#endif
+
 namespace fer
 {
 
@@ -304,6 +308,11 @@ Var *VarMap::getAttr(StringRef name)
 	auto loc = this->val.find(name);
 	if(loc == this->val.end()) return nullptr;
 	return loc->second;
+}
+void VarMap::clear()
+{
+	for(auto &v : val) decref(v.second);
+	val.clear();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
