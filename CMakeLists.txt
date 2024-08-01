@@ -24,6 +24,13 @@ set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
+# set path for Feral's temp directory and create it
+set(CMAKE_TEMP_PREFIX "${CMAKE_INSTALL_PREFIX}/temp")
+install(DIRECTORY DESTINATION "${CMAKE_TEMP_PREFIX}")
+
+# set modulePathsListFilePath
+set(CMAKE_MODULE_PATH_LIST_FILE_PATH "${CMAKE_INSTALL_PREFIX}/.modulePaths")
+
 # disable deprecated warnings on Windows
 if(WIN32)
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

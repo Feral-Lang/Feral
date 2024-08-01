@@ -38,8 +38,6 @@ namespace fer
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
 
-constexpr char modulePathListPath[] = INSTALL_PATH PATH_DELIM ".modulePaths";
-
 Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
@@ -259,16 +257,16 @@ Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 			return nullptr;
 		}
 	}
-	if(!fs::exists(modulePathListPath)) {
-		FILE *f = fopen(modulePathListPath, "w");
+	if(!fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
+		FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w");
 		fclose(f);
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(modulePathListPath, data, true)) {
+	if(fs::read(MODULE_PATHS_LIST_FILE_PATH, data, true)) {
 		existingData = stringDelim(data, "\n");
 	}
-	FILE *f	     = fopen(modulePathListPath, "a+");
+	FILE *f	     = fopen(MODULE_PATHS_LIST_FILE_PATH, "a+");
 	size_t added = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		VarStr *arg = as<VarStr>(args[i]);
@@ -293,13 +291,13 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 			return nullptr;
 		}
 	}
-	if(!fs::exists(modulePathListPath)) {
-		FILE *f = fopen(modulePathListPath, "w");
+	if(!fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
+		FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w");
 		fclose(f);
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(modulePathListPath, data, true)) {
+	if(fs::read(MODULE_PATHS_LIST_FILE_PATH, data, true)) {
 		existingData = stringDelim(data, "\n");
 	}
 	size_t removed = 0;
@@ -310,7 +308,7 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 		existingData.erase(exists);
 		++removed;
 	}
-	FILE *f = fopen(modulePathListPath, "w+");
+	FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w+");
 	for(auto &data : existingData) {
 		fwrite(data.data(), sizeof(char), data.size(), f);
 		fwrite("\n", sizeof(char), 1, f);
@@ -518,6 +516,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarStr>(loc, "trim", strTrim, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "lower", strLower, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "upper", strUpper, 0);
+	vm.addNativeTypeFn<VarStr>(loc, "replace", strReplace, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplit, 2);
 	vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith, 1);
 	vm.addNativeTypeFn<VarStr>(loc, "endsWith", strEndsWith, 1);
@@ -670,6 +669,10 @@ INIT_MODULE(Prelude)
 	mod->addNativeVar("cmakeVersion", vm.makeVar<VarStr>(loc, CMAKE_VERSION));
 
 	mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, INSTALL_PATH));
+	mod->addNativeVar("tempPath", vm.makeVar<VarStr>(loc, TEMP_PATH));
+
+	mod->addNativeVar("extraModulePathsFilePath",
+			  vm.makeVar<VarStr>(loc, MODULE_PATHS_LIST_FILE_PATH));
 
 	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
 			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));

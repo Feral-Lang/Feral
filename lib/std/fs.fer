@@ -1,11 +1,5 @@
 let stat = import('std/stat');
 
-inline if getOSName() == 'windows' {
-let pathSeparator = '\\';
-} else {
-let pathSeparator = '/';
-}
-
 ################################# Some definitions #################################
 
 let fdRead = feral.fsFdRead;
@@ -72,7 +66,7 @@ let dirExists = fn(name) {
 
 let pathAppend = fn(fullpath, pathparts...) {
 	for let i = 0; i < pathparts.len(); ++i {
-		if !fullpath.empty() { fullpath += pathSeparator; }
+		if !fullpath.empty() { fullpath += '/'; }
 		fullpath += pathparts[i];
 	}
 };
@@ -84,11 +78,16 @@ let pathFrom = fn(pathparts...) {
 	return fullpath;
 };
 
+# Converts all \ with / where needed.
+let normalizePath = fn(path) {
+	return path.replace('\\', '/');
+};
+
 # can also be written as:
 #  fmtWithPath('$d', path)
 let parentDir = fn(path) {
 	let dirname = '';
-	let locslash = path.rfind(pathSeparator);
+	let locslash = path.rfind('/');
 	if locslash == -1 { dirname = '.'; }
 	else { dirname = path.substr(0, locslash); }
 	return dirname;
@@ -106,7 +105,7 @@ let fmtWithPath = fn(fmtstr, fpath) {
 	let dirname = '';
 	let filename = '';
 	let ext = '';
-	let locslash = fpath.rfind(pathSeparator);
+	let locslash = fpath.rfind('/');
 	let locdot = fpath.rfind('.');
 	if locslash == -1 {
 		dirname = '.';

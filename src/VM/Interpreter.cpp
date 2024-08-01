@@ -48,7 +48,7 @@ Interpreter::Interpreter(RAIIParser &parser)
 	}
 
 	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, INSTALL_PATH);
-	moduleLoc->get() += PATH_DELIM "lib" PATH_DELIM "feral";
+	moduleLoc->get() += "/lib/feral";
 	defaultModuleDirs->push(moduleLoc);
 	String feral_paths = env::get("FERAL_PATHS");
 	for(auto &_path : stringDelim(feral_paths, ";")) {
@@ -56,10 +56,9 @@ Interpreter::Interpreter(RAIIParser &parser)
 		defaultModuleDirs->push(moduleLoc);
 	}
 	// Mainly used to inject pkg manager module path(s) to Feral.
-	String modulePathsFilePath = INSTALL_PATH PATH_DELIM ".modulePaths";
-	if(fs::exists(modulePathsFilePath)) {
+	if(fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
 		String modulePaths;
-		fs::read(modulePathsFilePath.c_str(), modulePaths);
+		fs::read(MODULE_PATHS_LIST_FILE_PATH, modulePaths);
 		for(auto &_path : stringDelim(modulePaths, "\n")) {
 			moduleLoc = makeVarWithRef<VarStr>(nullptr, _path);
 			defaultModuleDirs->push(moduleLoc);
