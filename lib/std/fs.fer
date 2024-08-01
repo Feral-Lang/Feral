@@ -80,7 +80,7 @@ let pathFrom = fn(pathparts...) {
 
 # Converts all \ with / where needed.
 let normalizePath = fn(path) {
-	return path.replace('\\', '/');
+	return path.replace('\\', '/').replace('//', '/');
 };
 
 # can also be written as:

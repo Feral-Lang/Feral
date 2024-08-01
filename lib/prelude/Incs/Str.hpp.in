@@ -150,7 +150,7 @@ Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Vector<Var *> _strSplit(Interpreter &vm, const ModuleLoc *loc, StringRef data, StringRef delim,
 			int64_t maxDelimCount);
 
-static void str_replace(String &s, StringRef from, StringRef to);
+static String str_replace(String &s, StringRef from, StringRef to);
 static inline void trim(String &s);
 
 size_t sizePow(size_t base, int exp);
@@ -628,23 +628,33 @@ Var *strReplace(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	VarStr *res    = vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->get());
 	StringRef from = as<VarStr>(args[1])->get();
 	StringRef to   = as<VarStr>(args[2])->get();
-	str_replace(res->get(), from, to);
-	return res;
+	String res     = str_replace(as<VarStr>(args[0])->get(), from, to);
+	if(res.empty()) {
+		return args[0];
+	}
+	using namespace std;
+	swap(res, as<VarStr>(args[0])->get());
+	return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
 // Replaces all instances of from in s with to
-static void str_replace(String &s, StringRef from, StringRef to)
+static String str_replace(String &s, StringRef from, StringRef to)
 {
-	if(from.empty()) return;
+	if(from.empty()) return "";
+	String res;
 	size_t start_pos = 0;
+	bool found	 = false;
 	while((start_pos = s.find(from, start_pos)) != std::string::npos) {
+		if(!found) {
+			res   = s;
+			found = true;
+		}
 		s.replace(start_pos, from.length(), to);
-		// In case 'to' contains 'from', like replacing 'x' with 'yx'
 		start_pos += to.length();
 	}
+	return res;
 }
 
 // trim from start (in place)
