@@ -29,10 +29,9 @@ Var *formatTime(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	unsigned long val = as<VarInt>(args[1])->get();
+	uint64_t val = as<VarInt>(args[1])->get();
 	std::chrono::microseconds usval(val);
-	std::chrono::system_clock::time_point tp(
-	std::chrono::duration_cast<std::chrono::system_clock::duration>(usval));
+	std::chrono::system_clock::time_point tp(std::chrono::microseconds{usval});
 	std::time_t time = std::chrono::system_clock::to_time_t(tp);
 	std::tm *t	 = std::localtime(&time);
 	char fmt[1024]	 = {0};
