@@ -1,0 +1,31 @@
+let assert = import('std/assert');
+
+let semver = import('std/semver');
+
+let version001 = semver.new(0, 0, 1);
+let version010 = semver.new(0, 1, 0);
+let versionAlpha = semver.new(0, 0, 1, semver.buildTypes.Alpha);
+let versionBeta = semver.new(0, 0, 1, semver.buildTypes.Beta);
+let versionMeta = semver.new(0, 0, 1, semver.buildTypes.Beta, 'a_git_commit_id');
+
+let parsedVersionSimple = semver.parse('0.0.1-beta+a_git_commit_id');
+let parsedVersion1 = semver.parse('0.0.1+1');
+let parsedVersion1120 = semver.parse('0.0.1+1.120');
+let parsedVersion1121 = semver.parse('0.0.1+1.121');
+
+assert.eq(version001, version001);
+assert.ge(version001, version001);
+assert.le(version001, version001);
+assert.gt(version010, version001);
+assert.lt(version001, version010);
+assert.gt(versionBeta, versionAlpha);
+assert.ne(versionMeta, versionBeta);
+assert.ne(versionMeta, version001);
+assert.eq(parsedVersionSimple, versionMeta);
+assert.gt(parsedVersion1120, parsedVersion1);
+assert.gt(parsedVersion1121, parsedVersion1120);
+
+let invalidVersion = semver.parse('0.0.0') or e {
+	assert.eq(e, 'Invalid semver: 0.0.0 with major, minor, and patch numbers being zero');
+	return nil;
+};

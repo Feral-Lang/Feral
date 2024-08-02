@@ -64,6 +64,12 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		case Opcode::CREATE: {
 			StringRef name = ins.getDataStr();
 			Var *val       = execstack.pop(false);
+			if(!val) {
+				fail(ins.getLoc(),
+				     "expected a value in stack for creating variable: ", name,
+				     ", but found none");
+				goto handle_err;
+			}
 			// only copy if reference count > 1 (no point in copying unique values)
 			if(val->getRef() == 1) {
 				vars->add(name, val, true);
