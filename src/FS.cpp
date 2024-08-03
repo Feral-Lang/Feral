@@ -109,6 +109,15 @@ int mkdir(StringRef dir, std::error_code &ec)
 	std::filesystem::create_directories(dir, ec);
 	return ec.value();
 }
+int mklink(StringRef src, StringRef dest, std::error_code &ec)
+{
+	if(exists(src) && std::filesystem::is_directory(src)) {
+		std::filesystem::create_directory_symlink(src, dest, ec);
+	} else {
+		std::filesystem::create_symlink(src, dest, ec);
+	}
+	return ec.value();
+}
 int rename(StringRef from, StringRef to, std::error_code &ec)
 {
 	std::filesystem::rename(from, to, ec);

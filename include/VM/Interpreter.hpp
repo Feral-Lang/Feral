@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bytecode.hpp"
+#include "Config.hpp"
 #include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
@@ -42,7 +43,7 @@ class Interpreter
 	Map<size_t, VarFrame *> typefns;
 	Vector<VarModule *> modulestack;
 	// Default dirs to search for modules. Used by basic{Import,Module}Finder()
-	VarVec *defaultModuleDirs;
+	VarVec *moduleDirs;
 	// Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is
 	// attempted.
 	// Signature is: fn(moduleToResolve: str, isImport: bool): nil/str
@@ -103,6 +104,10 @@ public:
 	void removeModule(StringRef path);
 	void pushModule(StringRef path);
 	void popModule();
+
+	// Must be used with full path of directory
+	void tryAddModulePathsFromDir(String dir);
+	void tryAddModulePathsFromFile(const char *file);
 
 	bool findImportModuleIn(VarVec *dirs, String &name);
 	bool findNativeModuleIn(VarVec *dirs, String &name);
@@ -220,7 +225,7 @@ public:
 	inline VarModule *getCurrModule() { return modulestack.back(); }
 	inline void setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
 	inline StringRef getTypeName(Var *var) { return getTypeName(var->getTypeFnID()); }
-	inline VarVec *getDefaultModuleDirs() { return defaultModuleDirs; }
+	inline VarVec *getModuleDirs() { return moduleDirs; }
 	inline VarVec *getModuleFinders() { return moduleFinders; }
 	inline StringRef getBinaryPath() { return binaryPath; }
 	inline StringRef getMainModulePath() { return mainmodulepath; }
@@ -235,6 +240,7 @@ public:
 	inline void setMaxRecurseCount(size_t count) { max_recurse_count = count; }
 	inline size_t getMaxRecurseCount() { return max_recurse_count; }
 	inline VarVec *getCLIArgs() { return cmdargs; }
+	inline const char *getGlobalModulePathsFile() { return INSTALL_PATH "/lib/.modulePaths"; }
 
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()

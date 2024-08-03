@@ -34,6 +34,7 @@ StringRef home();
 
 int copy(StringRef src, StringRef dest, std::error_code &ec);
 int mkdir(StringRef dir, std::error_code &ec);
+int mklink(StringRef src, StringRef dest, std::error_code &ec);
 int rename(StringRef from, StringRef to, std::error_code &ec);
 int remove(StringRef path, std::error_code &ec);
 

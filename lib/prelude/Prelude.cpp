@@ -257,16 +257,16 @@ Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 			return nullptr;
 		}
 	}
-	if(!fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
-		FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w");
+	if(!fs::exists(vm.getGlobalModulePathsFile())) {
+		FILE *f = fopen(vm.getGlobalModulePathsFile(), "w");
 		fclose(f);
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(MODULE_PATHS_LIST_FILE_PATH, data, true)) {
+	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
 		existingData = stringDelim(data, "\n");
 	}
-	FILE *f	     = fopen(MODULE_PATHS_LIST_FILE_PATH, "a+");
+	FILE *f	     = fopen(vm.getGlobalModulePathsFile(), "a+");
 	size_t added = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		VarStr *arg = as<VarStr>(args[i]);
@@ -291,13 +291,13 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 			return nullptr;
 		}
 	}
-	if(!fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
-		FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w");
+	if(!fs::exists(vm.getGlobalModulePathsFile())) {
+		FILE *f = fopen(vm.getGlobalModulePathsFile(), "w");
 		fclose(f);
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(MODULE_PATHS_LIST_FILE_PATH, data, true)) {
+	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
 		existingData = stringDelim(data, "\n");
 	}
 	size_t removed = 0;
@@ -307,8 +307,9 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 		if(exists == existingData.end()) continue;
 		existingData.erase(exists);
 		++removed;
+		--i;
 	}
-	FILE *f = fopen(MODULE_PATHS_LIST_FILE_PATH, "w+");
+	FILE *f = fopen(vm.getGlobalModulePathsFile(), "w+");
 	for(auto &data : existingData) {
 		fwrite(data.data(), sizeof(char), data.size(), f);
 		fwrite("\n", sizeof(char), 1, f);
@@ -338,6 +339,7 @@ INIT_MODULE(Prelude)
 	mod->addNativeFn("removeGlobalModulePaths", removeGlobalModulePaths, 1, true);
 
 	// VM altering variables
+	mod->addNativeVar("moduleDirs", vm.getModuleDirs());
 	mod->addNativeVar("moduleFinders", vm.getModuleFinders());
 
 	// fundamental functions for builtin types
@@ -599,10 +601,11 @@ INIT_MODULE(Prelude)
 	// files and dirs
 	mod->addNativeFn("fsExists", fsExists, 1);
 	mod->addNativeFn("fsInstall", fsInstall, 2);
+	mod->addNativeFn("fsMklink", fsMklink, 2);
+	mod->addNativeFn("fsMove", fsMove, 2);
 	mod->addNativeFn("fsMkdir", fsMkdir, 1, true);
 	mod->addNativeFn("fsRemove", fsRemove, 1, true);
 	mod->addNativeFn("fsCopy", fsCopy, 2, true);
-	mod->addNativeFn("fsMove", fsMove, 2);
 
 	vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopen, 2);
 	vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines, 0);
@@ -670,9 +673,6 @@ INIT_MODULE(Prelude)
 
 	mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, INSTALL_PATH));
 	mod->addNativeVar("tempPath", vm.makeVar<VarStr>(loc, TEMP_PATH));
-
-	mod->addNativeVar("extraModulePathsFilePath",
-			  vm.makeVar<VarStr>(loc, MODULE_PATHS_LIST_FILE_PATH));
 
 	mod->addNativeVar("DEFAULT_MAX_CALLSTACKS",
 			  vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
