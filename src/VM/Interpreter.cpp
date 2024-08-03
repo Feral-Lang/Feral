@@ -1,6 +1,5 @@
 #include "VM/Interpreter.hpp"
 
-#include "Config.hpp"
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -25,7 +24,7 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(RAIIParser &parser)
-	: defaultModuleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
+	: moduleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(nullptr, 2, false)), prelude("prelude/prelude"),
 	  binaryPath(env::getProcPath()), parser(parser), c(parser.getContext()),
 	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
@@ -49,24 +48,20 @@ Interpreter::Interpreter(RAIIParser &parser)
 
 	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, INSTALL_PATH);
 	moduleLoc->get() += "/lib/feral";
-	defaultModuleDirs->push(moduleLoc);
+	moduleDirs->push(moduleLoc);
 	String feral_paths = env::get("FERAL_PATHS");
 	for(auto &_path : stringDelim(feral_paths, ";")) {
 		moduleLoc = makeVarWithRef<VarStr>(nullptr, _path);
-		defaultModuleDirs->push(moduleLoc);
-	}
-	// Mainly used to inject pkg manager module path(s) to Feral.
-	if(fs::exists(MODULE_PATHS_LIST_FILE_PATH)) {
-		String modulePaths;
-		fs::read(MODULE_PATHS_LIST_FILE_PATH, modulePaths);
-		for(auto &_path : stringDelim(modulePaths, "\n")) {
-			moduleLoc = makeVarWithRef<VarStr>(nullptr, _path);
-			defaultModuleDirs->push(moduleLoc);
-		}
+		moduleDirs->push(moduleLoc);
 	}
 
+	// Global .modulePaths file.
+	// The path of a package is added to it when it's installed from command line via package
+	// manager.
+	tryAddModulePathsFromFile(getGlobalModulePathsFile());
+
 #if defined(FER_OS_WINDOWS)
-	for(auto &modDir : defaultModuleDirs->get()) {
+	for(auto &modDir : moduleDirs->get()) {
 		addDLLDirectory(as<VarStr>(modDir)->get());
 	}
 #endif
@@ -79,7 +74,7 @@ Interpreter::~Interpreter()
 	decref(tru);
 	decref(cmdargs);
 	decref(moduleFinders);
-	decref(defaultModuleDirs);
+	decref(moduleDirs);
 	for(auto &typefn : typefns) {
 		delete typefn.second;
 	}
@@ -111,6 +106,9 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	if(argparser.has("ir")) mod->dumpCode();
 	if(argparser.has("dry")) return 0;
 
+	// Search the module's parent directory for a .modulePaths file
+	tryAddModulePathsFromDir(String(fs::parentDir(mod->getDir())));
+
 	addModule(loc, mod);
 
 	pushModule(mod->getPath());
@@ -120,7 +118,7 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 		setupCoreFuncs(*this, nullptr);
 		// loadlib must be setup here because it is needed to load even the core module from
 		// <prelude>.
-		if(!findImportModuleIn(defaultModuleDirs, prelude)) {
+		if(!findImportModuleIn(moduleDirs, prelude)) {
 			err::out(loc, "Failed to find prelude: ", prelude);
 			return 1;
 		}
@@ -163,6 +161,26 @@ void Interpreter::popModule()
 {
 	decref(modulestack.back());
 	modulestack.pop_back();
+}
+
+void Interpreter::tryAddModulePathsFromDir(String dir)
+{
+	// Paths which have already been searched in for the .modulePaths file
+	static Set<String> searchedPaths;
+	if(searchedPaths.contains(dir)) return;
+	searchedPaths.insert(dir);
+	String path = dir + "/.modulePaths";
+	return tryAddModulePathsFromFile(path.c_str());
+}
+void Interpreter::tryAddModulePathsFromFile(const char *file)
+{
+	if(!fs::exists(file)) return;
+	String modulePaths;
+	if(!fs::read(file, modulePaths, true)) return;
+	for(auto &_path : stringDelim(modulePaths, "\n")) {
+		VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, _path);
+		moduleDirs->push(moduleLoc);
+	}
 }
 
 bool Interpreter::findImportModuleIn(VarVec *dirs, String &name)

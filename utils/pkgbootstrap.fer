@@ -59,7 +59,7 @@ logging.info('Git repository successfully retrieved');
 let pkgBasePath = fs.pathFrom(feral.installPath, 'lib', 'pkg');
 if fs.dirExists(pkgBasePath) { fs.remove(pkgBasePath); }
 
-let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', 'current');
+let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', pkgVersion);
 
 logging.info('Installing Pkg to: ', pkgInstallPath);
 io.println('Installing Pkg to: ', pkgInstallPath);
@@ -76,16 +76,10 @@ logging.trace('-- ', srcIncPath, ' -> ', destIncPath);
 fs.copy(srcIncPath, destIncPath);
 # Don't setup configs - let pkg itself take care of that when it's run for the first time.
 # Create the binary hook
-let binaryHookPath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
-logging.trace('Generating binary hook: ', binaryHookPath);
-let binaryHookDataTemplate =
-`let pkg = import('pkg/pkg');
-pkg.addModuleFinderPaths('{pkgInstallPath}');
-import('{pkgInstallPath}/bin/pkg');`;
-{
-	let binaryHookFile = fs.fopen(binaryHookPath, 'w+');
-	io.fprintln(binaryHookFile, binaryHookDataTemplate.fmt());
-}
+let pkgBinaryPath = fs.pathFrom(destBinPath, 'pkg.fer');
+let pkgBinaryLinkPath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
+logging.trace('Generating symlink for binary: ', pkgBinaryPath, ' -> ', pkgBinaryLinkPath);
+fs.mklink(pkgBinaryPath, pkgBinaryLinkPath);
 logging.trace('Adding Pkg path to the global module paths file ...');
 feral.addGlobalModulePaths(pkgInstallPath);
 logging.info('Successfully installed Pkg!');

@@ -461,6 +461,29 @@ Var *fsMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
+Var *fsMklink(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	      const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for mklink source, found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[2]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for copy destination argument, found: ",
+			vm.getTypeName(args[2]));
+		return nullptr;
+	}
+	StringRef src  = as<VarStr>(args[1])->get();
+	StringRef dest = as<VarStr>(args[2])->get();
+	std::error_code ec;
+	if(fs::mklink(src, dest, ec)) {
+		vm.fail(loc, "mklink failed (", ec.value(), "): ", ec.message());
+		return nullptr;
+	}
+	return vm.getNil();
+}
+
 Var *fsRemove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {

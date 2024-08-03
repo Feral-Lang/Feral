@@ -82,9 +82,9 @@ Var *basicModuleFinder(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	String modfile = as<VarStr>(args[1])->get();
 	bool isImport  = as<VarBool>(args[2])->get();
 	if(isImport) {
-		if(!vm.findImportModuleIn(vm.getDefaultModuleDirs(), modfile)) return vm.getNil();
+		if(!vm.findImportModuleIn(vm.getModuleDirs(), modfile)) return vm.getNil();
 	} else {
-		if(!vm.findNativeModuleIn(vm.getDefaultModuleDirs(), modfile)) return vm.getNil();
+		if(!vm.findNativeModuleIn(vm.getModuleDirs(), modfile)) return vm.getNil();
 	}
 	return vm.makeVar<VarStr>(loc, modfile);
 }

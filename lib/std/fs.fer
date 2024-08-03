@@ -8,6 +8,7 @@ let fdClose = feral.fsFdClose;
 
 let exists = feral.fsExists;
 let install = feral.fsInstall;
+let mklink = feral.fsMklink;
 let mkdir = feral.fsMkdir;
 let remove = feral.fsRemove;
 let copy = feral.fsCopy;
