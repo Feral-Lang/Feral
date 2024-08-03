@@ -124,6 +124,46 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	auto outVarLoc = assn_args.find("out");
 	if(outVarLoc != assn_args.end()) outVar = outVarLoc->second.val;
 
+	Var *envVar    = nullptr;
+	auto envVarLoc = assn_args.find("env");
+	if(envVarLoc != assn_args.end()) envVar = envVarLoc->second.val;
+
+	if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>())) {
+		vm.fail(loc, "expected out variable to be a string/vector, or not used, found: ",
+			vm.getTypeName(outVar));
+		return nullptr;
+	}
+
+	if(envVar && !envVar->is<VarMap>()) {
+		vm.fail(loc, "expected env variable to be a map, found: ", vm.getTypeName(envVar));
+		return nullptr;
+	}
+
+	StringMap<String> existingEnv;
+	// this is made to convert Feral's map of string,Var* without tainting env variables should
+	// the conversion fail.
+	StringMap<String> newEnv;
+	if(envVar) {
+		auto &map = as<VarMap>(envVar)->get();
+		String val;
+		for(auto &item : map) {
+			val = env::get(item.first.c_str());
+			// Must add keys with empty values as well to clean out the env afterwards.
+			existingEnv[item.first] = val;
+			Var *v			= nullptr;
+			Array<Var *, 1> tmp{item.second};
+			if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
+				vm.fail(loc, "Failed to call str() on the value of env map's key: ",
+					item.first);
+				return nullptr;
+			}
+			newEnv[item.first] = as<VarStr>(v)->get();
+		}
+		for(auto &item : newEnv) {
+			env::set(item.first.c_str(), item.second.c_str(), true);
+		}
+	}
+
 	FILE *pipe = popen(cmd.c_str(), "r");
 	if(!pipe) return vm.makeVar<VarInt>(loc, 1);
 	char *csline = NULL;
@@ -149,6 +189,12 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	if(csline) free(csline);
 	int res = pclose(pipe);
+
+	if(envVar) {
+		for(auto &item : existingEnv) {
+			env::set(item.first.c_str(), item.second.c_str(), true);
+		}
+	}
 
 #if !defined(FER_OS_WINDOWS)
 	res = WEXITSTATUS(res);

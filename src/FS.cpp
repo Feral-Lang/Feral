@@ -111,6 +111,10 @@ int mkdir(StringRef dir, std::error_code &ec)
 }
 int mklink(StringRef src, StringRef dest, std::error_code &ec)
 {
+	if(exists(dest)) {
+		remove(dest, ec);
+		if(ec.value()) return ec.value();
+	}
 	if(exists(src) && std::filesystem::is_directory(src)) {
 		std::filesystem::create_directory_symlink(src, dest, ec);
 	} else {

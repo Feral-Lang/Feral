@@ -20,7 +20,6 @@ int main(int argc, char **argv)
 	args.add("parse").setShort("p").setHelp("shows AST");
 	args.add("optparse").setShort("P").setHelp("shows optimized AST (AST after passes)");
 	args.add("ir").setShort("i").setHelp("shows codegen IR");
-	args.add("testdir").setShort("t").setHelp("run all test cases in a directory");
 	args.add("dry").setShort("d").setHelp("dry run - generate IR but don't run the VM");
 	args.add("verbose").setShort("V").setHelp("show verbose compiler output");
 	if(!args.parse()) return 1;
@@ -42,14 +41,6 @@ int main(int argc, char **argv)
 
 	String file		    = String(args.getSource());
 	Vector<StringRef> &codeargs = args.getCodeExecArgs();
-
-	if(file == "build" || file == "install") {
-		if(file == "install") {
-			file = "build";
-			codeargs.insert(codeargs.begin(), "install");
-		}
-		file += ".fer";
-	}
 
 	if(!fs::exists(file)) {
 		String binfile(fs::parentDir(env::getProcPath()));

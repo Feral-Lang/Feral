@@ -76,7 +76,7 @@ let find in VecTy = fn(obj) {
 };
 
 # returns true if element is found in the list, else false
-let rem in VecTy = fn(obj) {
+let remove in VecTy = fn(obj) {
 	let len = self.len();
 	for let i = 0; i < len; ++i {
 		if self[i] == obj {
@@ -85,6 +85,21 @@ let rem in VecTy = fn(obj) {
 		}
 	}
 	return false;
+};
+
+let join in VecTy = fn(with) {
+	if self.empty() { return ''; }
+	let res = '';
+	let len = self.len();
+	for item in self.each() {
+		res += item.str();
+		res += with;
+	}
+	let withLen = with.len();
+	while withLen-- > 0 {
+		res.pop();
+	}
+	return res;
 };
 
 let append in VecTy = fn(src, start = 0, end = -1) {
@@ -139,14 +154,7 @@ let mean in VecTy = fn(onEach = fn(e) { return e; }) {
 
 let str in VecTy = fn() {
 	let res = '[';
-	for elem in self.each() {
-		res += elem.str();
-		res += ', ';
-	}
-	if !self.empty() {
-		res.pop();
-		res.pop();
-	}
+	res += self.join(', ');
 	res += ']';
 	return res;
 };

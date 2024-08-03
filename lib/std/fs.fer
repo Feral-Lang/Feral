@@ -52,7 +52,7 @@ let fopen = fn(file, mode = 'r', mustClose = true) {
 	return feral.fsFopen(file, mode, mustClose);
 };
 
-let walkDir = fn(dir, mode = WALK_RECURSE, regex = '(.*)') {
+let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)') {
 	return feral.fsWalkDir(dir, mode, regex);
 };
 
