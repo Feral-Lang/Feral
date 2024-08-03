@@ -82,6 +82,8 @@ logging.trace('Generating symlink for binary: ', pkgBinaryPath, ' -> ', pkgBinar
 fs.mklink(pkgBinaryPath, pkgBinaryLinkPath);
 logging.trace('Adding Pkg path to the global module paths file ...');
 feral.addGlobalModulePaths(pkgInstallPath);
+logging.trace('Removing Pkg download path ...');
+fs.remove(pkgRepoPath);
 logging.info('Successfully installed Pkg!');
 
 io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager!');

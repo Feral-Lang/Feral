@@ -13,7 +13,7 @@ bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImpo
 	Array<Var *, 3> tmpArgs{nullptr, modname, isImport ? vm.getTrue() : vm.getFalse()};
 	Var *ret = nullptr;
 	for(auto &callable : vm.getModuleFinders()->get()) {
-		if(!vm.callVar(loc, "loadlib", callable, ret, tmpArgs, {})) {
+		if(!vm.callVar(loc, "loadCommon", callable, ret, tmpArgs, {})) {
 			vm.fail(
 			loc, "failed to load module '", as<VarStr>(modname)->get(),
 			"' when attempting to call the callable: ", vm.getTypeName(callable));
@@ -29,6 +29,12 @@ bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImpo
 	}
 	result = as<VarStr>(ret)->get();
 	decref(ret);
+
+	size_t nameLoc = result.rfind(as<VarStr>(modname)->get());
+	// nameLoc cannot be String::npos since result is the string where modname was found.
+	// - 1 for the last slash in the path.
+	String dir = result.substr(0, result.size() - nameLoc - 1);
+	vm.tryAddModulePathsFromDir(dir);
 	return true;
 }
 
