@@ -177,14 +177,18 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		String line;
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			line = csline;
-			while(line.back() == '\n' || line.back() == '\r') line.pop_back();
+			while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
+				line.pop_back();
+			}
 			resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
 		}
 	} else if(outVar->is<VarStr>()) {
 		String &resstr = as<VarStr>(outVar)->get();
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			resstr += csline;
-			while(resstr.back() == '\n' || resstr.back() == '\r') resstr.pop_back();
+			while(!resstr.empty() && (resstr.back() == '\n' || resstr.back() == '\r')) {
+				resstr.pop_back();
+			}
 		}
 	}
 	if(csline) free(csline);
