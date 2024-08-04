@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24.3)
+cmake_minimum_required(VERSION 3.30.1)
 
 project(Feral C CXX)
 
@@ -10,6 +10,13 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 	message("-- Install messages are now lazily shown")
 	set(CMAKE_INSTALL_MESSAGE LAZY)
 endif()
+
+# Add external path
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external")
+
+set(SOURCE_VERSION_MAJOR 0)
+set(SOURCE_VERSION_MINOR 0)
+set(SOURCE_VERSION_PATCH 1)
 
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
 	if(WIN32)
@@ -24,26 +31,52 @@ set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
-# set path for Feral's temp directory and create it
+# Set path for Feral's temp directory and create it
 set(CMAKE_TEMP_PREFIX "${CMAKE_INSTALL_PREFIX}/temp")
 install(DIRECTORY DESTINATION "${CMAKE_TEMP_PREFIX}")
 
-# set modulePathsListFilePath
-set(CMAKE_MODULE_PATH_LIST_FILE_PATH "${CMAKE_INSTALL_PREFIX}/.modulePaths")
-
-# disable deprecated warnings on Windows
+set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
 if(WIN32)
+	# This makes the debug information embedded in object file, therefore multiple files can be compiled simultaneously.
+	# If it is not present, cmake defaults to ProgramDatabase which causes all sources in parallel to attempt accessing
+	# a single file which is something like vc143.pdb, therefore causing the compilation to fail.
+	# https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_DEBUG_INFORMATION_FORMAT.html
+	set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
+	message("-- Set CMake MSVC debug information format to: $<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
+	# Disable deprecated warnings on Windows
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 		add_compile_options("-Wno-deprecated-declarations")
 	endif()
+	find_program(CCACHE_PROGRAM sccache)
+else()
+	set(ORIGIN "$ORIGIN")
+	if(APPLE)
+		set(ORIGIN "@loader_path")
+		set(CMAKE_MACOSX_RPATH TRUE)
+	endif()
+	list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+	find_program(CCACHE_PROGRAM ccache)
 endif()
-
-# add external path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external")
-
-set(SOURCE_VERSION_MAJOR 0)
-set(SOURCE_VERSION_MINOR 0)
-set(SOURCE_VERSION_PATCH 1)
+if(CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+    message("-- Using ccache: ${CCACHE_PROGRAM}")
+endif()
+# For macOS and BSD
+if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
+	include_directories(/usr/local/include)
+	if(NOT APPLE)
+		add_definitions(-D_WITH_GETLINE)
+	endif()
+endif()
+# Because Android has issues with dlopen()'s RTLD_GLOBAL; See:
+# https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-search-order
+# https://android.googlesource.com/platform/bionic/+/30b17e32f0b403a97cef7c4d1fcab471fa316340/linker/linker_namespaces.cpp#100
+# https://android-ndk.narkive.com/iNWj05IV/weak-symbol-linking-when-loading-dynamic-libraries
+if(ANDROID)
+	set(EXTRA_LD_FLAGS "-z global")
+endif()
 
 string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
 
@@ -56,24 +89,7 @@ else()
 	set(TREE_STATUS "Dirty")
 endif()
 
-set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
-if(NOT WIN32)
-	set(ORIGIN "$ORIGIN")
-	if(APPLE)
-		set(ORIGIN "@loader_path")
-		set(CMAKE_MACOSX_RPATH TRUE)
-	endif()
-	list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
-	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-endif()
-
 include(CheckCXXCompilerFlag)
-
-# For macOS and BSD
-if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
-	include_directories(/usr/local/include)
-endif()
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -86,20 +102,6 @@ else()
 	message("-- Using thread flags: ${CMAKE_THREAD_LIBS_INIT}")
 	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
 	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
-endif()
-
-if(WIN32)
-	find_program(CCACHE_PROGRAM sccache)
-else()
-	find_program(CCACHE_PROGRAM ccache)
-endif()
-if(CCACHE_PROGRAM)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-    message("-- Using ccache: ${CCACHE_PROGRAM}")
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
-	add_definitions(-D_WITH_GETLINE)
 endif()
 
 # Generally, disabled for CI purposes
@@ -117,15 +119,6 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
 	if(COMPILER_SUPPORTS_GDWARF4)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-4")
 	endif()
-endif()
-
-# Because Android has issues with dlopen()'s RTLD_GLOBAL; See:
-# https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-search-order
-# https://android.googlesource.com/platform/bionic/+/30b17e32f0b403a97cef7c4d1fcab471fa316340/linker/linker_namespaces.cpp#100
-# https://android-ndk.narkive.com/iNWj05IV/weak-symbol-linking-when-loading-dynamic-libraries
-set(EXTRA_LD_FLAGS "")
-if(ANDROID)
-	set(EXTRA_LD_FLAGS "-z global")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX AND DEFINED WITH_COVERAGE)
