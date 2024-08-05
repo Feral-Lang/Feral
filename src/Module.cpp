@@ -29,13 +29,13 @@ bool Module::parseTokens(bool expr_only)
 	return expr_only ? parser.parseExpr(p, ptree, false)
 			 : parser.parseBlock(p, (StmtBlock *&)ptree, false);
 }
-bool Module::executeDefaultParserPasses()
+bool Module::executeDefaultPasses()
 {
-	SimplifyParserPass p(ctx);
-	if(!executeParserPass<SimplifyParserPass>()) return false;
+	SimplifyPass p(ctx);
+	if(!executePass<SimplifyPass>()) return false;
 	return true;
 }
-bool Module::genCode() { return executeParserPass<CodegenParserPass>(bc); }
+bool Module::genCode() { return executePass<CodegenPass>(bc); }
 void Module::dumpTokens() const
 {
 	std::cout << "Source: " << path << "\n";

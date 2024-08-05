@@ -5,12 +5,12 @@
 namespace fer
 {
 
-CodegenParserPass::CodegenParserPass(Context &ctx, Bytecode &bc)
-	: ParserPass(ParserPass::genPassID<CodegenParserPass>(), ctx), bc(bc)
+CodegenPass::CodegenPass(Context &ctx, Bytecode &bc)
+	: Pass(Pass::genPassID<CodegenPass>(), ctx), bc(bc)
 {}
-CodegenParserPass::~CodegenParserPass() {}
+CodegenPass::~CodegenPass() {}
 
-bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
+bool CodegenPass::visit(Stmt *stmt, Stmt **source)
 {
 	switch(stmt->getStmtType()) {
 	case BLOCK: return visit(as<StmtBlock>(stmt), source);
@@ -37,7 +37,7 @@ bool CodegenParserPass::visit(Stmt *stmt, Stmt **source)
 //////////////////////////////////////////// StmtBlock ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
+bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
 {
 	if(!stmt->isTop()) bc.addInstrInt(Opcode::PUSH_BLOCK, stmt->getLoc(), 1);
 	for(auto &s : stmt->getStmts()) {
@@ -57,7 +57,7 @@ bool CodegenParserPass::visit(StmtBlock *stmt, Stmt **source)
 ////////////////////////////////////////// StmtSimple /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
+bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
 {
 	const lex::Lexeme &val = stmt->getLexValue();
 	switch(val.getTokVal()) {
@@ -86,7 +86,7 @@ bool CodegenParserPass::visit(StmtSimple *stmt, Stmt **source)
 ////////////////////////////////////////// StmtFnArgs /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
+bool CodegenPass::visit(StmtFnArgs *stmt, Stmt **source)
 {
 	// ssize_t because size_t can overflow
 	for(ssize_t i = stmt->getArgs().size() - 1; i >= 0; --i) {
@@ -115,7 +115,7 @@ bool CodegenParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 //////////////////////////////////////////// StmtExpr /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtExpr *stmt, Stmt **source)
+bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 {
 	// if LHS is a dot operation and the current expr is a function call, we want the
 	// member function call instr to be emitted
@@ -233,7 +233,7 @@ end:
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
+bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 {
 	Stmt *&val		= stmt->getVal();
 	const lex::Lexeme &name = stmt->getName();
@@ -264,7 +264,7 @@ bool CodegenParserPass::visit(StmtVar *stmt, Stmt **source)
 //////////////////////////////////////////// StmtFnSig ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
+bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
 	String arginfo;
 	arginfo += stmt->getKwArg() ? "1" : "0";
@@ -295,7 +295,7 @@ bool CodegenParserPass::visit(StmtFnSig *stmt, Stmt **source)
 //////////////////////////////////////////// StmtFnDef ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source)
+bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
 {
 	size_t block_till_loc = bc.size();
 	bc.addInstrInt(Opcode::BLOCK_TILL, stmt->getLoc(), 0); // 0 is a placeholder
@@ -317,7 +317,7 @@ bool CodegenParserPass::visit(StmtFnDef *stmt, Stmt **source)
 ///////////////////////////////////////// StmtVarDecl /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtVarDecl *stmt, Stmt **source)
+bool CodegenPass::visit(StmtVarDecl *stmt, Stmt **source)
 {
 	for(auto &d : stmt->getDecls()) {
 		if(!visit(d, asStmt(&d))) return false;
@@ -329,7 +329,7 @@ bool CodegenParserPass::visit(StmtVarDecl *stmt, Stmt **source)
 //////////////////////////////////////////// StmtCond /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtCond *stmt, Stmt **source)
+bool CodegenPass::visit(StmtCond *stmt, Stmt **source)
 {
 	Vector<size_t> bodyjmps;
 	for(size_t i = 0; i < stmt->getConditionals().size(); ++i) {
@@ -366,7 +366,7 @@ bool CodegenParserPass::visit(StmtCond *stmt, Stmt **source)
 //////////////////////////////////////////// StmtFor //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
+bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
 {
 	Stmt *&init	= stmt->getInit();
 	Stmt *&cond	= stmt->getCond();
@@ -435,7 +435,7 @@ bool CodegenParserPass::visit(StmtFor *stmt, Stmt **source)
 /////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
+bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
 {
 	lex::Lexeme &iter    = stmt->getIter();
 	lex::Lexeme __iter   = iter;
@@ -496,7 +496,7 @@ bool CodegenParserPass::visit(StmtForIn *stmt, Stmt **source)
 //////////////////////////////////////////// StmtRet //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source)
+bool CodegenPass::visit(StmtRet *stmt, Stmt **source)
 {
 	if(stmt->getRetVal() && !visit(stmt->getRetVal(), &stmt->getRetVal())) {
 		err::out(stmt->getRetVal(), "failed to generate code for return value");
@@ -510,7 +510,7 @@ bool CodegenParserPass::visit(StmtRet *stmt, Stmt **source)
 ////////////////////////////////////////// StmtContinue ///////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
+bool CodegenPass::visit(StmtContinue *stmt, Stmt **source)
 {
 	bc.addInstrInt(Opcode::CONTINUE, stmt->getLoc(), 0); // placeholder
 	return true;
@@ -520,7 +520,7 @@ bool CodegenParserPass::visit(StmtContinue *stmt, Stmt **source)
 //////////////////////////////////////////// StmtBreak ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source)
+bool CodegenPass::visit(StmtBreak *stmt, Stmt **source)
 {
 	bc.addInstrInt(Opcode::BREAK, stmt->getLoc(), 0); // placeholder
 	return true;
@@ -530,9 +530,9 @@ bool CodegenParserPass::visit(StmtBreak *stmt, Stmt **source)
 //////////////////////////////////////////// StmtDefer ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenParserPass::visit(StmtDefer *stmt, Stmt **source)
+bool CodegenPass::visit(StmtDefer *stmt, Stmt **source)
 {
-	err::out(stmt, "defer should have been dealt with in SimplifyParserPass");
+	err::out(stmt, "defer should have been dealt with in SimplifyPass");
 	return false;
 }
 

@@ -21,14 +21,14 @@ public:
 	void applyDefers(Vector<Stmt *> &stmts);
 };
 
-class SimplifyParserPass : public ParserPass
+class SimplifyPass : public Pass
 {
 	Stmt *applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper);
 	DeferStack defers;
 
 public:
-	SimplifyParserPass(Context &ctx);
-	~SimplifyParserPass() override;
+	SimplifyPass(Context &ctx);
+	~SimplifyPass() override;
 
 	bool visit(Stmt *stmt, Stmt **source) override;
 

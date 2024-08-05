@@ -8,13 +8,13 @@ namespace fer
 class Module;
 class ModuleLoc;
 class Stmt;
-class ParserPass;
+class Pass;
 
 class Context
 {
 	UniList<ModuleLoc> modlocmem;
 	UniList<Stmt *> stmtmem;
-	Map<size_t, ParserPass *> passes;
+	Map<size_t, Pass *> passes;
 
 public:
 	Context();
@@ -29,11 +29,11 @@ public:
 		return res;
 	}
 
-	void addPass(const size_t &id, ParserPass *pass);
+	void addPass(const size_t &id, Pass *pass);
 	void remPass(const size_t &id);
-	ParserPass *getPass(const size_t &id);
+	Pass *getPass(const size_t &id);
 	template<typename T>
-	typename std::enable_if<std::is_base_of<ParserPass, T>::value, T *>::type getPass()
+	typename std::enable_if<std::is_base_of<Pass, T>::value, T *>::type getPass()
 	{
 		return static_cast<T *>(getPass(T::template genPassID<T>()));
 	}

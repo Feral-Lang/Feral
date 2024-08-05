@@ -1,4 +1,4 @@
-// part of SimplifyParserPass
+// part of SimplifyPass
 
 #include "Parser/Passes/Simplify.hpp"
 
@@ -52,7 +52,7 @@ template<typename T> T getValueAs(const lex::Lexeme &tok)
 	lex::Lexeme restok(l->getLoc(), lhs OPER rhs ? lex::FTRUE : lex::FFALSE);         \
 	return ctx.allocStmt<StmtSimple>(restok.getLoc(), restok);
 
-Stmt *SimplifyParserPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper)
+Stmt *SimplifyPass::applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper)
 {
 	lex::TokType ltok = l->getLexValue().getTokVal();
 	lex::TokType rtok = r ? r->getLexValue().getTokVal() : lex::INVALID;

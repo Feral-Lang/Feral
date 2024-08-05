@@ -99,7 +99,7 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 	if(argparser.has("lex")) mod->dumpTokens();
 	if(!mod->parseTokens()) return 1;
 	if(argparser.has("parse")) mod->dumpParseTree();
-	if(!mod->executeDefaultParserPasses()) {
+	if(!mod->executeDefaultPasses()) {
 		err::out(loc, "Failed to apply default parser passes on module: ", mod->getPath());
 		return 1;
 	}
@@ -411,7 +411,7 @@ Var *Interpreter::eval(const ModuleLoc *loc, StringRef code, bool isExpr)
 	int exitcode = 1;
 
 	if(!mod || !mod->tokenize() || !mod->parseTokens(isExpr)) goto done;
-	if(!mod->executeDefaultParserPasses()) {
+	if(!mod->executeDefaultPasses()) {
 		fail(loc, "Failed to apply default parser passes on module: ", mod->getPath());
 		goto done;
 	}
