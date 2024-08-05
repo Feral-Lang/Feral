@@ -11,12 +11,13 @@ VarRegex::VarRegex(const ModuleLoc *loc, StringRef exprStr, std::regex::flag_typ
 VarRegex::VarRegex(const ModuleLoc *loc, const std::regex &expr)
 	: Var(loc, false, false), expr(expr)
 {}
-VarRegex::~VarRegex() {}
-
-Var *VarRegex::copyImpl(const ModuleLoc *loc) { return new VarRegex(loc, expr); }
-void VarRegex::set(Var *from) { expr = as<VarRegex>(from)->expr; }
-
-bool VarRegex::match(StringRef data, const ModuleLoc *loc, Var *captures, bool ignoreMatch)
+Var *VarRegex::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarRegex>(loc, expr);
+}
+void VarRegex::onSet(Interpreter &vm, Var *from) { expr = as<VarRegex>(from)->expr; }
+bool VarRegex::match(Interpreter &vm, StringRef data, const ModuleLoc *loc, Var *captures,
+		     bool ignoreMatch)
 {
 	svmatch results;
 	bool found = std::regex_search(data.begin(), data.end(), results, expr);
@@ -25,12 +26,12 @@ bool VarRegex::match(StringRef data, const ModuleLoc *loc, Var *captures, bool i
 	if(captures->is<VarVec>()) {
 		VarVec *caps = as<VarVec>(captures);
 		for(size_t i = ignoreMatch; i < resCount; ++i) {
-			caps->push(new VarStr(loc, results[i].str()));
+			caps->push(vm.makeVarWithRef<VarStr>(loc, results[i].str()));
 		}
 	} else if(captures->is<VarStr>()) {
 		VarStr *caps = as<VarStr>(captures);
 		for(size_t i = ignoreMatch; i < resCount; ++i) {
-			caps->get() += results[i].str();
+			caps->getVal() += results[i].str();
 		}
 	}
 	return found;
@@ -52,8 +53,8 @@ Var *regexNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected regex flags mask to be an int, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	return vm.makeVar<VarRegex>(loc, as<VarStr>(args[1])->get(),
-				    (std::regex::flag_type)as<VarInt>(args[2])->get());
+	return vm.makeVar<VarRegex>(loc, as<VarStr>(args[1])->getVal(),
+				    (std::regex::flag_type)as<VarInt>(args[2])->getVal());
 }
 
 Var *regexMatch(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -76,12 +77,12 @@ Var *regexMatch(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected ignore first match to be a bool, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef target = as<VarStr>(args[1])->get();
+	StringRef target = as<VarStr>(args[1])->getVal();
 	Var *matches	 = nullptr;
 	if(args[2]->is<VarVec>() || args[2]->is<VarStr>()) matches = args[2];
-	bool ignoreMatch = as<VarBool>(args[3])->get();
-	return as<VarRegex>(args[0])->match(target, loc, matches, ignoreMatch) ? vm.getTrue()
-									       : vm.getFalse();
+	bool ignoreMatch = as<VarBool>(args[3])->getVal();
+	return as<VarRegex>(args[0])->match(vm, target, loc, matches, ignoreMatch) ? vm.getTrue()
+										   : vm.getFalse();
 }
 
 INIT_MODULE(Regex)
@@ -92,7 +93,7 @@ INIT_MODULE(Regex)
 
 	vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch, 3);
 
-	mod->addNativeFn("newNative", regexNew, 2, false);
+	mod->addNativeFn(vm, "newNative", regexNew, 2, false);
 
 	mod->addNativeVar("icase", vm.makeVar<VarInt>(loc, std::regex_constants::icase));
 	mod->addNativeVar("nosubs", vm.makeVar<VarInt>(loc, std::regex_constants::nosubs));

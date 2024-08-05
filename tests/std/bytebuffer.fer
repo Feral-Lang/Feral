@@ -2,10 +2,5 @@ let assert = import('std/assert');
 
 let bytebuffer = import('std/bytebuffer');
 
-let bbuf = bytebuffer.new();
-
-assert.eq(bbuf.capacity(), 0);
-bbuf.resize(250);
-assert.eq(bbuf.capacity(), 250);
-bbuf.resize(0);
-assert.eq(bbuf.capacity(), 0);
+let bbuf = bytebuffer.new(200);
+assert.eq(bbuf.capacity(), 200);

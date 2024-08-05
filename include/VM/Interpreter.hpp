@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Allocator.hpp"
 #include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
@@ -20,6 +21,7 @@ typedef void (*ModDeinitFn)();
 // Interpreter should be the parent of all execution threads(?)
 class Interpreter
 {
+	MemoryManager mem;
 	FailStack failstack;
 	ExecStack execstack;
 	// global vars/objects that are required
@@ -67,7 +69,9 @@ public:
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	makeVarWithRef(Args &&...args)
 	{
-		return new T(std::forward<Args>(args)...);
+		T *res = new(mem.alloc(sizeof(T))) T(std::forward<Args>(args)...);
+		res->create(*this);
+		return res;
 	}
 	// used in native function calls - sets ref to zero
 	template<typename T, typename... Args>
@@ -77,10 +81,48 @@ public:
 		res->dref();
 		return res;
 	}
+	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
+	// being used elsewhere.
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, void>::type unmakeVar(T *var)
 	{
-		delete var;
+		var->destroy(*this);
+		var->~T();
+		mem.free(var);
+	}
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
+	{
+		if(var == nullptr) return nullptr;
+		var->iref();
+		return var;
+	}
+	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	decVarRef(T *&var, bool del = true)
+	{
+		if(var == nullptr) return nullptr;
+		var->dref();
+		if(del && var->getRef() == 0) {
+			unmakeVar(var);
+			var = nullptr;
+		}
+		return var;
+	}
+	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	copyVar(const ModuleLoc *loc, T *var)
+	{
+		if(var->isLoadAsRef()) {
+			var->unsetLoadAsRef();
+			incVarRef(var);
+			return var;
+		}
+		return var->copy(*this, loc);
+	}
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
+	{
+		var->set(*this, from);
+		return var;
 	}
 
 	// compile and run a file; the file argument must be absolute path
@@ -164,7 +206,7 @@ public:
 			     !args.empty() && args[0] != nullptr ? "member" : "func",
 			     " call expected to return a '", getTypeName(typeID<T>()),
 			     "', instead returned: ", getTypeName(retdata));
-			decref(retdata);
+			decVarRef(retdata);
 			return false;
 		}
 		return true;
@@ -180,7 +222,7 @@ public:
 			     !args.empty() && args[0] != nullptr ? "member" : "func",
 			     " call expected to return a '", getTypeName(typeID<T>()),
 			     "', instead returned: ", getTypeName(retdata));
-			decref(retdata);
+			decVarRef(retdata);
 			return false;
 		}
 		return true;
@@ -202,7 +244,7 @@ public:
 			err::out(loc, std::forward<Args>(args)...);
 		} else if(!failstack.getVarName().empty() && !failstack.getErr()) {
 			VarStr *str = makeVarWithRef<VarStr>(loc, "");
-			appendToString(str->get(), std::forward<Args>(args)...);
+			appendToString(str->getVal(), std::forward<Args>(args)...);
 			failstack.setErr(str);
 		}
 		// Lose the error msg to the void if the error is handled but not stored in a

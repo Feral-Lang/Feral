@@ -53,9 +53,9 @@ Var *fsOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &filename = as<VarStr>(args[1])->get();
-	const String &mode     = as<VarStr>(args[2])->get();
-	bool mustClose	       = as<VarBool>(args[3])->get();
+	const String &filename = as<VarStr>(args[1])->getVal();
+	const String &mode     = as<VarStr>(args[2])->getVal();
+	bool mustClose	       = as<VarBool>(args[3])->getVal();
 	FILE *file	       = fopen(filename.c_str(), mode.c_str());
 	if(!file) {
 		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
@@ -84,15 +84,15 @@ Var *fsWalkDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected string argument for file regex, found: ", vm.getTypeName(args[3]));
 		return nullptr;
 	}
-	String dirstr = as<VarStr>(args[1])->get();
-	size_t flags  = as<VarInt>(args[2])->get();
+	String dirstr = as<VarStr>(args[1])->getVal();
+	size_t flags  = as<VarInt>(args[2])->getVal();
 
 	if(dirstr.empty()) {
 		vm.fail(loc, "empty directory path provided");
 		return nullptr;
 	}
 
-	const String &regexstr = as<VarStr>(args[3])->get();
+	const String &regexstr = as<VarStr>(args[3])->getVal();
 	Regex regex(regexstr);
 
 	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
@@ -115,8 +115,8 @@ Var *fileReopen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &filename = as<VarStr>(args[1])->get();
-	const String &mode     = as<VarStr>(args[2])->get();
+	const String &filename = as<VarStr>(args[1])->getVal();
+	const String &mode     = as<VarStr>(args[2])->getVal();
 	filev->getFile()       = fopen(filename.c_str(), mode.c_str());
 	if(!filev->getFile()) {
 		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
@@ -138,8 +138,10 @@ Var *fileLines(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
 	while((read = getline(&lineptr, &len, file)) != -1) {
 		VarStr *s = vm.makeVarWithRef<VarStr>(loc, lineptr);
-		while(!s->get().empty() && (s->get().back() == '\n' || s->get().back() == '\r')) {
-			s->get().pop_back();
+		while(!s->getVal().empty() &&
+		      (s->getVal().back() == '\n' || s->getVal().back() == '\r'))
+		{
+			s->getVal().pop_back();
 		}
 		res->push(s);
 		free(lineptr);
@@ -164,8 +166,8 @@ Var *fileSeek(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	long pos   = as<VarInt>(args[1])->get();
-	int origin = as<VarInt>(args[2])->get();
+	long pos   = as<VarInt>(args[1])->getVal();
+	int origin = as<VarInt>(args[2])->getVal();
 	return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
 }
 
@@ -198,7 +200,7 @@ Var *fileReadAll(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
 	while((read = getline(&lineptr, &len, file)) != -1) {
 		String tmp = lineptr;
-		res->get() += tmp;
+		res->getVal() += tmp;
 		free(lineptr);
 		lineptr = NULL;
 	}
@@ -223,8 +225,8 @@ Var *fileReadBlocks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	const String &beg = as<VarStr>(args[1])->get();
-	const String &end = as<VarStr>(args[2])->get();
+	const String &beg = as<VarStr>(args[1])->getVal();
+	const String &end = as<VarStr>(args[2])->getVal();
 
 	bool inside_block = false;
 	char *lineptr	  = NULL;
@@ -291,8 +293,8 @@ Var *fdCreate(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected int argument for mode, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &path = as<VarStr>(args[1])->get();
-	int res		   = creat(path.c_str(), as<VarInt>(args[2])->get());
+	const String &path = as<VarStr>(args[1])->getVal();
+	int res		   = creat(path.c_str(), as<VarInt>(args[2])->getVal());
 	if(res < 0) {
 		vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
 		return nullptr;
@@ -312,8 +314,8 @@ Var *fdOpen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected int argument for open flags, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &path = as<VarStr>(args[1])->get();
-	int res		   = open(path.c_str(), as<VarInt>(args[2])->get());
+	const String &path = as<VarStr>(args[1])->getVal();
+	int res		   = open(path.c_str(), as<VarInt>(args[2])->getVal());
 	if(res < 0) {
 		vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));
 		return nullptr;
@@ -336,10 +338,11 @@ Var *fdRead(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
 	errno		  = 0;
-	ssize_t res	  = read(as<VarInt>(args[1])->get(), bb->getBuf(), bb->capacity());
+	ssize_t res	  = read(as<VarInt>(args[1])->getVal(), bb->getBuf(), bb->capacity());
 	if(res < 0 || errno != 0) {
 		vm.fail(loc, "failed to read from the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->getVal()),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	bb->setLen(res);
@@ -365,16 +368,17 @@ Var *fdWrite(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(args[2]->is<VarBytebuffer>()) {
 		VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
 		data		  = bb->getBuf();
-		count		  = bb->capacity();
+		count		  = bb->getLen();
 	} else if(args[2]->is<VarStr>()) {
 		VarStr *s = as<VarStr>(args[2]);
-		data	  = s->get().data();
-		count	  = s->get().size();
+		data	  = s->getVal().data();
+		count	  = s->getVal().size();
 	}
-	ssize_t res = write(as<VarInt>(args[1])->get(), data, count);
+	ssize_t res = write(as<VarInt>(args[1])->getVal(), data, count);
 	if(res < 0 || errno != 0) {
 		vm.fail(loc, "failed to write to the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->getVal()),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -388,10 +392,11 @@ Var *fdClose(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	int res = close(as<VarInt>(args[1])->get());
+	int res = close(as<VarInt>(args[1])->getVal());
 	if(res < 0) {
 		vm.fail(loc, "failed to close the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->get()), "', error: ", strerror(errno));
+			std::to_string(as<VarInt>(args[1])->getVal()),
+			"', error: ", strerror(errno));
 		return nullptr;
 	}
 	return vm.makeVar<VarInt>(loc, res);
@@ -404,7 +409,7 @@ Var *fsExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return fs::exists(as<VarStr>(args[1])->get()) ? vm.getTrue() : vm.getFalse();
+	return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
 }
 
 Var *fsInstall(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -420,8 +425,8 @@ Var *fsInstall(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &src  = as<VarStr>(args[1])->get();
-	const String &dest = as<VarStr>(args[2])->get();
+	const String &src  = as<VarStr>(args[1])->getVal();
+	const String &dest = as<VarStr>(args[2])->getVal();
 	if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
 
 	StringRef parent = fs::parentDir(dest);
@@ -450,7 +455,7 @@ Var *fsMkdir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &path = as<VarStr>(args[i])->get();
+		const String &path = as<VarStr>(args[i])->getVal();
 		if(path.empty()) continue;
 		std::error_code ec;
 		if(fs::mkdir(path, ec)) {
@@ -474,8 +479,8 @@ Var *fsMklink(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	StringRef src  = as<VarStr>(args[1])->get();
-	StringRef dest = as<VarStr>(args[2])->get();
+	StringRef src  = as<VarStr>(args[1])->getVal();
+	StringRef dest = as<VarStr>(args[2])->getVal();
 	std::error_code ec;
 	if(fs::mklink(src, dest, ec)) {
 		vm.fail(loc, "mklink failed (", ec.value(), "): ", ec.message());
@@ -493,7 +498,7 @@ Var *fsRemove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &path = as<VarStr>(args[i])->get();
+		const String &path = as<VarStr>(args[i])->getVal();
 		if(path.empty()) continue;
 		std::error_code ec;
 		if(fs::remove(path, ec)) {
@@ -519,14 +524,14 @@ Var *fsCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(destArg));
 		return nullptr;
 	}
-	const String &dest = as<VarStr>(destArg)->get();
+	const String &dest = as<VarStr>(destArg)->getVal();
 	for(size_t i = 1; i < args.size() - 1; ++i) {
 		if(!args[i]->is<VarStr>()) {
 			vm.fail(loc, "expected string argument for copy argument, found: ",
 				vm.getTypeName(args[i]));
 			return nullptr;
 		}
-		const String &src = as<VarStr>(args[i])->get();
+		const String &src = as<VarStr>(args[i])->getVal();
 		if(src.empty()) continue;
 		std::error_code ec;
 		if(fs::copy(src, dest, ec)) {
@@ -548,8 +553,8 @@ Var *fsMove(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	const String &from = as<VarStr>(args[1])->get().c_str();
-	const String &to   = as<VarStr>(args[2])->get().c_str();
+	const String &from = as<VarStr>(args[1])->getVal().c_str();
+	const String &to   = as<VarStr>(args[2])->getVal().c_str();
 	std::error_code ec;
 	if(fs::rename(from, to, ec)) {
 		vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());

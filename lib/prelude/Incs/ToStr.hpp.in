@@ -2,12 +2,12 @@ Var *allToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	res->get() += "Type: ";
-	res->get() += vm.getTypeName(args[0]);
-	res->get() += " at ";
+	res->getVal() += "Type: ";
+	res->getVal() += vm.getTypeName(args[0]);
+	res->getVal() += " at ";
 	char tmp[24];
 	sprintf(tmp, "%p", args[0]);
-	res->get() += tmp;
+	res->getVal() += tmp;
 	return res;
 }
 
@@ -20,28 +20,28 @@ Var *nilToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *boolToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->get() ? "true" : "false");
+	return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false");
 }
 
 Var *typeIDToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	VarStr *res = vm.makeVar<VarStr>(loc, "typeid<");
-	res->get() += std::to_string(as<VarTypeID>(args[0])->get());
-	res->get() += ">";
+	res->getVal() += std::to_string(as<VarTypeID>(args[0])->getVal());
+	res->getVal() += ">";
 	return res;
 }
 
 Var *intToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->get()));
+	return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->getVal()));
 }
 
 Var *fltToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->get()));
+	return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->getVal()));
 }
 
 Var *strToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,

@@ -6,35 +6,7 @@ Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 		loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->get());
-}
-
-Var *bytebufferResize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected int argument "
-			"for bytebuffer size, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-	self->resize(as<VarInt>(args[1])->get());
-	return args[0];
-}
-
-Var *bytebufferSetLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		      const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(
-		loc, "expected int argument for bytebuffer len, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-	self->setLen(as<VarInt>(args[1])->get());
-	return args[0];
+	return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 
 Var *bytebufferCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -46,13 +18,13 @@ Var *bytebufferCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *bytebufferLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->len());
+	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->getLen());
 }
 
 Var *bytebufferToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-	if(self->len() == 0) return vm.makeVar<VarStr>(loc, "");
-	return vm.makeVar<VarStr>(loc, self->getBuf(), self->len());
+	if(self->capacity() == 0) return vm.makeVar<VarStr>(loc, "");
+	return vm.makeVar<VarStr>(loc, self->getBuf(), self->getLen());
 }

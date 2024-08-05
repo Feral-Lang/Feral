@@ -12,7 +12,8 @@ Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.unmakeVar(res);
 			return nullptr;
 		}
-		res->setAttr(as<VarStr>(a)->get(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
+		res->setAttr(vm, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1),
+			     false);
 	}
 
 	for(auto &a : assn_args) {
@@ -23,7 +24,7 @@ Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.unmakeVar(res);
 			return nullptr;
 		}
-		res->setAttr(a.first, a.second.val->copy(loc), false);
+		res->setAttr(vm, a.first, vm.copyVar(loc, a.second.val), false);
 	}
 
 	return res;

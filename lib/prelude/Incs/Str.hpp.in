@@ -8,8 +8,8 @@ Var *strAdd(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	VarStr *res = vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->get());
-	res->get() += as<VarStr>(args[1])->get();
+	VarStr *res = vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->getVal());
+	res->getVal() += as<VarStr>(args[1])->getVal();
 	return res;
 }
 
@@ -21,11 +21,11 @@ Var *strMul(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs = as<VarStr>(args[0])->get();
-	int64_t rhs   = as<VarInt>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	int64_t rhs   = as<VarInt>(args[1])->getVal();
 	VarStr *res   = vm.makeVar<VarStr>(loc, "");
 	for(int64_t i = 1; i < rhs; ++i) {
-		res->get() += lhs;
+		res->getVal() += lhs;
 	}
 	return res;
 }
@@ -39,7 +39,7 @@ Var *strAddAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarStr *res = as<VarStr>(args[0]);
-	res->get() += as<VarStr>(args[1])->get();
+	res->getVal() += as<VarStr>(args[1])->getVal();
 	return args[0];
 }
 
@@ -52,10 +52,10 @@ Var *strMulAssn(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String lhs  = as<VarStr>(args[0])->get();
-	int64_t rhs = as<VarInt>(args[1])->get();
+	String lhs  = as<VarStr>(args[0])->getVal();
+	int64_t rhs = as<VarInt>(args[1])->getVal();
 	for(int64_t i = 1; i < rhs; ++i) {
-		as<VarStr>(args[0])->get() += lhs;
+		as<VarStr>(args[0])->getVal() += lhs;
 	}
 	return args[0];
 }
@@ -70,8 +70,8 @@ Var *strLT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs < rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -82,8 +82,8 @@ Var *strGT(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs > rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -94,8 +94,8 @@ Var *strLE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs <= rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -106,8 +106,8 @@ Var *strGE(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs >= rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -115,8 +115,8 @@ Var *strEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getFalse();
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs == rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -124,8 +124,8 @@ Var *strNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getTrue();
-	StringRef lhs = as<VarStr>(args[0])->get();
-	StringRef rhs = as<VarStr>(args[1])->get();
+	StringRef lhs = as<VarStr>(args[0])->getVal();
+	StringRef rhs = as<VarStr>(args[1])->getVal();
 	return lhs != rhs ? vm.getTrue() : vm.getFalse();
 }
 
@@ -137,8 +137,8 @@ Var *strAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef str = as<VarStr>(args[0])->get();
-	size_t pos    = as<VarInt>(args[1])->get();
+	StringRef str = as<VarStr>(args[0])->getVal();
+	size_t pos    = as<VarInt>(args[1])->getVal();
 	if(pos >= str.size()) return vm.getNil();
 	return vm.makeVar<VarStr>(loc, str[pos]);
 }
@@ -159,33 +159,33 @@ size_t strToBin(StringRef str);
 Var *strSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->get().size());
+	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size());
 }
 
 Var *strClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	as<VarStr>(args[0])->get().clear();
+	as<VarStr>(args[0])->getVal().clear();
 	return vm.getNil();
 }
 
 Var *strEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarStr>(args[0])->get().size() == 0 ? vm.getTrue() : vm.getFalse();
+	return as<VarStr>(args[0])->getVal().size() == 0 ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strFront(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	const String &str = as<VarStr>(args[0])->get();
+	const String &str = as<VarStr>(args[0])->getVal();
 	return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.front());
 }
 
 Var *strBack(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	String &str = as<VarStr>(args[0])->get();
+	String &str = as<VarStr>(args[0])->getVal();
 	return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.back());
 }
 
@@ -197,8 +197,8 @@ Var *strPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String &src  = as<VarStr>(args[1])->get();
-	String &dest = as<VarStr>(args[0])->get();
+	String &src  = as<VarStr>(args[1])->getVal();
+	String &dest = as<VarStr>(args[0])->getVal();
 	if(src.size() > 0) dest += src;
 	return args[0];
 }
@@ -206,7 +206,7 @@ Var *strPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
-	String &str = as<VarStr>(args[0])->get();
+	String &str = as<VarStr>(args[0])->getVal();
 	if(str.size() > 0) str.pop_back();
 	return args[0];
 }
@@ -226,17 +226,17 @@ Var *strIsChAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = as<VarInt>(args[1])->get();
-	String &dest = as<VarStr>(args[0])->get();
+	size_t pos   = as<VarInt>(args[1])->getVal();
+	String &dest = as<VarStr>(args[0])->getVal();
 	if(pos >= dest.size()) {
 		vm.fail(loc, "position ", pos, " is not within string of length: ", dest.size());
 		return nullptr;
 	}
 	String chars;
 	if(args[2]->is<VarInt>()) {
-		chars = as<VarInt>(args[2])->get();
+		chars = as<VarInt>(args[2])->getVal();
 	} else if(args[2]->is<VarStr>()) {
-		chars = as<VarStr>(args[2])->get();
+		chars = as<VarStr>(args[2])->getVal();
 	}
 	return chars.find(dest[pos]) == String::npos ? vm.getFalse() : vm.getTrue();
 }
@@ -256,13 +256,13 @@ Var *strSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = as<VarInt>(args[1])->get();
-	String &dest = as<VarStr>(args[0])->get();
+	size_t pos   = as<VarInt>(args[1])->getVal();
+	String &dest = as<VarStr>(args[0])->getVal();
 	if(pos >= dest.size()) {
 		vm.fail(loc, "position ", pos, " is not within string of length: ", dest.size());
 		return nullptr;
 	}
-	String &src = as<VarStr>(args[2])->get();
+	String &src = as<VarStr>(args[2])->getVal();
 	if(src.size() == 0) return args[0];
 	dest[pos] = src[0];
 	return args[0];
@@ -285,13 +285,13 @@ Var *strInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos   = as<VarInt>(args[1])->get();
-	String &dest = as<VarStr>(args[0])->get();
+	size_t pos   = as<VarInt>(args[1])->getVal();
+	String &dest = as<VarStr>(args[0])->getVal();
 	if(pos > dest.size()) {
 		vm.fail(loc, "position ", pos, " is greater than string length: ", dest.size());
 		return nullptr;
 	}
-	String &src = as<VarStr>(args[2])->get();
+	String &src = as<VarStr>(args[2])->getVal();
 	dest.insert(dest.begin() + pos, src.begin(), src.end());
 	return args[0];
 }
@@ -304,8 +304,8 @@ Var *strErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	size_t pos  = as<VarInt>(args[1])->get();
-	String &str = as<VarStr>(args[0])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
+	String &str = as<VarStr>(args[0])->getVal();
 	if(pos < str.size()) str.erase(str.begin() + pos);
 	return args[0];
 }
@@ -318,8 +318,8 @@ Var *strFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String &str  = as<VarStr>(args[0])->get();
-	String &what = as<VarStr>(args[1])->get();
+	String &str  = as<VarStr>(args[0])->getVal();
+	String &what = as<VarStr>(args[1])->getVal();
 	size_t pos   = str.find(what);
 	if(pos == String::npos) {
 		return vm.makeVar<VarInt>(loc, -1);
@@ -335,8 +335,8 @@ Var *strRFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	String &str  = as<VarStr>(args[0])->get();
-	String &what = as<VarStr>(args[1])->get();
+	String &str  = as<VarStr>(args[0])->getVal();
+	String &what = as<VarStr>(args[1])->getVal();
 	size_t pos   = str.rfind(what);
 	if(pos == String::npos) {
 		return vm.makeVar<VarInt>(loc, -1);
@@ -360,22 +360,22 @@ Var *strSubstr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	size_t pos  = as<VarInt>(args[1])->get();
-	size_t len  = as<VarInt>(args[2])->get();
-	String &str = as<VarStr>(args[0])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
+	size_t len  = as<VarInt>(args[2])->getVal();
+	String &str = as<VarStr>(args[0])->getVal();
 	return vm.makeVar<VarStr>(loc, str.substr(pos, len));
 }
 
 Var *strLast(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->get().size() - 1);
+	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size() - 1);
 }
 
 Var *strTrim(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	String &str = as<VarStr>(args[0])->get();
+	String &str = as<VarStr>(args[0])->getVal();
 	trim(str);
 	return args[0];
 }
@@ -383,7 +383,7 @@ Var *strTrim(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strLower(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	String str = as<VarStr>(args[0])->get();
+	String str = as<VarStr>(args[0])->getVal();
 	size_t len = str.size();
 	for(size_t i = 0; i < len; ++i) {
 		str[i] = str[i] >= 'A' && str[i] <= 'Z' ? str[i] | 0x60 : str[i];
@@ -394,7 +394,7 @@ Var *strLower(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strUpper(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	String str = as<VarStr>(args[0])->get();
+	String str = as<VarStr>(args[0])->getVal();
 	size_t len = str.size();
 	for(size_t i = 0; i < len; ++i) {
 		str[i] = str[i] >= 'a' && str[i] <= 'z' ? str[i] ^ 0x20 : str[i];
@@ -411,7 +411,7 @@ Var *strSplit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected string argument for delimiter, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	if(as<VarStr>(args[1])->get().size() == 0) {
+	if(as<VarStr>(args[1])->getVal().size() == 0) {
 		vm.fail(loc, "found empty delimiter for string split");
 		return nullptr;
 	}
@@ -420,11 +420,11 @@ Var *strSplit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected int argument for max delim count, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	StringRef delim	      = as<VarStr>(args[1])->get();
-	int64_t maxDelimCount = as<VarInt>(args[2])->get();
+	StringRef delim	      = as<VarStr>(args[1])->getVal();
+	int64_t maxDelimCount = as<VarInt>(args[2])->getVal();
 	if(maxDelimCount < 0) maxDelimCount = std::numeric_limits<int64_t>().max();
 	return vm.makeVar<VarVec>(
-	loc, std::move(_strSplit(vm, loc, str->get(), delim, maxDelimCount)), false);
+	loc, std::move(_strSplit(vm, loc, str->getVal(), delim, maxDelimCount)), false);
 }
 
 Var *strStartsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -436,8 +436,8 @@ Var *strStartsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &str = as<VarStr>(args[0])->get();
-	String &with	  = as<VarStr>(args[1])->get();
+	const String &str = as<VarStr>(args[0])->getVal();
+	String &with	  = as<VarStr>(args[1])->getVal();
 	return vm.makeVar<VarBool>(loc, str.rfind(with, 0) == 0);
 }
 
@@ -450,8 +450,8 @@ Var *strEndsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &str = as<VarStr>(args[0])->get();
-	String &with	  = as<VarStr>(args[1])->get();
+	const String &str = as<VarStr>(args[0])->getVal();
+	String &with	  = as<VarStr>(args[1])->getVal();
 	size_t pos	  = str.rfind(with);
 	return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
@@ -459,7 +459,7 @@ Var *strEndsWith(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	String str    = as<VarStr>(args[0])->get();
+	String str    = as<VarStr>(args[0])->getVal();
 	size_t argctr = 1;
 	for(size_t i = 0; i < str.size(); ++i) {
 		if(str[i] != '{') continue;
@@ -474,7 +474,7 @@ Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *base = nullptr;
 		if(i < str.size() && str[i] == '}') {
 			base = args[argctr++];
-			incref(base);
+			vm.incVarRef(base);
 		} else {
 			while(i < str.size() && str[i] != '}') expr += str[i++];
 			if(i == str.size()) {
@@ -490,12 +490,12 @@ Var *strFormat(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{base};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
-			decref(base);
+			vm.decVarRef(base);
 			return nullptr;
 		}
-		String res = as<VarStr>(v)->get();
-		decref(v);
-		decref(base);
+		String res = as<VarStr>(v)->getVal();
+		vm.decVarRef(v);
+		vm.decVarRef(base);
 		str.erase(start, expr.size() + 2); // +2 for braces
 		str.insert(str.begin() + start, res.begin(), res.end());
 		i = start + res.size() - 1; // -1 for loop increment (++i)
@@ -512,7 +512,7 @@ Var *hexStrToBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	{'c', "1100"}, {'d', "1101"}, {'e', "1110"}, {'f', "1111"},
 	};
 
-	const String &str = as<VarStr>(args[0])->get();
+	const String &str = as<VarStr>(args[0])->getVal();
 	String bin;
 	for(auto &ch : str) {
 		char c = tolower(ch);
@@ -529,7 +529,7 @@ Var *hexStrToBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *utf8CharFromBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
-	String str = as<VarStr>(args[0])->get();
+	String str = as<VarStr>(args[0])->getVal();
 	if(str.empty()) return vm.makeVar<VarStr>(loc, "");
 
 	// reference: https://en.wikipedia.org/wiki/UTF-8#Encoding
@@ -545,7 +545,7 @@ Var *utf8CharFromBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	String &r   = as<VarStr>(res)->get();
+	String &r   = as<VarStr>(res)->getVal();
 	if(str.size() <= 7) {
 		while(str.size() < 7) {
 			str.insert(str.begin(), '0');
@@ -582,7 +582,7 @@ Var *utf8CharFromBinStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *byt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	 const StringMap<AssnArgData> &assn_args)
 {
-	const String &str = as<VarStr>(args[0])->get();
+	const String &str = as<VarStr>(args[0])->getVal();
 	if(str.empty()) return vm.makeVar<VarInt>(loc, 0);
 	return vm.makeVar<VarInt>(loc, (unsigned char)str[0]);
 }
@@ -591,7 +591,7 @@ Var *byt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *chr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	 const StringMap<AssnArgData> &assn_args)
 {
-	uint8_t byt = (uint8_t)as<VarInt>(args[0])->get();
+	uint8_t byt = (uint8_t)as<VarInt>(args[0])->getVal();
 	return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 
@@ -628,14 +628,14 @@ Var *strReplace(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	StringRef from = as<VarStr>(args[1])->get();
-	StringRef to   = as<VarStr>(args[2])->get();
-	String res     = str_replace(as<VarStr>(args[0])->get(), from, to);
+	StringRef from = as<VarStr>(args[1])->getVal();
+	StringRef to   = as<VarStr>(args[2])->getVal();
+	String res     = str_replace(as<VarStr>(args[0])->getVal(), from, to);
 	if(res.empty()) {
 		return args[0];
 	}
 	using namespace std;
-	swap(res, as<VarStr>(args[0])->get());
+	swap(res, as<VarStr>(args[0])->getVal());
 	return vm.makeVar<VarStr>(loc, std::move(res));
 }
 

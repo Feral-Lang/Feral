@@ -33,12 +33,11 @@ VarMultiProc::~VarMultiProc()
 		if(res != nullptr) delete res;
 	}
 }
-
-Var *VarMultiProc::copyImpl(const ModuleLoc *loc)
+Var *VarMultiProc::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	return new VarMultiProc(loc, thread, res, id, false);
+	return vm.makeVarWithRef<VarMultiProc>(loc, thread, res, id, false);
 }
-void VarMultiProc::set(Var *from)
+void VarMultiProc::onSet(Interpreter &vm, Var *from)
 {
 	VarMultiProc *t = as<VarMultiProc>(from);
 	owner		= false;
@@ -70,7 +69,7 @@ Var *mprocNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	PackagedTask<int(String)> task(execCommand);
 	SharedFuture<int> *fut = new SharedFuture<int>(task.get_future());
 	return vm.makeVar<VarMultiProc>(
-	loc, new Thread(std::move(task), as<VarStr>(args[1])->get()), fut);
+	loc, new Thread(std::move(task), as<VarStr>(args[1])->getVal()), fut);
 }
 
 Var *mprocGetId(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -103,8 +102,8 @@ INIT_MODULE(MultiProc)
 
 	vm.registerType<VarMultiProc>(loc, "MultiProc");
 
-	mod->addNativeFn("getConcurrency", getConcurrency);
-	mod->addNativeFn("new", mprocNew, 1);
+	mod->addNativeFn(vm, "getConcurrency", getConcurrency);
+	mod->addNativeFn(vm, "new", mprocNew, 1);
 
 	vm.addNativeTypeFn<VarMultiProc>(loc, "getId", mprocGetId, 0);
 	vm.addNativeTypeFn<VarMultiProc>(loc, "isDone", mprocIsDone, 0);

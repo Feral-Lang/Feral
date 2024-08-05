@@ -1,12 +1,14 @@
 #include "VM/Vars.hpp"
 
+#include "VM/Interpreter.hpp"
+
 namespace fer
 {
 
-VarFrame::VarFrame() {}
+VarFrame::VarFrame(Interpreter &vm) : vm(vm) {}
 VarFrame::~VarFrame()
 {
-	for(auto &v : vars) decref(v.second);
+	for(auto &v : vars) vm.decVarRef(v.second);
 }
 
 Var *VarFrame::get(StringRef name)
@@ -19,30 +21,20 @@ Var *VarFrame::get(StringRef name)
 void VarFrame::add(StringRef name, Var *val, bool iref)
 {
 	auto loc = vars.find(name);
-	if(loc != vars.end()) decref(loc->second);
-	if(iref) incref(val);
+	if(loc != vars.end()) vm.decVarRef(loc->second);
+	if(iref) vm.incVarRef(val);
 	vars.insert_or_assign(String(name), val);
 }
 bool VarFrame::rem(StringRef name, bool dref)
 {
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return false;
-	if(dref) decref(loc->second);
+	if(dref) vm.decVarRef(loc->second);
 	vars.erase(loc);
 	return true;
 }
 
-VarFrame *VarFrame::threadCopy(const ModuleLoc *loc)
-{
-	VarFrame *f = new VarFrame;
-	for(auto &v : vars) {
-		incref(v.second);
-		f->vars[v.first] = v.second;
-	}
-	return f;
-}
-
-VarStack::VarStack() { pushStack(1); }
+VarStack::VarStack(Interpreter &vm) : vm(vm) { pushStack(1); }
 VarStack::~VarStack()
 {
 	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) delete *layer;
@@ -50,7 +42,7 @@ VarStack::~VarStack()
 
 void VarStack::pushStack(size_t count)
 {
-	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame);
+	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame(vm));
 }
 void VarStack::popStack(size_t count)
 {
@@ -72,7 +64,7 @@ Var *VarStack::get(StringRef name)
 void VarStack::pushLoop()
 {
 	loops_from.push_back(stack.size());
-	stack.push_back(new VarFrame());
+	stack.push_back(new VarFrame(vm));
 }
 void VarStack::popLoop()
 {
@@ -96,19 +88,7 @@ bool VarStack::rem(StringRef name, bool dref)
 	return false;
 }
 
-VarStack *VarStack::threadCopy(const ModuleLoc *loc)
-{
-	VarStack *s = new VarStack;
-	s->loops_from.reserve(loops_from.size());
-	s->loops_from.assign(loops_from.begin(), loops_from.end());
-	s->stack.reserve(stack.size());
-	for(auto &f : stack) {
-		s->stack.push_back(f->threadCopy(loc));
-	}
-	return s;
-}
-
-Vars::Vars() : fnstack(-1) { fnvars[0] = new VarStack; }
+Vars::Vars(Interpreter &vm) : fnstack(-1), vm(vm) { fnvars[0] = new VarStack(vm); }
 Vars::~Vars()
 {
 	assert(fnstack == 0 || fnstack == -1);
@@ -136,7 +116,7 @@ void Vars::pushFn()
 {
 	++fnstack;
 	if(fnstack == 0) return;
-	fnvars[fnstack] = new VarStack;
+	fnvars[fnstack] = new VarStack(vm);
 }
 void Vars::popFn()
 {
@@ -148,24 +128,13 @@ void Vars::popFn()
 }
 void Vars::stash(StringRef name, Var *val, bool iref)
 {
-	if(iref) incref(val);
+	if(iref) vm.incVarRef(val);
 	stashed.insert({String(name), val});
 }
 void Vars::unstash()
 {
-	for(auto &s : stashed) decref(s.second);
+	for(auto &s : stashed) vm.decVarRef(s.second);
 	stashed.clear();
-}
-
-Vars *Vars::threadCopy(const ModuleLoc *loc)
-{
-	Vars *v = new Vars;
-	delete v->fnvars[0];
-	v->fnstack = fnstack;
-	for(auto &fv : fnvars) {
-		v->fnvars[fv.first] = fv.second->threadCopy(loc);
-	}
-	return v;
 }
 
 } // namespace fer

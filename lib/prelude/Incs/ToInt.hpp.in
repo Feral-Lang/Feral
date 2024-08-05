@@ -7,13 +7,13 @@ Var *nilToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *boolToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->get() ? 1 : 0);
+	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
 }
 
 Var *typeIDToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->get());
+	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
 }
 
 Var *intToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -25,17 +25,17 @@ Var *intToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *fltToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->get());
+	return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
 }
 
 Var *strToInt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	StringRef num = as<VarStr>(args[0])->get();
+	StringRef num = as<VarStr>(args[0])->getVal();
 	for(auto c : num) {
 		if(c == '-' || (c >= '0' && c <= '9')) continue;
 		vm.fail(loc, "string '", num, "' is not a number");
 		return nullptr;
 	}
-	return vm.makeVar<VarInt>(loc, std::stoll(as<VarStr>(args[0])->get()));
+	return vm.makeVar<VarInt>(loc, std::stoll(as<VarStr>(args[0])->getVal()));
 }

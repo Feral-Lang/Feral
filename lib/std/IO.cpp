@@ -31,9 +31,9 @@ Var *print(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -46,9 +46,9 @@ Var *println(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += write(STDOUT_FILENO, "\n", 1);
 	return vm.makeVar<VarInt>(loc, count);
@@ -62,10 +62,10 @@ Var *cprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -78,10 +78,10 @@ Var *cprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += write(STDOUT_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += write(STDOUT_FILENO, "\n", 1);
 	return vm.makeVar<VarInt>(loc, count);
@@ -95,9 +95,9 @@ Var *eprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += write(STDERR_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -110,9 +110,9 @@ Var *eprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += write(STDERR_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += write(STDERR_FILENO, "\n", 1);
 	return vm.makeVar<VarInt>(loc, count);
@@ -126,10 +126,10 @@ Var *ecprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += write(STDERR_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -142,10 +142,10 @@ Var *ecprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += write(STDERR_FILENO, str.data(), str.size());
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += write(STDERR_FILENO, "\n", 1);
 	return vm.makeVar<VarInt>(loc, count);
@@ -170,9 +170,9 @@ Var *fprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -196,9 +196,9 @@ Var *fprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->get();
+		const String &str = as<VarStr>(v)->getVal();
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += fwrite("\n", sizeof(char), 1, f);
 	return vm.makeVar<VarInt>(loc, count);
@@ -223,10 +223,10 @@ Var *fcprint(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarInt>(loc, count);
 }
@@ -250,10 +250,10 @@ Var *fcprintln(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->get();
+		String str = as<VarStr>(v)->getVal();
 		applyColors(str);
 		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		decref(v);
+		vm.decVarRef(v);
 	}
 	count += fwrite("\n", sizeof(char), 1, f);
 	return vm.makeVar<VarInt>(loc, count);
@@ -269,15 +269,15 @@ Var *scan(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	if(args.size() > 1) {
-		const String &prompt = as<VarStr>(args[1])->get();
+		const String &prompt = as<VarStr>(args[1])->getVal();
 		write(STDOUT_FILENO, prompt.data(), prompt.size());
 	}
 
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	std::getline(std::cin, res->get());
+	std::getline(std::cin, res->getVal());
 
-	if(!res->get().empty() && res->get().back() == '\r') res->get().pop_back();
-	if(!res->get().empty() && res->get().back() == '\n') res->get().pop_back();
+	if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
+	if(!res->getVal().empty() && res->getVal().back() == '\n') res->getVal().pop_back();
 
 	return res;
 }
@@ -292,16 +292,16 @@ Var *scanEOF(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	if(args.size() > 1) {
-		const String &prompt = as<VarStr>(args[1])->get();
+		const String &prompt = as<VarStr>(args[1])->getVal();
 		write(STDOUT_FILENO, prompt.data(), prompt.size());
 	}
 
 	String line;
 	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	while(std::getline(std::cin, line)) res->get() += line;
+	while(std::getline(std::cin, line)) res->getVal() += line;
 
-	if(!res->get().empty() && res->get().back() == '\r') res->get().pop_back();
-	if(!res->get().empty() && res->get().back() == '\n') res->get().pop_back();
+	if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
+	if(!res->getVal().empty() && res->getVal().back() == '\n') res->getVal().pop_back();
 
 	return res;
 }
@@ -333,7 +333,7 @@ Var *readChar(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	int fd	= as<VarInt>(args[1])->get();
+	int fd	= as<VarInt>(args[1])->getVal();
 	char c	= 0;
 	int res = read(fd, &c, 1);
 	if(res <= 0) {
@@ -347,22 +347,22 @@ INIT_MODULE(IO)
 {
 	VarModule *mod = vm.getCurrModule();
 
-	mod->addNativeFn("print", print, 1, true);
-	mod->addNativeFn("println", println, 0, true);
-	mod->addNativeFn("cprint", cprint, 1, true);
-	mod->addNativeFn("cprintln", cprintln, 0, true);
-	mod->addNativeFn("eprint", eprint, 1, true);
-	mod->addNativeFn("eprintln", eprintln, 0, true);
-	mod->addNativeFn("ecprint", ecprint, 1, true);
-	mod->addNativeFn("ecprintln", ecprintln, 0, true);
-	mod->addNativeFn("fprint", fprint, 2, true);
-	mod->addNativeFn("fprintln", fprintln, 1, true);
-	mod->addNativeFn("fcprint", fcprint, 1, true);
-	mod->addNativeFn("fcprintln", fcprintln, 0, true);
-	mod->addNativeFn("scan", scan, 0, true);
-	mod->addNativeFn("scanEOF", scanEOF, 0, true);
-	mod->addNativeFn("fflush", fflush, 1);
-	mod->addNativeFn("readChar", readChar, 1);
+	mod->addNativeFn(vm, "print", print, 1, true);
+	mod->addNativeFn(vm, "println", println, 0, true);
+	mod->addNativeFn(vm, "cprint", cprint, 1, true);
+	mod->addNativeFn(vm, "cprintln", cprintln, 0, true);
+	mod->addNativeFn(vm, "eprint", eprint, 1, true);
+	mod->addNativeFn(vm, "eprintln", eprintln, 0, true);
+	mod->addNativeFn(vm, "ecprint", ecprint, 1, true);
+	mod->addNativeFn(vm, "ecprintln", ecprintln, 0, true);
+	mod->addNativeFn(vm, "fprint", fprint, 2, true);
+	mod->addNativeFn(vm, "fprintln", fprintln, 1, true);
+	mod->addNativeFn(vm, "fcprint", fcprint, 1, true);
+	mod->addNativeFn(vm, "fcprintln", fcprintln, 0, true);
+	mod->addNativeFn(vm, "scan", scan, 0, true);
+	mod->addNativeFn(vm, "scanEOF", scanEOF, 0, true);
+	mod->addNativeFn(vm, "fflush", fflush, 1);
+	mod->addNativeFn(vm, "readChar", readChar, 1);
 
 	// stdin, stdout, and stderr cannot be owned by a VarFile
 	mod->addNativeVar("stdin", vm.makeVar<VarFile>(loc, stdin, "r", false));
