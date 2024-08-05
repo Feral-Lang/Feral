@@ -2,7 +2,7 @@
 
 #include "FS.hpp"
 #include "Lexer.hpp"
-#include "Parser/Parse.hpp"
+#include "Parser/Parser.hpp"
 #include "Parser/Passes/Base.hpp"
 #include "Parser/Passes/Codegen.hpp"
 #include "Parser/Passes/Simplify.hpp"
