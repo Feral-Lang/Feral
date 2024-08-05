@@ -12,25 +12,25 @@ bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImpo
 	}
 	Array<Var *, 3> tmpArgs{nullptr, modname, isImport ? vm.getTrue() : vm.getFalse()};
 	Var *ret = nullptr;
-	for(auto &callable : vm.getModuleFinders()->get()) {
+	for(auto &callable : vm.getModuleFinders()->getVal()) {
 		if(!vm.callVar(loc, "loadCommon", callable, ret, tmpArgs, {})) {
 			vm.fail(
-			loc, "failed to load module '", as<VarStr>(modname)->get(),
+			loc, "failed to load module '", as<VarStr>(modname)->getVal(),
 			"' when attempting to call the callable: ", vm.getTypeName(callable));
 			return false;
 		}
 		if(ret && ret->is<VarStr>()) break;
-		if(ret && !ret->is<VarNil>()) decref(ret);
+		if(ret && !ret->is<VarNil>()) vm.decVarRef(ret);
 		ret = nullptr;
 	}
 	if(!ret || !ret->is<VarStr>()) {
-		vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->get());
+		vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->getVal());
 		return false;
 	}
-	result = as<VarStr>(ret)->get();
-	decref(ret);
+	result = as<VarStr>(ret)->getVal();
+	vm.decVarRef(ret);
 
-	size_t nameLoc = result.rfind(as<VarStr>(modname)->get());
+	size_t nameLoc = result.rfind(as<VarStr>(modname)->getVal());
 	// nameLoc cannot be String::npos since result is the string where modname was found.
 	// - 1 for the last slash in the path.
 	String dir = result.substr(0, result.size() - nameLoc - 1);
@@ -59,8 +59,8 @@ Var *loadLibrary(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	String file;
 	if(!loadCommon(vm, loc, args[1], false, file)) return nullptr;
-	if(!vm.loadNativeModule(loc, file, as<VarStr>(args[1])->get())) {
-		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->get());
+	if(!vm.loadNativeModule(loc, file, as<VarStr>(args[1])->getVal())) {
+		vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->getVal());
 		return nullptr;
 	}
 	return vm.getNil();
@@ -85,8 +85,8 @@ Var *basicModuleFinder(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected argument to be of type bool, found: ", vm.getTypeName(args[2]));
 		return nullptr;
 	}
-	String modfile = as<VarStr>(args[1])->get();
-	bool isImport  = as<VarBool>(args[2])->get();
+	String modfile = as<VarStr>(args[1])->getVal();
+	bool isImport  = as<VarBool>(args[2])->getVal();
 	if(isImport) {
 		if(!vm.findImportModuleIn(vm.getModuleDirs(), modfile)) return vm.getNil();
 	} else {

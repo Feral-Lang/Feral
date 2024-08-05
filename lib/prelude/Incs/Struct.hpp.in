@@ -3,7 +3,7 @@ Var *createStruct(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	VarStructDef *res = vm.makeVar<VarStructDef>(loc, assn_args.size());
 	for(auto &attr : assn_args) {
-		res->setAttr(attr.first, attr.second.val, true);
+		res->setAttr(vm, attr.first, attr.second.val, true);
 		res->setAttrOrderAt(attr.second.pos, attr.first);
 	}
 	return res;
@@ -14,7 +14,7 @@ Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	VarStruct *st = as<VarStruct>(args[0]);
 	VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getTypeFnID()));
-	res->get() += "{";
+	res->getVal() += "{";
 	for(auto &a : st->getAttrs()) {
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{a.second};
@@ -22,17 +22,17 @@ Var *structToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.unmakeVar(res);
 			return nullptr;
 		}
-		res->get() += a.first;
-		res->get() += ": ";
-		res->get() += as<VarStr>(v)->get();
-		decref(v);
-		res->get() += ", ";
+		res->getVal() += a.first;
+		res->getVal() += ": ";
+		res->getVal() += as<VarStr>(v)->getVal();
+		vm.decVarRef(v);
+		res->getVal() += ", ";
 	}
 	if(!st->getAttrs().empty()) {
-		res->get().pop_back();
-		res->get().pop_back();
+		res->getVal().pop_back();
+		res->getVal().pop_back();
 	}
-	res->get() += "}";
+	res->getVal() += "}";
 	return res;
 }
 
@@ -45,7 +45,7 @@ Var *structDefSetTypeName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 		return nullptr;
 	}
 	VarStructDef *def  = as<VarStructDef>(args[0]);
-	const String &name = as<VarStr>(args[1])->get();
+	const String &name = as<VarStr>(args[1])->getVal();
 	vm.setTypeName(def->getID(), name);
 	return vm.getNil();
 }
@@ -71,7 +71,7 @@ Var *structDefGetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> a
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &name = as<VarStr>(args[1])->get();
+	const String &name = as<VarStr>(args[1])->getVal();
 	Var *res	   = as<VarStructDef>(args[0])->getAttr(name);
 	return res ? res : vm.getNil();
 }
@@ -102,7 +102,7 @@ Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 		loc, "expected field name to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &name = as<VarStr>(args[1])->get();
+	const String &name = as<VarStr>(args[1])->getVal();
 
 	VarStruct *st = as<VarStruct>(args[0]);
 	Var *val      = st->getAttr(name);
@@ -116,7 +116,7 @@ Var *structSetFieldValue(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 			"', provided: '", vm.getTypeName(args[2]), "'");
 		return nullptr;
 	}
-	val->set(args[2]);
+	vm.setVar(val, args[2]);
 	return vm.getNil();
 }
 

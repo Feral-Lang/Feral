@@ -38,7 +38,7 @@ Var *sleepCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		loc, "expected integer argument for sleep time, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	size_t dur = as<VarInt>(args[1])->get();
+	size_t dur = as<VarInt>(args[1])->getVal();
 	std::this_thread::sleep_for(std::chrono::milliseconds(dur));
 	return vm.getNil();
 }
@@ -51,7 +51,7 @@ Var *getEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &var = as<VarStr>(args[1])->get();
+	const String &var = as<VarStr>(args[1])->getVal();
 	return vm.makeVar<VarStr>(loc, env::get(var.c_str()));
 }
 
@@ -76,9 +76,9 @@ Var *setEnv(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 
-	const String &var = as<VarStr>(args[1])->get();
-	const String &val = as<VarStr>(args[2])->get();
-	bool overwrite	  = as<VarBool>(args[3])->get();
+	const String &var = as<VarStr>(args[1])->getVal();
+	const String &val = as<VarStr>(args[2])->getVal();
+	bool overwrite	  = as<VarBool>(args[3])->getVal();
 
 	return vm.makeVar<VarInt>(loc, env::set(var.c_str(), val.c_str(), overwrite));
 }
@@ -90,7 +90,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	size_t startFrom      = 1;
 
 	if(args[1]->is<VarVec>()) {
-		auto &vec = as<VarVec>(args[1])->get();
+		auto &vec = as<VarVec>(args[1])->getVal();
 		argsToUse = vec;
 		startFrom = 0;
 	}
@@ -106,7 +106,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	String cmd;
 	for(size_t i = startFrom; i < argsToUse.size(); ++i) {
 		if(i > startFrom) cmd += " ";
-		StringRef arg	   = as<VarStr>(argsToUse[i])->get();
+		StringRef arg	   = as<VarStr>(argsToUse[i])->getVal();
 		bool isArgOperator = !arg.empty() && arg[0] == '^';
 		if(isArgOperator) arg = arg.substr(1);
 		if(!isArgOperator) cmd += "\"";
@@ -144,7 +144,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	// the conversion fail.
 	StringMap<String> newEnv;
 	if(envVar) {
-		auto &map = as<VarMap>(envVar)->get();
+		auto &map = as<VarMap>(envVar)->getVal();
 		String val;
 		for(auto &item : map) {
 			val = env::get(item.first.c_str());
@@ -157,7 +157,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 					item.first);
 				return nullptr;
 			}
-			newEnv[item.first] = as<VarStr>(v)->get();
+			newEnv[item.first] = as<VarStr>(v)->getVal();
 		}
 		for(auto &item : newEnv) {
 			env::set(item.first.c_str(), item.second.c_str(), true);
@@ -173,7 +173,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(!outVar) {
 		while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
 	} else if(outVar->is<VarVec>()) {
-		Vector<Var *> &resvec = as<VarVec>(outVar)->get();
+		Vector<Var *> &resvec = as<VarVec>(outVar)->getVal();
 		String line;
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			line = csline;
@@ -183,7 +183,7 @@ Var *execCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
 		}
 	} else if(outVar->is<VarStr>()) {
-		String &resstr = as<VarStr>(outVar)->get();
+		String &resstr = as<VarStr>(outVar)->getVal();
 		while((nread = getline(&csline, &len, pipe)) != -1) {
 			resstr += csline;
 			while(!resstr.empty() && (resstr.back() == '\n' || resstr.back() == '\r')) {
@@ -214,7 +214,7 @@ Var *systemCustom(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected string argument for command, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &cmd = as<VarStr>(args[1])->get();
+	const String &cmd = as<VarStr>(args[1])->getVal();
 
 	int res = std::system(cmd.c_str());
 #if !defined(FER_OS_WINDOWS)
@@ -249,7 +249,7 @@ Var *osStrErr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	return vm.makeVar<VarStr>(loc, strerror(as<VarInt>(args[1])->get()));
+	return vm.makeVar<VarStr>(loc, strerror(as<VarInt>(args[1])->getVal()));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@ Var *osGetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
-	if(res->get().empty()) {
+	if(res->getVal().empty()) {
 		vm.fail(loc, "getCWD() failed - internal error");
 		vm.unmakeVar(res);
 		return nullptr;
@@ -276,7 +276,7 @@ Var *osSetCWD(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &dir = as<VarStr>(args[1])->get();
+	const String &dir = as<VarStr>(args[1])->getVal();
 	return vm.makeVar<VarBool>(loc, fs::setCWD(dir.c_str()));
 }
 
@@ -305,9 +305,9 @@ Var *osChmod(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &dest = as<VarStr>(args[1])->get();
-	const String &mode = as<VarStr>(args[2])->get();
-	bool recurse	   = as<VarBool>(args[3])->get();
+	const String &dest = as<VarStr>(args[1])->getVal();
+	const String &mode = as<VarStr>(args[2])->getVal();
+	bool recurse	   = as<VarBool>(args[3])->getVal();
 	String cmd	   = "chmod ";
 	if(recurse) cmd += "-R ";
 	cmd += mode;
@@ -321,21 +321,21 @@ INIT_MODULE(OS)
 {
 	VarModule *mod = vm.getCurrModule();
 
-	mod->addNativeFn("sleep", sleepCustom, 1);
+	mod->addNativeFn(vm, "sleep", sleepCustom, 1);
 
-	mod->addNativeFn("getEnv", getEnv, 1);
-	mod->addNativeFn("setEnvNative", setEnv, 3);
+	mod->addNativeFn(vm, "getEnv", getEnv, 1);
+	mod->addNativeFn(vm, "setEnvNative", setEnv, 3);
 
-	mod->addNativeFn("exec", execCustom, 1, true);
-	mod->addNativeFn("system", systemCustom, 1);
-	mod->addNativeFn("strErr", osStrErr, 1);
-	mod->addNativeFn("getNameNative", osGetName);
+	mod->addNativeFn(vm, "exec", execCustom, 1, true);
+	mod->addNativeFn(vm, "system", systemCustom, 1);
+	mod->addNativeFn(vm, "strErr", osStrErr, 1);
+	mod->addNativeFn(vm, "getNameNative", osGetName);
 
-	mod->addNativeFn("getCWD", osGetCWD);
-	mod->addNativeFn("setCWD", osSetCWD, 1);
+	mod->addNativeFn(vm, "getCWD", osGetCWD);
+	mod->addNativeFn(vm, "setCWD", osSetCWD, 1);
 
 #if !defined(FER_OS_WINDOWS)
-	mod->addNativeFn("chmodNative", osChmod, 3);
+	mod->addNativeFn(vm, "chmodNative", osChmod, 3);
 #endif
 
 	return true;

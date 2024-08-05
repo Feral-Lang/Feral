@@ -74,9 +74,9 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(val->getRef() == 1) {
 				vars->add(name, val, true);
 			} else {
-				vars->add(name, val->copy(ins.getLoc()), false);
+				vars->add(name, copyVar(ins.getLoc(), val), false);
 			}
-			decref(val);
+			decVarRef(val);
 			break;
 		}
 		case Opcode::CREATE_IN: {
@@ -89,9 +89,9 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
 				if(val->getRef() == 1) {
-					in->setAttr(name, val, true);
+					in->setAttr(*this, name, val, true);
 				} else {
-					in->setAttr(name, val->copy(ins.getLoc()), false);
+					in->setAttr(*this, name, copyVar(ins.getLoc(), val), false);
 				}
 			} else {
 				if(!val->isCallable()) {
@@ -99,16 +99,16 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 							   "attribute based types");
 					goto create_fail;
 				}
-				addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->get()
+				addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->getVal()
 							      : in->getType(),
 					  name, val, true);
 			}
-			decref(in);
-			decref(val);
+			decVarRef(in);
+			decVarRef(val);
 			break;
 		create_fail:
-			decref(in);
-			decref(val);
+			decVarRef(in);
+			decVarRef(val);
 			goto handle_err;
 		}
 		case Opcode::STORE: {
@@ -125,13 +125,13 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				fail(var->getLoc(),
 				     "type mismatch for assignment: ", getTypeName(val),
 				     " cannot be assigned to variable of type: ", getTypeName(var));
-				decref(val);
-				decref(var);
+				decVarRef(val);
+				decVarRef(var);
 				goto handle_err;
 			}
-			var->set(val);
+			setVar(var, val);
 			execstack.push(var, false);
-			decref(val);
+			decVarRef(val);
 			break;
 		}
 		case Opcode::PUSH_BLOCK: {
@@ -161,11 +161,11 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			Var *var = execstack.back();
 			bool res = false;
 			if(var->is<VarInt>()) {
-				res = as<VarInt>(var)->get();
+				res = as<VarInt>(var)->getVal();
 			} else if(var->is<VarFlt>()) {
-				res = as<VarFlt>(var)->get();
+				res = as<VarFlt>(var)->getVal();
 			} else if(var->is<VarBool>()) {
-				res = as<VarBool>(var)->get();
+				res = as<VarBool>(var)->getVal();
 			} else if(var->is<VarNil>()) {
 				res = false;
 			} else {
@@ -196,11 +196,11 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			StringRef arginfo = ins.getDataStr();
 			String kw, va;
 			if(arginfo[0] == '1') {
-				kw = as<VarStr>(execstack.back())->get();
+				kw = as<VarStr>(execstack.back())->getVal();
 				execstack.pop();
 			}
 			if(arginfo[1] == '1') {
-				va = as<VarStr>(execstack.back())->get();
+				va = as<VarStr>(execstack.back())->getVal();
 				execstack.pop();
 			}
 			size_t argcount = 0, assnarg_count = 0;
@@ -213,11 +213,11 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 					      assnarg_count, FnBody{.feral = bodies.back()}, false);
 			bodies.pop_back();
 			for(size_t i = 2; i < arginfo.size(); ++i) {
-				String name = as<VarStr>(execstack.back())->get();
+				String name = as<VarStr>(execstack.back())->getVal();
 				execstack.pop();
 				if(arginfo[i] == '1') {
-					fn->insertAssnParam(name,
-							    execstack.back()->copy(ins.getLoc()));
+					fn->insertAssnParam(
+					name, copyVar(ins.getLoc(), execstack.back()));
 					execstack.pop();
 				}
 				fn->pushParam(name);
@@ -227,8 +227,8 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		}
 		case Opcode::MEM_CALL: // fallthrough
 		case Opcode::CALL: {
-			// self is not decref()'d manually at the end because it becomes a part of
-			// args anyway
+			// self is not decVarRef()'d manually at the end because it becomes a
+			// part of args anyway
 			Var *self   = nullptr; // only for memcall
 			Var *fnbase = nullptr;
 			Var *res    = nullptr;
@@ -250,33 +250,33 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 						ins.getLoc(),
 						"expected a vector or kwarg to unpack, found: ",
 						getTypeName(a));
-						decref(a);
+						decVarRef(a);
 						goto fncall_fail;
 					}
 					if(a->is<VarVec>()) {
-						for(auto &va : as<VarVec>(a)->get()) {
-							incref(va);
+						for(auto &va : as<VarVec>(a)->getVal()) {
+							incVarRef(va);
 							args.push_back(va);
 						}
 					} else if(a->is<VarMap>()) {
 						for(auto &k : as<VarMap>(a)->getPositions()) {
 							Var *v = as<VarMap>(a)->getAttr(k);
-							incref(v);
+							incVarRef(v);
 							auto loc = assn_args.find(k);
 							if(loc != assn_args.end())
-								decref(loc->second.val);
+								decVarRef(loc->second.val);
 							assn_args[k] = {kwargpos++, v};
 						}
 					}
-					decref(a);
+					decVarRef(a);
 				} else if(arginfo[i] == '1') {
-					String name = as<VarStr>(execstack.back())->get();
+					String name = as<VarStr>(execstack.back())->getVal();
 					execstack.pop();
 					auto loc   = assn_args.find(name);
 					size_t pos = 0;
 					if(loc != assn_args.end()) {
 						pos = loc->second.pos;
-						decref(loc->second.val);
+						decVarRef(loc->second.val);
 					} else {
 						pos = kwargpos++;
 					}
@@ -288,7 +288,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 
 			// fetch the function
 			if(memcall) {
-				fnname = as<VarStr>(execstack.back())->get();
+				fnname = as<VarStr>(execstack.back())->getVal();
 				execstack.pop();
 				self = execstack.pop(false);
 				if(self->isAttrBased()) fnbase = self->getAttr(fnname);
@@ -303,13 +303,13 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				} else {
 					fail(ins.getLoc(), "this function does not exist");
 				}
-				decref(self);
+				decVarRef(self);
 				goto fncall_fail;
 			}
 			if(!fnbase->isCallable()) {
 				fail(ins.getLoc(), "'", getTypeName(fnbase),
 				     "' is not a callable type");
-				decref(self);
+				decVarRef(self);
 				goto fncall_fail;
 			}
 			args.insert(args.begin(), self);
@@ -328,15 +328,15 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(!res->is<VarNil>()) execstack.push(res);
 
 			// cleanup
-			for(auto &a : args) decref(a);
-			for(auto &aa : assn_args) decref(aa.second.val);
-			if(!memcall) decref(fnbase);
+			for(auto &a : args) decVarRef(a);
+			for(auto &aa : assn_args) decVarRef(aa.second.val);
+			if(!memcall) decVarRef(fnbase);
 			if(exitcalled) goto done;
 			break;
 		fncall_fail:
-			for(auto &a : args) decref(a);
-			for(auto &aa : assn_args) decref(aa.second.val);
-			if(!memcall) decref(fnbase);
+			for(auto &a : args) decVarRef(a);
+			for(auto &aa : assn_args) decVarRef(aa.second.val);
+			if(!memcall) decVarRef(fnbase);
 			goto handle_err;
 		}
 		case Opcode::ATTR: {
@@ -348,11 +348,11 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(!val) {
 				fail(ins.getLoc(), "type ", getTypeName(inbase),
 				     " does not contain attribute: ", attr);
-				decref(inbase);
+				decVarRef(inbase);
 				goto handle_err;
 			}
 			execstack.push(val);
-			decref(inbase);
+			decVarRef(inbase);
 			break;
 		}
 		case Opcode::RETURN: {
@@ -448,11 +448,11 @@ void Interpreter::dumpExecStack(OStream &os)
 		} else if(e->is<VarFlt>()) {
 			os << "flt";
 		} else if(e->is<VarStr>()) {
-			os << "Str:" << as<VarStr>(e)->get();
+			os << "Str:" << as<VarStr>(e)->getVal();
 		} else if(e->is<VarNil>()) {
 			os << "nil";
 		} else if(e->is<VarBool>()) {
-			os << "bool:" << (as<VarBool>(e)->get() ? "true" : "false");
+			os << "bool:" << (as<VarBool>(e)->getVal() ? "true" : "false");
 		} else {
 			os << getTypeName(e);
 		}

@@ -18,7 +18,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(refsv));
 			return nullptr;
 		}
-		refs = as<VarBool>(refsv)->get();
+		refs = as<VarBool>(refsv)->getVal();
 	}
 	if(caploc != assn_args.end()) {
 		Var *capv = caploc->second.val;
@@ -29,7 +29,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(capv));
 			return nullptr;
 		}
-		resvcap = as<VarInt>(capv)->get();
+		resvcap = as<VarInt>(capv)->getVal();
 	}
 	StringMap<Var *> mapval;
 	mapval.reserve(resvcap);
@@ -37,16 +37,16 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &key = as<VarStr>(v)->get();
+		const String &key = as<VarStr>(v)->getVal();
 		auto maploc	  = mapval.find(key);
-		if(maploc != mapval.end()) decref(maploc->second);
+		if(maploc != mapval.end()) vm.decVarRef(maploc->second);
 		if(refs) {
-			incref(args[++i]);
+			vm.incVarRef(args[++i]);
 			mapval[key] = args[i];
 		} else {
-			mapval[key] = args[++i]->copy(loc);
+			mapval[key] = vm.copyVar(loc, args[++i]);
 		}
-		decref(v);
+		vm.decVarRef(v);
 	}
 	return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
 }
@@ -54,7 +54,7 @@ Var *mapNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *mapSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->get().size());
+	return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
 }
 
 Var *mapIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -66,7 +66,7 @@ Var *mapIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *mapEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarMap>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
+	return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -76,11 +76,11 @@ Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	const String &key = as<VarStr>(v)->get();
+	const String &key = as<VarStr>(v)->getVal();
 	if(map->isRefMap()) {
-		map->setAttr(key, args[2], true);
+		map->setAttr(vm, key, args[2], true);
 	} else {
-		map->setAttr(key, args[2]->copy(loc), false);
+		map->setAttr(vm, key, vm.copyVar(loc, args[2]), false);
 	}
 	return args[0];
 }
@@ -88,23 +88,23 @@ Var *mapInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *mapErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	StringMap<Var *> &map = as<VarMap>(args[0])->get();
+	StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
 	Var *v		      = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	auto maploc = map.find(as<VarStr>(v)->get());
+	auto maploc = map.find(as<VarStr>(v)->getVal());
 	if(maploc != map.end()) {
-		decref(maploc->second);
+		vm.decVarRef(maploc->second);
 		map.erase(maploc);
 	}
-	decref(v);
+	vm.decVarRef(v);
 	return args[0];
 }
 
 Var *mapClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	as<VarMap>(args[0])->clear();
+	as<VarMap>(args[0])->clear(vm);
 	return vm.getNil();
 }
 
@@ -115,8 +115,8 @@ Var *mapAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	Var *res = map->getAttr(as<VarStr>(v)->get());
-	decref(v);
+	Var *res = map->getAttr(as<VarStr>(v)->getVal());
+	vm.decVarRef(v);
 	return res ? res : vm.getNil();
 }
 
@@ -127,8 +127,8 @@ Var *mapFind(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	Var *v	    = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	bool res = map->existsAttr(as<VarStr>(v)->get());
-	decref(v);
+	bool res = map->existsAttr(as<VarStr>(v)->getVal());
+	vm.decVarRef(v);
 	return res ? vm.getTrue() : vm.getFalse();
 }
 
@@ -143,7 +143,7 @@ Var *mapIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 {
 	VarMapIterator *it = as<VarMapIterator>(args[0]);
 	Var *res	   = nullptr;
-	if(!it->next(res, vm, loc)) return vm.getNil();
+	if(!it->next(vm, loc, res)) return vm.getNil();
 	res->setLoadAsRef();
 	return res;
 }

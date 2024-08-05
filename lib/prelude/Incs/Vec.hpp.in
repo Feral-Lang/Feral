@@ -14,7 +14,7 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(refsv));
 			return nullptr;
 		}
-		refs = as<VarBool>(refsv)->get();
+		refs = as<VarBool>(refsv)->getVal();
 	}
 	if(caploc != assn_args.end()) {
 		Var *capv = caploc->second.val;
@@ -25,17 +25,17 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				vm.getTypeName(capv));
 			return nullptr;
 		}
-		resvcap = as<VarInt>(capv)->get();
+		resvcap = as<VarInt>(capv)->getVal();
 	}
 	VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
 	if(refs) {
 		for(size_t i = 1; i < args.size(); ++i) {
-			incref(args[i]);
+			vm.incVarRef(args[i]);
 			res->push(args[i]);
 		}
 	} else {
 		for(size_t i = 1; i < args.size(); ++i) {
-			res->push(args[i]->copy(loc));
+			res->push(vm.copyVar(loc, args[i]));
 		}
 	}
 	return res;
@@ -83,10 +83,10 @@ Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarVec *res = as<VarVec>(args[0]);
 	for(size_t i = 1; i < args.size(); ++i) {
 		if(res->isRefVec()) {
-			incref(args[i]);
+			vm.incVarRef(args[i]);
 			res->push(args[i]);
 		} else {
-			res->push(args[i]->copy(loc));
+			res->push(vm.copyVar(loc, args[i]));
 		}
 	}
 	return args[0];
@@ -100,7 +100,7 @@ Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		vm.fail(loc, "called pop() on an empty vector");
 		return nullptr;
 	}
-	decref(res->back());
+	vm.decVarRef(res->back());
 	res->pop();
 	return args[0];
 }
@@ -109,8 +109,8 @@ Var *vecClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *v = as<VarVec>(args[0]);
-	for(auto &e : v->get()) {
-		decref(e);
+	for(auto &e : v->getVal()) {
+		vm.decVarRef(e);
 	}
 	v->clear();
 	return args[0];
@@ -127,18 +127,18 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
 	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->size()));
 		return nullptr;
 	}
-	decref(res->at(pos));
+	vm.decVarRef(res->at(pos));
 	if(res->isRefVec()) {
-		incref(args[2]);
+		vm.incVarRef(args[2]);
 		res->at(pos) = args[2];
 	} else {
-		res->at(pos) = args[2]->copy(loc);
+		res->at(pos) = vm.copyVar(loc, args[2]);
 	}
 	return args[0];
 }
@@ -152,13 +152,13 @@ Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
 	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->size()));
 		return nullptr;
 	}
-	decref(res->at(pos));
+	vm.decVarRef(res->at(pos));
 	res->erase(res->begin() + pos);
 	return args[0];
 }
@@ -174,17 +174,17 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
 	if(pos >= res->size()) {
 		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
 			std::to_string(res->size()));
 		return nullptr;
 	}
 	if(res->isRefVec()) {
-		incref(args[2]);
+		vm.incVarRef(args[2]);
 		res->insert(res->begin() + pos, args[2]);
 	} else {
-		res->insert(res->begin() + pos, args[2]->copy(loc));
+		res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
 	}
 	return args[0];
 }
@@ -209,8 +209,8 @@ Var *vecAppend(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 	VarVec *dest = as<VarVec>(args[0]);
 	VarVec *src  = as<VarVec>(args[1]);
-	size_t start = as<VarInt>(args[2])->get();
-	size_t end   = as<VarInt>(args[3])->get();
+	size_t start = as<VarInt>(args[2])->getVal();
+	size_t end   = as<VarInt>(args[3])->getVal();
 	if(end == -1 || end > src->size()) end = src->size();
 	if(dest->isRefVec()) {
 		// for the loop, we are not using iterator format because self append will fail in
@@ -218,13 +218,13 @@ Var *vecAppend(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		// ie. v.append(v) will fail if iterator format is used.
 		for(size_t i = start; i < end; ++i) {
 			Var *e = src->at(i);
-			incref(e);
+			vm.incVarRef(e);
 			dest->push(e);
 		}
 	} else {
 		for(size_t i = start; i < end; ++i) {
 			Var *e = src->at(i);
-			dest->push(e->copy(loc));
+			dest->push(vm.copyVar(loc, e));
 		}
 	}
 	return dest;
@@ -247,7 +247,7 @@ Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->get();
+	size_t pos  = as<VarInt>(args[1])->getVal();
 	if(pos >= res->size()) return vm.getNil();
 	return res->at(pos);
 }
@@ -271,8 +271,8 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = as<VarInt>(args[1])->get();
-	size_t end = as<VarInt>(args[2])->get();
+	size_t beg = as<VarInt>(args[1])->getVal();
+	size_t end = as<VarInt>(args[2])->getVal();
 
 	if(beg >= v->size()) {
 		vm.fail(loc, "starting index is greater than vector size");
@@ -285,7 +285,7 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
 	if(end <= beg) return res;
 	for(size_t i = beg; i < end; ++i) {
-		res->push(v->at(i)->copy(loc));
+		res->push(vm.copyVar(loc, v->at(i)));
 	}
 	return res;
 }
@@ -306,8 +306,8 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	}
 
 	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = as<VarInt>(args[1])->get();
-	size_t end = as<VarInt>(args[2])->get();
+	size_t beg = as<VarInt>(args[1])->getVal();
+	size_t end = as<VarInt>(args[2])->getVal();
 
 	if(beg >= v->size()) {
 		vm.fail(loc, "starting index is greater than vector size");
@@ -321,7 +321,7 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(end <= beg) return res;
 	for(size_t i = beg; i < end; ++i) {
 		Var *e = v->at(i);
-		incref(e);
+		vm.incVarRef(e);
 		res->push(e);
 	}
 	return res;

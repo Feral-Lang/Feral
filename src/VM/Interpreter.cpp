@@ -24,7 +24,8 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(RAIIParser &parser)
-	: moduleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
+	: mem("VM::Main"), failstack(*this), execstack(*this), globals(*this),
+	  moduleDirs(makeVarWithRef<VarVec>(nullptr, 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(nullptr, 2, false)), prelude("prelude/prelude"),
 	  binaryPath(env::getProcPath()), parser(parser), c(parser.getContext()),
 	  argparser(parser.getCommandArgs()), tru(makeVarWithRef<VarBool>(nullptr, true)),
@@ -54,7 +55,7 @@ Interpreter::Interpreter(RAIIParser &parser)
 
 	// FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
 	VarStr *moduleLoc = makeVarWithRef<VarStr>(nullptr, INSTALL_PATH);
-	moduleLoc->get() += "/lib/feral";
+	moduleLoc->getVal() += "/lib/feral";
 	moduleDirs->push(moduleLoc);
 
 	// Global .modulePaths file.
@@ -63,27 +64,27 @@ Interpreter::Interpreter(RAIIParser &parser)
 	tryAddModulePathsFromFile(getGlobalModulePathsFile());
 
 #if defined(FER_OS_WINDOWS)
-	for(auto &modDir : moduleDirs->get()) {
-		addDLLDirectory(as<VarStr>(modDir)->get());
+	for(auto &modDir : moduleDirs->getVal()) {
+		addDLLDirectory(as<VarStr>(modDir)->getVal());
 	}
 #endif
 }
 
 Interpreter::~Interpreter()
 {
-	decref(nil);
-	decref(fals);
-	decref(tru);
-	decref(cmdargs);
-	decref(moduleFinders);
-	decref(moduleDirs);
+	decVarRef(nil);
+	decVarRef(fals);
+	decVarRef(tru);
+	decVarRef(cmdargs);
+	decVarRef(moduleFinders);
+	decVarRef(moduleDirs);
 	for(auto &typefn : typefns) {
 		delete typefn.second;
 	}
 	for(auto &deinitfn : dlldeinitfns) {
 		deinitfn.second();
 	}
-	for(auto &mod : allmodules) decref(mod.second);
+	for(auto &mod : allmodules) decVarRef(mod.second);
 
 #if defined(FER_OS_WINDOWS)
 	remDLLDirectories();
@@ -140,25 +141,25 @@ int Interpreter::compileAndRun(const ModuleLoc *loc, String &&file, bool main_mo
 void Interpreter::addModule(const ModuleLoc *loc, Module *mod, Vars *varsnew)
 {
 	auto l = allmodules.find(mod->getPath());
-	if(l != allmodules.end()) decref(l->second);
+	if(l != allmodules.end()) decVarRef(l->second);
 	allmodules[mod->getPath()] = makeVarWithRef<VarModule>(loc, mod, varsnew, !varsnew);
 }
 void Interpreter::removeModule(StringRef path)
 {
 	auto loc = allmodules.find(path);
 	if(loc == allmodules.end()) return;
-	decref(loc->second);
+	decVarRef(loc->second);
 	allmodules.erase(loc);
 }
 void Interpreter::pushModule(StringRef path)
 {
 	auto mloc = allmodules.find(path);
-	incref(mloc->second);
+	incVarRef(mloc->second);
 	modulestack.push_back(mloc->second);
 }
 void Interpreter::popModule()
 {
-	decref(modulestack.back());
+	decVarRef(modulestack.back());
 	modulestack.pop_back();
 }
 
@@ -197,8 +198,8 @@ bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext)
 	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
 	   (name.size() < 2 || name[1] != ':'))
 	{
-		for(auto locVar : dirs->get()) {
-			auto &loc = as<VarStr>(locVar)->get();
+		for(auto locVar : dirs->getVal()) {
+			auto &loc = as<VarStr>(locVar)->getVal();
 			strncpy(testpath, loc.data(), loc.size());
 			testpath[loc.size()] = '\0';
 			strcat(testpath, "/");
@@ -305,7 +306,7 @@ void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
 	if(loc == typefns.end()) {
-		typefns[_typeid] = f = new VarFrame;
+		typefns[_typeid] = f = new VarFrame(*this);
 	} else {
 		f = loc->second;
 	}
