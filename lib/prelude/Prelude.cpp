@@ -70,10 +70,9 @@ Var *allNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	Var *copy = args[0]->copy(loc);
+	Var *copy = vm.copyVar(loc, args[0]);
 	// decreased because system internally will increment it again
-	copy->dref();
-	return copy;
+	return vm.decVarRef(copy, false);
 }
 
 // This is useful when a new (struct) instance is created and inserted into a container,
@@ -96,8 +95,8 @@ Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		Var *v = nullptr;
 		Array<Var *, 1> tmp{args[i]};
 		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		res += as<VarStr>(v)->get();
-		decref(v);
+		res += as<VarStr>(v)->getVal();
+		vm.decVarRef(v);
 	}
 	vm.fail(loc, "raised: ", res);
 	return nullptr;
@@ -111,14 +110,13 @@ Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef code = as<VarStr>(args[1])->get();
+	StringRef code = as<VarStr>(args[1])->getVal();
 	Var *res       = vm.eval(loc, code, false);
 	if(!res) {
 		vm.fail(loc, "failed to evaluate code: ", code);
 		return nullptr;
 	}
-	res->dref();
-	return res;
+	return vm.decVarRef(res, false);
 }
 
 Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -129,14 +127,13 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected argument to be of type string, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	StringRef expr = as<VarStr>(args[1])->get();
+	StringRef expr = as<VarStr>(args[1])->getVal();
 	Var *res       = vm.eval(loc, expr, true);
 	if(!res) {
 		vm.fail(loc, "failed to evaluate expr: ", expr);
 		return nullptr;
 	}
-	res->dref();
-	return res;
+	return vm.decVarRef(res, false);
 }
 
 // getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
@@ -210,7 +207,7 @@ Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	vm.setExitCalled(true);
-	vm.setExitCode(as<VarInt>(args[1])->get());
+	vm.setExitCode(as<VarInt>(args[1])->getVal());
 	return vm.getNil();
 }
 
@@ -223,7 +220,7 @@ Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		return nullptr;
 	}
 	Vars *moduleVars = vm.getCurrModule()->getVars();
-	StringRef var	 = as<VarStr>(args[1])->get();
+	StringRef var	 = as<VarStr>(args[1])->getVal();
 	return moduleVars->get(var) || vm.getGlobal(var) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -235,7 +232,7 @@ Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 			"expected int argument for max count, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	vm.setMaxRecurseCount(as<VarInt>(args[1])->get());
+	vm.setMaxRecurseCount(as<VarInt>(args[1])->getVal());
 	return vm.getNil();
 }
 
@@ -269,9 +266,9 @@ Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	size_t added = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		VarStr *arg = as<VarStr>(args[i]);
-		auto exists = std::find(existingData.begin(), existingData.end(), arg->get());
+		auto exists = std::find(existingData.begin(), existingData.end(), arg->getVal());
 		if(exists != existingData.end()) continue;
-		fwrite(arg->get().data(), sizeof(char), arg->get().size(), f);
+		fwrite(arg->getVal().data(), sizeof(char), arg->getVal().size(), f);
 		fwrite("\n", sizeof(char), 1, f);
 		++added;
 	}
@@ -302,7 +299,7 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 	size_t removed = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
 		VarStr *arg = as<VarStr>(args[i]);
-		auto exists = std::find(existingData.begin(), existingData.end(), arg->get());
+		auto exists = std::find(existingData.begin(), existingData.end(), arg->getVal());
 		if(exists == existingData.end()) continue;
 		existingData.erase(exists);
 		++removed;
@@ -334,8 +331,8 @@ INIT_MODULE(Prelude)
 	vm.addNativeFn(loc, "struct", createStruct, 0);
 
 	// module functions
-	mod->addNativeFn("addGlobalModulePaths", addGlobalModulePaths, 1, true);
-	mod->addNativeFn("removeGlobalModulePaths", removeGlobalModulePaths, 1, true);
+	mod->addNativeFn(vm, "addGlobalModulePaths", addGlobalModulePaths, 1, true);
+	mod->addNativeFn(vm, "removeGlobalModulePaths", removeGlobalModulePaths, 1, true);
 
 	// VM altering variables
 	mod->addNativeVar("moduleDirs", vm.getModuleDirs());
@@ -529,7 +526,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarInt>(loc, "chr", chr, 0);
 
 	// vec
-	mod->addNativeFn("vecNew", vecNew, 0, true);
+	mod->addNativeFn(vm, "vecNew", vecNew, 0, true);
 
 	vm.addNativeTypeFn<VarVec>(loc, "len", vecSize, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "capacity", vecCapacity, 0);
@@ -555,7 +552,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarVecIterator>(loc, "next", vecIteratorNext, 0);
 
 	// map
-	mod->addNativeFn("mapNew", mapNew, 0, true);
+	mod->addNativeFn(vm, "mapNew", mapNew, 0, true);
 	vm.addNativeTypeFn<VarMap>(loc, "len", mapSize, 0);
 	vm.addNativeTypeFn<VarMap>(loc, "isRef", mapIsRef, 0);
 	vm.addNativeTypeFn<VarMap>(loc, "empty", mapEmpty, 0);
@@ -581,30 +578,28 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarStruct>(loc, "len", structLen, 0);
 
 	// bytebuffer
-	mod->addNativeFn("bytebufferNew", bytebufferNewNative, 1);
+	mod->addNativeFn(vm, "bytebufferNew", bytebufferNewNative, 1);
 
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "resize", bytebufferResize, 1);
-	vm.addNativeTypeFn<VarBytebuffer>(loc, "setLen", bytebufferSetLen, 1);
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen, 0);
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity, 0);
 	vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr, 0);
 
 	// file/filesystem
-	mod->addNativeFn("fsFopen", fsOpen, 3);
-	mod->addNativeFn("fsWalkDir", fsWalkDir, 3);
+	mod->addNativeFn(vm, "fsFopen", fsOpen, 3);
+	mod->addNativeFn(vm, "fsWalkDir", fsWalkDir, 3);
 	// file descriptor
-	mod->addNativeFn("fsFdOpen", fdOpen, 2);
-	mod->addNativeFn("fsFdRead", fdRead, 2);
-	mod->addNativeFn("fsFdWrite", fdWrite, 2);
-	mod->addNativeFn("fsFdClose", fdClose, 1);
+	mod->addNativeFn(vm, "fsFdOpen", fdOpen, 2);
+	mod->addNativeFn(vm, "fsFdRead", fdRead, 2);
+	mod->addNativeFn(vm, "fsFdWrite", fdWrite, 2);
+	mod->addNativeFn(vm, "fsFdClose", fdClose, 1);
 	// files and dirs
-	mod->addNativeFn("fsExists", fsExists, 1);
-	mod->addNativeFn("fsInstall", fsInstall, 2);
-	mod->addNativeFn("fsMklink", fsMklink, 2);
-	mod->addNativeFn("fsMove", fsMove, 2);
-	mod->addNativeFn("fsMkdir", fsMkdir, 1, true);
-	mod->addNativeFn("fsRemove", fsRemove, 1, true);
-	mod->addNativeFn("fsCopy", fsCopy, 2, true);
+	mod->addNativeFn(vm, "fsExists", fsExists, 1);
+	mod->addNativeFn(vm, "fsInstall", fsInstall, 2);
+	mod->addNativeFn(vm, "fsMklink", fsMklink, 2);
+	mod->addNativeFn(vm, "fsMove", fsMove, 2);
+	mod->addNativeFn(vm, "fsMkdir", fsMkdir, 1, true);
+	mod->addNativeFn(vm, "fsRemove", fsRemove, 1, true);
+	mod->addNativeFn(vm, "fsCopy", fsCopy, 2, true);
 
 	vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopen, 2);
 	vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines, 0);
@@ -650,10 +645,10 @@ INIT_MODULE(Prelude)
 
 	// From std/sys
 
-	mod->addNativeFn("exitNative", _exit, 1);
-	mod->addNativeFn("varExists", varExists, 1);
-	mod->addNativeFn("setMaxCallstacksNative", setMaxCallstacks, 1);
-	mod->addNativeFn("getMaxCallstacks", getMaxCallstacks, 0);
+	mod->addNativeFn(vm, "exitNative", _exit, 1);
+	mod->addNativeFn(vm, "varExists", varExists, 1);
+	mod->addNativeFn(vm, "setMaxCallstacksNative", setMaxCallstacks, 1);
+	mod->addNativeFn(vm, "getMaxCallstacks", getMaxCallstacks, 0);
 
 	mod->addNativeVar("args", vm.getCLIArgs());
 

@@ -5,12 +5,14 @@
 namespace fer
 {
 
+class Interpreter;
 class VarFrame
 {
 	StringMap<Var *> vars;
+	Interpreter &vm;
 
 public:
-	VarFrame();
+	VarFrame(Interpreter &vm);
 	~VarFrame();
 
 	inline StringMap<Var *> &get() { return vars; }
@@ -21,8 +23,6 @@ public:
 
 	void add(StringRef name, Var *val, bool iref);
 	bool rem(StringRef name, bool dref);
-
-	VarFrame *threadCopy(const ModuleLoc *loc);
 };
 
 class VarStack
@@ -33,9 +33,10 @@ class VarStack
 	// This is so because otherwise, on vector resize, it will cause the VarFrame object to
 	// delete and reconstruct, therefore incorrectly calling the dref() calls
 	Vector<VarFrame *> stack;
+	Interpreter &vm;
 
 public:
-	VarStack();
+	VarStack(Interpreter &vm);
 	~VarStack();
 
 	void pushStack(size_t count);
@@ -57,8 +58,6 @@ public:
 	}
 	inline void add(StringRef name, Var *val, bool iref) { stack.back()->add(name, val, iref); }
 	bool rem(StringRef name, bool dref);
-
-	VarStack *threadCopy(const ModuleLoc *loc);
 };
 
 class Vars
@@ -68,9 +67,10 @@ class Vars
 	// 0 is the id for global scope
 	Map<size_t, VarStack *> fnvars;
 	size_t fnstack;
+	Interpreter &vm;
 
 public:
-	Vars();
+	Vars(Interpreter &vm);
 	~Vars();
 
 	// checks if variable exists in current scope ONLY
@@ -100,8 +100,6 @@ public:
 	// add variable to module level unconditionally (for vm.registerNewType())
 	inline void addm(StringRef name, Var *val, bool iref) { fnvars[0]->add(name, val, iref); }
 	inline bool rem(StringRef name, bool dref) { return fnvars[fnstack]->rem(name, dref); }
-
-	Vars *threadCopy(const ModuleLoc *loc);
 };
 
 } // namespace fer

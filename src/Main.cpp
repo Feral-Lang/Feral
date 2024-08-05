@@ -3,6 +3,7 @@
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
+#include "Logger.hpp"
 #include "RAIIParser.hpp"
 #include "VM/Interpreter.hpp"
 
@@ -21,7 +22,9 @@ int main(int argc, char **argv)
 	args.add("optparse").setShort("P").setHelp("shows optimized AST (AST after passes)");
 	args.add("ir").setShort("i").setHelp("shows codegen IR");
 	args.add("dry").setShort("d").setHelp("dry run - generate IR but don't run the VM");
+	args.add("logerr").setShort("e").setHelp("show logs on stderr");
 	args.add("verbose").setShort("V").setHelp("show verbose compiler output");
+	args.add("trace").setShort("T").setHelp("show trace (even more verbose) compiler output");
 	if(!args.parse()) return 1;
 
 	if(args.has("help")) {
@@ -33,6 +36,10 @@ int main(int argc, char **argv)
 		showVersion();
 		return 0;
 	}
+
+	if(args.has("logerr")) logger.addSink(&std::cerr, true, false);
+	if(args.has("verbose")) logger.setLevel(LogLevels::INFO);
+	else if(args.has("trace")) logger.setLevel(LogLevels::TRACE);
 
 	if(args.getSource().empty()) {
 		args.setSource("<prompt>");

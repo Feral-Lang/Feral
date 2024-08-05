@@ -4,8 +4,8 @@ Var *typeIDEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(!args[1]->is<VarTypeID>()) {
 		return vm.getFalse();
 	}
-	return as<VarTypeID>(args[0])->get() == as<VarTypeID>(args[1])->get() ? vm.getTrue()
-									      : vm.getFalse();
+	return as<VarTypeID>(args[0])->getVal() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
+										    : vm.getFalse();
 }
 
 Var *typeIDNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
@@ -14,6 +14,6 @@ Var *typeIDNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	if(!args[1]->is<VarTypeID>()) {
 		return vm.getTrue();
 	}
-	return as<VarTypeID>(args[0])->get() != as<VarTypeID>(args[1])->get() ? vm.getTrue()
-									      : vm.getFalse();
+	return as<VarTypeID>(args[0])->getVal() != as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
+										    : vm.getFalse();
 }

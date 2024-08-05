@@ -1,14 +1,15 @@
-#define BoolComparison(name, op, opname)                                                           \
-	Var *bool##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,                   \
-			const StringMap<AssnArgData> &assn_args)                                   \
-	{                                                                                          \
-		if(!args[1]->is<VarBool>()) {                                                      \
-			vm.fail(loc, "expected boolean argument for logical '", opname,            \
-				"', found: ", vm.getTypeName(args[1]));                            \
-			return nullptr;                                                            \
-		}                                                                                  \
-		return as<VarBool>(args[0])->get() op as<VarBool>(args[1])->get() ? vm.getTrue()   \
-										  : vm.getFalse(); \
+#define BoolComparison(name, op, opname)                                                \
+	Var *bool##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,        \
+			const StringMap<AssnArgData> &assn_args)                        \
+	{                                                                               \
+		if(!args[1]->is<VarBool>()) {                                           \
+			vm.fail(loc, "expected boolean argument for logical '", opname, \
+				"', found: ", vm.getTypeName(args[1]));                 \
+			return nullptr;                                                 \
+		}                                                                       \
+		return as<VarBool>(args[0])->getVal() op as<VarBool>(args[1])->getVal() \
+		       ? vm.getTrue()                                                   \
+		       : vm.getFalse();                                                 \
 	}
 
 // logical functions
@@ -21,20 +22,20 @@ Var *boolEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) return vm.getFalse();
-	return as<VarBool>(args[0])->get() == as<VarBool>(args[1])->get() ? vm.getTrue()
-									  : vm.getFalse();
+	return as<VarBool>(args[0])->getVal() == as<VarBool>(args[1])->getVal() ? vm.getTrue()
+										: vm.getFalse();
 }
 
 Var *boolNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) return vm.getTrue();
-	return as<VarBool>(args[0])->get() != as<VarBool>(args[1])->get() ? vm.getTrue()
-									  : vm.getFalse();
+	return as<VarBool>(args[0])->getVal() != as<VarBool>(args[1])->getVal() ? vm.getTrue()
+										: vm.getFalse();
 }
 
 Var *boolNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarBool>(args[0])->get() ? vm.getFalse() : vm.getTrue();
+	return as<VarBool>(args[0])->getVal() ? vm.getFalse() : vm.getTrue();
 }

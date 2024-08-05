@@ -71,9 +71,6 @@ void Instruction::dump(OStream &os) const
 	if(isDataBool()) os << "[bool] " << (getDataBool() ? "true" : "false");
 }
 
-Bytecode::Bytecode() {}
-Bytecode::~Bytecode() {}
-
 void Bytecode::dump(OStream &os) const
 {
 	for(size_t idx = 0; idx < code.size(); ++idx) {

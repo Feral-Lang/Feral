@@ -25,29 +25,29 @@ Var *typeIDToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *intToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarInt>(args[0])->get() == 0 ? vm.getFalse() : vm.getTrue();
+	return as<VarInt>(args[0])->getVal() == 0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *fltToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarFlt>(args[0])->get() == 0.0 ? vm.getFalse() : vm.getTrue();
+	return as<VarFlt>(args[0])->getVal() == 0.0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *strToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarStr>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
+	return !as<VarStr>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarVec>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
+	return !as<VarVec>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapToBool(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarMap>(args[0])->get().empty() ? vm.getTrue() : vm.getFalse();
+	return !as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }

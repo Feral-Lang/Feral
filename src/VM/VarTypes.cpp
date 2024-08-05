@@ -1,7 +1,6 @@
 #include "VM/VarTypes.hpp"
 
 #include "VM/Interpreter.hpp"
-#include "VM/VarMemory.hpp"
 
 #if defined(FER_OS_WINDOWS)
 #include "FS.hpp" // required for getline()
@@ -27,65 +26,60 @@ Var::Var(const ModuleLoc *loc, bool callable, bool attr_based) : loc(loc), ref(1
 }
 Var::~Var() {}
 
-size_t Var::getTypeFnID() { return getType(); }
+void Var::create(Interpreter &vm) { onCreate(vm); }
+void Var::destroy(Interpreter &vm) { onDestroy(vm); }
+Var *Var::copy(Interpreter &vm, const ModuleLoc *loc) { return onCopy(vm, loc); }
+void Var::set(Interpreter &vm, Var *from) { onSet(vm, from); }
 
-Var *Var::copy(const ModuleLoc *loc)
-{
-	if(isLoadAsRef()) {
-		unsetLoadAsRef();
-		incref(this);
-		return this;
-	}
-	return this->copyImpl(loc);
-}
+void Var::onCreate(Interpreter &vm) {}
+void Var::onDestroy(Interpreter &vm) {}
+Var *Var::onCopy(Interpreter &vm, const ModuleLoc *loc) { return vm.incVarRef(this); }
+void Var::onSet(Interpreter &vm, Var *from) {}
+
+size_t Var::getTypeFnID() { return getType(); }
 
 Var *Var::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	return nullptr;
 }
-void Var::setAttr(StringRef name, Var *val, bool iref) {}
+void Var::setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
-
-void *Var::operator new(size_t sz) { return VarMemory::getInstance().alloc(sz); }
-void Var::operator delete(void *ptr, size_t sz) { VarMemory::getInstance().free(ptr, sz); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarAll::VarAll(const ModuleLoc *loc) : Var(loc, false, false) {}
-Var *VarAll::copyImpl(const ModuleLoc *loc) { return new VarAll(loc); }
-void VarAll::set(Var *from) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarNil ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarNil::VarNil(const ModuleLoc *loc) : Var(loc, false, false) {}
-Var *VarNil::copyImpl(const ModuleLoc *loc)
-{
-	this->iref();
-	return this;
-}
-void VarNil::set(Var *from) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// VarTypeID //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarTypeID::VarTypeID(const ModuleLoc *loc, size_t val) : Var(loc, false, false), val(val) {}
-Var *VarTypeID::copyImpl(const ModuleLoc *loc) { return new VarTypeID(loc, val); }
-void VarTypeID::set(Var *from) { val = as<VarTypeID>(from)->get(); }
+Var *VarTypeID::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarTypeID>(loc, val);
+}
+void VarTypeID::onSet(Interpreter &vm, Var *from) { val = as<VarTypeID>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarBool ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarBool::VarBool(const ModuleLoc *loc, bool val) : Var(loc, false, false), val(val) {}
-Var *VarBool::copyImpl(const ModuleLoc *loc) { return new VarBool(loc, val); }
-void VarBool::set(Var *from) { val = as<VarBool>(from)->get(); }
+Var *VarBool::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarBool>(loc, val);
+}
+void VarBool::onSet(Interpreter &vm, Var *from) { val = as<VarBool>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarInt ////////////////////////////////////////////////
@@ -95,9 +89,11 @@ VarInt::VarInt(const ModuleLoc *loc, int64_t _val) : Var(loc, false, false), val
 VarInt::VarInt(const ModuleLoc *loc, const char *_val)
 	: Var(loc, false, false), val(std::stoll(_val))
 {}
-VarInt::~VarInt() {}
-Var *VarInt::copyImpl(const ModuleLoc *loc) { return new VarInt(loc, val); }
-void VarInt::set(Var *from) { val = as<VarInt>(from)->get(); }
+Var *VarInt::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarInt>(loc, val);
+}
+void VarInt::onSet(Interpreter &vm, Var *from) { val = as<VarInt>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// VarIntIterator ////////////////////////////////////////////
@@ -111,13 +107,12 @@ VarIntIterator::VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _en
 	: Var(loc, false, false), started(false), reversed(_step < 0), begin(_begin), end(_end),
 	  step(_step), curr(_begin)
 {}
-VarIntIterator::~VarIntIterator() {}
 
-Var *VarIntIterator::copyImpl(const ModuleLoc *loc)
+Var *VarIntIterator::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	return new VarIntIterator(loc, begin, end, step);
+	return vm.makeVarWithRef<VarIntIterator>(loc, begin, end, step);
 }
-void VarIntIterator::set(Var *from)
+void VarIntIterator::onSet(Interpreter &vm, Var *from)
 {
 	VarIntIterator *f = as<VarIntIterator>(from);
 
@@ -158,11 +153,13 @@ bool VarIntIterator::next(int64_t &val)
 
 VarFlt::VarFlt(const ModuleLoc *loc, long double _val) : Var(loc, false, false), val(_val) {}
 VarFlt::VarFlt(const ModuleLoc *loc, const char *_val)
-	: Var(loc, false, false), val(std::stod(_val))
+	: Var(loc, false, false), val(std::stold(_val))
 {}
-VarFlt::~VarFlt() {}
-Var *VarFlt::copyImpl(const ModuleLoc *loc) { return new VarFlt(loc, val); }
-void VarFlt::set(Var *from) { val = as<VarFlt>(from)->get(); }
+Var *VarFlt::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarFlt>(loc, val);
+}
+void VarFlt::onSet(Interpreter &vm, Var *from) { val = as<VarFlt>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
@@ -179,8 +176,11 @@ VarStr::VarStr(const ModuleLoc *loc, InitList<StringRef> _val) : Var(loc, false,
 VarStr::VarStr(const ModuleLoc *loc, const char *val, size_t count)
 	: Var(loc, false, false), val(val, count)
 {}
-Var *VarStr::copyImpl(const ModuleLoc *loc) { return new VarStr(loc, val); }
-void VarStr::set(Var *from) { val = as<VarStr>(from)->get(); }
+Var *VarStr::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarStr>(loc, val);
+}
+void VarStr::onSet(Interpreter &vm, Var *from) { val = as<VarStr>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarVec ////////////////////////////////////////////////
@@ -194,32 +194,28 @@ VarVec::VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs)
 VarVec::VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs)
 	: Var(loc, false, false), val(std::move(val)), asrefs(asrefs)
 {}
-VarVec::~VarVec()
+void VarVec::onDestroy(Interpreter &vm)
 {
-	for(auto &v : val) decref(v);
+	for(auto &v : val) vm.decVarRef(v);
 }
-Var *VarVec::copyImpl(const ModuleLoc *loc)
+Var *VarVec::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	VarVec *tmp = new VarVec(loc, val.size(), asrefs);
-	if(asrefs) {
-		for(auto &v : val) incref(v);
-		tmp->set(val);
-	} else {
-		for(auto &v : val) tmp->push(v->copy(loc));
-	}
+	VarVec *tmp = vm.makeVarWithRef<VarVec>(loc, val.size(), asrefs);
+	tmp->setVal(vm, val);
 	return tmp;
 }
-void VarVec::set(Span<Var *> newval)
+void VarVec::onSet(Interpreter &vm, Var *from) { setVal(vm, as<VarVec>(from)->getVal()); }
+void VarVec::setVal(Interpreter &vm, Span<Var *> newval)
 {
-	for(auto &v : val) decref(v);
+	for(auto &v : val) vm.decVarRef(v);
 	val.clear();
 	if(asrefs) {
 		for(auto &v : newval) {
-			incref(v);
+			vm.incVarRef(v);
 		}
 		val.assign(newval.begin(), newval.end());
 	} else {
-		for(auto &v : newval) val.push_back(v->copy(getLoc()));
+		for(auto &v : newval) val.push_back(vm.copyVar(getLoc(), v));
 	}
 }
 
@@ -229,25 +225,26 @@ void VarVec::set(Span<Var *> newval)
 
 VarVecIterator::VarVecIterator(const ModuleLoc *loc, VarVec *vec)
 	: Var(loc, false, false), vec(vec), curr(0)
+{}
+void VarVecIterator::onCreate(Interpreter &vm) { vm.incVarRef(vec); }
+void VarVecIterator::onDestroy(Interpreter &vm) { vm.decVarRef(vec); }
+Var *VarVecIterator::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	incref(vec);
+	return vm.makeVarWithRef<VarVecIterator>(loc, vec);
 }
-VarVecIterator::~VarVecIterator() { decref(vec); }
-
-Var *VarVecIterator::copyImpl(const ModuleLoc *loc) { return new VarVecIterator(loc, vec); }
-void VarVecIterator::set(Var *from)
+void VarVecIterator::onSet(Interpreter &vm, Var *from)
 {
 	VarVecIterator *f = as<VarVecIterator>(from);
-	decref(vec);
-	incref(f->vec);
+	vm.decVarRef(vec);
+	vm.incVarRef(f->vec);
 	vec  = f->vec;
 	curr = f->curr;
 }
 
 bool VarVecIterator::next(Var *&val)
 {
-	if(curr >= vec->get().size()) return false;
-	val = vec->get()[curr++];
+	if(curr >= vec->getVal().size()) return false;
+	val = vec->getVal()[curr++];
 	return true;
 }
 
@@ -263,43 +260,40 @@ VarMap::VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs)
 VarMap::VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs)
 	: Var(loc, false, true), val(std::move(val)), asrefs(asrefs)
 {}
-VarMap::~VarMap()
+void VarMap::onDestroy(Interpreter &vm) { clear(vm); }
+Var *VarMap::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	for(auto &v : val) decref(v.second);
-}
-Var *VarMap::copyImpl(const ModuleLoc *loc)
-{
-	VarMap *tmp = new VarMap(loc, val.size(), asrefs);
-	if(asrefs) {
-		for(auto &v : val) incref(v.second);
-		tmp->set(val);
-	} else {
-		for(auto &v : val) tmp->insert(v.first, v.second->copy(loc));
-	}
+	VarMap *tmp = vm.makeVarWithRef<VarMap>(loc, val.size(), asrefs);
+	tmp->setVal(vm, val);
 	return tmp;
 }
-void VarMap::set(const StringMap<Var *> &newval)
+void VarMap::onSet(Interpreter &vm, Var *from) { setVal(vm, as<VarMap>(from)->getVal()); }
+void VarMap::setVal(Interpreter &vm, const StringMap<Var *> &newval)
 {
-	for(auto &v : val) decref(v.second);
-	val.clear();
+	clear(vm);
 	if(asrefs) {
 		for(auto &v : newval) {
-			incref(v.second);
+			vm.incVarRef(v.second);
 		}
 		val.insert(newval.begin(), newval.end());
 	} else {
-		for(auto &v : newval) val.insert({v.first, v.second->copy(getLoc())});
+		for(auto &v : newval) val.insert({v.first, vm.copyVar(getLoc(), v.second)});
 	}
 }
-void VarMap::setAttr(StringRef name, Var *val, bool iref)
+void VarMap::clear(Interpreter &vm)
+{
+	for(auto &v : val) vm.decVarRef(v.second);
+	val.clear();
+}
+void VarMap::setAttr(Interpreter &vm, StringRef name, Var *val, bool iref)
 {
 	auto loc = this->val.find(name);
-	if(iref) incref(val);
+	if(iref) vm.incVarRef(val);
 	if(loc == this->val.end()) {
 		this->val.insert({String(name), val});
 		return;
 	}
-	decref(loc->second);
+	vm.decVarRef(loc->second);
 	loc->second = val;
 }
 bool VarMap::existsAttr(StringRef name) { return this->val.find(name) != this->val.end(); }
@@ -309,41 +303,36 @@ Var *VarMap::getAttr(StringRef name)
 	if(loc == this->val.end()) return nullptr;
 	return loc->second;
 }
-void VarMap::clear()
-{
-	for(auto &v : val) decref(v.second);
-	val.clear();
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// VarMapIterator ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarMapIterator::VarMapIterator(const ModuleLoc *loc, VarMap *map)
-	: Var(loc, false, false), map(map), curr(map->get().begin())
+	: Var(loc, false, false), map(map), curr(map->getVal().begin())
+{}
+void VarMapIterator::onCreate(Interpreter &vm) { vm.incVarRef(map); }
+void VarMapIterator::onDestroy(Interpreter &vm) { vm.decVarRef(map); }
+Var *VarMapIterator::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	incref(map);
+	return vm.makeVarWithRef<VarMapIterator>(loc, map);
 }
-VarMapIterator::~VarMapIterator() { decref(map); }
-
-Var *VarMapIterator::copyImpl(const ModuleLoc *loc) { return new VarMapIterator(loc, map); }
-void VarMapIterator::set(Var *from)
+void VarMapIterator::onSet(Interpreter &vm, Var *from)
 {
 	VarMapIterator *f = as<VarMapIterator>(from);
-	decref(map);
-	incref(f->map);
+	vm.decVarRef(map);
+	vm.incVarRef(f->map);
 	map  = f->map;
 	curr = f->curr;
 }
 
-bool VarMapIterator::next(Var *&val, Interpreter &vm, const ModuleLoc *loc)
+bool VarMapIterator::next(Interpreter &vm, const ModuleLoc *loc, Var *&val)
 {
-	if(curr == map->get().end()) return false;
+	if(curr == map->getVal().end()) return false;
 	StringMap<Var *> attrs;
-	incref(curr->second);
 	val = vm.makeVar<VarStruct>(loc, nullptr, 2, typeID<VarMapIterator>());
-	as<VarStruct>(val)->setAttr("0", vm.makeVarWithRef<VarStr>(loc, curr->first), false);
-	as<VarStruct>(val)->setAttr("1", curr->second, false);
+	as<VarStruct>(val)->setAttr(vm, "0", vm.makeVarWithRef<VarStr>(loc, curr->first), false);
+	as<VarStruct>(val)->setAttr(vm, "1", vm.incVarRef(curr->second), false);
 	++curr;
 	return true;
 }
@@ -360,20 +349,20 @@ VarFn::VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, cons
 	params.reserve(paramcount);
 	assn_params.reserve(assn_params_count);
 }
-VarFn::~VarFn()
+void VarFn::onDestroy(Interpreter &vm)
 {
-	for(auto &aa : assn_params) decref(aa.second);
+	for(auto &aa : assn_params) vm.decVarRef(aa.second);
 }
-Var *VarFn::copyImpl(const ModuleLoc *loc)
+Var *VarFn::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	VarFn *tmp = new VarFn(loc, modpath, kw_arg, var_arg, params.size(), assn_params.size(),
-			       body, is_native);
+	VarFn *tmp = vm.makeVarWithRef<VarFn>(loc, modpath, kw_arg, var_arg, params.size(),
+					      assn_params.size(), body, is_native);
 	tmp->setParams(params);
-	for(auto &aa : assn_params) incref(aa.second);
+	for(auto &aa : assn_params) vm.incVarRef(aa.second);
 	tmp->setAssnParams(assn_params);
 	return tmp;
 }
-void VarFn::set(Var *from)
+void VarFn::onSet(Interpreter &vm, Var *from)
 {
 	VarFn *tmp = as<VarFn>(from);
 
@@ -382,8 +371,8 @@ void VarFn::set(Var *from)
 	var_arg = tmp->var_arg;
 	// I assume copy assignment operator of vector & map do not cause unnecessary reallocations
 	params = tmp->params;
-	for(auto &aa : assn_params) decref(aa.second);
-	for(auto &aa : tmp->assn_params) incref(aa.second);
+	for(auto &aa : assn_params) vm.decVarRef(aa.second);
+	for(auto &aa : tmp->assn_params) vm.incVarRef(aa.second);
 	assn_params = tmp->assn_params;
 	body	    = tmp->body;
 	is_native   = tmp->is_native;
@@ -422,13 +411,13 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	// add all default args which have not been overwritten by args
 	for(auto &aa : assn_params) {
 		if(found_args.find(aa.first) != found_args.end()) continue;
-		Var *cpy = aa.second->copy(loc);
+		Var *cpy = vm.copyVar(loc, aa.second);
 		vars->stash(aa.first, cpy, false); // copy will make sure there is ref = 1 already
 	}
 	if(!var_arg.empty()) {
 		VarVec *v = vm.makeVarWithRef<VarVec>(loc, args.size(), false);
 		while(i < args.size()) {
-			incref(args[i]);
+			vm.incVarRef(args[i]);
 			v->push(args[i]);
 			++i;
 		}
@@ -438,7 +427,7 @@ Var *VarFn::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 		VarMap *m = vm.makeVarWithRef<VarMap>(loc, assn_args.size(), false);
 		m->initializePos(assn_args.size());
 		for(auto &a : assn_args) {
-			incref(a.second.val);
+			vm.incVarRef(a.second.val);
 			m->insert(a.first, a.second.val);
 			m->setPos(a.second.pos, a.first);
 		}
@@ -461,21 +450,20 @@ VarModule::VarModule(const ModuleLoc *loc, Module *mod, Vars *vars, bool is_owne
 		     bool is_thread_copy)
 	: Var(loc, false, true), mod(mod), vars(vars), is_owner(is_owner),
 	  is_thread_copy(is_thread_copy)
+{}
+void VarModule::onCreate(Interpreter &vm)
 {
-	if(vars == nullptr) this->vars = new Vars;
+	if(vars == nullptr) this->vars = new Vars(vm);
 }
-
-VarModule::~VarModule()
+void VarModule::onDestroy(Interpreter &vm)
 {
 	if(is_owner && vars) delete vars;
 }
-
-Var *VarModule::copyImpl(const ModuleLoc *loc) { return new VarModule(loc, mod, vars, false); }
-Var *VarModule::threadCopy(const ModuleLoc *loc)
+Var *VarModule::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	return new VarModule(loc, mod, vars->threadCopy(loc), true, true);
+	return vm.makeVarWithRef<VarModule>(loc, mod, vars, false);
 }
-void VarModule::set(Var *from)
+void VarModule::onSet(Interpreter &vm, Var *from)
 {
 	VarModule *m = as<VarModule>(from);
 	if(is_owner) delete vars;
@@ -483,15 +471,17 @@ void VarModule::set(Var *from)
 	vars	 = m->vars;
 	is_owner = false;
 }
-
-void VarModule::setAttr(StringRef name, Var *val, bool iref) { vars->add(name, val, iref); }
+void VarModule::setAttr(Interpreter &vm, StringRef name, Var *val, bool iref)
+{
+	vars->add(name, val, iref);
+}
 bool VarModule::existsAttr(StringRef name) { return vars->exists(name); }
 Var *VarModule::getAttr(StringRef name) { return vars->get(name); }
 
-void VarModule::addNativeFn(StringRef name, NativeFn body, size_t args, bool is_va)
+void VarModule::addNativeFn(Interpreter &vm, StringRef name, NativeFn body, size_t args, bool is_va)
 {
-	VarFn *res = new VarFn(getLoc(), mod->getPath(), "", is_va ? "." : "", args, 0,
-			       FnBody{.native = body}, true);
+	VarFn *res = vm.makeVarWithRef<VarFn>(getLoc(), mod->getPath(), "", is_va ? "." : "", args,
+					      0, FnBody{.native = body}, true);
 	for(size_t i = 0; i < args; ++i) res->pushParam("");
 	vars->add(name, res, false);
 }
@@ -510,39 +500,37 @@ VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount)
 {
 	attrs.reserve(attrscount);
 }
-
 VarStructDef::VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id)
 	: Var(loc, true, true), attrorder(attrscount, ""), id(id)
 {
 	attrs.reserve(attrscount);
 }
-
-VarStructDef::~VarStructDef()
+void VarStructDef::onDestroy(Interpreter &vm)
 {
 	for(auto &attr : attrs) {
-		decref(attr.second);
+		vm.decVarRef(attr.second);
 	}
 }
 
-Var *VarStructDef::copyImpl(const ModuleLoc *loc)
+Var *VarStructDef::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	VarStructDef *res = new VarStructDef(loc, attrs.size(), id);
+	VarStructDef *res = vm.makeVarWithRef<VarStructDef>(loc, attrs.size(), id);
 	std::unordered_map<std::string, Var *> attrs;
 	for(auto &attr : attrs) {
-		res->attrs.insert({attr.first, attr.second->copy(loc)});
+		res->attrs.insert({attr.first, vm.copyVar(loc, attr.second)});
 	}
 	res->attrorder = attrorder;
 	return res;
 }
 
-void VarStructDef::set(Var *from)
+void VarStructDef::onSet(Interpreter &vm, Var *from)
 {
 	VarStructDef *st = as<VarStructDef>(from);
 	for(auto &attr : attrs) {
-		decref(attr.second);
+		vm.decVarRef(attr.second);
 	}
 	for(auto &attr : st->attrs) {
-		incref(attr.second);
+		vm.incVarRef(attr.second);
 		attrs[attr.first] = attr.second;
 	}
 	attrorder.assign(st->attrorder.begin(), st->attrorder.end());
@@ -570,7 +558,7 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				"provided more arguments than existing in structure definition");
 			goto fail;
 		}
-		res->setAttr(*it, arg->copy(loc), false);
+		res->setAttr(vm, *it, vm.copyVar(loc, arg), false);
 		++it;
 	}
 
@@ -587,11 +575,11 @@ Var *VarStructDef::call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				", found: ", vm.getTypeName(aa.second.val));
 			goto fail;
 		}
-		res->setAttr(aa.first, aa.second.val->copy(loc), false);
+		res->setAttr(vm, aa.first, vm.copyVar(loc, aa.second.val), false);
 	}
 
 	while(it < attrorder.end()) {
-		if(!res->existsAttr(*it)) res->setAttr(*it, attrs[*it]->copy(loc), false);
+		if(!res->existsAttr(*it)) res->setAttr(vm, *it, vm.copyVar(loc, attrs[*it]), false);
 		++it;
 	}
 
@@ -601,13 +589,13 @@ fail:
 	return nullptr;
 }
 
-void VarStructDef::setAttr(StringRef name, Var *val, bool iref)
+void VarStructDef::setAttr(Interpreter &vm, StringRef name, Var *val, bool iref)
 {
 	auto loc = attrs.find(name);
 	if(loc != attrs.end()) {
-		decref(loc->second);
+		vm.decVarRef(loc->second);
 	}
-	if(iref) incref(val);
+	if(iref) vm.incVarRef(val);
 	attrs.insert_or_assign(String(name), val);
 }
 
@@ -625,60 +613,57 @@ Var *VarStructDef::getAttr(StringRef name)
 VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount)
 	: Var(loc, false, true), base(base), id(genStructEnumID())
 {
-	if(base) incref(base);
 	attrs.reserve(attrscount);
 }
-
 VarStruct::VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, size_t id)
 	: Var(loc, false, true), base(base), id(id)
 {
-	if(base) incref(base);
 	attrs.reserve(attrscount);
 }
-
-VarStruct::~VarStruct()
+void VarStruct::onCreate(Interpreter &vm)
 {
-	for(auto &attr : attrs) {
-		decref(attr.second);
-	}
-	if(base) decref(base);
+	if(base) vm.incVarRef(base);
 }
-
-size_t VarStruct::getTypeFnID() { return id; }
-
-Var *VarStruct::copyImpl(const ModuleLoc *loc)
+void VarStruct::onDestroy(Interpreter &vm)
 {
-	VarStruct *res = new VarStruct(loc, base, attrs.size(), id);
 	for(auto &attr : attrs) {
-		res->setAttr(attr.first, attr.second->copy(loc), false);
+		vm.decVarRef(attr.second);
+	}
+	if(base) vm.decVarRef(base);
+}
+Var *VarStruct::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	VarStruct *res = vm.makeVarWithRef<VarStruct>(loc, base, attrs.size(), id);
+	for(auto &attr : attrs) {
+		res->setAttr(vm, attr.first, vm.copyVar(loc, attr.second), false);
 	}
 	return res;
 }
 
-void VarStruct::set(Var *from)
+void VarStruct::onSet(Interpreter &vm, Var *from)
 {
 	VarStruct *st = as<VarStruct>(from);
 
 	for(auto &attr : attrs) {
-		decref(attr.second);
+		vm.decVarRef(attr.second);
 	}
 	for(auto &attr : st->attrs) {
-		incref(attr.second);
+		vm.incVarRef(attr.second);
 		attrs[attr.first] = attr.second;
 	}
-	if(base) decref(base);
-	if(st->base) incref(st->base);
+	if(base) vm.decVarRef(base);
+	if(st->base) vm.incVarRef(st->base);
 	base = st->base;
 	id   = st->id;
 }
 
-void VarStruct::setAttr(StringRef name, Var *val, bool iref)
+void VarStruct::setAttr(Interpreter &vm, StringRef name, Var *val, bool iref)
 {
 	auto loc = attrs.find(name);
 	if(loc != attrs.end()) {
-		decref(loc->second);
+		vm.decVarRef(loc->second);
 	}
-	if(iref) incref(val);
+	if(iref) vm.incVarRef(val);
 	attrs.insert_or_assign(String(name), val);
 }
 
@@ -696,14 +681,17 @@ Var *VarStruct::getAttr(StringRef name)
 VarFile::VarFile(const ModuleLoc *loc, FILE *const file, const String &mode, const bool owner)
 	: Var(loc, false, false), file(file), mode(mode), owner(owner)
 {}
-VarFile::~VarFile()
+void VarFile::onDestroy(Interpreter &vm)
 {
 	if(owner && file) fclose(file);
 }
 
-Var *VarFile::copyImpl(const ModuleLoc *loc) { return new VarFile(loc, file, mode, false); }
+Var *VarFile::onCopy(Interpreter &vm, const ModuleLoc *loc)
+{
+	return vm.makeVarWithRef<VarFile>(loc, file, mode, false);
+}
 
-void VarFile::set(Var *from)
+void VarFile::onSet(Interpreter &vm, Var *from)
 {
 	if(owner) fclose(file);
 	owner = false;
@@ -716,17 +704,19 @@ void VarFile::set(Var *from)
 
 VarFileIterator::VarFileIterator(const ModuleLoc *loc, VarFile *file)
 	: Var(loc, false, false), file(file)
-{
-	incref(file);
-}
-VarFileIterator::~VarFileIterator() { decref(file); }
+{}
+void VarFileIterator::onCreate(Interpreter &vm) { vm.incVarRef(file); }
+void VarFileIterator::onDestroy(Interpreter &vm) { vm.decVarRef(file); }
 
-Var *VarFileIterator::copyImpl(const ModuleLoc *loc) { return new VarFileIterator(loc, file); }
-void VarFileIterator::set(Var *from)
+Var *VarFileIterator::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	decref(file);
+	return vm.makeVarWithRef<VarFileIterator>(loc, file);
+}
+void VarFileIterator::onSet(Interpreter &vm, Var *from)
+{
+	vm.decVarRef(file);
 	file = as<VarFileIterator>(from)->file;
-	incref(file);
+	vm.incVarRef(file);
 }
 
 bool VarFileIterator::next(VarStr *&val)
@@ -734,7 +724,7 @@ bool VarFileIterator::next(VarStr *&val)
 	if(!val) return false;
 	char *lineptr	= NULL;
 	size_t len	= 0;
-	String &valdata = val->get();
+	String &valdata = val->getVal();
 	if(getline(&lineptr, &len, file->getFile()) != -1) {
 		valdata.clear();
 		valdata = lineptr;
@@ -751,50 +741,37 @@ bool VarFileIterator::next(VarStr *&val)
 //////////////////////////////////////////// VarByteBuffer ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBytebuffer::VarBytebuffer(const ModuleLoc *loc, size_t bufsz)
-	: Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(0)
+VarBytebuffer::VarBytebuffer(const ModuleLoc *loc, size_t bufsz, size_t buflen, char *buf)
+	: Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
 	if(bufsz > 0) buffer = (char *)malloc(bufsz);
+	if(buflen > 0) memcpy(buffer, buf, buflen);
 }
 VarBytebuffer::~VarBytebuffer()
 {
 	if(bufsz > 0) free(buffer);
 }
-
-Var *VarBytebuffer::copyImpl(const ModuleLoc *loc)
+Var *VarBytebuffer::onCopy(Interpreter &vm, const ModuleLoc *loc)
 {
-	VarBytebuffer *newbuf = new VarBytebuffer(loc, bufsz);
-	newbuf->set(this);
-	return newbuf;
+	return vm.makeVarWithRef<VarBytebuffer>(loc, bufsz, buflen, buffer);
 }
-
-void VarBytebuffer::set(Var *from)
+void VarBytebuffer::onSet(Interpreter &vm, Var *from)
 {
 	VarBytebuffer *tmp = as<VarBytebuffer>(from);
-	if(tmp->bufsz == 0) {
-		if(bufsz > 0) free(buffer);
-		bufsz = 0;
-		return;
-	}
-	if(bufsz != tmp->bufsz) {
-		if(bufsz == 0) buffer = (char *)malloc(tmp->bufsz);
-		else buffer = (char *)realloc(buffer, tmp->bufsz);
-	}
-	memcpy(buffer, tmp->buffer, tmp->bufsz);
-	bufsz  = tmp->bufsz;
-	buflen = tmp->buflen;
+	setData(tmp->buffer, tmp->buflen);
 }
-
-void VarBytebuffer::resize(size_t newsz)
+void VarBytebuffer::setData(char *newbuf, size_t newlen)
 {
-	if(newsz == 0) {
-		if(bufsz > 0) free(buffer);
-		bufsz = 0;
-		return;
+	if(newlen == 0) return;
+	if(bufsz > 0 && newlen > bufsz) {
+		buffer = (char *)realloc(buffer, newlen);
+		bufsz  = newlen;
+	} else if(bufsz == 0) {
+		buffer = (char *)malloc(newlen);
+		bufsz  = newlen;
 	}
-	if(bufsz == 0) buffer = (char *)malloc(newsz);
-	else buffer = (char *)realloc(buffer, newsz);
-	bufsz = newsz;
+	memcpy(buffer, newbuf, newlen);
+	buflen = newlen;
 }
 
 } // namespace fer
