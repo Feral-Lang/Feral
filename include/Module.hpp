@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Bytecode.hpp"
 #include "Context.hpp"
 #include "Core.hpp"
+#include "VM/Bytecode.hpp"
 
 namespace fer
 {

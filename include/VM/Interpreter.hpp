@@ -1,21 +1,12 @@
 #pragma once
 
-#include "Bytecode.hpp"
 #include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
 #include "RAIIParser.hpp"
 #include "Utils.hpp"
 #include "Vars.hpp"
-
-#if defined(FER_OS_WINDOWS)
-// Windows' max recurse count seems to be ~200. So 100 should do.
-static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
-#else
-static constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 400;
-#endif
-static const char *MODULE_EXTENSION	   = ".fer";
-static const char *MODULE_EXTENSION_NO_DOT = "fer";
+#include "VM/Bytecode.hpp"
 
 namespace fer
 {
