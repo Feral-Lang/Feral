@@ -28,4 +28,14 @@ constexpr char const *GLOBAL_MODULE_PATHS_FILE_PATH = "@CMAKE_INSTALL_PREFIX@/li
 
 constexpr char const *PRELUDE_MODULE = "prelude/prelude";
 
+constexpr char const *MODULE_EXTENSION	      = ".fer";
+constexpr char const *MODULE_EXTENSION_NO_DOT = "fer";
+
 constexpr size_t MAX_PATH_CHARS = 4096;
+
+#if defined(FER_OS_WINDOWS)
+// Windows' max recurse count seems to be ~200. So 100 should do.
+constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
+#else
+constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 400;
+#endif

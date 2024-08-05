@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-#include "Bytecode.hpp"
 #include "Error.hpp"
 #include "Lexer.hpp"
+#include "VM/Bytecode.hpp"
 
 namespace fer
 {

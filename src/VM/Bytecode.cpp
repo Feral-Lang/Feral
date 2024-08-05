@@ -1,4 +1,4 @@
-#include "Bytecode.hpp"
+#include "VM/Bytecode.hpp"
 
 #include <iomanip>
 
