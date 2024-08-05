@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Bytecode.hpp"
-#include "Config.hpp"
 #include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
@@ -240,7 +239,7 @@ public:
 	inline void setMaxRecurseCount(size_t count) { max_recurse_count = count; }
 	inline size_t getMaxRecurseCount() { return max_recurse_count; }
 	inline VarVec *getCLIArgs() { return cmdargs; }
-	inline const char *getGlobalModulePathsFile() { return INSTALL_PATH "/lib/.modulePaths"; }
+	inline const char *getGlobalModulePathsFile() { return GLOBAL_MODULE_PATHS_FILE_PATH; }
 
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()

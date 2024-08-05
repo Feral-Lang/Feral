@@ -7,23 +7,23 @@ namespace fer
 
 class ModuleLoc;
 
-enum class Opcode : u8
+enum class Opcode : uint8_t
 {
-	LOAD_DATA,     // laod a const int/float/char/string from operand onto the stack
-	UNLOAD,	       // unload from stack; operand = count of unloads to perform
-	STORE,	       // store data in a variable; no operand
-	CREATE,	       // create a variable with name as operand, value present in stack
-	CREATE_IN,     // create a variable with name as operand, value and 'in' present in stack
-	PUSH_BLOCK,    // push a layer for variables on stack; operand = count of layers to push
-	POP_BLOCK,     // pop a layer of variables from stack; operand = count of layers to pop
-	PUSH_LOOP,     // special handling for loops
-	POP_LOOP,      // special handling for loops
-	RETURN,	       // self explanatory; operand = true if a val exists, false for void/nil
-	BLOCK_TILL,    // create a block (for function); operand = index till which block exists
-	CREATE_FN,     // self explanatory; operand = string:
-		       // first char '1' if function contains keyword arg, else '0';
-		       // second char '1' if function contains variadic, else '0';
-		       // rest chars '1' if the equivalent arg has default value, else '0'
+	LOAD_DATA,  // laod a const int/float/char/string from operand onto the stack
+	UNLOAD,	    // unload from stack; operand = count of unloads to perform
+	STORE,	    // store data in a variable; no operand
+	CREATE,	    // create a variable with name as operand, value present in stack
+	CREATE_IN,  // create a variable with name as operand, value and 'in' present in stack
+	PUSH_BLOCK, // push a layer for variables on stack; operand = count of layers to push
+	POP_BLOCK,  // pop a layer of variables from stack; operand = count of layers to pop
+	PUSH_LOOP,  // special handling for loops
+	POP_LOOP,   // special handling for loops
+	RETURN,	    // self explanatory; operand = true if a val exists, false for void/nil
+	BLOCK_TILL, // create a block (for function); operand = index till which block exists
+	CREATE_FN,  // self explanatory; operand = string:
+		   // first char '1' if function contains keyword arg, else '0';
+		   // second char '1' if function contains variadic, else '0';
+		   // rest chars '1' if the equivalent arg has default value, else '0'
 	CONTINUE,      // self explanatory; operand = jump index
 	BREAK,	       // self explanatory, operand = pop loop index
 	JMP,	       // jump unconditionally; operand = index in bytecode to jump to
@@ -52,7 +52,7 @@ enum class Opcode : u8
 
 StringRef getOpcodeStr(Opcode opcode);
 
-enum class DataType : u8
+enum class DataType : uint8_t
 {
 	BOOL,
 	NIL,

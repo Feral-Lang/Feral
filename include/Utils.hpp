@@ -37,7 +37,7 @@ inline void appendToString(String &dest) {}
 
 template<typename... Args> void appendToString(String &dest, StringRef data, Args... args);
 template<typename... Args> void appendToString(String &dest, char data, Args... args);
-template<typename... Args> void appendToString(String &dest, u8 data, Args... args);
+template<typename... Args> void appendToString(String &dest, uint8_t data, Args... args);
 template<typename... Args> void appendToString(String &dest, int data, Args... args);
 template<typename... Args> void appendToString(String &dest, size_t data, Args... args);
 template<typename... Args> void appendToString(String &dest, int64_t data, Args... args);
@@ -54,7 +54,7 @@ template<typename... Args> void appendToString(String &dest, char data, Args... 
 	dest += data;
 	appendToString(dest, args...);
 }
-template<typename... Args> void appendToString(String &dest, u8 data, Args... args)
+template<typename... Args> void appendToString(String &dest, uint8_t data, Args... args)
 {
 	dest += std::to_string(data);
 	appendToString(dest, args...);

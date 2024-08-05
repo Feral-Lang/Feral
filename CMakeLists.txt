@@ -131,7 +131,7 @@ endif()
 # Finally! The sources!!!!!
 
 # Set Config.hpp.in template
-configure_file("${PROJECT_SOURCE_DIR}/include/Config.hpp.in" "${PROJECT_SOURCE_DIR}/include/Config.hpp" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_DIR}/include/Config.inl" @ONLY)
 
 # Install CMake modules
 # install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"

@@ -1,7 +1,7 @@
 let os = import('std/os');
 
 inline if os.name == 'windows' {
-# cmake build type is required here for the BUILD_TYPE config in Config.hpp.in
+# cmake build type is required here for the BUILD_TYPE config in Config.inl.in
 let cmake = 'cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=True -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache';
 let make = '$msbuild /p:CL_MPCount=4 -m:8 /p:Configuration=Release .\\INSTALL.vcxproj';
 } else {

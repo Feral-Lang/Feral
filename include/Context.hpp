@@ -12,8 +12,8 @@ class ParserPass;
 
 class Context
 {
-	List<ModuleLoc> modlocmem;
-	List<Stmt *> stmtmem;
+	UniList<ModuleLoc> modlocmem;
+	UniList<Stmt *> stmtmem;
 	Map<size_t, ParserPass *> passes;
 
 public:

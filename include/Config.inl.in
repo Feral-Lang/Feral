@@ -1,0 +1,31 @@
+// Used in Core.hpp
+
+constexpr char const *PROJECT_NAME = "@PROJECT_NAME@";
+
+constexpr int PROJECT_MAJOR = @SOURCE_VERSION_MAJOR@;
+constexpr int PROJECT_MINOR = @SOURCE_VERSION_MINOR@;
+constexpr int PROJECT_PATCH = @SOURCE_VERSION_PATCH@;
+
+constexpr char const *PROJECT_MAJOR_STR = "@SOURCE_VERSION_MAJOR@";
+constexpr char const *PROJECT_MINOR_STR = "@SOURCE_VERSION_MINOR@";
+constexpr char const *PROJECT_PATCH_STR = "@SOURCE_VERSION_PATCH@";
+
+constexpr char const *CMAKE_BUILD_TYPE = "@CMAKE_BUILD_TYPE@";
+constexpr char const *BUILD_COMPILER   = "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
+constexpr char const *BUILD_DATE       = "@BUILD_DATE@";
+
+constexpr char const *REPO_URL	  = "@REPO_URL@";
+constexpr char const *COMMIT_ID	  = "@COMMIT_ID@";
+constexpr char const *TREE_STATUS = "@TREE_STATUS@";
+
+constexpr char const *MIN_CMAKE_VERSION = "@CMAKE_MINIMUM_REQUIRED_VERSION@";
+constexpr char const *CMAKE_VERSION	= "@CMAKE_VERSION@";
+
+constexpr char const *INSTALL_PATH = "@CMAKE_INSTALL_PREFIX@";
+constexpr char const *TEMP_PATH	   = "@CMAKE_TEMP_PREFIX@";
+
+constexpr char const *GLOBAL_MODULE_PATHS_FILE_PATH = "@CMAKE_INSTALL_PREFIX@/lib/.modulePaths";
+
+constexpr char const *PRELUDE_MODULE = "prelude/prelude";
+
+constexpr size_t MAX_PATH_CHARS = 4096;
