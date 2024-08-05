@@ -30,12 +30,12 @@ public:
 
 	bool tokenize();
 	bool parseTokens(bool expr_only = false);
-	bool executeDefaultParserPasses();
+	bool executeDefaultPasses();
 	bool genCode(); // generate bytecode
 
 	template<class T, typename... Args>
-	typename std::enable_if<std::is_base_of<ParserPass, T>::value, bool>::type
-	executeParserPass(Args &&...args)
+	typename std::enable_if<std::is_base_of<Pass, T>::value, bool>::type
+	executePass(Args &&...args)
 	{
 		T pass(ctx, std::forward<Args>(args)...);
 		return pass.visitTree(ptree);

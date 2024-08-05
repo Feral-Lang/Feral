@@ -7,7 +7,7 @@
 namespace fer
 {
 
-class CodegenParserPass : public ParserPass
+class CodegenPass : public Pass
 {
 	// argument info string for function definitions
 	// needs to be propagated between function signature and definition
@@ -20,8 +20,8 @@ class CodegenParserPass : public ParserPass
 	Bytecode &bc;
 
 public:
-	CodegenParserPass(Context &ctx, Bytecode &bc);
-	~CodegenParserPass() override;
+	CodegenPass(Context &ctx, Bytecode &bc);
+	~CodegenPass() override;
 
 	bool visit(Stmt *stmt, Stmt **source) override;
 

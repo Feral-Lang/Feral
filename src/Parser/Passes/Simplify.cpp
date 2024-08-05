@@ -42,12 +42,10 @@ void DeferStack::applyDefers(Vector<Stmt *> &stmts)
 	}
 }
 
-SimplifyParserPass::SimplifyParserPass(Context &ctx)
-	: ParserPass(ParserPass::genPassID<SimplifyParserPass>(), ctx)
-{}
-SimplifyParserPass::~SimplifyParserPass() {}
+SimplifyPass::SimplifyPass(Context &ctx) : Pass(Pass::genPassID<SimplifyPass>(), ctx) {}
+SimplifyPass::~SimplifyPass() {}
 
-bool SimplifyParserPass::visit(Stmt *stmt, Stmt **source)
+bool SimplifyPass::visit(Stmt *stmt, Stmt **source)
 {
 	switch(stmt->getStmtType()) {
 	case BLOCK: return visit(as<StmtBlock>(stmt), source);
@@ -70,7 +68,7 @@ bool SimplifyParserPass::visit(Stmt *stmt, Stmt **source)
 	return false;
 }
 
-bool SimplifyParserPass::visit(StmtBlock *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtBlock *stmt, Stmt **source)
 {
 	defers.pushLayer();
 	auto &stmts = stmt->getStmts();
@@ -89,8 +87,8 @@ bool SimplifyParserPass::visit(StmtBlock *stmt, Stmt **source)
 	defers.popLayer();
 	return true;
 }
-bool SimplifyParserPass::visit(StmtSimple *stmt, Stmt **source) { return true; }
-bool SimplifyParserPass::visit(StmtFnArgs *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtSimple *stmt, Stmt **source) { return true; }
+bool SimplifyPass::visit(StmtFnArgs *stmt, Stmt **source)
 {
 	auto &args = stmt->getArgs();
 	for(size_t i = 0; i < args.size(); ++i) {
@@ -101,7 +99,7 @@ bool SimplifyParserPass::visit(StmtFnArgs *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtExpr *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtExpr *stmt, Stmt **source)
 {
 	Stmt *&lhs	  = stmt->getLHS();
 	Stmt *&rhs	  = stmt->getRHS();
@@ -123,7 +121,7 @@ bool SimplifyParserPass::visit(StmtExpr *stmt, Stmt **source)
 	if(Stmt *res = applyConstantFolding(l, r, oper)) *source = res;
 	return true;
 }
-bool SimplifyParserPass::visit(StmtVar *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtVar *stmt, Stmt **source)
 {
 	if(stmt->getVal() && !visit(stmt->getVal(), asStmt(&stmt->getVal()))) {
 		err::out(stmt,
@@ -132,7 +130,7 @@ bool SimplifyParserPass::visit(StmtVar *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtFnSig *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtFnSig *stmt, Stmt **source)
 {
 	auto &args = stmt->getArgs();
 	for(size_t i = 0; i < args.size(); ++i) {
@@ -148,7 +146,7 @@ bool SimplifyParserPass::visit(StmtFnSig *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtFnDef *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtFnDef *stmt, Stmt **source)
 {
 	if(!visit(stmt->getSig(), asStmt(&stmt->getSig()))) {
 		err::out(stmt, "failed to apply simplify pass on func signature in definition");
@@ -164,7 +162,7 @@ bool SimplifyParserPass::visit(StmtFnDef *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtVarDecl *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtVarDecl *stmt, Stmt **source)
 {
 	for(size_t i = 0; i < stmt->getDecls().size(); ++i) {
 		auto &d = stmt->getDecls()[i];
@@ -183,7 +181,7 @@ bool SimplifyParserPass::visit(StmtVarDecl *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtCond *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtCond *stmt, Stmt **source)
 {
 	for(auto &c : stmt->getConditionals()) {
 		if(c.getCond() && !visit(c.getCond(), &c.getCond())) {
@@ -197,7 +195,7 @@ bool SimplifyParserPass::visit(StmtCond *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtFor *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtFor *stmt, Stmt **source)
 {
 	if(stmt->getInit() && !visit(stmt->getInit(), &stmt->getInit())) {
 		err::out(stmt, "failed to apply simplify pass on for-loop init");
@@ -219,7 +217,7 @@ bool SimplifyParserPass::visit(StmtFor *stmt, Stmt **source)
 	if(!defers.popLoop(stmt->getLoc())) return false;
 	return true;
 }
-bool SimplifyParserPass::visit(StmtForIn *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtForIn *stmt, Stmt **source)
 {
 	if(!visit(stmt->getIn(), &stmt->getIn())) {
 		err::out(stmt, "failed to apply simplify pass on forin loop expr");
@@ -233,7 +231,7 @@ bool SimplifyParserPass::visit(StmtForIn *stmt, Stmt **source)
 	if(!defers.popLoop(stmt->getLoc())) return false;
 	return true;
 }
-bool SimplifyParserPass::visit(StmtRet *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtRet *stmt, Stmt **source)
 {
 	if(stmt->getRetVal() && !visit(stmt->getRetVal(), &stmt->getRetVal())) {
 		err::out(stmt, "failed to apply simplify pass on return value");
@@ -241,9 +239,9 @@ bool SimplifyParserPass::visit(StmtRet *stmt, Stmt **source)
 	}
 	return true;
 }
-bool SimplifyParserPass::visit(StmtContinue *stmt, Stmt **source) { return true; }
-bool SimplifyParserPass::visit(StmtBreak *stmt, Stmt **source) { return true; }
-bool SimplifyParserPass::visit(StmtDefer *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtContinue *stmt, Stmt **source) { return true; }
+bool SimplifyPass::visit(StmtBreak *stmt, Stmt **source) { return true; }
+bool SimplifyPass::visit(StmtDefer *stmt, Stmt **source)
 {
 	defers.addStmt(stmt->getDeferVal());
 	*source = nullptr;
