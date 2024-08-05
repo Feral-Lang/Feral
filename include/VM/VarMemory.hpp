@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VarTypes.hpp"
+#include "Core.hpp"
 
 namespace fer
 {
@@ -17,13 +17,13 @@ static constexpr size_t ALIGNMENT   = sizeof(SysAlign) - sizeof(size_t);
 
 struct MemPool
 {
-	u8 *head;
-	u8 *mem;
+	uint8_t *head;
+	uint8_t *mem;
 };
 
 class VarMemory
 {
-	Map<size_t, List<u8 *>> freechunks;
+	Map<size_t, UniList<uint8_t *>> freechunks;
 	Vector<MemPool> pools;
 
 	// works upto MAX_ROUNDUP

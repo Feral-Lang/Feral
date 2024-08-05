@@ -54,7 +54,7 @@ size_t VarMemory::mult8Roundup(size_t sz)
 
 void VarMemory::allocPool()
 {
-	u8 *alloc = new u8[POOL_SIZE];
+	uint8_t *alloc = new uint8_t[POOL_SIZE];
 #if defined(MEM_PROFILE)
 	tot_alloc += POOL_SIZE;
 #endif
@@ -83,14 +83,14 @@ void *VarMemory::alloc(size_t sz)
 #endif
 		tot_manual_alloc += sz;
 #endif
-		return new u8[sz];
+		return new uint8_t[sz];
 	}
 
 	LockGuard<Mutex> mtxlock(memmtx);
 	// there is a free chunk available in the chunk list
 	auto &freechunkloc = freechunks[sz];
 	if(!freechunkloc.empty()) {
-		u8 *loc = freechunkloc.front();
+		uint8_t *loc = freechunkloc.front();
 		freechunkloc.pop_front();
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf(stdout, "Using previously allocated ... %zu\n", sz);
@@ -102,7 +102,7 @@ void *VarMemory::alloc(size_t sz)
 	for(auto &p : pools) {
 		size_t freespace = POOL_SIZE - (p.head - p.mem);
 		if(freespace >= sz) {
-			u8 *loc = p.head;
+			uint8_t *loc = p.head;
 			p.head += sz;
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 			fprintf(stdout, "Allocating from pool ... %zu\n", sz);
@@ -111,8 +111,8 @@ void *VarMemory::alloc(size_t sz)
 		}
 	}
 	allocPool();
-	auto &p = pools.back();
-	u8 *loc = p.head;
+	auto &p	     = pools.back();
+	uint8_t *loc = p.head;
 	p.head += sz;
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 	fprintf(stdout, "Allocating from NEW pool ... %zu\n", sz);
@@ -128,14 +128,14 @@ void VarMemory::free(void *data, size_t sz)
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 		fprintf(stdout, "Deleting manually ... %zu\n", sz);
 #endif
-		delete[](u8 *)data;
+		delete[](uint8_t *)data;
 		return;
 	}
 	LockGuard<Mutex> mtxlock(memmtx);
 #if defined(MEM_PROFILE) && defined(DEBUG_MODE)
 	fprintf(stdout, "Giving back to pool ... %zu\n", sz);
 #endif
-	freechunks[sz].push_front((u8 *)data);
+	freechunks[sz].push_front((uint8_t *)data);
 }
 
 } // namespace fer

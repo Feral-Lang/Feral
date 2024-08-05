@@ -591,7 +591,7 @@ Var *byt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 Var *chr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	 const StringMap<AssnArgData> &assn_args)
 {
-	u8 byt = (u8)as<VarInt>(args[0])->get();
+	uint8_t byt = (uint8_t)as<VarInt>(args[0])->get();
 	return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 

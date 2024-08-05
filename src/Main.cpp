@@ -1,5 +1,5 @@
 #include "Args.hpp"
-#include "Config.hpp"
+#include "Core.hpp"
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -74,7 +74,7 @@ int execInteractive(ArgParser &cmdargs)
 
 void showVersion()
 {
-	std::cout << PROJECT_NAME << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
-		  << VERSION_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
-		  << ")\nBuilt with " << BUILD_CXX_COMPILER << "\nOn " << BUILD_DATE << "\n";
+	std::cout << PROJECT_NAME << " " << PROJECT_MAJOR << "." << PROJECT_MINOR << "."
+		  << PROJECT_PATCH << " (" << REPO_URL << " " << COMMIT_ID << " " << TREE_STATUS
+		  << ")\nBuilt with " << BUILD_COMPILER << "\nOn " << BUILD_DATE << "\n";
 }

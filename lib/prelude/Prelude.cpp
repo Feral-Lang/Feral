@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <filesystem> // used by File.hpp.in
 
-#include "Config.hpp"
 #include "FS.hpp" // used by File.hpp.in
 #include "VM/Interpreter.hpp"
 
@@ -661,12 +660,12 @@ INIT_MODULE(Prelude)
 	mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
 	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
 
-	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, VERSION_MAJOR));
-	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, VERSION_MINOR));
-	mod->addNativeVar("versionPatch", vm.makeVar<VarInt>(loc, VERSION_PATCH));
+	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
+	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, PROJECT_MINOR));
+	mod->addNativeVar("versionPatch", vm.makeVar<VarInt>(loc, PROJECT_PATCH));
 
 	mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
-	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_CXX_COMPILER));
+	mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_COMPILER));
 	mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
 	mod->addNativeVar("minCmakeVersion", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
 	mod->addNativeVar("cmakeVersion", vm.makeVar<VarStr>(loc, CMAKE_VERSION));

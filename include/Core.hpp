@@ -1,3 +1,6 @@
+// Defines all the common macros, types, etc. to be used by the codebase.
+// Also contains all the standard library headers that are used.
+
 #pragma once
 
 #include <array>
@@ -51,19 +54,17 @@
 #define FER_OS_APPLE
 #endif
 
+namespace fer
+{
+
 #if defined(FER_OS_WINDOWS)
 #if defined(FER_OS_WINDOWS64)
 using ssize_t = int64_t;
 #else
-using ssize_t = int;
+using ssize_t = int32_t;
 #endif
 #endif
 
-namespace fer
-{
-
-// the primitives have lower case name
-using u8	= unsigned char;
 using Mutex	= std::mutex;
 using Regex	= std::regex;
 using String	= std::string;
@@ -74,12 +75,10 @@ using FStream	= std::fstream;
 using Nullptr	= std::nullptr_t;
 using IOStream	= std::iostream;
 using IFStream	= std::ifstream;
+using OFStream	= std::ofstream;
 using StringRef = std::string_view;
 
-#if defined(FER_OS_WINDOWS)
-using WString	 = std::wstring;
-using WStringRef = std::wstring_view;
-#endif
+#include "Config.inl"
 
 struct StringHash
 {
@@ -92,10 +91,10 @@ struct StringHash
 };
 
 template<typename T> using Set		   = std::unordered_set<T>;
-template<typename T> using List		   = std::forward_list<T>; // singly linked list
 template<typename T> using Span		   = std::span<T>;
 template<typename T> using Deque	   = std::deque<T>;
 template<typename T> using Vector	   = std::vector<T>;
+template<typename T> using UniList	   = std::forward_list<T>; // singly linked list
 template<typename T> using InitList	   = std::initializer_list<T>;
 template<typename T> using LockGuard	   = std::lock_guard<T>;
 template<typename... Ts> using Variant	   = std::variant<Ts...>;
