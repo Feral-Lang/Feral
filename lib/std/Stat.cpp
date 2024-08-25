@@ -28,7 +28,7 @@ namespace fer
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statNative(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStruct>()) {
@@ -107,7 +107,7 @@ Var *statNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsReg(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -115,7 +115,7 @@ Var *statIsReg(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISREG(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsDir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -123,7 +123,7 @@ Var *statIsDir(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISDIR(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsChr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -132,7 +132,7 @@ Var *statIsChr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 }
 
 #if !defined(FER_OS_WINDOWS)
-Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsBlk(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -140,7 +140,7 @@ Var *statIsBlk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISBLK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsFifo(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -148,7 +148,7 @@ Var *statIsFifo(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISFIFO(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsLnk(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);
@@ -156,7 +156,7 @@ Var *statIsLnk(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return S_ISLNK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsSock(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *statIsSock(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[1]);

@@ -1,13 +1,14 @@
 #include "VM/DynLib.hpp"
 
 #include "Error.hpp"
-#include "FS.hpp"
 
 #if defined(FER_OS_WINDOWS)
 // Windows dlfcn equivalent functions.
 // Thanks to this person's youth:
 // https://stackoverflow.com/questions/53530566/loading-dll-in-windows-c-for-cross-platform-design
 #include <Windows.h>
+
+#include "FS.hpp"
 
 #define RTLD_GLOBAL 0x100 /* do not hide entries in this module */
 #define RTLD_LOCAL 0x000  /* hide entries in this module */
@@ -61,7 +62,7 @@ void *DynLib::load(const char *filepath)
 	// something
 	void *hndl = dlopen(filepath, RTLD_NOW | RTLD_GLOBAL);
 	if(hndl == nullptr) {
-		err::out(nullptr, "dyn lib failed to open ", filepath, ": ", dlerror());
+		err.fail({}, "dyn lib failed to open ", filepath, ": ", dlerror());
 	} else {
 		handles.insert({filepath, hndl});
 	}

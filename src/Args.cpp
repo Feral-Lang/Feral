@@ -35,7 +35,7 @@ bool ArgParser::parse()
 			expect_val	 = false;
 			continue;
 		}
-		if(startsWith(arg, "--") && !source_done) {
+		if(utils::startsWith(arg, "--") && !source_done) {
 			if(arg.size() == 2) {
 				source_done = true;
 				continue;
@@ -53,7 +53,7 @@ bool ArgParser::parse()
 			}
 			continue;
 		}
-		if(startsWith(arg, "-") && !source_done) {
+		if(utils::startsWith(arg, "-") && !source_done) {
 			arg = arg.substr(1);
 			for(auto &a : arg_defs) {
 				if(a.second.shrt == arg) {
@@ -75,12 +75,12 @@ bool ArgParser::parse()
 		}
 	}
 	if(expect_val) {
-		err::out(nullptr, "Expected value to be provided for argument: ", expect_key);
+		err.fail({}, "Expected value to be provided for argument: ", expect_key);
 		return false;
 	}
 	for(auto &a : arg_defs) {
 		if(a.second.reqd && opts.find(a.first) == opts.end()) {
-			err::out(nullptr, "Required argument: ", a.first, " was not provided");
+			err.fail({}, "Required argument: ", a.first, " was not provided");
 			return false;
 		}
 	}

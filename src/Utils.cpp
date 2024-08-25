@@ -5,7 +5,7 @@
 #include <atlconv.h>
 #endif
 
-namespace fer
+namespace fer::utils
 {
 
 Vector<StringRef> stringDelim(StringRef str, StringRef delim)
@@ -152,4 +152,80 @@ WString toWString(StringRef data)
 }
 #endif
 
-} // namespace fer
+void removeBackSlash(String &s)
+{
+	for(auto it = s.begin(); it != s.end(); ++it) {
+		if(*it == '\\') {
+			if(it + 1 >= s.end()) continue;
+			it = s.erase(it);
+			if(*it == '0') *it = '\0';
+			else if(*it == 'a') *it = '\a';
+			else if(*it == 'b') *it = '\b';
+#if !defined(OS_WINDOWS)
+			else if(*it == 'e') *it = '\e';
+#endif
+			else if(*it == 'f') *it = '\f';
+			else if(*it == 'n') *it = '\n';
+			else if(*it == 'r') *it = '\r';
+			else if(*it == 't') *it = '\t';
+			else if(*it == 'v') *it = '\v';
+		}
+	}
+}
+
+String viewBackSlash(StringRef data)
+{
+	String res(data);
+	for(auto it = res.begin(); it != res.end(); ++it) {
+		if(*it == '\0') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\0");
+			continue;
+		}
+		if(*it == '\a') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\a");
+			continue;
+		}
+		if(*it == '\b') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\b");
+			continue;
+		}
+#if !defined(OS_WINDOWS)
+		if(*it == '\e') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\e");
+			continue;
+		}
+#endif
+		if(*it == '\f') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\f");
+			continue;
+		}
+		if(*it == '\n') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\n");
+			continue;
+		}
+		if(*it == '\r') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\r");
+			continue;
+		}
+		if(*it == '\t') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\t");
+			continue;
+		}
+		if(*it == '\v') {
+			it = res.erase(it);
+			res.insert(it - res.begin(), "\\v");
+			continue;
+		}
+	}
+	return res;
+}
+
+} // namespace fer::utils

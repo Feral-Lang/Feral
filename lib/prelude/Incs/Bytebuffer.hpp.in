@@ -1,4 +1,4 @@
-Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *bytebufferNewNative(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -9,19 +9,19 @@ Var *bytebufferNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args
 	return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 
-Var *bytebufferCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *bytebufferCapacity(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->capacity());
 }
 
-Var *bytebufferLen(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *bytebufferLen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->getLen());
 }
 
-Var *bytebufferToStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *bytebufferToStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarBytebuffer *self = as<VarBytebuffer>(args[0]);

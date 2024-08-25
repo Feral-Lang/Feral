@@ -12,20 +12,20 @@ class VarRegex : public Var
 	using svmatch	 = std::match_results<StringRef::const_iterator>;
 	using svsubmatch = std::sub_match<StringRef::const_iterator>;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarRegex(const ModuleLoc *loc, StringRef exprStr,
+	VarRegex(ModuleLoc loc, StringRef exprStr,
 		 Regex::flag_type opts = std::regex_constants::ECMAScript);
-	VarRegex(const ModuleLoc *loc, const Regex &expr);
+	VarRegex(ModuleLoc loc, const Regex &expr);
 
 	// loc can be nullptr if captures is not a VarVec (ie. no new strings will have to be
 	// created)
 	// If ignoreMatch is true, it will ignore the first match, ie. the regex equivalent in
 	// string, and go directly for the capture groups if any.
-	bool match(Interpreter &vm, StringRef data, const ModuleLoc *loc = nullptr,
-		   Var *captures = nullptr, bool ignoreMatch = false);
+	bool match(Interpreter &vm, StringRef data, ModuleLoc loc = {}, Var *captures = nullptr,
+		   bool ignoreMatch = false);
 };
 
 } // namespace fer

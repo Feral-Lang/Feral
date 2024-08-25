@@ -3,6 +3,7 @@
 #include <charconv>
 
 #include "Error.hpp"
+#include "FS.hpp"
 
 namespace fer::lex
 {
@@ -190,16 +191,16 @@ const char *Tok::getOperCStr() const
 	return "";
 }
 
-Lexeme::Lexeme(const ModuleLoc *loc) : loc(loc), tok(INVALID) {}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type) : loc(loc), tok(type) {}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type, String &&_data)
+Lexeme::Lexeme(ModuleLoc loc) : loc(loc), tok(INVALID) {}
+Lexeme::Lexeme(ModuleLoc loc, TokType type) : loc(loc), tok(type) {}
+Lexeme::Lexeme(ModuleLoc loc, TokType type, String &&_data)
 	: loc(loc), tok(type), data(std::move(_data))
 {}
-Lexeme::Lexeme(const ModuleLoc *loc, TokType type, StringRef _data)
+Lexeme::Lexeme(ModuleLoc loc, TokType type, StringRef _data)
 	: loc(loc), tok(type), data(String(_data))
 {}
-Lexeme::Lexeme(const ModuleLoc *loc, int64_t _data) : loc(loc), tok(INT), data(_data) {}
-Lexeme::Lexeme(const ModuleLoc *loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
+Lexeme::Lexeme(ModuleLoc loc, int64_t _data) : loc(loc), tok(INT), data(_data) {}
+Lexeme::Lexeme(ModuleLoc loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
 
 bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
 {
@@ -222,7 +223,11 @@ String Lexeme::str(int64_t pad) const
 	for(int64_t i = 0; i < pad - len; ++i) res += " ";
 	if(pad == 0) res += " ";
 	len = res.size();
-	if(loc) res += "[" + loc->getLocStr() + "]";
+	res += "[";
+	res += utils::toString(loc.id);
+	res += ":";
+	res += utils::toString(loc.offset);
+	res += "]";
 	if(!tok.isData()) return res;
 	len = res.size() - len;
 	for(int64_t i = 0; i < pad - len; ++i) res += " ";
@@ -244,15 +249,15 @@ String Lexeme::str(int64_t pad) const
 	op_type = type;       \
 	break
 
-Tokenizer::Tokenizer(Context &ctx, Module *m) : ctx(ctx), mod(m) {}
+StringRef getName(StringRef data, size_t &i);
+TokType classifyStr(StringRef str);
+String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &line_start,
+	      TokType &num_type, int &base);
+bool getConstStr(ModuleId moduleId, StringRef data, char &quote_type, size_t &i, size_t &line,
+		 size_t &line_start, String &buf);
+TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, size_t line_start);
 
-ModuleLoc *Tokenizer::locAlloc(size_t line, size_t col)
-{
-	return ctx.allocModuleLoc(mod, line, col);
-}
-ModuleLoc Tokenizer::loc(size_t line, size_t col) { return ModuleLoc(mod, line, col); }
-
-bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
+bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks)
 {
 	int comment_block = 0; // int to handle nested comment blocks
 	bool comment_line = false;
@@ -277,7 +282,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 		}
 		if(CURR == '*' && NEXT == '/') {
 			if(!comment_block) {
-				err::out(loc(line, i - line_start),
+				err.fail(ModuleLoc(moduleId, i),
 					 "encountered multi line comment "
 					 "terminator '*/' in non comment block");
 				return false;
@@ -306,31 +311,29 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 		    PREV != '_' && PREV != ')' && PREV != ']' && PREV != '\'' && PREV != '"') ||
 		   isalpha(CURR) || CURR == '_')
 		{
+			size_t startPos = i;
 			String tmpstr; // used for __SRC_PATH__ and __SRC_DIR__
 			StringRef str = getName(data, i);
 			// check if string is a keyword
 			TokType str_class = classifyStr(str);
-			size_t strsz	  = str.size();
 			if(!str.empty() && str[0] == '.') str = str.substr(1);
 			if(str == "__SRC_PATH__") {
 				// toRawString() because in codegen, all strings are passed through
 				// fromRawString()
-				tmpstr	  = toRawString(mod->getPath());
+				tmpstr	  = utils::toRawString(path);
 				str	  = tmpstr;
 				str_class = STR;
 			} else if(str == "__SRC_DIR__") {
-				tmpstr	  = toRawString(mod->getDir());
+				tmpstr	  = utils::toRawString(fs::parentDir(path));
 				str	  = tmpstr;
 				str_class = STR;
 			}
 			if(str_class == STR || str_class == IDEN) {
 				// place either the data itself (type = STR, IDEN)
-				toks.emplace_back(locAlloc(line, i - line_start - strsz), str_class,
-						  str);
+				toks.emplace_back(ModuleLoc(moduleId, startPos), str_class, str);
 			} else {
 				// or the type
-				toks.emplace_back(locAlloc(line, i - line_start - strsz),
-						  str_class);
+				toks.emplace_back(ModuleLoc(moduleId, startPos), str_class);
 			}
 			continue;
 		}
@@ -339,7 +342,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 		if(isdigit(CURR)) {
 			TokType num_type = INT;
 			int base	 = 10;
-			StringRef num	 = getNum(data, i, line, line_start, num_type, base);
+			String num = getNum(moduleId, data, i, line, line_start, num_type, base);
 			if(num.empty()) return false;
 			if(num_type == FLT) {
 				// FIXME: from_chars() does not work with LLVM's libc++
@@ -351,8 +354,7 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 				long double fltval;
 				std::from_chars(num.data(), num.data() + num.size(), fltval);
 #endif
-				toks.emplace_back(locAlloc(line, i - line_start - num.size()),
-						  fltval);
+				toks.emplace_back(ModuleLoc(moduleId, i - num.size()), fltval);
 				continue;
 			}
 			int64_t intval;
@@ -362,31 +364,31 @@ bool Tokenizer::tokenize(String &data, Vector<Lexeme> &toks)
 				num = num.substr(base == 8 ? 1 : 2);
 			}
 			std::from_chars(num.data(), num.data() + num.size(), intval, base);
-			toks.emplace_back(locAlloc(line, i - line_start - num.size()), intval);
+			toks.emplace_back(ModuleLoc(moduleId, i - num.size()), intval);
 			continue;
 		}
 
 		// const strings
 		if(CURR == '\"' || CURR == '\'' || CURR == '`') {
-			StringRef buf;
+			String buf;
 			size_t startloc = i + 1;
 			char quote_type = 0;
-			if(!getConstStr(data, quote_type, len, i, line, line_start, buf))
+			if(!getConstStr(moduleId, data, quote_type, i, line, line_start, buf))
 				return false;
-			toks.emplace_back(locAlloc(line, startloc - line_start), STR, buf);
+			toks.emplace_back(ModuleLoc(moduleId, startloc), STR, buf);
 			continue;
 		}
 
 		// operators
 		size_t begin	= i;
-		TokType op_type = getOperator(data, i, line, line_start);
+		TokType op_type = getOperator(moduleId, data, i, line, line_start);
 		if(op_type == INVALID) return false;
-		toks.emplace_back(locAlloc(line, begin - line_start), op_type);
+		toks.emplace_back(ModuleLoc(moduleId, begin), op_type);
 	}
 	return true;
 }
 
-StringRef Tokenizer::getName(StringRef data, size_t &i)
+StringRef getName(StringRef data, size_t &i)
 {
 	size_t len   = data.size();
 	size_t start = i++; // we know first char is valid, duh
@@ -399,7 +401,7 @@ StringRef Tokenizer::getName(StringRef data, size_t &i)
 	return StringRef(&data[start], i - start);
 }
 
-TokType Tokenizer::classifyStr(StringRef str)
+TokType classifyStr(StringRef str)
 {
 	if(str == TokStrs[LET]) return LET;
 	if(str == TokStrs[FN]) return FN;
@@ -425,10 +427,11 @@ TokType Tokenizer::classifyStr(StringRef str)
 	return str[0] == '.' ? STR : IDEN;
 }
 
-StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &line_start,
-			    TokType &num_type, int &base)
+String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &line_start,
+	      TokType &num_type, int &base)
 {
-	size_t len	      = data.size();
+	size_t len = data.size();
+	String buf;
 	size_t first_digit_at = i;
 
 	int dot_loc = -1;
@@ -486,7 +489,7 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 		}
 		case '.':
 			if(!read_base && base != 10) {
-				err::out(loc(line, first_digit_at - line_start),
+				err.fail(ModuleLoc(moduleId, first_digit_at),
 					 "encountered dot (.) character when base is not 10 (",
 					 base, ") ");
 				return "";
@@ -498,7 +501,7 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 					goto end;
 				}
 			} else {
-				err::out(loc(line, first_digit_at - line_start),
+				err.fail(ModuleLoc(moduleId, first_digit_at),
 					 "encountered dot (.) character when the "
 					 "number being retrieved (from column ",
 					 first_digit_at + 1, ") already had one");
@@ -510,7 +513,7 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 		default:
 		fail:
 			if(isalnum(c)) {
-				err::out(loc(line, first_digit_at - line_start),
+				err.fail(ModuleLoc(moduleId, first_digit_at),
 					 "encountered invalid character '", c,
 					 "' while retrieving a number of base ", base);
 				return "";
@@ -518,16 +521,19 @@ StringRef Tokenizer::getNum(StringRef data, size_t &i, size_t &line, size_t &lin
 				goto end;
 			}
 		}
-		if(first_digit_at != i || c != '0') read_base = false;
+		if(!buf.empty() || c != '0') read_base = false;
+		buf.push_back(c);
 		++i;
 	}
 end:
-	return StringRef(&data[first_digit_at], i - first_digit_at);
+	return buf;
 }
 
-bool Tokenizer::getConstStr(String &data, char &quote_type, size_t &len, size_t &i, size_t &line,
-			    size_t &line_start, StringRef &buf)
+bool getConstStr(ModuleId moduleId, StringRef data, char &quote_type, size_t &i, size_t &line,
+		 size_t &line_start, String &buf)
 {
+	size_t len = data.size();
+	buf.clear();
 	quote_type		    = CURR;
 	int starting_at		    = i + 1;
 	size_t continuous_backslash = 0;
@@ -540,25 +546,24 @@ bool Tokenizer::getConstStr(String &data, char &quote_type, size_t &len, size_t 
 		}
 		if(CURR == '\\') {
 			++continuous_backslash;
-			++i;
+			buf.push_back(data[i++]);
 			continue;
 		}
 		if(CURR == quote_type && continuous_backslash % 2 == 0) break;
-		++i;
+		buf.push_back(data[i++]);
 		continuous_backslash = 0;
 	}
 	if(CURR != quote_type) {
-		err::out(loc(line, i - line_start), "no matching quote for '", quote_type,
+		err.fail(ModuleLoc(moduleId, starting_at), "no matching quote for '", quote_type,
 			 "' found");
 		return false;
 	}
-	buf = StringRef(&data[starting_at], i - starting_at);
 	// omit ending quote
 	++i;
 	return true;
 }
 
-TokType Tokenizer::getOperator(StringRef data, size_t &i, size_t line, size_t line_start)
+TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, size_t line_start)
 {
 	size_t len	   = data.size();
 	TokType op_type	   = INVALID;
@@ -732,13 +737,19 @@ TokType Tokenizer::getOperator(StringRef data, size_t &i, size_t line, size_t li
 	case ']': SET_OP_TYPE_BRK(RBRACK);
 	case '}': SET_OP_TYPE_BRK(RBRACE);
 	default:
-		err::out(loc(line, starting_at - line_start), "unknown operator '", CURR,
-			 "' found");
+		err.fail(ModuleLoc(moduleId, starting_at), "unknown operator '", CURR, "' found");
 		op_type = INVALID;
 	}
 
 	++i;
 	return op_type;
+}
+
+void dumpTokens(OStream &os, Span<Lexeme> toks)
+{
+	for(auto &t : toks) {
+		os << t.str() << "\n";
+	}
 }
 
 } // namespace fer::lex

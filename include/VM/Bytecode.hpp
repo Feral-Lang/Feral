@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Error.hpp"
 
 namespace fer
 {
@@ -69,17 +70,17 @@ public:
 
 private:
 	Data data;
-	const ModuleLoc *loc;
+	ModuleLoc loc;
 	DataType dtype;
 	Opcode opcode;
 
 public:
-	Instruction(Opcode opcode, const ModuleLoc *loc, String &&data, DataType dtype);
-	Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype);
-	Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data);
-	Instruction(Opcode opcode, const ModuleLoc *loc, long double data);
-	Instruction(Opcode opcode, const ModuleLoc *loc, bool data);
-	Instruction(Opcode opcode, const ModuleLoc *loc); // for nil
+	Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype);
+	Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype);
+	Instruction(Opcode opcode, ModuleLoc loc, int64_t data);
+	Instruction(Opcode opcode, ModuleLoc loc, long double data);
+	Instruction(Opcode opcode, ModuleLoc loc, bool data);
+	Instruction(Opcode opcode, ModuleLoc loc); // for nil
 
 #define isDataX(X, ENUMVAL) \
 	inline bool isData##X() const { return dtype == DataType::ENUMVAL; }
@@ -93,13 +94,13 @@ public:
 	inline void setInt(int64_t dat) { data = dat; }
 	inline void setStr(StringRef dat) { std::get<String>(data) = dat; }
 
-	inline const ModuleLoc *getLoc() const { return loc; }
+	inline ModuleLoc getLoc() const { return loc; }
 	inline StringRef getDataStr() const { return std::get<String>(data); }
 	inline int64_t getDataInt() const { return std::get<int64_t>(data); }
 	inline long double getDataFlt() const { return std::get<long double>(data); }
 	inline bool getDataBool() const { return std::get<bool>(data); }
 
-	inline Data &getData() { return data; }
+	inline const Data &getData() const { return data; }
 	inline DataType getDataType() const { return dtype; }
 	inline Opcode getOpcode() const { return opcode; }
 
@@ -111,34 +112,31 @@ class Bytecode
 	Vector<Instruction> code;
 
 public:
-	inline void addInstrStr(Opcode opcode, const ModuleLoc *loc, String &&data)
+	inline void addInstrStr(Opcode opcode, ModuleLoc loc, String &&data)
 	{
 		code.emplace_back(opcode, loc, std::move(data), DataType::STR);
 	}
-	inline void addInstrStr(Opcode opcode, const ModuleLoc *loc, StringRef data)
+	inline void addInstrStr(Opcode opcode, ModuleLoc loc, StringRef data)
 	{
 		code.emplace_back(opcode, loc, data, DataType::STR);
 	}
-	inline void addInstrIden(Opcode opcode, const ModuleLoc *loc, StringRef data)
+	inline void addInstrIden(Opcode opcode, ModuleLoc loc, StringRef data)
 	{
 		code.emplace_back(opcode, loc, data, DataType::IDEN);
 	}
-	inline void addInstrInt(Opcode opcode, const ModuleLoc *loc, int64_t data)
+	inline void addInstrInt(Opcode opcode, ModuleLoc loc, int64_t data)
 	{
 		code.emplace_back(opcode, loc, data);
 	}
-	inline void addInstrFlt(Opcode opcode, const ModuleLoc *loc, long double data)
+	inline void addInstrFlt(Opcode opcode, ModuleLoc loc, long double data)
 	{
 		code.emplace_back(opcode, loc, data);
 	}
-	inline void addInstrBool(Opcode opcode, const ModuleLoc *loc, bool data)
+	inline void addInstrBool(Opcode opcode, ModuleLoc loc, bool data)
 	{
 		code.emplace_back(opcode, loc, data);
 	}
-	inline void addInstrNil(Opcode opcode, const ModuleLoc *loc)
-	{
-		code.emplace_back(opcode, loc);
-	}
+	inline void addInstrNil(Opcode opcode, ModuleLoc loc) { code.emplace_back(opcode, loc); }
 
 	inline void updateInstrInt(size_t instr_idx, int64_t data) { code[instr_idx].setInt(data); }
 	inline void updateInstrStr(size_t instr_idx, StringRef data)
@@ -149,9 +147,10 @@ public:
 	inline void pop() { code.pop_back(); }
 	inline void erase(size_t idx) { code.erase(code.begin() + idx); }
 	inline size_t getLastIndex() const { return code.size() - 1; }
-	inline Instruction &getInstrAt(size_t idx) { return code[idx]; }
 	inline size_t size() const { return code.size(); }
-	inline Vector<Instruction> &getBytecode() { return code; }
+	inline Instruction &getInstrAt(size_t idx) { return code[idx]; }
+	inline const Vector<Instruction> &getBytecode() const { return code; }
+	inline const Instruction &getInstrAt(size_t idx) const { return code[idx]; }
 
 	void dump(OStream &os) const;
 };

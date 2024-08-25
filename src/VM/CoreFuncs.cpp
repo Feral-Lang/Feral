@@ -3,7 +3,7 @@
 namespace fer
 {
 
-bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImport, String &result)
+bool loadCommon(Interpreter &vm, ModuleLoc loc, Var *modname, bool isImport, String &result)
 {
 	if(!modname->is<VarStr>()) {
 		vm.fail(loc,
@@ -38,13 +38,13 @@ bool loadCommon(Interpreter &vm, const ModuleLoc *loc, Var *modname, bool isImpo
 	return true;
 }
 
-Var *loadFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *loadFile(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	String file;
 	if(!loadCommon(vm, loc, args[1], true, file)) return nullptr;
 	if(!vm.hasModule(file)) {
-		int res = vm.compileAndRun(loc, file);
+		int res = vm.compileAndRun(loc, file.c_str());
 		if(res != 0 && !vm.isExitCalled()) {
 			vm.fail(args[1]->getLoc(), "could not import: '", file,
 				"', look at error above (exit code: ", res, ")");
@@ -54,7 +54,7 @@ Var *loadFile(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getModule(file);
 }
 
-Var *loadLibrary(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *loadLibrary(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	String file;
@@ -66,13 +66,13 @@ Var *loadLibrary(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-void setupCoreFuncs(Interpreter &vm, const ModuleLoc *loc)
+void setupCoreFuncs(Interpreter &vm, ModuleLoc loc)
 {
 	vm.addNativeFn(loc, "import", loadFile, 1);
 	vm.addNativeFn(loc, "loadlib", loadLibrary, 1);
 }
 
-Var *basicModuleFinder(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *basicModuleFinder(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {

@@ -44,8 +44,7 @@ class Logger
 	template<typename... Args> void log(LogLevels lvl, Args &&...args)
 	{
 		if((int)level < (int)lvl) return;
-		String res;
-		appendToString(res, std::forward<Args>(args)...);
+		String res = utils::toString(std::forward<Args>(args)...);
 		logInternal(lvl, res);
 	}
 

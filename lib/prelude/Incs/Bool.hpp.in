@@ -1,5 +1,5 @@
 #define BoolComparison(name, op, opname)                                                \
-	Var *bool##name(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,        \
+	Var *bool##name(Interpreter &vm, ModuleLoc loc, Span<Var *> args,               \
 			const StringMap<AssnArgData> &assn_args)                        \
 	{                                                                               \
 		if(!args[1]->is<VarBool>()) {                                           \
@@ -18,7 +18,7 @@ BoolComparison(GT, >, ">");
 BoolComparison(LE, <=, "<=");
 BoolComparison(GE, >=, ">=");
 
-Var *boolEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *boolEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) return vm.getFalse();
@@ -26,7 +26,7 @@ Var *boolEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 										: vm.getFalse();
 }
 
-Var *boolNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *boolNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarBool>()) return vm.getTrue();
@@ -34,7 +34,7 @@ Var *boolNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 										: vm.getFalse();
 }
 
-Var *boolNot(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *boolNot(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarBool>(args[0])->getVal() ? vm.getFalse() : vm.getTrue();

@@ -37,37 +37,37 @@ namespace fer
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
 
-Var *allGetTypeID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allGetTypeID(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
-Var *allGetTypeFnID(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allGetTypeFnID(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
-Var *allGetTypeStr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allGetTypeStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
-Var *allEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *allNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *allCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	Var *copy = vm.copyVar(loc, args[0]);
@@ -80,14 +80,14 @@ Var *allCopy(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 // If a new instance is created and simply returned without storing in a container,
 // there is no point in calling this since reference count of that object will be 1
 // and hence the VM won't create a copy of it when used in creating a new var.
-Var *reference(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *reference(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	args[1]->setLoadAsRef();
 	return args[1];
 }
 
-Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *raise(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	String res;
@@ -102,7 +102,7 @@ Var *raise(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return nullptr;
 }
 
-Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *evaluateCode(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -119,7 +119,7 @@ Var *evaluateCode(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.decVarRef(res, false);
 }
 
-Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *evaluateExpr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -139,7 +139,7 @@ Var *evaluateExpr(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 // getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
 // vice-versa.
 
-Var *getOSName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *getOSName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	String name;
@@ -157,7 +157,7 @@ Var *getOSName(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, name);
 }
 
-Var *getOSDistro(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *getOSDistro(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	String distro;
@@ -191,15 +191,9 @@ Var *getOSDistro(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, distro);
 }
 
-Var *isMainModule(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args)
-{
-	return vm.getCurrModule()->getMod()->isMainModule() ? vm.getTrue() : vm.getFalse();
-}
-
 // Stuff from std/sys module
 
-Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *_exit(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -211,7 +205,7 @@ Var *_exit(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *varExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -224,7 +218,7 @@ Var *varExists(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return moduleVars->get(var) || vm.getGlobal(var) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *setMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -236,13 +230,13 @@ Var *setMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *getMaxCallstacks(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *getMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
 }
 
-Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *addGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -260,7 +254,7 @@ Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	String data;
 	Vector<StringRef> existingData;
 	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
-		existingData = stringDelim(data, "\n");
+		existingData = utils::stringDelim(data, "\n");
 	}
 	FILE *f	     = fopen(vm.getGlobalModulePathsFile(), "a+");
 	size_t added = 0;
@@ -276,7 +270,7 @@ Var *addGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> arg
 	return vm.makeVar<VarInt>(loc, added);
 }
 
-Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *removeGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			     const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -294,7 +288,7 @@ Var *removeGlobalModulePaths(Interpreter &vm, const ModuleLoc *loc, Span<Var *> 
 	String data;
 	Vector<StringRef> existingData;
 	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
-		existingData = stringDelim(data, "\n");
+		existingData = utils::stringDelim(data, "\n");
 	}
 	size_t removed = 0;
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -325,7 +319,6 @@ INIT_MODULE(Prelude)
 	vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);
 	vm.addNativeFn(loc, "getOSName", getOSName, 0);
 	vm.addNativeFn(loc, "getOSDistro", getOSDistro, 0);
-	vm.addNativeFn(loc, "_isMainModule_", isMainModule, 1);
 	// enum/struct
 	vm.addNativeFn(loc, "enum", createEnum, 0, true);
 	vm.addNativeFn(loc, "struct", createStruct, 0);
@@ -653,7 +646,6 @@ INIT_MODULE(Prelude)
 	mod->addNativeVar("args", vm.getCLIArgs());
 
 	mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
-	mod->addNativeVar("mainModulePath", vm.makeVar<VarStr>(loc, vm.getMainModulePath()));
 
 	mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
 	mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, PROJECT_MINOR));

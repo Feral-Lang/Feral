@@ -1,11 +1,8 @@
 #pragma once
 
 #include "Error.hpp"
-#include "Module.hpp"
 
-namespace fer
-{
-namespace lex
+namespace fer::lex
 {
 
 enum TokType
@@ -191,16 +188,16 @@ public:
 
 private:
 	Data data;
-	const ModuleLoc *loc;
+	ModuleLoc loc;
 	Tok tok;
 
 public:
-	Lexeme(const ModuleLoc *loc = nullptr);
-	explicit Lexeme(const ModuleLoc *loc, TokType type);
-	explicit Lexeme(const ModuleLoc *loc, TokType type, String &&_data);
-	explicit Lexeme(const ModuleLoc *loc, TokType type, StringRef _data);
-	explicit Lexeme(const ModuleLoc *loc, int64_t _data);
-	explicit Lexeme(const ModuleLoc *loc, long double _data);
+	Lexeme(ModuleLoc loc = {});
+	explicit Lexeme(ModuleLoc loc, TokType type);
+	explicit Lexeme(ModuleLoc loc, TokType type, String &&_data);
+	explicit Lexeme(ModuleLoc loc, TokType type, StringRef _data);
+	explicit Lexeme(ModuleLoc loc, int64_t _data);
+	explicit Lexeme(ModuleLoc loc, long double _data);
 
 	bool cmpData(const Lexeme &other, TokType type) const;
 
@@ -215,11 +212,9 @@ public:
 	inline void setDataStr(StringRef str) { data = String(str); }
 	inline void setDataInt(int64_t i) { data = i; }
 	inline void setDataFlt(long double f) { data = f; }
-	inline void setDataStr(InitList<StringRef> strs)
+	template<typename... Args> void setDataStr(Args... args)
 	{
-		String datanew;
-		for(auto s : strs) datanew += s;
-		data = datanew;
+		data = utils::toString(std::forward<Args>(args)...);
 	}
 
 	inline StringRef getDataStr() const { return std::get<String>(data); }
@@ -229,42 +224,10 @@ public:
 	inline Tok &getTok() { return tok; }
 	inline const Tok &getTok() const { return tok; }
 	inline TokType getTokVal() const { return tok.getVal(); }
-	inline const ModuleLoc *getLoc() const { return loc; }
+	inline ModuleLoc getLoc() const { return loc; }
 };
 
-class Tokenizer
-{
-	Context &ctx;
-	Module *mod;
+bool tokenize(ModuleId id, StringRef path, StringRef data, Vector<Lexeme> &toks);
+void dumpTokens(OStream &os, Span<Lexeme> toks);
 
-	ModuleLoc *locAlloc(size_t line, size_t col);
-	ModuleLoc loc(size_t line, size_t col);
-
-	StringRef getName(StringRef data, size_t &i);
-	TokType classifyStr(StringRef str);
-	StringRef getNum(StringRef data, size_t &i, size_t &line, size_t &line_start,
-			 TokType &num_type, int &base);
-	bool getConstStr(String &data, char &quote_type, size_t &len, size_t &i, size_t &line,
-			 size_t &line_start, StringRef &end);
-	TokType getOperator(StringRef data, size_t &i, size_t line, size_t line_start);
-
-public:
-	Tokenizer(Context &ctx, Module *m);
-	bool tokenize(String &data, Vector<Lexeme> &toks);
-};
-
-} // namespace lex
-
-namespace err
-{
-template<typename... Args> void out(const lex::Lexeme &tok, Args &&...args)
-{
-	out(tok.getLoc(), std::forward<Args>(args)...);
-}
-template<typename... Args> void outw(const lex::Lexeme &tok, Args &&...args)
-{
-	outw(tok.getLoc(), std::forward<Args>(args)...);
-}
-} // namespace err
-
-} // namespace fer
+} // namespace fer::lex

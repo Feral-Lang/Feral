@@ -11,11 +11,11 @@ class VarPtr : public Var
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarPtr(const ModuleLoc *loc, Var *val);
+	VarPtr(ModuleLoc loc, Var *val);
 
 	void setVal(Interpreter &vm, Var *newval);
 

@@ -1,15 +1,15 @@
-#include "Parser/Stmts.hpp"
+#include "AST/Stmts.hpp"
 
 #include "TreeIO.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// Stmt //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-Stmt::Stmt(Stmts stmt_type, const ModuleLoc *loc) : loc(loc), stype(stmt_type) {}
+Stmt::Stmt(Stmts stmt_type, ModuleLoc loc) : loc(loc), stype(stmt_type) {}
 Stmt::~Stmt() {}
 
 const char *Stmt::getStmtTypeCString() const
@@ -38,14 +38,14 @@ const char *Stmt::getStmtTypeCString() const
 //////////////////////////////////////////// StmtBlock ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtBlock::StmtBlock(const ModuleLoc *loc, const Vector<Stmt *> &stmts, bool is_top)
+StmtBlock::StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top)
 	: Stmt(BLOCK, loc), stmts(stmts), is_top(is_top)
 {}
 StmtBlock::~StmtBlock() {}
-StmtBlock *StmtBlock::create(Context &c, const ModuleLoc *loc, const Vector<Stmt *> &stmts,
+StmtBlock *StmtBlock::create(Allocator &allocator, ModuleLoc loc, const Vector<Stmt *> &stmts,
 			     bool is_top)
 {
-	return c.allocStmt<StmtBlock>(loc, stmts, is_top);
+	return allocator.alloc<StmtBlock>(loc, stmts, is_top);
 }
 
 void StmtBlock::disp(bool has_next)
@@ -68,13 +68,12 @@ void StmtBlock::disp(bool has_next)
 ////////////////////////////////////////// StmtSimple /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtSimple::StmtSimple(const ModuleLoc *loc, const lex::Lexeme &val) : Stmt(SIMPLE, loc), val(val)
-{}
+StmtSimple::StmtSimple(ModuleLoc loc, const lex::Lexeme &val) : Stmt(SIMPLE, loc), val(val) {}
 
 StmtSimple::~StmtSimple() {}
-StmtSimple *StmtSimple::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &val)
+StmtSimple *StmtSimple::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &val)
 {
-	return c.allocStmt<StmtSimple>(loc, val);
+	return allocator.alloc<StmtSimple>(loc, val);
 }
 
 void StmtSimple::disp(bool has_next)
@@ -88,14 +87,14 @@ void StmtSimple::disp(bool has_next)
 ////////////////////////////////////////// StmtFnArgs /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnArgs::StmtFnArgs(const ModuleLoc *loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector)
+StmtFnArgs::StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector)
 	: Stmt(FNARGS, loc), args(args), unpack_vector(unpack_vector)
 {}
 StmtFnArgs::~StmtFnArgs() {}
-StmtFnArgs *StmtFnArgs::create(Context &c, const ModuleLoc *loc, Vector<Stmt *> &&args,
+StmtFnArgs *StmtFnArgs::create(Allocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
 			       Vector<bool> &&unpack_vector)
 {
-	return c.allocStmt<StmtFnArgs>(loc, std::move(args), std::move(unpack_vector));
+	return allocator.alloc<StmtFnArgs>(loc, std::move(args), std::move(unpack_vector));
 }
 
 void StmtFnArgs::disp(bool has_next)
@@ -118,14 +117,14 @@ void StmtFnArgs::disp(bool has_next)
 //////////////////////////////////////////// StmtExpr /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtExpr::StmtExpr(const ModuleLoc *loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs)
+StmtExpr::StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs)
 	: Stmt(EXPR, loc), lhs(lhs), oper(oper), rhs(rhs), or_blk(nullptr), or_blk_var(loc)
 {}
 StmtExpr::~StmtExpr() {}
-StmtExpr *StmtExpr::create(Context &c, const ModuleLoc *loc, Stmt *lhs, const lex::Lexeme &oper,
+StmtExpr *StmtExpr::create(Allocator &allocator, ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper,
 			   Stmt *rhs)
 {
-	return c.allocStmt<StmtExpr>(loc, lhs, oper, rhs);
+	return allocator.alloc<StmtExpr>(loc, lhs, oper, rhs);
 }
 
 void StmtExpr::disp(bool has_next)
@@ -164,14 +163,14 @@ void StmtExpr::disp(bool has_next)
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVar::StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg)
+StmtVar::StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg)
 	: Stmt(VAR, loc), name(name), in(in), val(val), is_arg(is_arg)
 {}
 StmtVar::~StmtVar() {}
-StmtVar *StmtVar::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in,
+StmtVar *StmtVar::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &name, Stmt *in,
 			 Stmt *val, bool is_arg)
 {
-	return c.allocStmt<StmtVar>(loc, name, in, val, is_arg);
+	return allocator.alloc<StmtVar>(loc, name, in, val, is_arg);
 }
 
 void StmtVar::disp(bool has_next)
@@ -197,15 +196,15 @@ void StmtVar::disp(bool has_next)
 //////////////////////////////////////////// StmtFnSig ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnSig::StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
+StmtFnSig::StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
 		     StmtSimple *vaarg)
 	: Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg)
 {}
 StmtFnSig::~StmtFnSig() {}
-StmtFnSig *StmtFnSig::create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
+StmtFnSig *StmtFnSig::create(Allocator &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
 			     StmtSimple *kwarg, StmtSimple *vaarg)
 {
-	return c.allocStmt<StmtFnSig>(loc, args, kwarg, vaarg);
+	return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg);
 }
 
 void StmtFnSig::disp(bool has_next)
@@ -239,13 +238,13 @@ void StmtFnSig::disp(bool has_next)
 //////////////////////////////////////////// StmtFnDef ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnDef::StmtFnDef(const ModuleLoc *loc, StmtFnSig *sig, StmtBlock *blk)
+StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
 	: Stmt(FNDEF, loc), sig(sig), blk(blk)
 {}
 StmtFnDef::~StmtFnDef() {}
-StmtFnDef *StmtFnDef::create(Context &c, const ModuleLoc *loc, StmtFnSig *sig, StmtBlock *blk)
+StmtFnDef *StmtFnDef::create(Allocator &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
 {
-	return c.allocStmt<StmtFnDef>(loc, sig, blk);
+	return allocator.alloc<StmtFnDef>(loc, sig, blk);
 }
 
 void StmtFnDef::disp(bool has_next)
@@ -267,13 +266,14 @@ void StmtFnDef::disp(bool has_next)
 ///////////////////////////////////////// StmtVarDecl /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVarDecl::StmtVarDecl(const ModuleLoc *loc, const Vector<StmtVar *> &decls)
+StmtVarDecl::StmtVarDecl(ModuleLoc loc, const Vector<StmtVar *> &decls)
 	: Stmt(VARDECL, loc), decls(decls)
 {}
 StmtVarDecl::~StmtVarDecl() {}
-StmtVarDecl *StmtVarDecl::create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &decls)
+StmtVarDecl *StmtVarDecl::create(Allocator &allocator, ModuleLoc loc,
+				 const Vector<StmtVar *> &decls)
 {
-	return c.allocStmt<StmtVarDecl>(loc, decls);
+	return allocator.alloc<StmtVarDecl>(loc, decls);
 }
 
 void StmtVarDecl::disp(bool has_next)
@@ -293,13 +293,12 @@ void StmtVarDecl::disp(bool has_next)
 Conditional::Conditional(Stmt *cond, StmtBlock *blk) : cond(cond), blk(blk) {}
 Conditional::~Conditional() {}
 
-StmtCond::StmtCond(const ModuleLoc *loc, const Vector<Conditional> &conds)
-	: Stmt(COND, loc), conds(conds)
+StmtCond::StmtCond(ModuleLoc loc, const Vector<Conditional> &conds) : Stmt(COND, loc), conds(conds)
 {}
 StmtCond::~StmtCond() {}
-StmtCond *StmtCond::create(Context &c, const ModuleLoc *loc, const Vector<Conditional> &conds)
+StmtCond *StmtCond::create(Allocator &allocator, ModuleLoc loc, const Vector<Conditional> &conds)
 {
-	return c.allocStmt<StmtCond>(loc, conds);
+	return allocator.alloc<StmtCond>(loc, conds);
 }
 
 void StmtCond::disp(bool has_next)
@@ -328,14 +327,14 @@ void StmtCond::disp(bool has_next)
 //////////////////////////////////////////// StmtFor //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFor::StmtFor(const ModuleLoc *loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *blk)
+StmtFor::StmtFor(ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *blk)
 	: Stmt(FOR, loc), init(init), cond(cond), incr(incr), blk(blk)
 {}
 StmtFor::~StmtFor() {}
-StmtFor *StmtFor::create(Context &c, const ModuleLoc *loc, Stmt *init, Stmt *cond, Stmt *incr,
+StmtFor *StmtFor::create(Allocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr,
 			 StmtBlock *blk)
 {
-	return c.allocStmt<StmtFor>(loc, init, cond, incr, blk);
+	return allocator.alloc<StmtFor>(loc, init, cond, incr, blk);
 }
 
 void StmtFor::disp(bool has_next)
@@ -373,14 +372,14 @@ void StmtFor::disp(bool has_next)
 /////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtForIn::StmtForIn(const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk)
+StmtForIn::StmtForIn(ModuleLoc loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk)
 	: Stmt(FORIN, loc), iter(iter), in(in), blk(blk)
 {}
 StmtForIn::~StmtForIn() {}
-StmtForIn *StmtForIn::create(Context &c, const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in,
+StmtForIn *StmtForIn::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &iter, Stmt *in,
 			     StmtBlock *blk)
 {
-	return c.allocStmt<StmtForIn>(loc, iter, in, blk);
+	return allocator.alloc<StmtForIn>(loc, iter, in, blk);
 }
 
 void StmtForIn::disp(bool has_next)
@@ -404,11 +403,11 @@ void StmtForIn::disp(bool has_next)
 //////////////////////////////////////////// StmtRet //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtRet::StmtRet(const ModuleLoc *loc, Stmt *val) : Stmt(RET, loc), val(val) {}
+StmtRet::StmtRet(ModuleLoc loc, Stmt *val) : Stmt(RET, loc), val(val) {}
 StmtRet::~StmtRet() {}
-StmtRet *StmtRet::create(Context &c, const ModuleLoc *loc, Stmt *val)
+StmtRet *StmtRet::create(Allocator &allocator, ModuleLoc loc, Stmt *val)
 {
-	return c.allocStmt<StmtRet>(loc, val);
+	return allocator.alloc<StmtRet>(loc, val);
 }
 
 void StmtRet::disp(bool has_next)
@@ -428,10 +427,10 @@ void StmtRet::disp(bool has_next)
 ////////////////////////////////////////// StmtContinue ///////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtContinue::StmtContinue(const ModuleLoc *loc) : Stmt(CONTINUE, loc) {}
-StmtContinue *StmtContinue::create(Context &c, const ModuleLoc *loc)
+StmtContinue::StmtContinue(ModuleLoc loc) : Stmt(CONTINUE, loc) {}
+StmtContinue *StmtContinue::create(Allocator &allocator, ModuleLoc loc)
 {
-	return c.allocStmt<StmtContinue>(loc);
+	return allocator.alloc<StmtContinue>(loc);
 }
 
 void StmtContinue::disp(bool has_next)
@@ -445,10 +444,10 @@ void StmtContinue::disp(bool has_next)
 //////////////////////////////////////////// StmtBreak ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtBreak::StmtBreak(const ModuleLoc *loc) : Stmt(BREAK, loc) {}
-StmtBreak *StmtBreak::create(Context &c, const ModuleLoc *loc)
+StmtBreak::StmtBreak(ModuleLoc loc) : Stmt(BREAK, loc) {}
+StmtBreak *StmtBreak::create(Allocator &allocator, ModuleLoc loc)
 {
-	return c.allocStmt<StmtBreak>(loc);
+	return allocator.alloc<StmtBreak>(loc);
 }
 
 void StmtBreak::disp(bool has_next)
@@ -462,11 +461,11 @@ void StmtBreak::disp(bool has_next)
 //////////////////////////////////////////// StmtDefer ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtDefer::StmtDefer(const ModuleLoc *loc, Stmt *val) : Stmt(DEFER, loc), val(val) {}
+StmtDefer::StmtDefer(ModuleLoc loc, Stmt *val) : Stmt(DEFER, loc), val(val) {}
 StmtDefer::~StmtDefer() {}
-StmtDefer *StmtDefer::create(Context &c, const ModuleLoc *loc, Stmt *val)
+StmtDefer *StmtDefer::create(Allocator &allocator, ModuleLoc loc, Stmt *val)
 {
-	return c.allocStmt<StmtDefer>(loc, val);
+	return allocator.alloc<StmtDefer>(loc, val);
 }
 
 void StmtDefer::disp(bool has_next)
@@ -482,4 +481,4 @@ void StmtDefer::disp(bool has_next)
 	tio::tabr();
 }
 
-} // namespace fer
+} // namespace fer::ast

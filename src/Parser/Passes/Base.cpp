@@ -1,12 +1,22 @@
-#include "Parser/Passes/Base.hpp"
+#include "AST/Passes/Base.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
-Pass::Pass(const size_t &passid, Context &ctx) : passid(passid), ctx(ctx)
+Pass::Pass(const size_t &passid, Allocator &allocator) : passid(passid), allocator(allocator) {}
+Pass::~Pass() {}
+
+PassManager::PassManager() {}
+PassManager::~PassManager()
 {
-	ctx.addPass(passid, this);
+	for(auto &p : passes) delete p;
 }
-Pass::~Pass() { ctx.remPass(passid); }
+bool PassManager::visit(Stmt *&ptree)
+{
+	for(auto &p : passes) {
+		if(!p->visit(ptree, &ptree)) return false;
+	}
+	return true;
+}
 
-} // namespace fer
+} // namespace fer::ast
