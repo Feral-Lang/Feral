@@ -68,6 +68,6 @@ public:
 	}
 };
 
-extern ErrorHandler err;
+extern DLL_EXPORT ErrorHandler err;
 
 } // namespace fer

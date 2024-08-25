@@ -2,6 +2,9 @@
 
 #include "Core.hpp"
 
+namespace fer
+{
+
 #define MAX_PATH_CHARS 4096
 
 #if defined(FER_OS_WINDOWS)
@@ -14,14 +17,14 @@ ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp);
 ssize_t getline(char **buf, size_t *bufsiz, FILE *fp);
 #endif
 
-namespace fer
-{
 namespace fs
 {
 
-extern int total_lines;
-inline void setTotalLines(int lines) { total_lines = lines; }
-inline int getTotalLines() { return total_lines; }
+// Not actually externed (at least on Windows), which works because
+// setTotalLines and getTotalLines are to be used and not the variable itself.
+extern int totalLines;
+inline void setTotalLines(int lines) { totalLines = lines; }
+inline int getTotalLines() { return totalLines; }
 
 StringRef parentDir(StringRef path);
 

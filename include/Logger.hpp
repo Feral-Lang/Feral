@@ -83,6 +83,6 @@ public:
 	inline LogLevels getLevel() { return level; }
 };
 
-extern Logger logger;
+extern DLL_EXPORT Logger logger;
 
 } // namespace fer
