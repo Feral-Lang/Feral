@@ -16,10 +16,10 @@ namespace fer
 
 static size_t threadId = 0;
 
-VarMultiProc::VarMultiProc(const ModuleLoc *loc, Thread *thread, SharedFuture<int> *res, bool owner)
+VarMultiProc::VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, bool owner)
 	: Var(loc, false, false), thread(thread), res(res), id(threadId++), owner(owner)
 {}
-VarMultiProc::VarMultiProc(const ModuleLoc *loc, Thread *thread, SharedFuture<int> *res, size_t id,
+VarMultiProc::VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, size_t id,
 			   bool owner)
 	: Var(loc, false, false), thread(thread), res(res), id(id), owner(owner)
 {}
@@ -33,7 +33,7 @@ VarMultiProc::~VarMultiProc()
 		if(res != nullptr) delete res;
 	}
 }
-Var *VarMultiProc::onCopy(Interpreter &vm, const ModuleLoc *loc)
+Var *VarMultiProc::onCopy(Interpreter &vm, ModuleLoc loc)
 {
 	return vm.makeVarWithRef<VarMultiProc>(loc, thread, res, id, false);
 }
@@ -52,13 +52,13 @@ int execCommand(const String &cmd);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *getConcurrency(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *getConcurrency(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, Thread::hardware_concurrency());
 }
 
-Var *mprocNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *mprocNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -72,13 +72,13 @@ Var *mprocNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	loc, new Thread(std::move(task), as<VarStr>(args[1])->getVal()), fut);
 }
 
-Var *mprocGetId(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *mprocGetId(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarMultiProc>(args[0])->getId());
 }
 
-Var *mprocIsDone(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *mprocIsDone(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	SharedFuture<int> *&fut = as<VarMultiProc>(args[0])->getFuture();
@@ -87,7 +87,7 @@ Var *mprocIsDone(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 										   : vm.getFalse();
 }
 
-Var *mprocGetRes(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *mprocGetRes(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	SharedFuture<int> *&fut = as<VarMultiProc>(args[0])->getFuture();

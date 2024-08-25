@@ -1,4 +1,4 @@
-Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	auto refloc    = assn_args.find("refs");
@@ -41,43 +41,43 @@ Var *vecNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecSize(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecSize(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
-Var *vecCapacity(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecCapacity(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
-Var *vecIsRef(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecIsRef(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecEmpty(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecEmpty(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecFront(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecFront(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
-Var *vecBack(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecBack(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
-Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecPush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -92,7 +92,7 @@ Var *vecPush(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecPop(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -105,7 +105,7 @@ Var *vecPop(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *v = as<VarVec>(args[0]);
@@ -116,7 +116,7 @@ Var *vecClear(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecSetAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -143,7 +143,7 @@ Var *vecSetAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -163,7 +163,7 @@ Var *vecErase(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -189,7 +189,7 @@ Var *vecInsert(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecAppend(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecAppend(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarVec>()) {
@@ -230,7 +230,7 @@ Var *vecAppend(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return dest;
 }
 
-Var *vecReverse(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecReverse(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -238,7 +238,7 @@ Var *vecReverse(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -252,7 +252,7 @@ Var *vecAt(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res->at(pos);
 }
 
-Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecSub(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -290,7 +290,7 @@ Var *vecSub(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecSlice(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -327,13 +327,13 @@ Var *vecSlice(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecEach(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecEach(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
-Var *vecIteratorNext(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *vecIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarVecIterator *it = as<VarVecIterator>(args[0]);

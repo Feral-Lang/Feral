@@ -2,11 +2,12 @@
 
 #include <cassert>
 
+#include "Allocator.hpp"
 #include "Error.hpp"
 #include "Lexer.hpp"
 #include "VM/Bytecode.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
 enum Stmts : uint8_t
@@ -28,14 +29,14 @@ enum Stmts : uint8_t
 	DEFER,
 };
 
-class Stmt
+class Stmt : public IAllocated
 {
 protected:
-	const ModuleLoc *loc;
+	ModuleLoc loc;
 	Stmts stype;
 
 public:
-	Stmt(Stmts stmt_type, const ModuleLoc *loc);
+	Stmt(Stmts stmt_type, ModuleLoc loc);
 	virtual ~Stmt();
 
 	virtual void disp(bool has_next) = 0;
@@ -62,25 +63,12 @@ public:
 	isStmtX(Break, BREAK);
 	isStmtX(Defer, DEFER);
 
-	inline const ModuleLoc *getLoc() { return loc; }
-	inline Module *getMod() const { return loc->getMod(); }
+	inline ModuleLoc getLoc() { return loc; }
 };
 
 template<typename T> T *as(Stmt *data) { return static_cast<T *>(data); }
 
 template<typename T> Stmt **asStmt(T **data) { return (Stmt **)(data); }
-
-namespace err
-{
-template<typename... Args> void out(Stmt *stmt, Args &&...args)
-{
-	out(stmt->getLoc(), std::forward<Args>(args)...);
-}
-template<typename... Args> void outw(Stmt *stmt, Args &&...args)
-{
-	outw(stmt->getLoc(), std::forward<Args>(args)...);
-}
-} // namespace err
 
 class StmtBlock : public Stmt
 {
@@ -88,9 +76,9 @@ class StmtBlock : public Stmt
 	bool is_top;
 
 public:
-	StmtBlock(const ModuleLoc *loc, const Vector<Stmt *> &stmts, bool is_top);
+	StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top);
 	~StmtBlock();
-	static StmtBlock *create(Context &c, const ModuleLoc *loc, const Vector<Stmt *> &stmts,
+	static StmtBlock *create(Allocator &allocator, ModuleLoc loc, const Vector<Stmt *> &stmts,
 				 bool is_top);
 
 	void disp(bool has_next);
@@ -105,9 +93,9 @@ class StmtSimple : public Stmt
 	lex::Lexeme val;
 
 public:
-	StmtSimple(const ModuleLoc *loc, const lex::Lexeme &val);
+	StmtSimple(ModuleLoc loc, const lex::Lexeme &val);
 	~StmtSimple();
-	static StmtSimple *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &val);
+	static StmtSimple *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &val);
 
 	void disp(bool has_next);
 
@@ -125,9 +113,9 @@ class StmtFnArgs : public Stmt
 	Vector<bool> unpack_vector; // works for variadic as well since variadic is a vector
 
 public:
-	StmtFnArgs(const ModuleLoc *loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector);
+	StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector);
 	~StmtFnArgs();
-	static StmtFnArgs *create(Context &c, const ModuleLoc *loc, Vector<Stmt *> &&args,
+	static StmtFnArgs *create(Allocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
 				  Vector<bool> &&unpack_vector);
 
 	void disp(bool has_next);
@@ -147,10 +135,10 @@ class StmtExpr : public Stmt
 	lex::Lexeme or_blk_var;
 
 public:
-	StmtExpr(const ModuleLoc *loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs);
+	StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs);
 	~StmtExpr();
 	// or_blk and or_blk_var can be set separately - nullptr/INVALID by default
-	static StmtExpr *create(Context &c, const ModuleLoc *loc, Stmt *lhs,
+	static StmtExpr *create(Allocator &allocator, ModuleLoc loc, Stmt *lhs,
 				const lex::Lexeme &oper, Stmt *rhs);
 
 	void disp(bool has_next);
@@ -177,11 +165,11 @@ class StmtVar : public Stmt
 	bool is_arg; // fndef param / fncall arg or not
 
 public:
-	StmtVar(const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);
+	StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);
 	~StmtVar();
 	// at least one of type or val must be present
-	static StmtVar *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &name, Stmt *in,
-			       Stmt *val, bool is_arg);
+	static StmtVar *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &name,
+			       Stmt *in, Stmt *val, bool is_arg);
 
 	void disp(bool has_next);
 
@@ -200,10 +188,10 @@ class StmtFnSig : public Stmt
 	StmtSimple *kwarg, *vaarg;
 
 public:
-	StmtFnSig(const ModuleLoc *loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
+	StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
 		  StmtSimple *vaarg);
 	~StmtFnSig();
-	static StmtFnSig *create(Context &c, const ModuleLoc *loc, const Vector<StmtVar *> &args,
+	static StmtFnSig *create(Allocator &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
 				 StmtSimple *kwarg, StmtSimple *vaarg);
 
 	void disp(bool has_next);
@@ -223,9 +211,10 @@ class StmtFnDef : public Stmt
 	StmtBlock *blk;
 
 public:
-	StmtFnDef(const ModuleLoc *loc, StmtFnSig *sig, StmtBlock *blk);
+	StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk);
 	~StmtFnDef();
-	static StmtFnDef *create(Context &c, const ModuleLoc *loc, StmtFnSig *sig, StmtBlock *blk);
+	static StmtFnDef *create(Allocator &allocator, ModuleLoc loc, StmtFnSig *sig,
+				 StmtBlock *blk);
 
 	void disp(bool has_next);
 
@@ -245,10 +234,10 @@ class StmtVarDecl : public Stmt
 	Vector<StmtVar *> decls;
 
 public:
-	StmtVarDecl(const ModuleLoc *loc, const Vector<StmtVar *> &decls);
+	StmtVarDecl(ModuleLoc loc, const Vector<StmtVar *> &decls);
 	~StmtVarDecl();
 
-	static StmtVarDecl *create(Context &c, const ModuleLoc *loc,
+	static StmtVarDecl *create(Allocator &allocator, ModuleLoc loc,
 				   const Vector<StmtVar *> &decls);
 
 	void disp(bool has_next);
@@ -282,9 +271,10 @@ class StmtCond : public Stmt
 	Vector<Conditional> conds;
 
 public:
-	StmtCond(const ModuleLoc *loc, const Vector<Conditional> &conds);
+	StmtCond(ModuleLoc loc, const Vector<Conditional> &conds);
 	~StmtCond();
-	static StmtCond *create(Context &c, const ModuleLoc *loc, const Vector<Conditional> &conds);
+	static StmtCond *create(Allocator &allocator, ModuleLoc loc,
+				const Vector<Conditional> &conds);
 
 	void disp(bool has_next);
 
@@ -301,11 +291,11 @@ class StmtFor : public Stmt
 	StmtBlock *blk;
 
 public:
-	StmtFor(const ModuleLoc *loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *blk);
+	StmtFor(ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *blk);
 	~StmtFor();
 	// init, cond, incr can be nullptr
-	static StmtFor *create(Context &c, const ModuleLoc *loc, Stmt *init, Stmt *cond, Stmt *incr,
-			       StmtBlock *blk);
+	static StmtFor *create(Allocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond,
+			       Stmt *incr, StmtBlock *blk);
 
 	void disp(bool has_next);
 
@@ -322,10 +312,10 @@ class StmtForIn : public Stmt
 	StmtBlock *blk;
 
 public:
-	StmtForIn(const ModuleLoc *loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk);
+	StmtForIn(ModuleLoc loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk);
 	~StmtForIn();
 	// init, cond, incr can be nullptr
-	static StmtForIn *create(Context &c, const ModuleLoc *loc, const lex::Lexeme &iter,
+	static StmtForIn *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &iter,
 				 Stmt *in, StmtBlock *blk);
 
 	void disp(bool has_next);
@@ -340,9 +330,9 @@ class StmtRet : public Stmt
 	Stmt *val;
 
 public:
-	StmtRet(const ModuleLoc *loc, Stmt *val);
+	StmtRet(ModuleLoc loc, Stmt *val);
 	~StmtRet();
-	static StmtRet *create(Context &c, const ModuleLoc *loc, Stmt *val);
+	static StmtRet *create(Allocator &allocator, ModuleLoc loc, Stmt *val);
 
 	void disp(bool has_next);
 
@@ -352,8 +342,8 @@ public:
 class StmtContinue : public Stmt
 {
 public:
-	StmtContinue(const ModuleLoc *loc);
-	static StmtContinue *create(Context &c, const ModuleLoc *loc);
+	StmtContinue(ModuleLoc loc);
+	static StmtContinue *create(Allocator &allocator, ModuleLoc loc);
 
 	void disp(bool has_next);
 };
@@ -361,8 +351,8 @@ public:
 class StmtBreak : public Stmt
 {
 public:
-	StmtBreak(const ModuleLoc *loc);
-	static StmtBreak *create(Context &c, const ModuleLoc *loc);
+	StmtBreak(ModuleLoc loc);
+	static StmtBreak *create(Allocator &allocator, ModuleLoc loc);
 
 	void disp(bool has_next);
 };
@@ -372,13 +362,13 @@ class StmtDefer : public Stmt
 	Stmt *val;
 
 public:
-	StmtDefer(const ModuleLoc *loc, Stmt *val);
+	StmtDefer(ModuleLoc loc, Stmt *val);
 	~StmtDefer();
-	static StmtDefer *create(Context &c, const ModuleLoc *loc, Stmt *val);
+	static StmtDefer *create(Allocator &allocator, ModuleLoc loc, Stmt *val);
 
 	void disp(bool has_next);
 
 	inline Stmt *&getDeferVal() { return val; }
 };
 
-} // namespace fer
+} // namespace fer::ast

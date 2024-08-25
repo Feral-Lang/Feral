@@ -2,8 +2,6 @@
 
 #include <iomanip>
 
-#include "Module.hpp"
-
 namespace fer
 {
 
@@ -41,22 +39,22 @@ StringRef getOpcodeStr(Opcode opcode)
 	return "";
 }
 
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, String &&data, DataType dtype)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype)
 	: data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, StringRef data, DataType dtype)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype)
 	: data(String(data)), loc(loc), dtype(dtype), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, int64_t data)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, int64_t data)
 	: data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, long double data)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, long double data)
 	: data(data), loc(loc), dtype(DataType::FLT), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc, bool data)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, bool data)
 	: data(data), loc(loc), dtype(DataType::BOOL), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, const ModuleLoc *loc)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc)
 	: loc(loc), dtype(DataType::NIL), opcode(opcode)
 {}
 

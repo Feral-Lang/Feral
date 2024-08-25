@@ -68,10 +68,10 @@ public:
 		if(has(argname)) return opts[argname];
 		return "";
 	}
-	inline StringRef getSource() { return source; }
+	inline const String &getSource() { return source; }
 	inline void setSource(StringRef src) { source = src; }
-	inline Vector<StringRef> &getCodeExecArgs() { return args; }
-	inline const Vector<StringRef> &getArgv() const { return argv; }
+	inline Span<StringRef> getCodeExecArgs() { return args; }
+	inline Span<StringRef> getArgv() { return argv; }
 };
 
 } // namespace fer

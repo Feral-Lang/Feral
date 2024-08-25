@@ -1,10 +1,10 @@
-Var *nilEq(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *nilEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *nilNe(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *nilNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();

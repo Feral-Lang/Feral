@@ -3,7 +3,6 @@
 // Wrapper class for dlfcn.h library
 
 #include "Core.hpp"
-#include "Module.hpp"
 
 namespace fer
 {

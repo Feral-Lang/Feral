@@ -1,11 +1,10 @@
-#include "Parser/ParseHelper.hpp"
+#include "AST/ParseHelper.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
-ParseHelper::ParseHelper(Context &ctx, Module *mod, Vector<lex::Lexeme> &toks, size_t begin)
-	: ctx(ctx), mod(mod), toks(toks), emptyloc(ctx.allocModuleLoc(mod, 0, 0)),
-	  invalid(emptyloc, lex::INVALID), eof(emptyloc, lex::FEOF), idx(begin)
+ParseHelper::ParseHelper(Vector<lex::Lexeme> &toks, size_t begin)
+	: toks(toks), invalid({}, lex::INVALID), eof({}, lex::FEOF), idx(begin)
 {}
 
 lex::Lexeme &ParseHelper::peek(int offset)
@@ -56,4 +55,4 @@ const lex::Lexeme *ParseHelper::at(size_t idx) const
 	return &toks[idx];
 }
 
-} // namespace fer
+} // namespace fer::ast

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Allocator.hpp"
+#include "Bytecode.hpp"
 #include "Core.hpp"
-#include "Module.hpp"
+#include "Error.hpp"
 
 namespace fer
 {
@@ -19,7 +20,7 @@ class Interpreter;
 
 class Var : public IAllocated
 {
-	const ModuleLoc *loc;
+	ModuleLoc loc;
 	size_t ref;
 
 	// for VarInfo
@@ -37,7 +38,7 @@ class Var : public IAllocated
 	// Proxy functions to use the functions to be implemented by the Var's.
 	void create(Interpreter &vm);
 	void destroy(Interpreter &vm);
-	Var *copy(Interpreter &vm, const ModuleLoc *loc);
+	Var *copy(Interpreter &vm, ModuleLoc loc);
 	void set(Interpreter &vm, Var *from);
 
 	// Following functions are to be implemented by the Var's as needed.
@@ -50,14 +51,14 @@ class Var : public IAllocated
 	virtual void onDestroy(Interpreter &vm);
 	// Copy this variable.
 	// By default (if not overriden), it just increments ref and returns `this`.
-	virtual Var *onCopy(Interpreter &vm, const ModuleLoc *loc);
+	virtual Var *onCopy(Interpreter &vm, ModuleLoc loc);
 	// Set value(s) in this variable using a different variable of the same type.
 	// As such, no type checking is required to cast `from` to the class in which
 	// this function is implemented.
 	virtual void onSet(Interpreter &vm, Var *from);
 
 protected:
-	Var(const ModuleLoc *loc, bool callable, bool attr_based);
+	Var(ModuleLoc loc, bool callable, bool attr_based);
 	// No need to override the destructor. Override onDestroy() instead.
 	virtual ~Var();
 
@@ -68,9 +69,9 @@ public:
 		return typeid(*this).hash_code() == typeid(T).hash_code();
 	}
 
-	inline void setLoc(const ModuleLoc *_loc) { loc = _loc; }
+	inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 
-	inline const ModuleLoc *getLoc() const { return loc; }
+	inline ModuleLoc getLoc() const { return loc; }
 	inline size_t getType() { return typeid(*this).hash_code(); }
 	virtual size_t getTypeFnID();
 
@@ -79,7 +80,7 @@ public:
 
 	inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
 
-	virtual Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	virtual Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);
 	virtual void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
@@ -100,24 +101,24 @@ class VarAll : public Var
 	// Essentially, creating a new copy of it serves no purpose.
 
 public:
-	VarAll(const ModuleLoc *loc);
+	VarAll(ModuleLoc loc);
 };
 
 class VarNil : public Var
 {
 public:
-	VarNil(const ModuleLoc *loc);
+	VarNil(ModuleLoc loc);
 };
 
 class VarTypeID : public Var
 {
 	size_t val;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarTypeID(const ModuleLoc *loc, size_t val);
+	VarTypeID(ModuleLoc loc, size_t val);
 
 	inline void setVal(size_t newval) { val = newval; }
 	inline size_t getVal() { return val; }
@@ -127,11 +128,11 @@ class VarBool : public Var
 {
 	bool val;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarBool(const ModuleLoc *loc, bool val);
+	VarBool(ModuleLoc loc, bool val);
 
 	inline void setVal(bool newval) { val = newval; }
 	inline bool getVal() { return val; }
@@ -141,12 +142,12 @@ class VarInt : public Var
 {
 	int64_t val;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarInt(const ModuleLoc *loc, int64_t _val);
-	VarInt(const ModuleLoc *loc, const char *_val);
+	VarInt(ModuleLoc loc, int64_t _val);
+	VarInt(ModuleLoc loc, const char *_val);
 
 	inline void setVal(int64_t newval) { val = newval; }
 	inline int64_t getVal() { return val; }
@@ -158,12 +159,12 @@ class VarIntIterator : public Var
 	bool started;
 	bool reversed;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarIntIterator(const ModuleLoc *loc);
-	VarIntIterator(const ModuleLoc *loc, int64_t _begin, int64_t _end, int64_t _step);
+	VarIntIterator(ModuleLoc loc);
+	VarIntIterator(ModuleLoc loc, int64_t _begin, int64_t _end, int64_t _step);
 
 	bool next(int64_t &val);
 
@@ -178,12 +179,12 @@ class VarFlt : public Var
 {
 	long double val;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarFlt(const ModuleLoc *loc, long double _val);
-	VarFlt(const ModuleLoc *loc, const char *_val);
+	VarFlt(ModuleLoc loc, long double _val);
+	VarFlt(ModuleLoc loc, const char *_val);
 
 	inline void setVal(long double newval) { val = newval; }
 	inline long double getVal() { return val; }
@@ -193,16 +194,16 @@ class VarStr : public Var
 {
 	String val;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarStr(const ModuleLoc *loc, char val);
-	VarStr(const ModuleLoc *loc, String &&val);
-	VarStr(const ModuleLoc *loc, StringRef val);
-	VarStr(const ModuleLoc *loc, const char *val);
-	VarStr(const ModuleLoc *loc, InitList<StringRef> _val);
-	VarStr(const ModuleLoc *loc, const char *val, size_t count);
+	VarStr(ModuleLoc loc, char val);
+	VarStr(ModuleLoc loc, String &&val);
+	VarStr(ModuleLoc loc, StringRef val);
+	VarStr(ModuleLoc loc, const char *val);
+	VarStr(ModuleLoc loc, InitList<StringRef> _val);
+	VarStr(ModuleLoc loc, const char *val, size_t count);
 
 	inline void setVal(StringRef newval) { val = newval; }
 	inline String &getVal() { return val; }
@@ -217,12 +218,12 @@ class VarVec : public Var
 	using ConstIterator = Vector<Var *>::const_iterator;
 
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarVec(const ModuleLoc *loc, size_t reservesz, bool asrefs);
-	VarVec(const ModuleLoc *loc, Vector<Var *> &&val, bool asrefs);
+	VarVec(ModuleLoc loc, size_t reservesz, bool asrefs);
+	VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs);
 
 	void setVal(Interpreter &vm, Span<Var *> newval);
 
@@ -253,11 +254,11 @@ class VarVecIterator : public Var
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarVecIterator(const ModuleLoc *loc, VarVec *vec);
+	VarVecIterator(ModuleLoc loc, VarVec *vec);
 
 	bool next(Var *&val);
 };
@@ -269,12 +270,12 @@ class VarMap : public Var
 	bool asrefs;
 
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarMap(const ModuleLoc *loc, size_t reservesz, bool asrefs);
-	VarMap(const ModuleLoc *loc, StringMap<Var *> &&val, bool asrefs);
+	VarMap(ModuleLoc loc, size_t reservesz, bool asrefs);
+	VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs);
 
 	void setVal(Interpreter &vm, const StringMap<Var *> &newval);
 	void clear(Interpreter &vm);
@@ -300,13 +301,13 @@ class VarMapIterator : public Var
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarMapIterator(const ModuleLoc *loc, VarMap *map);
+	VarMapIterator(ModuleLoc loc, VarMap *map);
 
-	bool next(Interpreter &vm, const ModuleLoc *loc, Var *&val);
+	bool next(Interpreter &vm, ModuleLoc loc, Var *&val);
 };
 
 // used in native function calls
@@ -316,7 +317,7 @@ struct AssnArgData
 	Var *val;
 };
 
-typedef Var *(*NativeFn)(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+typedef Var *(*NativeFn)(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args);
 
 struct FeralFnBody
@@ -333,7 +334,7 @@ union FnBody
 
 class VarFn : public Var
 {
-	StringRef modpath;
+	ModuleId moduleId;
 	String kw_arg;
 	String var_arg;
 	Vector<String> params;
@@ -342,15 +343,15 @@ class VarFn : public Var
 	bool is_native;
 
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
-	VarFn(const ModuleLoc *loc, StringRef modpath, const String &kw_arg, const String &var_arg,
+	VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
 
-	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	inline void pushParam(const String &param) { params.push_back(param); }
@@ -361,7 +362,7 @@ public:
 	inline void insertAssnParam(const String &key, Var *val) { assn_params.insert({key, val}); }
 	inline void setAssnParams(const StringMap<Var *> &newmap) { assn_params = newmap; }
 
-	inline StringRef getModulePath() { return modpath; }
+	inline ModuleId getModuleId() { return moduleId; }
 	inline StringRef getKwArg() { return kw_arg; }
 	inline StringRef getVarArg() { return var_arg; }
 	inline Vector<String> &getParams() { return params; }
@@ -378,21 +379,21 @@ public:
 };
 
 class Vars;
+// A VarModule cannot be copied. It will always return self when a copy is attempted.
 class VarModule : public Var
 {
-	Module *mod;
+	String path;
+	Bytecode bc;
+	ModuleId moduleId;
 	Vars *vars;
-	bool is_owner;
-	bool is_thread_copy;
+	bool ownsVars;
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarModule(const ModuleLoc *loc, Module *mod, Vars *vars = nullptr, bool is_owner = true,
-		  bool is_thread_copy = false);
+	VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
+		  Vars *vars = nullptr);
 
 	// not inline because Vars is incomplete type
 	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
@@ -403,10 +404,10 @@ public:
 			 bool is_va = false);
 	void addNativeVar(StringRef name, Var *val, bool iref = true, bool module_level = false);
 
-	inline Module *getMod() { return mod; }
+	inline StringRef getPath() { return path; }
+	inline const Bytecode &getBytecode() { return bc; }
+	inline ModuleId getModuleId() { return moduleId; }
 	inline Vars *getVars() { return vars; }
-	inline bool isOwner() { return is_owner; }
-	inline bool isThreadCopy() { return is_thread_copy; }
 };
 
 class VarStructDef : public Var
@@ -417,15 +418,15 @@ class VarStructDef : public Var
 	size_t id;
 
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarStructDef(const ModuleLoc *loc, size_t attrscount);
-	VarStructDef(const ModuleLoc *loc, size_t attrscount, size_t id);
+	VarStructDef(ModuleLoc loc, size_t attrscount);
+	VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
 
 	// returns VarStruct
-	Var *call(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+	Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
@@ -452,14 +453,14 @@ class VarStruct : public Var
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
 	// base can be nullptr (as is the case for enums)
-	VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount);
+	VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount);
 	// base can be nullptr (as is the case for enums)
-	VarStruct(const ModuleLoc *loc, VarStructDef *base, size_t attrscount, size_t id);
+	VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount, size_t id);
 
 	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
 
@@ -480,12 +481,11 @@ class VarFile : public Var
 	bool owner;
 
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarFile(const ModuleLoc *loc, FILE *const file, const String &mode,
-		const bool owner = true);
+	VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool owner = true);
 
 	inline void setMode(StringRef newmode) { mode = newmode; }
 	inline void setOwner(bool isowner) { owner = isowner; }
@@ -501,11 +501,11 @@ class VarFileIterator : public Var
 
 	void onCreate(Interpreter &vm) override;
 	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarFileIterator(const ModuleLoc *loc, VarFile *file);
+	VarFileIterator(ModuleLoc loc, VarFile *file);
 
 	bool next(VarStr *&val);
 };
@@ -516,11 +516,11 @@ class VarBytebuffer : public Var
 	size_t bufsz;
 	size_t buflen;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarBytebuffer(const ModuleLoc *loc, size_t bufsz, size_t buflen = 0, char *buf = nullptr);
+	VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, char *buf = nullptr);
 	~VarBytebuffer();
 
 	void setData(char *newbuf, size_t newlen);

@@ -5,23 +5,7 @@
 namespace fer
 {
 
-IAllocated::IAllocated() {}
-IAllocated::~IAllocated() {}
-
-Allocator::Allocator(MemoryManager &mem, StringRef name) : mem(mem), name(name) {}
-Allocator::~Allocator()
-{
-	size_t count = 0;
-	for(auto &m : allocs) {
-		++count;
-		m->~IAllocated();
-		mem.free(m);
-	}
-	logger.trace(name, " allocator had ", count, " allocations");
-}
-
-static size_t totalAllocReq = 0, totalManualAlloc = 0, totalPoolAlloc = 0, reuseCount = 0;
-constexpr size_t SIZE_BYTES = sizeof(size_t);
+static size_t totalAllocRequests = 0, totalManualAlloc = 0, totalPoolAlloc = 0, reuseCount = 0;
 
 MemoryManager::MemoryManager(StringRef name) : name(name) { allocPool(); }
 MemoryManager::~MemoryManager()
@@ -30,21 +14,21 @@ MemoryManager::~MemoryManager()
 	for(auto &c : freechunks) {
 		if(c.first > POOL_SIZE) {
 			for(auto &blk : c.second) {
-				delete[] blk;
+				std::free(blk);
 			}
 		}
 		c.second.clear();
 	}
 	freechunks.clear();
-	for(auto &p : pools) delete[] p.mem;
+	for(auto &p : pools) std::free(p.mem);
 	logger.trace("=============== ", name, " memory manager stats: ===============");
 	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalManualAlloc);
 	logger.trace("--             Total allocated bytes (pools): ", totalPoolAlloc);
-	logger.trace("--                          Requests (count): ", totalAllocReq);
+	logger.trace("--                          Requests (count): ", totalAllocRequests);
 	logger.trace("--                            Reuses (count): ", reuseCount);
 }
 
-size_t MemoryManager::mult8Roundup(size_t sz)
+size_t MemoryManager::nextPow2(size_t sz)
 {
 	if(sz > MAX_ROUNDUP) return sz;
 	--sz;
@@ -58,31 +42,34 @@ size_t MemoryManager::mult8Roundup(size_t sz)
 
 void MemoryManager::allocPool()
 {
-	char *alloc = new char[POOL_SIZE];
+	char *alloc = (char *)std::aligned_alloc(MAX_ALIGNMENT, POOL_SIZE);
 	totalManualAlloc += POOL_SIZE;
 	pools.push_back({alloc, alloc});
 }
 
-void *MemoryManager::alloc(size_t sz)
+void *MemoryManager::alloc(size_t size, size_t align)
 {
-	if(sz == 0) return nullptr;
+	// align is unused for now.
+	if(size == 0) return nullptr;
 
-	sz += SIZE_BYTES; // for storing the size in the first size_t bytes.
-	sz = mult8Roundup(sz);
+	// Add MAX_ALIGNMENT instead of SIZE_BYTES - since MAX_ALIGNMENT is guaranteed
+	// (static_assert) to be a multiple of SIZE_BYTES.
+	size_t allocSz = size + MAX_ALIGNMENT;
+	allocSz	       = nextPow2(allocSz);
 
-	++totalAllocReq;
+	++totalAllocRequests;
 
 	char *loc = nullptr;
 
-	if(sz > POOL_SIZE) {
-		totalManualAlloc += sz;
-		loc = new char[sz];
+	if(allocSz > POOL_SIZE) {
+		totalManualAlloc += allocSz;
+		loc = (char *)std::aligned_alloc(MAX_ALIGNMENT, allocSz);
 	} else {
-		totalPoolAlloc += sz;
+		totalPoolAlloc += allocSz;
 
 		LockGuard<Mutex> mtxlock(mtx);
 		// there is a free chunk available in the chunk list
-		auto &freechunkloc = freechunks[sz];
+		auto &freechunkloc = freechunks[allocSz];
 		if(!freechunkloc.empty()) {
 			loc = freechunkloc.front();
 			freechunkloc.pop_front();
@@ -95,9 +82,9 @@ void *MemoryManager::alloc(size_t sz)
 		// fetch a chunk from the pool
 		for(auto &p : pools) {
 			size_t freespace = POOL_SIZE - (p.head - p.mem);
-			if(freespace >= sz) {
+			if(freespace >= allocSz) {
 				loc = p.head;
-				p.head += sz;
+				p.head += allocSz;
 				break;
 			}
 		}
@@ -105,11 +92,12 @@ void *MemoryManager::alloc(size_t sz)
 			allocPool();
 			auto &p = pools.back();
 			loc	= p.head;
-			p.head += sz;
+			p.head += allocSz;
 		}
 	}
-	*((size_t *)loc) = sz;
-	return loc + SIZE_BYTES;
+	loc += MAX_ALIGNMENT;
+	*((size_t *)(loc - SIZE_BYTES)) = allocSz;
+	return loc;
 }
 
 void MemoryManager::free(void *data)
@@ -123,6 +111,32 @@ void MemoryManager::free(void *data)
 	}
 	LockGuard<Mutex> mtxlock(mtx);
 	freechunks[sz].push_front(loc);
+}
+
+void MemoryManager::dumpMem(char *pool)
+{
+	constexpr size_t charSize     = 2; // in bytes
+	constexpr size_t charsPerLine = 64 * charSize;
+	for(size_t i = 0; i < POOL_SIZE; i += charSize) {
+		if(i % charsPerLine == 0) std::cout << "\n" << (void *)(pool + i) << " :: ";
+		std::cout << std::hex << (*(uint16_t *)(pool + i)) << " ";
+	}
+	std::cout << std::dec << "\n";
+}
+
+IAllocated::IAllocated() {}
+IAllocated::~IAllocated() {}
+
+Allocator::Allocator(MemoryManager &mem, StringRef name) : mem(mem), name(name) {}
+Allocator::~Allocator()
+{
+	size_t count = 0;
+	for(auto &m : allocs) {
+		++count;
+		m->~IAllocated();
+		mem.free(m);
+	}
+	logger.trace(name, " allocator had ", count, " allocations");
 }
 
 } // namespace fer

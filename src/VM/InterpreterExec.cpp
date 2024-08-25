@@ -6,11 +6,10 @@ namespace fer
 int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurse_count;
-	VarModule *varmod = getCurrModule();
-	Vars *vars	  = varmod->getVars();
-	Module *mod	  = varmod->getMod();
-	Bytecode &bc	  = mod->getBytecode();
-	size_t bcsz	  = end == 0 ? bc.size() : end;
+	VarModule *varmod  = getCurrModule();
+	Vars *vars	   = varmod->getVars();
+	const Bytecode &bc = varmod->getBytecode();
+	size_t bcsz	   = end == 0 ? bc.size() : end;
 
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
@@ -22,7 +21,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 	if(addBlk) vars->pushBlk(1);
 
 	for(size_t i = begin; i < bcsz; ++i) {
-		Instruction &ins = bc.getInstrAt(i);
+		const Instruction &ins = bc.getInstrAt(i);
 		// std::cout << "[" << i << ": " << ins.getLoc()->getMod()->getPath() << "] ";
 		// ins.dump(std::cout);
 		// std::cout << " :: ";
@@ -209,7 +208,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				else ++argcount;
 			}
 			VarFn *fn =
-			makeVarWithRef<VarFn>(ins.getLoc(), mod->getPath(), kw, va, argcount,
+			makeVarWithRef<VarFn>(ins.getLoc(), varmod->getModuleId(), kw, va, argcount,
 					      assnarg_count, FnBody{.feral = bodies.back()}, false);
 			bodies.pop_back();
 			for(size_t i = 2; i < arginfo.size(); ++i) {
@@ -413,7 +412,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(recurse_count_exceeded) {
 				break;
 			}
-			pushModule(getCurrModule()->getMod()->getPath());
+			pushModule(getCurrModule()->getModuleId());
 			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
 				if(!failstack.getVarName().empty()) vars->unstash();
 				popModule();

@@ -81,7 +81,7 @@ String getExeFromPath(const char *exe)
 	String path = get("PATH");
 	if(path.empty()) return path;
 
-	Vector<StringRef> paths = stringDelim(path, ":");
+	Vector<StringRef> paths = utils::stringDelim(path, ":");
 
 	String pathstr;
 	for(auto &p : paths) {

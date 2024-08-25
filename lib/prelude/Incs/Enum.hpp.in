@@ -1,4 +1,4 @@
-Var *createEnum(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *createEnum(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *res = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assn_args.size() - 1);

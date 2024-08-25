@@ -5,13 +5,10 @@
 namespace fer
 {
 
-VarPtr::VarPtr(const ModuleLoc *loc, Var *val) : Var(loc, false, false), val(val) {}
+VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, false, false), val(val) {}
 void VarPtr::onCreate(Interpreter &vm) { vm.incVarRef(val); }
 void VarPtr::onDestroy(Interpreter &vm) { vm.decVarRef(val); }
-Var *VarPtr::onCopy(Interpreter &vm, const ModuleLoc *loc)
-{
-	return vm.makeVarWithRef<VarPtr>(loc, val);
-}
+Var *VarPtr::onCopy(Interpreter &vm, ModuleLoc loc) { return vm.makeVarWithRef<VarPtr>(loc, val); }
 void VarPtr::onSet(Interpreter &vm, Var *from) { setVal(vm, as<VarPtr>(from)->val); }
 void VarPtr::setVal(Interpreter &vm, Var *newval)
 {
@@ -24,13 +21,13 @@ void VarPtr::setVal(Interpreter &vm, Var *newval)
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *ptrNewNative(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *ptrNewNative(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
-Var *ptrSet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *ptrSet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarPtr *self = as<VarPtr>(args[0]);
@@ -38,7 +35,7 @@ Var *ptrSet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *ptrGet(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *ptrGet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarPtr>(args[0])->getVal();

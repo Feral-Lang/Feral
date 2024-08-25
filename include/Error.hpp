@@ -1,50 +1,73 @@
 #pragma once
 
-#include "Module.hpp"
 #include "Utils.hpp"
 
-namespace fer::err
+namespace fer
 {
 
-extern size_t max_errs;
-inline void setMaxErrs(size_t max_err) { max_errs = max_err; }
+using ModuleId = uint16_t;
 
-void outCommonStr(const ModuleLoc *loc, bool iswarn, bool withloc, const String &e);
+// Module ID is the group of 16 most significant bits (2 bytes) of the ModuleLoc which is
+// a 64 bit unsigned integer, with the remaining 48 bits denoting the code offset.
+// When id is -1, the ModuleLoc is invalid.
+struct ModuleLoc
+{
+	uint64_t id	: 16;
+	uint64_t offset : 48;
 
-template<typename... Args>
-void outCommon(const ModuleLoc *loc, bool iswarn, bool withloc, Args &&...args)
-{
-	String res;
-	appendToString(res, std::forward<Args>(args)...);
-	outCommonStr(loc, iswarn, withloc, res);
-}
+	ModuleLoc();
+	// Note: offset takes a uint64_t, but actually is 48 bits in size.
+	ModuleLoc(ModuleId id, uint64_t offset);
+};
 
-template<typename... Args> void out(const ModuleLoc *loc, Args &&...args)
-{
-	outCommon(loc, false, loc, std::forward<Args>(args)...);
-}
-template<typename... Args> void out(ModuleLoc &&loc, Args &&...args)
-{
-	outCommon(&loc, false, true, std::forward<Args>(args)...);
-}
+static_assert(sizeof(ModuleLoc) == sizeof(uint64_t));
 
-// equivalent to out(), but for warnings
-template<typename... Args> void outw(const ModuleLoc *loc, Args &&...args)
+class ErrorHandler
 {
-	outCommon(loc, true, loc, std::forward<Args>(args)...);
-}
-template<typename... Args> void outw(ModuleLoc &&loc, Args &&...args)
-{
-	outCommon(&loc, true, true, std::forward<Args>(args)...);
-}
+	Map<ModuleId, String> paths;
+	Map<ModuleId, String> codes; // for virtual modules - like <eval>
+	size_t maxErrors;
 
-template<typename... Args> void out(Nullptr, Args &&...args)
-{
-	out(static_cast<const ModuleLoc *>(nullptr), std::forward<Args>(args)...);
-}
-template<typename... Args> void outw(Nullptr, Args &&...args)
-{
-	outw(static_cast<const ModuleLoc *>(nullptr), std::forward<Args>(args)...);
-}
+	void outputString(ModuleLoc loc, bool iswarn, const String &e);
+	static bool getLineAndColumnFromData(StringRef data, size_t offset, StringRef &line,
+					     size_t &lineNum, size_t &column);
 
-} // namespace fer::err
+	template<typename... Args> void output(ModuleLoc loc, bool iswarn, Args &&...args)
+	{
+		String res = utils::toString(std::forward<Args>(args)...);
+		outputString(loc, iswarn, res);
+	}
+
+public:
+	ErrorHandler(size_t maxErrors);
+
+	const char *getPathForId(ModuleId id);
+	const char *getCodeForId(ModuleId id);
+
+	inline void setPathForId(ModuleId id, StringRef path) { paths.insert_or_assign(id, path); }
+	inline void setCodeForId(ModuleId id, String &&code)
+	{
+		codes.insert_or_assign(id, std::move(code));
+	}
+	inline void setMaxErrors(size_t maxErr) { maxErrors = maxErr; }
+
+	inline bool moduleIdExists(ModuleId id) { return paths.find(id) != paths.end(); }
+	inline bool moduleCodeExists(ModuleId id) { return codes.find(id) != codes.end(); }
+	inline size_t getMaxErrors() { return maxErrors; }
+
+	///////////////////////////// Actual error related functions. /////////////////////////////
+
+	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
+	{
+		output(loc, false, std::forward<Args>(args)...);
+	}
+
+	template<typename... Args> void warn(ModuleLoc loc, Args &&...args)
+	{
+		output(loc, true, std::forward<Args>(args)...);
+	}
+};
+
+extern ErrorHandler err;
+
+} // namespace fer

@@ -12,13 +12,12 @@ class VarMultiProc : public Var
 	size_t id;
 	bool owner;
 
-	Var *onCopy(Interpreter &vm, const ModuleLoc *loc) override;
+	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
 	void onSet(Interpreter &vm, Var *from) override;
 
 public:
-	VarMultiProc(const ModuleLoc *loc, Thread *thread, SharedFuture<int> *res,
-		     bool owner = true);
-	VarMultiProc(const ModuleLoc *loc, Thread *thread, SharedFuture<int> *res, size_t id,
+	VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, bool owner = true);
+	VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, size_t id,
 		     bool owner = true);
 	~VarMultiProc();
 

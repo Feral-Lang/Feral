@@ -13,78 +13,110 @@
 
 #include "Error.hpp"
 
+#include "FS.hpp"
+
 namespace fer
 {
-namespace err
+
+ErrorHandler err(10);
+
+ModuleLoc::ModuleLoc() : id((ModuleId)-1), offset(static_cast<ModuleId>(-1)) {}
+ModuleLoc::ModuleLoc(ModuleId id, uint64_t offset) : id(id), offset(offset) {}
+
+ErrorHandler::ErrorHandler(size_t maxErrors) : maxErrors(maxErrors) {}
+const char *ErrorHandler::getPathForId(ModuleId id)
 {
-
-size_t max_errs = 10;
-
-void outCommonStr(const ModuleLoc *loc, bool iswarn, bool withloc, const String &e)
+	auto loc = paths.find(id);
+	if(loc == paths.end()) return "";
+	return loc->second.c_str();
+}
+const char *ErrorHandler::getCodeForId(ModuleId id)
 {
-	static size_t errcount = 0;
+	auto loc = codes.find(id);
+	if(loc == codes.end()) return "";
+	return loc->second.c_str();
+}
 
-	if(errcount >= max_errs) return;
+void ErrorHandler::outputString(ModuleLoc loc, bool iswarn, const String &e)
+{
+	static size_t errCount = 0;
 
-	// just show the error
-	if(!withloc) {
-		std::cout << (iswarn ? "Warning" : "Failure") << ": ";
-		std::cout << e;
-		std::cout << "\n";
-		if(!iswarn) ++errcount;
-		if(errcount >= max_errs) std::cout << "Failure: Too many errors encountered\n";
-		return;
+	if(errCount >= maxErrors) return;
+
+	String path    = getPathForId(loc.id);
+	StringRef code = getCodeForId(loc.id);
+	String spacingCaret;
+	StringRef errLine;
+	size_t lineNum, column;
+	size_t tabCount = 0;
+
+	// Just show the error
+	if(loc.id == (ModuleId)-1 || path.empty()) goto justError;
+	if(!fs::exists(path) && code.empty()) goto justError;
+	if(code.empty()) {
+		String codeData;
+		if(!fs::read(path.c_str(), codeData, true)) goto justError;
+		setCodeForId(loc.id, std::move(codeData));
+		code = getCodeForId(loc.id);
+	}
+	if(!getLineAndColumnFromData(code, loc.offset, errLine, lineNum, column)) goto justError;
+
+	for(auto &c : errLine) {
+		if(c == '\t') ++tabCount;
+	}
+	spacingCaret = String(column, ' ');
+	while(tabCount--) {
+		spacingCaret.pop_back();
+		spacingCaret.insert(spacingCaret.begin(), '\t');
 	}
 
-	Module *mod = loc->getMod();
-	size_t line = loc->getLine();
-	size_t col  = loc->getCol();
-
-	size_t linectr = 0;
-	size_t idx     = 0;
-	bool found     = false;
-
-	StringRef data	   = mod->getCode();
-	StringRef filename = mod->getPath();
-
-	for(size_t i = 0; i < data.size(); ++i) {
-		if(linectr == line) {
-			found = true;
-			idx   = i;
-			break;
-		}
-		if(data[i] == '\n') {
-			++linectr;
-			continue;
-		}
-	}
-	StringRef err_line = "<not found>";
-	if(found) {
-		size_t count = data.find('\n', idx);
-		if(count != String::npos) count -= idx;
-		err_line = data.substr(idx, count);
-	}
-
-	size_t tab_count = 0;
-	for(auto &c : err_line) {
-		if(c == '\t') ++tab_count;
-	}
-	String spacing_caret(col, ' ');
-	while(tab_count--) {
-		spacing_caret.pop_back();
-		spacing_caret.insert(spacing_caret.begin(), '\t');
-	}
-
-	std::cout << filename << " (" << line + 1 << ":" << col + 1 << "): ";
+	std::cout << path << " (" << lineNum << ":" << column + 1 << "): ";
 	std::cout << (iswarn ? "Warning" : "Failure") << ": ";
 	std::cout << e;
 	std::cout << "\n";
-	std::cout << err_line << "\n";
-	std::cout << spacing_caret << "^\n";
+	std::cout << errLine << "\n";
+	std::cout << spacingCaret << "^\n";
 
-	if(!iswarn) ++errcount;
-	if(errcount >= max_errs) std::cout << "Failure: Too many errors encountered\n";
+	if(!iswarn) ++errCount;
+	if(errCount >= maxErrors) std::cout << "Failure: Too many errors encountered\n";
+	return;
+justError:
+	std::cout << (iswarn ? "Warning" : "Failure") << ": ";
+	std::cout << e;
+	std::cout << "\n";
+	if(!iswarn) ++errCount;
+	if(errCount >= maxErrors) std::cout << "Failure: Too many errors encountered\n";
 }
 
-} // namespace err
+bool ErrorHandler::getLineAndColumnFromData(StringRef data, size_t offset, StringRef &line,
+					    size_t &lineNum, size_t &column)
+{
+	line	= "";
+	lineNum = 1;
+	column	= -1;
+
+	size_t lineStart = 0, lineEnd = 0;
+	bool breakOnNewline = false;
+	for(size_t i = 0; i < data.size(); ++i) {
+		if(data[i] == '\n') {
+			if(breakOnNewline) break;
+			lineStart = i + 1;
+			lineEnd	  = i;
+			++lineNum;
+			continue;
+		}
+		if(i == offset) {
+			breakOnNewline = true;
+			column	       = i - lineStart;
+		}
+		++lineEnd;
+	}
+	if(column == -1) {
+		lineNum = 0;
+		return false;
+	}
+	line = StringRef(&data[lineStart], lineEnd - lineStart + 1);
+	return true;
+}
+
 } // namespace fer

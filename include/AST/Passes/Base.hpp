@@ -1,16 +1,16 @@
 #pragma once
 
-#include "Context.hpp"
-#include "Parser/Stmts.hpp"
+#include "Allocator.hpp"
+#include "AST/Stmts.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
 class Pass
 {
 protected:
 	size_t passid;
-	Context &ctx;
+	Allocator &allocator;
 
 	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
 	template<typename T> static inline std::uintptr_t passID()
@@ -20,7 +20,7 @@ protected:
 	}
 
 public:
-	Pass(const size_t &passid, Context &ctx);
+	Pass(const size_t &passid, Allocator &allocator);
 	virtual ~Pass();
 
 	template<typename T>
@@ -60,4 +60,35 @@ public:
 
 template<typename T> T *as(Pass *t) { return static_cast<T *>(t); }
 
-} // namespace fer
+class PassManager
+{
+	// Must be a vector to be able to use push_back()
+	Vector<Pass *> passes;
+
+public:
+	PassManager();
+	PassManager(const PassManager &pm) = delete;
+	~PassManager();
+
+	bool visit(Stmt *&ptree);
+
+	template<typename T, typename... Args>
+	typename std::enable_if<std::is_base_of<Pass, T>::value, void>::type add(Args &&...args)
+	{
+		passes.push_back(new T(std::forward<Args>(args)...));
+	}
+
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Pass, T>::value, T>::type *getPass()
+	{
+		Pass *res = nullptr;
+		for(auto &p : passes) {
+			if(!p->isPass<T>()) continue;
+			res = p;
+			break;
+		}
+		return as<T>(res);
+	}
+};
+
+} // namespace fer::ast

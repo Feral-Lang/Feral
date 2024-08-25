@@ -5,18 +5,16 @@
 namespace fer
 {
 
-VarRegex::VarRegex(const ModuleLoc *loc, StringRef exprStr, std::regex::flag_type opts)
+VarRegex::VarRegex(ModuleLoc loc, StringRef exprStr, std::regex::flag_type opts)
 	: Var(loc, false, false), expr(exprStr.begin(), exprStr.end(), opts)
 {}
-VarRegex::VarRegex(const ModuleLoc *loc, const std::regex &expr)
-	: Var(loc, false, false), expr(expr)
-{}
-Var *VarRegex::onCopy(Interpreter &vm, const ModuleLoc *loc)
+VarRegex::VarRegex(ModuleLoc loc, const std::regex &expr) : Var(loc, false, false), expr(expr) {}
+Var *VarRegex::onCopy(Interpreter &vm, ModuleLoc loc)
 {
 	return vm.makeVarWithRef<VarRegex>(loc, expr);
 }
 void VarRegex::onSet(Interpreter &vm, Var *from) { expr = as<VarRegex>(from)->expr; }
-bool VarRegex::match(Interpreter &vm, StringRef data, const ModuleLoc *loc, Var *captures,
+bool VarRegex::match(Interpreter &vm, StringRef data, ModuleLoc loc, Var *captures,
 		     bool ignoreMatch)
 {
 	svmatch results;
@@ -41,7 +39,7 @@ bool VarRegex::match(Interpreter &vm, StringRef data, const ModuleLoc *loc, Var 
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *regexNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *regexNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -57,7 +55,7 @@ Var *regexNew(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
 				    (std::regex::flag_type)as<VarInt>(args[2])->getVal());
 }
 
-Var *regexMatch(Interpreter &vm, const ModuleLoc *loc, Span<Var *> args,
+Var *regexMatch(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {

@@ -1,27 +1,34 @@
 #pragma once
 
-// Converts the parse tree to IR (bytecode)
+// Implements the basic parse tree simplification - including constant folding
+// After this pass, StmtDefer will not be found in the code
 
-#include "Parser/Passes/Base.hpp"
+#include "AST/Passes/Base.hpp"
 
-namespace fer
+namespace fer::ast
 {
 
-class CodegenPass : public Pass
+class DeferStack
 {
-	// argument info string for function definitions
-	// needs to be propagated between function signature and definition
-	Vector<String> fndefarginfo;
-	// argument info string for function call
-	// needs to be propagated between function call args and expression
-	Vector<String> fncallarginfo;
-	// for logical AND and OR jumps
-	Vector<size_t> jmplocs;
-	Bytecode &bc;
+	Vector<Vector<Stmt *>> deferstack;
 
 public:
-	CodegenPass(Context &ctx, Bytecode &bc);
-	~CodegenPass() override;
+	inline void pushLayer() { deferstack.push_back({}); }
+	inline void popLayer() { deferstack.pop_back(); }
+	inline void pushLoop() { deferstack.push_back({nullptr}); }
+	bool popLoop(ModuleLoc loc);
+	inline void addStmt(Stmt *stmt) { deferstack.back().push_back(stmt); }
+	void applyDefers(Vector<Stmt *> &stmts);
+};
+
+class SimplifyPass : public Pass
+{
+	Stmt *applyConstantFolding(StmtSimple *l, StmtSimple *r, const lex::Tok &oper);
+	DeferStack defers;
+
+public:
+	SimplifyPass(Allocator &allocator);
+	~SimplifyPass() override;
 
 	bool visit(Stmt *stmt, Stmt **source) override;
 
@@ -42,4 +49,4 @@ public:
 	bool visit(StmtDefer *stmt, Stmt **source) override;
 };
 
-} // namespace fer
+} // namespace fer::ast

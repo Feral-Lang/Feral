@@ -2,7 +2,7 @@
 
 #include "Core.hpp"
 
-namespace fer
+namespace fer::utils
 {
 
 inline bool startsWith(StringRef src, StringRef term) { return src.rfind(term, 0) == 0; }
@@ -18,14 +18,18 @@ String fromRawString(StringRef data);
 String vecToStr(Span<StringRef> items);
 String vecToStr(Span<String> items);
 
+void removeBackSlash(String &s);
+String viewBackSlash(StringRef data);
+
 inline void appendToString(String &dest) {}
 
 inline void appendToString(String &dest, bool data) { dest += data ? "(true)" : "(false)"; }
 inline void appendToString(String &dest, char data) { dest += data; }
 inline void appendToString(String &dest, uint8_t data) { dest += std::to_string(data); }
-inline void appendToString(String &dest, int data) { dest += std::to_string(data); }
+inline void appendToString(String &dest, uint16_t data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, int64_t data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, size_t data) { dest += std::to_string(data); }
+inline void appendToString(String &dest, int data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, float data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, double data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, const char *data) { dest += data; }
@@ -49,4 +53,4 @@ template<typename... Args> String toString(Args... args)
 WString toWString(StringRef data);
 #endif
 
-} // namespace fer
+} // namespace fer::utils
