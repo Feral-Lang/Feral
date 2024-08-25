@@ -330,7 +330,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			for(auto &a : args) decVarRef(a);
 			for(auto &aa : assn_args) decVarRef(aa.second.val);
 			if(!memcall) decVarRef(fnbase);
-			if(exitcalled) goto done;
+			if(isExitCalled()) goto done;
 			break;
 		fncall_fail:
 			for(auto &a : args) decVarRef(a);
@@ -421,6 +421,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// POP_JMP instr will take care of popping from jmps and failstack.
 			i = blkEnd - 1;
 			popModule();
+			if(isExitCalled()) goto done;
 			break;
 		}
 		}
