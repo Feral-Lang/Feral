@@ -215,7 +215,7 @@ Var *varExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	}
 	VarModule *mod	 = vm.getCurrModule();
 	bool providedMod = false;
-	if(args[2] && args[2]->is<VarModule>()) {
+	if(args.size() > 2 && args[2] && args[2]->is<VarModule>()) {
 		mod	    = as<VarModule>(args[2]);
 		providedMod = true;
 	}

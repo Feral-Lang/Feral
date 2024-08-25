@@ -2,6 +2,16 @@
 
 #include "Logger.hpp"
 
+// aligned_alloc doesn't exist on Windows, so we use _aligned_malloc and _aligned_free instead.
+#if defined(FER_OS_WINDOWS)
+#include <malloc.h>
+#define AlignedAlloc(align, sz) _aligned_malloc(sz, align)
+#define AlignedFree(ptr) _aligned_free(ptr)
+#else
+#define AlignedAlloc(align, sz) std::aligned_alloc(align, sz)
+#define AlignedFree(ptr) std::free(ptr)
+#endif
+
 namespace fer
 {
 
@@ -14,13 +24,13 @@ MemoryManager::~MemoryManager()
 	for(auto &c : freechunks) {
 		if(c.first > POOL_SIZE) {
 			for(auto &blk : c.second) {
-				std::free(blk);
+				AlignedFree(blk);
 			}
 		}
 		c.second.clear();
 	}
 	freechunks.clear();
-	for(auto &p : pools) std::free(p.mem);
+	for(auto &p : pools) AlignedFree(p.mem);
 	logger.trace("=============== ", name, " memory manager stats: ===============");
 	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalManualAlloc);
 	logger.trace("--             Total allocated bytes (pools): ", totalPoolAlloc);
@@ -42,9 +52,9 @@ size_t MemoryManager::nextPow2(size_t sz)
 
 void MemoryManager::allocPool()
 {
-	char *alloc = (char *)std::aligned_alloc(MAX_ALIGNMENT, POOL_SIZE);
+	char *alloc = (char *)AlignedAlloc(MAX_ALIGNMENT, POOL_SIZE);
 	totalManualAlloc += POOL_SIZE;
-	pools.push_back({alloc, alloc});
+	pools.emplace_back(alloc, alloc);
 }
 
 void *MemoryManager::alloc(size_t size, size_t align)
@@ -63,7 +73,7 @@ void *MemoryManager::alloc(size_t size, size_t align)
 
 	if(allocSz > POOL_SIZE) {
 		totalManualAlloc += allocSz;
-		loc = (char *)std::aligned_alloc(MAX_ALIGNMENT, allocSz);
+		loc = (char *)AlignedAlloc(MAX_ALIGNMENT, allocSz);
 	} else {
 		totalPoolAlloc += allocSz;
 
@@ -106,7 +116,7 @@ void MemoryManager::free(void *data)
 	char *loc = (char *)data;
 	size_t sz = *((size_t *)(loc - SIZE_BYTES));
 	if(sz > POOL_SIZE) {
-		delete[](loc - SIZE_BYTES);
+		AlignedFree(loc - MAX_ALIGNMENT);
 		return;
 	}
 	LockGuard<Mutex> mtxlock(mtx);

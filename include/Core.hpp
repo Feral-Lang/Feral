@@ -54,6 +54,16 @@
 #define FER_OS_APPLE
 #endif
 
+#if defined(FER_OS_WINDOWS)
+#if defined(EXPORT_FOR_DLL)
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+#else
+#define DLL_EXPORT
+#endif
+
 namespace fer
 {
 
@@ -77,6 +87,11 @@ using IOStream	= std::iostream;
 using IFStream	= std::ifstream;
 using OFStream	= std::ofstream;
 using StringRef = std::string_view;
+
+#if defined(FER_OS_WINDOWS)
+using WString	 = std::wstring;
+using WStringRef = std::wstring_view;
+#endif
 
 #include "Config.inl"
 

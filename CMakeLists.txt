@@ -160,6 +160,9 @@ file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(libferal SHARED ${SRCS} ${INCS})
+# For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport) depending on
+# if the the DLL is being generated, or is being used.
+target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
 target_include_directories(libferal PRIVATE ${PROJECT_SOURCE_DIR}/include)
 set_target_properties(libferal
     PROPERTIES

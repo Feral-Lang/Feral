@@ -134,7 +134,6 @@ int remove(StringRef path, std::error_code &ec)
 }
 
 } // namespace fs
-} // namespace fer
 
 #if defined(FER_OS_WINDOWS)
 // getdelim and getline functions from NetBSD libnbcompat:
@@ -210,3 +209,5 @@ ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 
 ssize_t getline(char **buf, size_t *bufsiz, FILE *fp) { return getdelim(buf, bufsiz, '\n', fp); }
 #endif
+
+} // namespace fer

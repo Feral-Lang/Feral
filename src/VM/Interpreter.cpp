@@ -97,7 +97,6 @@ int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
 {
 	static bool firstSource = true;
 	String code;
-	Bytecode bc;
 
 	if(!fs::read(file, code, true)) {
 		err.fail(loc, "Failed to read file: ", file);
@@ -505,7 +504,7 @@ void Interpreter::initTypeNames()
 bool addDLLDirectory(StringRef dir)
 {
 	if(dllDirectories.find(dir) != dllDirectories.end()) return true;
-	DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(toWString(dir).c_str());
+	DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::toWString(dir).c_str());
 	if(!dlldir) return false;
 	dllDirectories.insert({String(dir), dlldir});
 	return true;
