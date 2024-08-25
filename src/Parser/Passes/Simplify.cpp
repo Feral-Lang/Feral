@@ -103,9 +103,8 @@ bool SimplifyPass::visit(StmtFnArgs *stmt, Stmt **source)
 }
 bool SimplifyPass::visit(StmtExpr *stmt, Stmt **source)
 {
-	Stmt *&lhs	  = stmt->getLHS();
-	Stmt *&rhs	  = stmt->getRHS();
-	lex::TokType oper = stmt->getOper().getTokVal();
+	Stmt *&lhs = stmt->getLHS();
+	Stmt *&rhs = stmt->getRHS();
 	if(lhs && !visit(lhs, &lhs)) {
 		err.fail(stmt->getLoc(), "failed to apply simplify pass on LHS in expression");
 		return false;
@@ -120,7 +119,9 @@ bool SimplifyPass::visit(StmtExpr *stmt, Stmt **source)
 	if(rhs && !rhs->isSimple()) return true;
 	StmtSimple *l = as<StmtSimple>(lhs);
 	StmtSimple *r = rhs ? as<StmtSimple>(rhs) : nullptr;
-	if(Stmt *res = applyConstantFolding(l, r, oper)) *source = res;
+	Stmt *res     = nullptr;
+	if(!applyConstantFolding(res, l, r, stmt->getOper())) return false;
+	if(res) *source = res;
 	return true;
 }
 bool SimplifyPass::visit(StmtVar *stmt, Stmt **source)

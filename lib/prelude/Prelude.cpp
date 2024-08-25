@@ -213,9 +213,17 @@ Var *varExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	Vars *moduleVars = vm.getCurrModule()->getVars();
+	VarModule *mod	 = vm.getCurrModule();
+	bool providedMod = false;
+	if(args[2] && args[2]->is<VarModule>()) {
+		mod	    = as<VarModule>(args[2]);
+		providedMod = true;
+	}
+
+	Vars *moduleVars = mod->getVars();
 	StringRef var	 = as<VarStr>(args[1])->getVal();
-	return moduleVars->get(var) || vm.getGlobal(var) ? vm.getTrue() : vm.getFalse();
+	return moduleVars->get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
+									   : vm.getFalse();
 }
 
 Var *setMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
@@ -639,7 +647,8 @@ INIT_MODULE(Prelude)
 	// From std/sys
 
 	mod->addNativeFn(vm, "exitNative", _exit, 1);
-	mod->addNativeFn(vm, "varExists", varExists, 1);
+	// va because there can be no proxy for this function (to make args[2] (VarModule) optional)
+	mod->addNativeFn(vm, "varExists", varExists, 1, true);
 	mod->addNativeFn(vm, "setMaxCallstacksNative", setMaxCallstacks, 1);
 	mod->addNativeFn(vm, "getMaxCallstacks", getMaxCallstacks, 0);
 

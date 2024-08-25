@@ -32,6 +32,7 @@ inline void appendToString(String &dest, size_t data) { dest += std::to_string(d
 inline void appendToString(String &dest, int data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, float data) { dest += std::to_string(data); }
 inline void appendToString(String &dest, double data) { dest += std::to_string(data); }
+inline void appendToString(String &dest, char *data) { dest += data; }
 inline void appendToString(String &dest, const char *data) { dest += data; }
 inline void appendToString(String &dest, StringRef data) { dest += data; }
 inline void appendToString(String &dest, const String &data) { dest += data; }
