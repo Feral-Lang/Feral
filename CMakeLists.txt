@@ -135,7 +135,7 @@ endif()
 
 # Finally! The sources!!!!!
 
-# Set Config.hpp.in template
+# Set Config.inl.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_DIR}/include/Config.inl" @ONLY)
 
 # Install CMake modules
@@ -146,7 +146,7 @@ configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_D
 # Install C++ Includes
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_SOURCE_DIR}/lib/"
 	DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
-	FILES_MATCHING PATTERN "*.hpp"
+	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.inl"
 )
 
 # Install Feral Imports

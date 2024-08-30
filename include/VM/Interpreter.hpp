@@ -14,9 +14,9 @@ typedef bool (*ParseSourceFn)(Interpreter &vm, Bytecode &bc, ModuleId moduleId, 
 			      StringRef code, bool exprOnly);
 
 typedef bool (*ModInitFn)(Interpreter &vm, ModuleLoc loc);
-typedef void (*ModDeinitFn)();
+typedef void (*ModDeinitFn)(Interpreter &vm);
 #define INIT_MODULE(name) extern "C" bool Init##name(Interpreter &vm, ModuleLoc loc)
-#define DEINIT_MODULE(name) extern "C" void Deinit##name()
+#define DEINIT_MODULE(name) extern "C" void Deinit##name(Interpreter &vm)
 
 // DynLib can be accessed using its static getter (DynLib::getInstance())
 // Interpreter should be the parent of all execution threads(?)
