@@ -84,7 +84,7 @@ Interpreter::~Interpreter()
 		delete typefn.second;
 	}
 	for(auto &deinitfn : dlldeinitfns) {
-		deinitfn.second();
+		deinitfn.second(*this);
 	}
 	for(auto &mod : modules) decVarRef(mod.second);
 
