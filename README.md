@@ -10,14 +10,15 @@ Instead, there are libraries/functions that allow the user to import modules, an
 For feral, all imports, structures, enums, and functions are variables. This makes all of them a first class citizen.
 One can pass and modify all of those around in functions, etc, just like a normal variable.
 
-Do note that Feral is not an object oriented programming language, but does support one primary construct - the `dot` operator.
+Do note that Feral is not an object oriented programming language, but does support structs and "associated" (member) functions for them.
 ```py
-variable.inside = 10;
-let x = variable.func();
+let Struct = struct(member = 5);
+let instance = Struct(); # default instantiation
+instance.member = 10;
 ```
-This makes the code a bit cleaner and easier to understand. See examples to understand its usage.
+This makes the code a bit cleaner and more pleasant to use. See examples to understand its usage.
 
-There is also a (WIP) book/guide for Feral available here: [https://feral-lang.github.io/Book/](https://feral-lang.github.io/Book/) ([source](https://github.com/Feral-Lang/Book))
+There is also a (WIP) book/guide for Feral available here: [https://feral-lang.github.io/Book/](https://feral-lang.github.io/Book/) ([source](https://github.com/Feral-Lang/Book)).
 
 # Examples
 
@@ -33,11 +34,11 @@ io.println('Hello World');
 ```py
 let io = import('std/io');
 
-let hello_fn = fn(name) {
+let helloFn = fn(name) {
 	io.println('Hello ', name);
 };
 
-hello_fn('Electrux'); # prints 'Hello Electrux`
+helloFn('Electrux'); # prints 'Hello Electrux`
 ```
 
 ## Simple factorial of 5 using a function
@@ -57,27 +58,24 @@ io.println('factorial of 5 is: ', facto(5));
 
 ## Creating an empty struct
 ```py
-let lang = import('std/lang');
-let struct_t = struct(); # empty structure type (struct with no fields)
+let structTy = struct(); # empty structure type (struct with no fields)
 ```
 
 ## Creating a struct with fields
 ```py
 # fields `a` and `b` of type integers having default values `10`, and `20` respectively
-let lang = import('std/lang');
-
-let struct_t = struct(a = 10, b = 20);
+let structTy = struct(a = 10, b = 20);
 ```
 To create objects of this structure:
 ```py
 # default values for struct fields
-let struct_obj1 = struct_t(); # a = 10, b = 20
+let structObj1 = structTy(); # a = 10, b = 20
 
 # overwrite first field's value (a)
-let struct_obj2 = struct_t(30); # a = 30, b = 20
+let structObj2 = structTy(30); # a = 30, b = 20
 
 # overwrite using assigned argument
-let struct_obj3 = struct_t(b = 30); # a = 10, b = 30
+let structObj3 = structTy(b = 30); # a = 10, b = 30
 ```
 
 # Installation
@@ -86,12 +84,8 @@ let struct_obj3 = struct_t(b = 30); # a = 10, b = 30
 
 To install `Feral`, the following packages are required:
 * CMake (build system - for compiling the project)
-* LibGMP (large integers)
-* LibMPFR (large floating point numbers)
 
-**Note**: Feral doesn't yet support Windows.
-
-## Automated Build
+## Automated Build (Unix-like OS)
 
 You can automatically build Feral and its standard library by downloading and running `build.sh`.
 It requires [Git](https://git-scm.com/) and the packages listed under [Prerequisites](#prerequisites).
@@ -111,22 +105,28 @@ git clone https://github.com/Feral-Lang/Feral.git
 ```
 
 Inside the repository, create a directory (say `build`), `cd` in it and run the commands for building and installing Feral:
-```
+```sh
 cd Feral && mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release # optionally PREFIX_DIR=<dir> can be set before this
-make -j<cpu cores on your system> install
+cmake --build . --config Release --parallel=8 --target install
+```
+
+On Windows, the first cmake command must have this argument as well: ` -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true`. Therefore, the command will be:
+```sh
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true # optionally PREFIX_DIR=<dir> can be set before this
 ```
 
 By default, `PREFIX_DIR=$HOME/.feral`.
-Once installation is done, execute the installed `feral` binary (`$PREFIX_DIR/bin/feral`) to use the Feral language.
+Once installation is done, execute the installed `feral` binary (`$PREFIX_DIR/bin/feral`) to use the Feral compiler/interpreter.
 
 ## Post Installation
 
-After installation is done, you'd probably also like to use the `feral init` command to initialize the `$FERAL_HOME` directory, which currently is `$HOME/.feral`. This directory is where external packages shall be installed.
+After the installation is done, you'd probably also like to setup the package manager to install packages for the language.
+To do that, just use `feral pkgbootstrap`.
 
 # Syntax Highlighting Extensions
 
-As of right now, there are Feral language's syntax highlighting extensions available for `Visual Studio Code` and `Vim` editors.
+As of now, there are Feral language's syntax highlighting extensions available for `Visual Studio Code` and `Vim` editors.
 Installation steps can be found on their repositories.
 
 Visual Studio Code: [Feral-Lang/Feral-VSCode](https://github.com/Feral-Lang/Feral-VSCode)
@@ -136,7 +136,3 @@ Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
 # For Developers
 
 The `.clang-format` style file is present in the repository: [https://github.com/Electrux/cpp-format](https://github.com/Electrux/cpp-format)
-
-# Communication
-
-Join us on Discord: [https://discord.gg/zMAjSXn](https://discord.gg/zMAjSXn)
