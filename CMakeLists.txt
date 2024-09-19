@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.30.1)
+if(WIN32)
+	cmake_minimum_required(VERSION 3.30.1)
+else()
+	cmake_minimum_required(VERSION 3.25.0)
+endif()
 
 project(Feral C CXX)
 
