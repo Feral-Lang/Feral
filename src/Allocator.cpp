@@ -15,7 +15,7 @@
 namespace fer
 {
 
-static size_t totalAllocRequests = 0, totalManualAlloc = 0, totalPoolAlloc = 0, reuseCount = 0;
+static size_t totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0, chunkReuseCount = 0;
 
 MemoryManager::MemoryManager(StringRef name) : name(name) { allocPool(); }
 MemoryManager::~MemoryManager()
@@ -32,10 +32,10 @@ MemoryManager::~MemoryManager()
 	freechunks.clear();
 	for(auto &p : pools) AlignedFree(p.mem);
 	logger.trace("=============== ", name, " memory manager stats: ===============");
-	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalManualAlloc);
-	logger.trace("--             Total allocated bytes (pools): ", totalPoolAlloc);
-	logger.trace("--                          Requests (count): ", totalAllocRequests);
-	logger.trace("--                            Reuses (count): ", reuseCount);
+	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes);
+	logger.trace("--                Allocated bytes from pools: ", totalPoolAlloc);
+	logger.trace("--                             Request count: ", totalAllocRequests);
+	logger.trace("--                         Chunk Reuse count: ", chunkReuseCount);
 }
 
 size_t MemoryManager::nextPow2(size_t sz)
@@ -53,7 +53,7 @@ size_t MemoryManager::nextPow2(size_t sz)
 void MemoryManager::allocPool()
 {
 	char *alloc = (char *)AlignedAlloc(MAX_ALIGNMENT, POOL_SIZE);
-	totalManualAlloc += POOL_SIZE;
+	totalAllocBytes += POOL_SIZE;
 	pools.emplace_back(alloc, alloc);
 }
 
@@ -72,7 +72,7 @@ void *MemoryManager::alloc(size_t size, size_t align)
 	char *loc = nullptr;
 
 	if(allocSz > POOL_SIZE) {
-		totalManualAlloc += allocSz;
+		totalAllocBytes += allocSz;
 		loc = (char *)AlignedAlloc(MAX_ALIGNMENT, allocSz);
 	} else {
 		totalPoolAlloc += allocSz;
@@ -83,7 +83,7 @@ void *MemoryManager::alloc(size_t size, size_t align)
 		if(!freechunkloc.empty()) {
 			loc = freechunkloc.front();
 			freechunkloc.pop_front();
-			++reuseCount;
+			++chunkReuseCount;
 			// No need to size size bytes here because they would have already been set
 			// when they were taken from the pool.
 			return loc;
