@@ -56,7 +56,9 @@ String getProcPath()
 	// TODO: Make this return normalized path instead of backslash on Windows
 	GetModuleFileNameA(NULL, path, MAX_PATH_CHARS);
 #elif defined(FER_OS_LINUX) || defined(FER_OS_ANDROID)
-	(void)readlink("/proc/self/exe", path, MAX_PATH_CHARS);
+	ssize_t count = readlink("/proc/self/exe", path, MAX_PATH_CHARS);
+	if(count < 0) return "";
+	path[count] = '\0';
 #elif defined(FER_OS_FREEBSD)
 	int mib[4];
 	mib[0]	  = CTL_KERN;
