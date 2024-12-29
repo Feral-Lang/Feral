@@ -100,6 +100,17 @@ Var *fsWalkDir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
+Var *fsAbsPath(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarStr>()) {
+		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	const String &path = as<VarStr>(args[1])->getVal();
+	return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
+}
+
 Var *fileReopen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {

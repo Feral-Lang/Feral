@@ -202,36 +202,38 @@ install(TARGETS feral
 	  COMPONENT Binaries
 )
 
-# Libraries
-file(GLOB_RECURSE mods RELATIVE "${PROJECT_SOURCE_DIR}" "lib/*.cpp")
-foreach(mod ${mods})
-	string(SUBSTRING ${mod} 4 -1 m)
-	get_filename_component(modname ${m} NAME_WE)
-	get_filename_component(moddir ${m} DIRECTORY)
-	set(dep "")
-	# Add dependencies here for a library if needed.
-	add_library(${modname} SHARED "${mod}")
-	target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
-	target_link_libraries(${modname} libferal ${dep})
-	set_target_properties(${modname}
-	    PROPERTIES
-	    PREFIX "libferal"
-	    ARCHIVE_OUTPUT_NAME "libferal${modname}"
-	    LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
-	    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
-	    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
-	    INSTALL_RPATH_USE_LINK_PATH TRUE
-	)
-	install(TARGETS ${modname}
-		LIBRARY
-		  DESTINATION "lib/feral/${moddir}"
-		ARCHIVE
-		  DESTINATION "lib/feral/${moddir}$<0:>"
-		RUNTIME
-		  DESTINATION "lib/feral/${moddir}$<0:>"
-	)
-endforeach()
+# Libraries (Optional)
+if(NOT NOSTDLIB STREQUAL "true")
+	file(GLOB_RECURSE mods RELATIVE "${PROJECT_SOURCE_DIR}" "lib/*.cpp")
+	foreach(mod ${mods})
+		string(SUBSTRING ${mod} 4 -1 m)
+		get_filename_component(modname ${m} NAME_WE)
+		get_filename_component(moddir ${m} DIRECTORY)
+		set(dep "")
+		# Add dependencies here for a library if needed.
+		add_library(${modname} SHARED "${mod}")
+		target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
+		target_link_libraries(${modname} libferal ${dep})
+		set_target_properties(${modname}
+		PROPERTIES
+		PREFIX "libferal"
+		ARCHIVE_OUTPUT_NAME "libferal${modname}"
+		LINK_FLAGS "${EXTRA_LD_FLAGS}"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
+		INSTALL_RPATH_USE_LINK_PATH TRUE
+		)
+		install(TARGETS ${modname}
+			LIBRARY
+			DESTINATION "lib/feral/${moddir}"
+			ARCHIVE
+			DESTINATION "lib/feral/${moddir}$<0:>"
+			RUNTIME
+			DESTINATION "lib/feral/${moddir}$<0:>"
+		)
+	endforeach()
+endif()
 
 # Utility Scripts
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/utils/"
