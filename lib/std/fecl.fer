@@ -211,7 +211,7 @@ let GetIden = fn(data, i, end) {
 	let res = '';
 	while i < end {
 		let ch = data[i];
-		if !ch.isAlpha() && !ch.isDigit() && ch != '_' { break; }
+		if !ch.isAlpha() && !ch.isDigit() && ch != '_' && ch != '-' { break; }
 		res += ch; ++i;
 	}
 	return res;
@@ -293,16 +293,28 @@ let ParseInternal = fn(toks, sz, i) {
 let expect = fn(toks, end, i, type) {
 	if i >= end { raise('expected: ', TokStr[type], ', found: EOF'); }
 	if toks.getType(i) != type {
-		raise('expected token at index ', i.str(), ' to be of type: ',
-		      TokStr[type], ', found: ', TokStr[toks.getType(i)]);
+		let err = 'expected token at index ' + i.str() + ' to be of type: ';
+		err += TokStr[type] + ', found: ' + TokStr[toks.getType(i)];
+		err += ' (' + toks.getData(i) + ')';
+		if i > 0 {
+			err += '; previous: ' + TokStr[toks.getType(i - 1)];
+			err += ' (' + toks.getData(i - 1) + ')';
+		}
+		raise(err);
 	}
 };
 
 let expect2 = fn(toks, end, i, type1, type2) {
 	if i >= end { raise('expected: ', TokStr[type1], ' or ', TokStr[type2], ', found: EOF'); }
 	if toks.getType(i) != type1 && toks.getType(i) != type2 {
-		raise('expected token at index ', i.str(), ' to be of type: ',
-		      TokStr[type1], ' or ', TokStr[type2], ', found: ', TokStr[toks.getType(i)]);
+		let err = 'expected token at index ' + i.str() + ' to be of type: ';
+		err += TokStr[type1] + ' or ' + TokStr[type2] + ', found: ' + TokStr[toks.getType(i)];
+		err += ' (' + toks.getData(i) + ')';
+		if i > 0 {
+			err += '; previous: ' + TokStr[toks.getType(i - 1)];
+			err += ' (' + toks.getData(i - 1) + ')';
+		}
+		raise(err);
 	}
 };
 
@@ -331,7 +343,7 @@ let feclString in IntTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
 };
 
 let feclString in StrTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return '\'' + self + '\'';
+	return '"' + self + '"';
 };
 
 let feclString in VecTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
@@ -389,11 +401,11 @@ let stringifyIfNeeded = fn(data) {
 	let stringify = false;
 	for let i = 0; i < len; ++i {
 		let ch = data[i];
-		if !ch.isAlpha() && !ch.isDigit() && ch != '_' {
+		if !ch.isAlpha() && ((!ch.isDigit() && ch != '_' && ch != '-') || i == 0) {
 			stringify = true;
 			break;
 		}
 	}
-	if stringify { return '\'' + data + '\''; }
+	if stringify { return '"' + data + '"'; } # Use double quotes because single quotes can be used as apostrophes too
 	return data;
 };
