@@ -8,7 +8,7 @@ let mproc = import('std/multiproc');
 
 let PROJ_DIR = os.getEnv('PROJ_DIR');
 
-if PROJ_DIR.empty() {
+if PROJ_DIR == nil {
 	io.println('PROJ_DIR env variable does not exist');
 	feral.exit(1);
 }
@@ -105,7 +105,7 @@ if execCmake {
 	if codeCov {
 		let gcc = os.findExec('gcc');
 		let gxx = os.findExec('g++');
-		if gcc.empty() || gxx.empty() {
+		if gcc == nil || gxx == nil {
 			io.println('Could not find gcc/g++ in PATH, required for code coverage');
 			feral.exit(1);
 		}
@@ -124,7 +124,7 @@ if execCmake {
 		cacher = 'sccache';
 	}
 	cacherPath = os.findExec(cacher);
-	if !cacherPath.empty() {
+	if cacherPath != nil {
 		cmakeCmd += ' -DCCACHE_PROGRAM=';
 		cmakeCmd += cacherPath;
 	}

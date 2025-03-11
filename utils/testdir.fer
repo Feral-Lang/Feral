@@ -87,7 +87,7 @@ let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 let valgrind = '';
 if feral.args.find('--valgrind') {
 	valgrind = os.findExec('valgrind');
-	if valgrind.empty() {
+	if valgrind == nil {
 		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
 		feral.exit(1);
 	}
