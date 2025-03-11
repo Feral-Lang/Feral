@@ -215,9 +215,9 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				String name = as<VarStr>(execstack.back())->getVal();
 				execstack.pop();
 				if(arginfo[i] == '1') {
-					fn->insertAssnParam(
-					name, copyVar(ins.getLoc(), execstack.back()));
-					execstack.pop();
+					Var *data = execstack.back();
+					execstack.pop(false);
+					fn->insertAssnParam(name, data);
 				}
 				fn->pushParam(name);
 			}
