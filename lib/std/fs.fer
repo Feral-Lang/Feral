@@ -54,8 +54,20 @@ let fopen = fn(file, mode = 'r', mustClose = true) {
 	return feral.fsFopen(file, mode, mustClose);
 };
 
-let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)') {
-	return feral.fsWalkDir(dir, mode, regex);
+let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
+	let res = feral.fsWalkDir(dir, mode, regex);
+	let nameOnly = kw['nameOnly'] != nil && kw['nameOnly'];
+	inline if nameOnly {
+	let dirslashed = dir;
+	if !dir.endsWith('/') { dirslashed += '/'; }
+	}
+	for i in res.each() {
+		i = normalizePath(i);
+		if nameOnly {
+			i = i.replace(dirslashed, '');
+		}
+	}
+	return res;
 };
 
 let fdOpen = fn(name, mode = O_RDONLY) {
