@@ -130,12 +130,12 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
 
 bool Parser::parseExpr(Stmt *&expr, bool disable_brace_after_iden)
 {
-	return parseExpr17(expr, disable_brace_after_iden);
+	return parseExpr18(expr, disable_brace_after_iden);
 }
 
 // Left Associative
 // ,
-bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr18(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -148,7 +148,7 @@ bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
 
 	size_t commas = 0;
 
-	if(!parseExpr16(rhs, disable_brace_after_iden)) {
+	if(!parseExpr17(rhs, disable_brace_after_iden)) {
 		return false;
 	}
 
@@ -156,7 +156,7 @@ bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
 		++commas;
 		oper = p.peek();
 		p.next();
-		if(!parseExpr16(lhs, disable_brace_after_iden)) {
+		if(!parseExpr17(lhs, disable_brace_after_iden)) {
 			return false;
 		}
 		rhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
@@ -168,7 +168,7 @@ bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
 }
 // Left Associative
 // ?:
-bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -181,7 +181,7 @@ bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 
 	lex::Lexeme &start = p.peek();
 
-	if(!parseExpr15(lhs, disable_brace_after_iden)) {
+	if(!parseExpr16(lhs, disable_brace_after_iden)) {
 		return false;
 	}
 	if(!p.accept(lex::QUEST)) {
@@ -193,7 +193,7 @@ bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 	p.next();
 	lex::Lexeme oper_inside;
 
-	if(!parseExpr15(lhs_lhs, disable_brace_after_iden)) {
+	if(!parseExpr16(lhs_lhs, disable_brace_after_iden)) {
 		return false;
 	}
 	if(!p.accept(lex::COL)) {
@@ -203,7 +203,7 @@ bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 	}
 	oper_inside = p.peek();
 	p.next();
-	if(!parseExpr15(lhs_rhs, disable_brace_after_iden)) {
+	if(!parseExpr16(lhs_rhs, disable_brace_after_iden)) {
 		return false;
 	}
 	rhs = StmtExpr::create(allocator, oper.getLoc(), lhs_lhs, oper_inside, lhs_rhs);
@@ -215,7 +215,7 @@ after_quest:
 }
 // Right Associative
 // =
-bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -226,14 +226,14 @@ bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
 
 	lex::Lexeme &start = p.peek();
 
-	if(!parseExpr14(rhs, disable_brace_after_iden)) {
+	if(!parseExpr15(rhs, disable_brace_after_iden)) {
 		return false;
 	}
 
 	while(p.accept(lex::ASSN)) {
 		oper = p.peek();
 		p.next();
-		if(!parseExpr14(lhs, disable_brace_after_iden)) {
+		if(!parseExpr15(lhs, disable_brace_after_iden)) {
 			return false;
 		}
 		rhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
@@ -244,12 +244,12 @@ bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
 	return true;
 }
 // Left Associative
-// += -=
-// *= /= %=
-// <<= >>=
-// &= |= ^=
+// += -= *=
+// /= %= <<=
+// >>= &= |=
+// ~= ^= ??=
 // or-block
-bool Parser::parseExpr14(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -262,18 +262,18 @@ bool Parser::parseExpr14(Stmt *&expr, bool disable_brace_after_iden)
 
 	lex::Lexeme &start = p.peek();
 
-	if(!parseExpr13(lhs, disable_brace_after_iden)) {
+	if(!parseExpr14(lhs, disable_brace_after_iden)) {
 		return false;
 	}
 
 	while(p.accept(lex::ADD_ASSN, lex::SUB_ASSN, lex::MUL_ASSN) ||
 	      p.accept(lex::DIV_ASSN, lex::MOD_ASSN, lex::LSHIFT_ASSN) ||
 	      p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) ||
-	      p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN))
+	      p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN, lex::NIL_COALESCE_ASSN))
 	{
 		oper = p.peek();
 		p.next();
-		if(!parseExpr13(rhs, disable_brace_after_iden)) {
+		if(!parseExpr14(rhs, disable_brace_after_iden)) {
 			return false;
 		}
 		lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
@@ -296,6 +296,36 @@ bool Parser::parseExpr14(Stmt *&expr, bool disable_brace_after_iden)
 		expr = StmtExpr::create(allocator, expr->getLoc(), expr, {}, nullptr);
 	}
 	as<StmtExpr>(expr)->setOr(or_blk, or_blk_var);
+	return true;
+}
+// Left Associative
+// ??
+bool Parser::parseExpr14(Stmt *&expr, bool disable_brace_after_iden)
+{
+	expr = nullptr;
+
+	Stmt *lhs = nullptr;
+	Stmt *rhs = nullptr;
+
+	lex::Lexeme oper;
+
+	lex::Lexeme &start = p.peek();
+
+	if(!parseExpr13(lhs, disable_brace_after_iden)) {
+		return false;
+	}
+
+	while(p.accept(lex::NIL_COALESCE)) {
+		oper = p.peek();
+		p.next();
+		if(!parseExpr13(rhs, disable_brace_after_iden)) {
+			return false;
+		}
+		lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
+		rhs = nullptr;
+	}
+
+	expr = lhs;
 	return true;
 }
 // Left Associative
@@ -738,7 +768,7 @@ begin_brack:
 		p.sett(lex::SUBS);
 		oper = p.peek();
 		p.next();
-		if(!parseExpr16(rhs, false)) {
+		if(!parseExpr17(rhs, false)) {
 			err.fail(oper.getLoc(), "failed to parse expression for subscript");
 			return false;
 		}
@@ -778,7 +808,7 @@ begin_brack:
 				lex::Lexeme &name = p.peek();
 				p.next();
 				p.next();
-				if(!parseExpr16(arg, false)) return false;
+				if(!parseExpr17(arg, false)) return false;
 				arg =
 				StmtVar::create(allocator, name.getLoc(), name, nullptr, arg, true);
 			} else if(p.accept(lex::IDEN) &&
@@ -792,7 +822,7 @@ begin_brack:
 				unpack_arg = true;
 			} else if(p.accept(lex::FN)) {
 				if(!parseFnDef(arg)) return false;
-			} else if(!parseExpr16(arg, false)) { // normal arg
+			} else if(!parseExpr17(arg, false)) { // normal arg
 				return false;
 			}
 			args.push_back(arg);
@@ -867,7 +897,7 @@ bool Parser::parseVar(StmtVar *&var, bool is_fn_arg)
 	}
 	if(p.accept(lex::FN)) {
 		if(!parseFnDef(val)) return false;
-	} else if(!parseExpr16(val, false)) {
+	} else if(!parseExpr17(val, false)) {
 		return false;
 	}
 
@@ -1025,7 +1055,7 @@ cond:
 		return false;
 	}
 
-	if(!parseExpr15(c.getCond(), true)) {
+	if(!parseExpr16(c.getCond(), true)) {
 		err.fail(p.peek().getLoc(), "failed to parse condition for if/else if statement");
 		return false;
 	}
@@ -1093,7 +1123,7 @@ bool Parser::parseForIn(Stmt *&fin)
 		return false;
 	}
 
-	if(!parseExpr15(in, true)) {
+	if(!parseExpr16(in, true)) {
 		err.fail(p.peek().getLoc(), "failed to parse expression for 'in'");
 		return false;
 	}
@@ -1144,7 +1174,7 @@ bool Parser::parseFor(Stmt *&f)
 cond:
 	if(p.acceptn(lex::COLS)) goto incr;
 
-	if(!parseExpr16(cond, false)) return false;
+	if(!parseExpr17(cond, false)) return false;
 	if(!p.acceptn(lex::COLS)) {
 		err.fail(p.peek().getLoc(),
 			 "expected semicolon here, found: ", p.peek().getTok().cStr());
@@ -1184,7 +1214,7 @@ bool Parser::parseWhile(Stmt *&w)
 		return false;
 	}
 
-	if(!parseExpr16(cond, true)) return false;
+	if(!parseExpr17(cond, true)) return false;
 
 	if(!parseBlock(blk)) {
 		err.fail(p.peek().getLoc(), "failed to parse block for 'for' construct");
@@ -1209,7 +1239,7 @@ bool Parser::parseRet(Stmt *&ret)
 
 	if(p.accept(lex::COLS)) goto done;
 
-	if(!parseExpr16(val, false)) {
+	if(!parseExpr17(val, false)) {
 		err.fail(p.peek().getLoc(), "failed to parse expression for return value");
 		return false;
 	}
@@ -1261,7 +1291,7 @@ bool Parser::parseDefer(Stmt *&defer)
 		return false;
 	}
 
-	if(!parseExpr16(val, false)) {
+	if(!parseExpr17(val, false)) {
 		err.fail(p.peek().getLoc(), "failed to parse expression for return value");
 		return false;
 	}

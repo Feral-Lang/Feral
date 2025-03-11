@@ -67,6 +67,12 @@ Var *allNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
+Var *allNilCoalesce(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+		    const StringMap<AssnArgData> &assn_args)
+{
+	return !args[0]->is<VarNil>() ? args[0] : args[1];
+}
+
 Var *allCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
@@ -345,6 +351,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarAll>(loc, "_typestr_", allGetTypeStr, 0);
 	vm.addNativeTypeFn<VarAll>(loc, "==", allEq, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "!=", allNe, 1);
+	vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "copy", allCopy, 0);
 
 	// to bool

@@ -23,6 +23,7 @@ public:
 
 	bool parsePrefixedSuffixedLiteral(Stmt *&expr);
 	bool parseExpr(Stmt *&expr, bool disable_brace_after_iden);
+	bool parseExpr18(Stmt *&expr, bool disable_brace_after_iden);
 	bool parseExpr17(Stmt *&expr, bool disable_brace_after_iden);
 	bool parseExpr16(Stmt *&expr, bool disable_brace_after_iden);
 	bool parseExpr15(Stmt *&expr, bool disable_brace_after_iden);

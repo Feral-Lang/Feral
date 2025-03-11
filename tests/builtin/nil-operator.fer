@@ -1,0 +1,12 @@
+let assert = import('std/assert');
+
+let a = nil;
+
+let b = a ?? 1;
+let c = b ?? 2;
+
+assert.eq(b, 1);
+assert.eq(c, 1);
+
+# let z = nil;
+# z ??= 1;

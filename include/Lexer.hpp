@@ -47,8 +47,10 @@ enum TokType
 	MUL_ASSN,
 	DIV_ASSN,
 	MOD_ASSN,
-	POWER, // **
-	ROOT,  // //
+	POWER,		   // **
+	ROOT,		   // //
+	NIL_COALESCE,	   // ??
+	NIL_COALESCE_ASSN, // ??=
 	// Post/Pre Inc/Dec
 	XINC,
 	INCX,
@@ -168,9 +170,6 @@ public:
 
 	inline const char *cStr() const { return TokStrs[val]; }
 	inline String str() const { return TokStrs[val]; }
-
-	const char *getOperCStr() const;
-	const char *getUnaryNoCharCStr() const;
 
 	inline bool operator==(Tok other) const { return val == other.val; }
 
