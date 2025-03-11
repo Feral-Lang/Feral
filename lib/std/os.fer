@@ -54,10 +54,10 @@ let envDelimiter = ':';
 # return the entire file path if found, empty string if not
 let findExec = fn(exec) {
 	let PATH = getEnv('PATH');
-	if PATH.empty() { return ''; }
+	if PATH == nil { return nil; }
 	for dir in PATH.split(envDelimiter).each() {
 		let p = fs.pathFrom(dir, exec);
 		if fs.exists(p) { return p; }
 	}
-	return '';
+	return nil;
 };

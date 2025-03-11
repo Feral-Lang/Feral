@@ -29,7 +29,7 @@ let gitCmd = os.findExec('git.exe');
 } else {
 let gitCmd = os.findExec('git');
 }
-if gitCmd.empty() {
+if gitCmd == nil {
 	logging.fatal('Failed to find git.');
 	raise('Failed to find git. Please make sure it is installed and available in one of the PATHs');
 }

@@ -52,7 +52,9 @@ Var *getEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		return nullptr;
 	}
 	const String &var = as<VarStr>(args[1])->getVal();
-	return vm.makeVar<VarStr>(loc, env::get(var.c_str()));
+	String res	  = env::get(var.c_str());
+	if(res.empty()) return vm.getNil();
+	return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
 Var *setEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,

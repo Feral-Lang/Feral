@@ -32,13 +32,13 @@ let notify = fn(title, body = '') {
 	let cmd = vec.new(refs = true);
 	if os.name == 'linux' {
 		let notify = os.findExec('notify-send');
-		if notify.empty() {
+		if notify == nil {
 			raise('notification requires notify-send on Linux (could not find in $PATH)');
 		}
 		cmd.push(notify, '-u', 'normal', '-t', '5000', title, body);
 	} elif os.name == 'macos' {
 		let notify = os.findExec('osascript');
-		if notify.empty() {
+		if notify == nil {
 			raise('notification requires osascript on macOS (could not find in $PATH)');
 		}
 		cmd.push(notify, '-e');
@@ -49,7 +49,7 @@ let notify = fn(title, body = '') {
 		}
 	} elif os.name == 'android' {
 		let notify = os.findExec('termux-notification');
-		if notify.empty() {
+		if notify == nil {
 			raise('notification requires termux-notification on Android (could not find in $PATH)');
 		}
 		cmd.push(notify, '--title', title);
