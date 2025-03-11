@@ -182,6 +182,7 @@ void Interpreter::tryAddModulePathsFromFile(const char *file)
 	String modulePaths;
 	if(!fs::read(file, modulePaths, true)) return;
 	for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
+		if(_path.empty()) continue;
 		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
 		moduleDirs->push(moduleLoc);
 	}

@@ -33,7 +33,7 @@ bool loadCommon(Interpreter &vm, ModuleLoc loc, Var *modname, bool isImport, Str
 	size_t nameLoc = result.rfind(as<VarStr>(modname)->getVal());
 	// nameLoc cannot be String::npos since result is the string where modname was found.
 	// - 1 for the last slash in the path.
-	String dir = result.substr(0, result.size() - nameLoc - 1);
+	String dir = result.substr(0, nameLoc - 1);
 	vm.tryAddModulePathsFromDir(dir);
 	return true;
 }
