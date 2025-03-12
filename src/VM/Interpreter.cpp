@@ -49,16 +49,16 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 		cmdargs->push(makeVarWithRef<VarStr>(ModuleLoc(), a));
 	}
 
+	VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), INSTALL_PATH);
+	moduleLoc->getVal() += "/lib/feral";
+	moduleDirs->insert(moduleDirs->begin(), moduleLoc);
+
+	// FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
 	String feral_paths = env::get("FERAL_PATHS");
 	for(auto &_path : utils::stringDelim(feral_paths, ";")) {
 		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
-		moduleDirs->push(moduleLoc);
+		moduleDirs->insert(moduleDirs->begin(), moduleLoc);
 	}
-
-	// FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
-	VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), INSTALL_PATH);
-	moduleLoc->getVal() += "/lib/feral";
-	moduleDirs->push(moduleLoc);
 
 	// Global .modulePaths file.
 	// The path of a package is added to it when it's installed from command line via package
@@ -184,7 +184,7 @@ void Interpreter::tryAddModulePathsFromFile(const char *file)
 	for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
 		if(_path.empty()) continue;
 		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
-		moduleDirs->push(moduleLoc);
+		moduleDirs->insert(moduleDirs->begin(), moduleLoc);
 	}
 }
 
