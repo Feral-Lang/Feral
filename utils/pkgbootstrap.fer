@@ -56,7 +56,7 @@ logging.info('Git repository successfully retrieved');
 
 # Install Pkg
 
-let pkgBasePath = fs.pathFrom(feral.installPath, 'lib', 'pkg');
+let pkgBasePath = fs.pathFrom(feral.installPath, 'lib', 'feral', 'pkg');
 if fs.dirExists(pkgBasePath) { fs.remove(pkgBasePath); }
 
 let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', pkgVersion);
