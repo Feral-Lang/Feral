@@ -101,7 +101,7 @@ bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef pat
 	Allocator astallocator(mem, utils::toString("AST(", path, ")"));
 	ast::Stmt *ptree = nullptr;
 	if(!ast::parse(astallocator, tokens, ptree, exprOnly)) {
-		std::cout << "Failed to parse tokens for file: " << path;
+		std::cout << "Failed to parse tokens for file: " << path << "\n";
 		return false;
 	}
 	if(args.has("ast")) {
