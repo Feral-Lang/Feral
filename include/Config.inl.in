@@ -22,7 +22,7 @@ constexpr char const *MIN_CMAKE_VERSION = "@CMAKE_MINIMUM_REQUIRED_VERSION@";
 constexpr char const *CMAKE_VERSION	= "@CMAKE_VERSION@";
 
 constexpr char const *INSTALL_PATH = "@CMAKE_INSTALL_PREFIX@";
-constexpr char const *TEMP_PATH	   = "@CMAKE_TEMP_PREFIX@";
+constexpr char const *TEMP_PATH	   = "@CMAKE_INSTALL_PREFIX@/lib/feral/temp";
 
 constexpr char const *GLOBAL_MODULE_PATHS_FILE_PATH = "@CMAKE_INSTALL_PREFIX@/lib/feral/.modulePaths";
 
