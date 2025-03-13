@@ -9,6 +9,8 @@ let pkgVersion = '0.0.1';
 
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
+if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
+
 let logFileName = fs.pathFrom(feral.tempPath, 'feralPkgBootstrap.log');
 logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
 io.println('Writing full logs to: ', logFileName);
