@@ -118,12 +118,11 @@ if execCmake {
 
 	# Set cache program
 	let cacher = 'ccache';
-	let cacherPath = '';
 	if os.name == 'windows' {
 		cmakeCmd += ' -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true';
 		cacher = 'sccache';
 	}
-	cacherPath = os.findExec(cacher);
+	let cacherPath = os.findExec(cacher);
 	if cacherPath != nil {
 		cmakeCmd += ' -DCCACHE_PROGRAM=';
 		cmakeCmd += cacherPath;
