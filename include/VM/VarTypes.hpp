@@ -231,6 +231,7 @@ public:
 	inline Iterator erase(ConstIterator iter) { return val.erase(iter); }
 	inline void push(Var *v) { val.push_back(v); }
 	inline void pop() { val.pop_back(); }
+	inline void swap(size_t a, size_t b) { std::iter_swap(val.begin() + a, val.begin() + b); }
 	inline void clear() { val.clear(); }
 	inline bool isEmpty() { return val.empty(); }
 	inline bool isRefVec() { return asrefs; }

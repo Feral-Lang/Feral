@@ -39,7 +39,7 @@ const char *Stmt::getStmtTypeCString() const
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtBlock::StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top)
-	: Stmt(BLOCK, loc), stmts(stmts), is_top(is_top)
+	: Stmt(BLOCK, loc), stmts(stmts), is_top(is_top), should_unload(true)
 {}
 StmtBlock::~StmtBlock() {}
 StmtBlock *StmtBlock::create(Allocator &allocator, ModuleLoc loc, const Vector<Stmt *> &stmts,
@@ -51,7 +51,8 @@ StmtBlock *StmtBlock::create(Allocator &allocator, ModuleLoc loc, const Vector<S
 void StmtBlock::disp(bool has_next)
 {
 	tio::taba(has_next);
-	tio::print(has_next, {"Block [top = ", is_top ? "yes" : "no", "]\n"});
+	tio::print(has_next, {"Block [top = ", is_top ? "yes" : "no",
+			      "][should unload = ", should_unload ? "yes" : "no", "]\n"});
 	for(size_t i = 0; i < stmts.size(); ++i) {
 		if(!stmts[i]) {
 			tio::taba(has_next);
@@ -305,7 +306,7 @@ void StmtCond::disp(bool has_next)
 {
 	bool is_inline = conds.size() > 0 && conds[0].getBlk() && conds[0].getBlk()->isTop();
 	tio::taba(has_next);
-	tio::print(has_next, {"Conditional [is_inline: ", is_inline ? "true" : "false", "\n"});
+	tio::print(has_next, {"Conditional [is_inline: ", is_inline ? "true" : "false", "]\n"});
 	for(size_t i = 0; i < conds.size(); ++i) {
 		tio::taba(i != conds.size() - 1);
 		tio::print(i != conds.size() - 1, {"Branch:\n"});

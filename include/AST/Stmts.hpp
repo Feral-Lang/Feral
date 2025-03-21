@@ -74,6 +74,9 @@ class StmtBlock : public Stmt
 {
 	Vector<Stmt *> stmts;
 	bool is_top;
+	// false = Disable unload after each expr/simple stmt in codegen.
+	// Used for conditionals created using ternary (... ? ... : ...) operator.
+	bool should_unload;
 
 public:
 	StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top);
@@ -84,8 +87,10 @@ public:
 	void disp(bool has_next);
 
 	inline void setTop(bool istop) { is_top = istop; }
+	inline void setUnload(bool shouldunload) { should_unload = shouldunload; }
 	inline Vector<Stmt *> &getStmts() { return stmts; }
 	inline bool isTop() const { return is_top; }
+	inline bool shouldUnload() const { return should_unload; }
 };
 
 class StmtSimple : public Stmt

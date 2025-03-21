@@ -116,6 +116,15 @@ let sub in VecTy = fn(start, end = -1) {
 	return self.subNative(start, end);
 };
 
+# Takes 'rev' keyword argument which can be true or false (reverse or not)
+let sort in VecTy = fn(comparator = nil, .kw) {
+	if self.len() <= 1 { return; }
+
+	let rev = kw['rev'] ?? false;
+	let cmp = comparator ?? (rev ? sortRevCmp : sortCmp);
+	quickSort(self, cmp, 0, self.len() - 1);
+};
+
 let min in VecTy = fn(lt = fn(a, b) { return a < b; }) {
 	if self.empty() {
 		raise('cannot find min in an empty list');
@@ -198,4 +207,28 @@ let str in MapTy = fn() {
 
 let reopen in FileTy = fn(file, mode = 'r') {
 	return self.reopenNative(file, mode);
+};
+
+# Sorting helpers
+
+let sortCmp = fn(a, b) { return a < b; };
+let sortRevCmp = fn(a, b) { return a > b; };
+
+let quickSort = fn(vec, cmp, low, high) {
+	if low >= high { return; }
+	let pi = quickSortPartition(vec, cmp, low, high);
+	quickSort(vec, cmp, low, pi - 1);
+	quickSort(vec, cmp, pi + 1, high);
+};
+
+let quickSortPartition = fn(vec, cmp, low, high) {
+	let pivot = ref(vec[high]);
+	let i = low - 1;
+	for let j = low; j < high; ++j {
+		if !cmp(vec[j], pivot) { continue; }
+		++i;
+		vec.swap(i, j);
+	}
+	vec.swap(i + 1, high);
+	return i + 1;
 };

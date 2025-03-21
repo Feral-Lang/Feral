@@ -548,6 +548,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase, 1);
 	vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "appendNative", vecAppend, 3);
+	vm.addNativeTypeFn<VarVec>(loc, "swap", vecSwap, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse, 0);
 	vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt, 2);
 	vm.addNativeTypeFn<VarVec>(loc, "at", vecAt, 1);

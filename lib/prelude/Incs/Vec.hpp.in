@@ -199,12 +199,12 @@ Var *vecAppend(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	}
 	if(!args[2]->is<VarInt>()) {
 		vm.fail(loc, "expected start index to be of type int for vec.append(), found: ",
-			vm.getTypeName(args[1]));
+			vm.getTypeName(args[2]));
 		return nullptr;
 	}
 	if(!args[3]->is<VarInt>()) {
 		vm.fail(loc, "expected end index to be of type int for vec.append(), found: ",
-			vm.getTypeName(args[1]));
+			vm.getTypeName(args[3]));
 		return nullptr;
 	}
 	VarVec *dest = as<VarVec>(args[0]);
@@ -228,6 +228,23 @@ Var *vecAppend(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		}
 	}
 	return dest;
+}
+
+Var *vecSwap(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+	     const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
+			vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	if(!args[2]->is<VarInt>()) {
+		vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
+			vm.getTypeName(args[2]));
+		return nullptr;
+	}
+	as<VarVec>(args[0])->swap(as<VarInt>(args[1])->getVal(), as<VarInt>(args[2])->getVal());
+	return args[0];
 }
 
 Var *vecReverse(Interpreter &vm, ModuleLoc loc, Span<Var *> args,

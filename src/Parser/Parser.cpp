@@ -166,56 +166,9 @@ bool Parser::parseExpr18(Stmt *&expr, bool disable_brace_after_iden)
 	expr = rhs;
 	return true;
 }
-// Left Associative
-// ?:
-bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
-{
-	expr = nullptr;
-
-	Stmt *lhs     = nullptr;
-	Stmt *rhs     = nullptr;
-	Stmt *lhs_lhs = nullptr;
-	Stmt *lhs_rhs = nullptr;
-
-	lex::Lexeme oper;
-
-	lex::Lexeme &start = p.peek();
-
-	if(!parseExpr16(lhs, disable_brace_after_iden)) {
-		return false;
-	}
-	if(!p.accept(lex::QUEST)) {
-		expr = lhs;
-		return true;
-	}
-
-	oper = p.peek();
-	p.next();
-	lex::Lexeme oper_inside;
-
-	if(!parseExpr16(lhs_lhs, disable_brace_after_iden)) {
-		return false;
-	}
-	if(!p.accept(lex::COL)) {
-		err.fail(p.peek().getLoc(),
-			 "expected ':' for ternary operator, found: ", p.peek().getTok().cStr());
-		return false;
-	}
-	oper_inside = p.peek();
-	p.next();
-	if(!parseExpr16(lhs_rhs, disable_brace_after_iden)) {
-		return false;
-	}
-	rhs = StmtExpr::create(allocator, oper.getLoc(), lhs_lhs, oper_inside, lhs_rhs);
-	goto after_quest;
-
-after_quest:
-	expr = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
-	return true;
-}
 // Right Associative
 // =
-bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr17(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -249,7 +202,7 @@ bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 // >>= &= |=
 // ~= ^= ??=
 // or-block
-bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
+bool Parser::parseExpr16(Stmt *&expr, bool disable_brace_after_iden)
 {
 	expr = nullptr;
 
@@ -296,6 +249,47 @@ bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
 		expr = StmtExpr::create(allocator, expr->getLoc(), expr, {}, nullptr);
 	}
 	as<StmtExpr>(expr)->setOr(or_blk, or_blk_var);
+	return true;
+}
+// Left Associative
+// ?:
+bool Parser::parseExpr15(Stmt *&expr, bool disable_brace_after_iden)
+{
+	expr = nullptr;
+
+	Vector<Conditional> cvec;
+	Stmt *cond    = nullptr;
+	Stmt *blkStmt = nullptr;
+
+	lex::Lexeme &start = p.peek();
+
+	if(!parseExpr16(cond, disable_brace_after_iden)) {
+		return false;
+	}
+	if(!p.acceptn(lex::QUEST)) {
+		expr = cond;
+		return true;
+	}
+
+	if(!parseExpr16(blkStmt, disable_brace_after_iden)) {
+		return false;
+	}
+	if(!p.acceptn(lex::COL)) {
+		err.fail(p.peek().getLoc(),
+			 "expected ':' for ternary operator, found: ", p.peek().getTok().cStr());
+		return false;
+	}
+	blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
+	as<StmtBlock>(blkStmt)->setUnload(false);
+	cvec.emplace_back(cond, as<StmtBlock>(blkStmt));
+	blkStmt = nullptr;
+	if(!parseExpr16(blkStmt, disable_brace_after_iden)) {
+		return false;
+	}
+	blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
+	as<StmtBlock>(blkStmt)->setUnload(false);
+	cvec.emplace_back(nullptr, as<StmtBlock>(blkStmt));
+	expr = StmtCond::create(allocator, cond->getLoc(), cvec);
 	return true;
 }
 // Left Associative
