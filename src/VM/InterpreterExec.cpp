@@ -241,10 +241,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			for(size_t i = 0; i < arginfo.size(); ++i) {
 				if(arginfo[i] == '2') { // unpack
 					Var *a = execstack.pop(false);
-					if(!a->is<VarVec>() &&
-					   (!a->is<VarMap>() ||
-					    as<VarMap>(a)->getPositions().empty()))
-					{
+					if(!a->is<VarVec>() && !a->is<VarMap>()) {
 						fail(
 						ins.getLoc(),
 						"expected a vector or kwarg to unpack, found: ",

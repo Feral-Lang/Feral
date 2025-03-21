@@ -104,7 +104,7 @@ bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef pat
 		std::cout << "Failed to parse tokens for file: " << path << "\n";
 		return false;
 	}
-	if(args.has("ast")) {
+	if(args.has("parse")) {
 		std::cout << "====================== AST for: " << path
 			  << " ======================\n";
 		ast::dumpTree(std::cout, ptree);
@@ -118,6 +118,11 @@ bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef pat
 	if(!pm.visit((ast::Stmt *&)ptree)) {
 		logger.fatal("Failed to perform passes on AST for file: ", path);
 		return false;
+	}
+	if(args.has("optparse")) {
+		std::cout << "====================== Optimized AST for: " << path
+			  << " ======================\n";
+		ast::dumpTree(std::cout, ptree);
 	}
 	if(args.has("ir")) {
 		std::cout << "====================== IR for: " << path
