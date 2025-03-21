@@ -16,6 +16,10 @@ assert.eq(v.erase(1), vec.new(3, 2, 1, 4));
 assert.eq(v.set(2, 5), vec.new(3, 2, 5, 4));
 assert.eq(v.at(2), 5);
 assert.eq(v[2], 5);
+v.sort(rev = true);
+assert.eq(v, vec.new(5, 4, 3, 2));
+v.sort();
+assert.eq(v, vec.new(2, 3, 4, 5));
 
 let v2 = vec.new();
 
@@ -25,7 +29,7 @@ for e in v.each() {
 assert.eq(v, v2);
 
 let slice = v.slice(1, 3);
-assert.eq(slice, vec.new(2, 5));
+assert.eq(slice, vec.new(3, 4));
 
 let v3 = vec.new();
 v.push('string');
