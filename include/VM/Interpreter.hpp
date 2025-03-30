@@ -18,8 +18,6 @@ typedef void (*ModDeinitFn)(Interpreter &vm);
 #define INIT_MODULE(name) extern "C" bool Init##name(Interpreter &vm, ModuleLoc loc)
 #define DEINIT_MODULE(name) extern "C" void Deinit##name(Interpreter &vm)
 
-// DynLib can be accessed using its static getter (DynLib::getInstance())
-// Interpreter should be the parent of all execution threads(?)
 class Interpreter
 {
 	ArgParser &argparser;
@@ -52,12 +50,12 @@ class Interpreter
 	VarBool *tru;
 	VarBool *fals;
 	VarNil *nil;
-	size_t exitcode;
 	// This is the one that's used for checking, and it can be modified by Feral program
-	size_t max_recurse_count;
-	size_t recurse_count; // how many times execute() has been called by itself
-	bool exitcalled;      // mainly used by <prelude>.exit()
-	bool recurse_count_exceeded;
+	size_t recurseMax;
+	size_t recurseCount; // how many times execute() has been called by itself
+	size_t exitcode;
+	bool recurseExceeded;
+	bool exitcalled;
 
 public:
 	Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn);
@@ -263,8 +261,8 @@ public:
 	inline bool isExitCalled() { return exitcalled; }
 	inline void setExitCalled(bool called) { exitcalled = called; }
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
-	inline void setMaxRecurseCount(size_t count) { max_recurse_count = count; }
-	inline size_t getMaxRecurseCount() { return max_recurse_count; }
+	inline void setRecurseMax(size_t count) { recurseMax = count; }
+	inline size_t getRecurseMax() { return recurseMax; }
 	inline VarVec *getCLIArgs() { return cmdargs; }
 	inline const char *getGlobalModulePathsFile() { return GLOBAL_MODULE_PATHS_FILE_PATH; }
 

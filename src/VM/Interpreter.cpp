@@ -30,9 +30,8 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)), prelude("prelude/prelude"),
 	  binaryPath(env::getProcPath()), tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
-	  nil(makeVarWithRef<VarNil>(ModuleLoc())), exitcode(0),
-	  max_recurse_count(DEFAULT_MAX_RECURSE_COUNT), recurse_count(0), exitcalled(false),
-	  recurse_count_exceeded(false)
+	  nil(makeVarWithRef<VarNil>(ModuleLoc())), recurseMax(DEFAULT_MAX_RECURSE_COUNT),
+	  recurseCount(0), exitcode(0), recurseExceeded(false), exitcalled(false)
 {
 #if defined(FER_OS_WINDOWS)
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
