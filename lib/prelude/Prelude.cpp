@@ -240,14 +240,14 @@ Var *setMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			"expected int argument for max count, found: ", vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	vm.setMaxRecurseCount(as<VarInt>(args[1])->getVal());
+	vm.setRecurseMax(as<VarInt>(args[1])->getVal());
 	return vm.getNil();
 }
 
 Var *getMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, vm.getMaxRecurseCount());
+	return vm.makeVar<VarInt>(loc, vm.getRecurseMax());
 }
 
 Var *addGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,

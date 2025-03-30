@@ -75,9 +75,8 @@ void *MemoryManager::alloc(size_t size, size_t align)
 		totalAllocBytes += allocSz;
 		loc = (char *)AlignedAlloc(MAX_ALIGNMENT, allocSz);
 	} else {
-		totalPoolAlloc += allocSz;
-
 		LockGuard<Mutex> mtxlock(mtx);
+		totalPoolAlloc += allocSz;
 		// there is a free chunk available in the chunk list
 		auto &freechunkloc = freechunks[allocSz];
 		if(!freechunkloc.empty()) {

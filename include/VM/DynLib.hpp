@@ -11,10 +11,10 @@ class DynLib
 {
 	StringMap<void *> handles;
 
-public:
 	DynLib();
 	~DynLib();
 
+public:
 	static DynLib &getInstance();
 
 	// ensure the source of filepath StringRef does NOT get deleted before DynLib instance

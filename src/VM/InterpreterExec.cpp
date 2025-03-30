@@ -5,7 +5,7 @@ namespace fer
 
 int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
-	++recurse_count;
+	++recurseCount;
 	VarModule *varmod  = getCurrModule();
 	Vars *vars	   = varmod->getVars();
 	const Bytecode &bc = varmod->getBytecode();
@@ -28,9 +28,9 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		// dumpExecStack(std::cout);
 		// std::cout << "\n";
 
-		if(addFunc && recurse_count >= getMaxRecurseCount()) {
-			fail(ins.getLoc(), "stack overflow, current max: ", getMaxRecurseCount());
-			recurse_count_exceeded = true;
+		if(addFunc && recurseCount >= getRecurseMax()) {
+			fail(ins.getLoc(), "stack overflow, current max: ", getRecurseMax());
+			recurseExceeded = true;
 			goto handle_err;
 		}
 		switch(ins.getOpcode()) {
@@ -315,7 +315,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// don't show the following failure when exec stack count is exceeded or
 			// there'll be a GIANT stack trace
 			if(!res) {
-				if(!recurse_count_exceeded) {
+				if(!recurseExceeded) {
 					fail(ins.getLoc(),
 					     "function call failed, check the error above");
 				}
@@ -381,7 +381,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			size_t blkEnd	= *(((size_t *)data.data()) + 1);
 			data		= data.substr(sizeof(size_t) * 2);
 			failstack.pushScope();
-			failstack.initFrame(recurse_count, data, blkBegin, blkEnd);
+			failstack.initFrame(recurseCount, data, blkBegin, blkEnd);
 			break;
 		}
 		case Opcode::PUSH_JMP_NAME: {
@@ -394,7 +394,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!failstack.isUsable() || recurse_count != failstack.getRecurseLevel())
+			if(!failstack.isUsable() || recurseCount != failstack.getRecurseLevel())
 				goto fail;
 			StringRef varName = failstack.getVarName();
 			size_t blkBegin	  = failstack.getBlkBegin();
@@ -406,7 +406,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 					makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
 				vars->stash(varName, err, false);
 			}
-			if(recurse_count_exceeded) {
+			if(recurseExceeded) {
 				break;
 			}
 			pushModule(getCurrModule()->getModuleId());
@@ -427,13 +427,13 @@ done:
 	if(addBlk) vars->popBlk(1);
 	if(addFunc) vars->popFn();
 	else vars->resizeBlkTo(currBlkSize);
-	--recurse_count;
+	--recurseCount;
 	return exitcode;
 fail:
 	if(addBlk) vars->popBlk(1);
 	if(addFunc) vars->popFn();
 	else vars->resizeBlkTo(currBlkSize);
-	--recurse_count;
+	--recurseCount;
 	return 1;
 }
 
