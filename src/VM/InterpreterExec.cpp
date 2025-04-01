@@ -1,9 +1,9 @@
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 namespace fer
 {
 
-int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
+int InterpreterThread::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurseCount;
 	VarModule *varmod  = getCurrModule();
@@ -88,9 +88,10 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
 				if(val->getRef() == 1) {
-					in->setAttr(*this, name, val, true);
+					in->setAttr(globalState, name, val, true);
 				} else {
-					in->setAttr(*this, name, copyVar(ins.getLoc(), val), false);
+					in->setAttr(globalState, name, copyVar(ins.getLoc(), val),
+						    false);
 				}
 			} else {
 				if(!val->isCallable()) {
@@ -352,7 +353,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) execstack.push(nil);
+			if(!ins.getDataBool()) execstack.push(globalState.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
@@ -437,7 +438,7 @@ fail:
 	return 1;
 }
 
-void Interpreter::dumpExecStack(OStream &os)
+void InterpreterThread::dumpExecStack(OStream &os)
 {
 	for(auto &e : execstack.get()) {
 		if(e->is<VarInt>()) {

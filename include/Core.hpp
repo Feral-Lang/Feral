@@ -4,7 +4,9 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cassert>
+#include <condition_variable>
 #include <cstring>
 #include <deque>
 #include <forward_list>
@@ -13,6 +15,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <mutex>
+#include <queue>
 #include <regex>
 #include <span>
 #include <string>
@@ -75,18 +78,19 @@ using ssize_t = int32_t;
 #endif
 #endif
 
-using Mutex	= std::mutex;
-using Regex	= std::regex;
-using String	= std::string;
-using Thread	= std::thread;
-using IStream	= std::istream;
-using OStream	= std::ostream;
-using FStream	= std::fstream;
-using Nullptr	= std::nullptr_t;
-using IOStream	= std::iostream;
-using IFStream	= std::ifstream;
-using OFStream	= std::ofstream;
-using StringRef = std::string_view;
+using Mutex	   = std::mutex;
+using Regex	   = std::regex;
+using String	   = std::string;
+using Thread	   = std::thread;
+using IStream	   = std::istream;
+using OStream	   = std::ostream;
+using FStream	   = std::fstream;
+using Nullptr	   = std::nullptr_t;
+using IOStream	   = std::iostream;
+using IFStream	   = std::ifstream;
+using OFStream	   = std::ofstream;
+using StringRef	   = std::string_view;
+using ConditionVar = std::condition_variable;
 
 #if defined(FER_OS_WINDOWS)
 using WString	 = std::wstring;
@@ -108,9 +112,12 @@ struct StringHash
 template<typename T> using Set		   = std::unordered_set<T>;
 template<typename T> using Span		   = std::span<T>;
 template<typename T> using Deque	   = std::deque<T>;
+template<typename T> using Queue	   = std::queue<T>;
+template<typename T> using Atomic	   = std::atomic<T>;
 template<typename T> using Vector	   = std::vector<T>;
 template<typename T> using UniList	   = std::forward_list<T>; // singly linked list
 template<typename T> using InitList	   = std::initializer_list<T>;
+template<typename Fn> using Function	   = std::function<Fn>;
 template<typename T> using LockGuard	   = std::lock_guard<T>;
 template<typename... Ts> using Variant	   = std::variant<Ts...>;
 template<typename T> using SharedFuture	   = std::shared_future<T>;

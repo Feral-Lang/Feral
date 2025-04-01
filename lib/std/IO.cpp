@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 #if defined(FER_OS_WINDOWS)
 #include <io.h>
@@ -23,7 +23,7 @@ int applyColors(String &str);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *print(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *print(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -38,7 +38,7 @@ Var *print(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *println(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *println(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -54,7 +54,7 @@ Var *println(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *cprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *cprint(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -70,7 +70,7 @@ Var *cprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *cprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *cprintln(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -87,7 +87,7 @@ Var *cprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *eprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *eprint(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -102,7 +102,7 @@ Var *eprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *eprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *eprintln(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -118,7 +118,7 @@ Var *eprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *ecprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ecprint(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -134,7 +134,7 @@ Var *ecprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *ecprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ecprintln(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	ssize_t count = 0;
@@ -151,7 +151,7 @@ Var *ecprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fprint(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
@@ -177,7 +177,7 @@ Var *fprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fprintln(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
@@ -204,7 +204,7 @@ Var *fprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fcprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fcprint(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
@@ -231,7 +231,7 @@ Var *fcprint(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fcprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fcprintln(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
@@ -259,7 +259,8 @@ Var *fcprintln(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *scan(Interpreter &vm, ModuleLoc loc, Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+Var *scan(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
+	  const StringMap<AssnArgData> &assn_args)
 {
 	if(args.size() > 1 && !args[1]->is<VarStr>()) {
 		vm.fail(args[1]->getLoc(),
@@ -281,7 +282,7 @@ Var *scan(Interpreter &vm, ModuleLoc loc, Span<Var *> args, const StringMap<Assn
 	return res;
 }
 
-Var *scanEOF(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *scanEOF(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(args.size() > 1 && !args[1]->is<VarStr>()) {
@@ -305,7 +306,7 @@ Var *scanEOF(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fflush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fflush(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFile>()) {
@@ -322,7 +323,7 @@ Var *fflush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *readChar(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *readChar(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {

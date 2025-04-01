@@ -5,14 +5,14 @@
 namespace fer
 {
 
-class Interpreter;
+class InterpreterState;
 class VarFrame
 {
 	StringMap<Var *> vars;
-	Interpreter &vm;
+	InterpreterState &vms;
 
 public:
-	VarFrame(Interpreter &vm);
+	VarFrame(InterpreterState &vms);
 	~VarFrame();
 
 	inline StringMap<Var *> &get() { return vars; }
@@ -33,10 +33,10 @@ class VarStack
 	// This is so because otherwise, on vector resize, it will cause the VarFrame object to
 	// delete and reconstruct, therefore incorrectly calling the dref() calls
 	Vector<VarFrame *> stack;
-	Interpreter &vm;
+	InterpreterState &vms;
 
 public:
-	VarStack(Interpreter &vm);
+	VarStack(InterpreterState &vms);
 	~VarStack();
 
 	void pushStack(size_t count);
@@ -67,10 +67,10 @@ class Vars
 	// 0 is the id for global scope
 	Map<size_t, VarStack *> fnvars;
 	size_t fnstack;
-	Interpreter &vm;
+	InterpreterState &vms;
 
 public:
-	Vars(Interpreter &vm);
+	Vars(InterpreterState &vms);
 	~Vars();
 
 	// checks if variable exists in current scope ONLY

@@ -4,7 +4,7 @@ let io = import('std/io');
 let fs = import('std/fs');
 let os = import('std/os');
 let fecl = import('std/fecl');
-let mproc = import('std/multiproc');
+let thread = import('std/thread');
 
 let PROJ_DIR = os.getEnv('PROJ_DIR');
 
@@ -146,7 +146,7 @@ if execCmake {
 let makeCmd = 'cmake --build ';
 makeCmd += projectBuildDir;
 makeCmd += ' --target=install --parallel=';
-makeCmd += mproc.getConcurrency().str();
+makeCmd += thread.getConcurrency().str();
 if os.name == 'windows' {
 	makeCmd += ' --config=';
 	makeCmd += buildType;

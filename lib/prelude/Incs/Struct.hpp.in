@@ -1,15 +1,15 @@
-Var *createStruct(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *createStruct(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	VarStructDef *res = vm.makeVar<VarStructDef>(loc, assn_args.size());
 	for(auto &attr : assn_args) {
-		res->setAttr(vm, attr.first, attr.second.val, true);
+		res->setAttr(vm.getGlobalState(), attr.first, attr.second.val, true);
 		res->setAttrOrderAt(attr.second.pos, attr.first);
 	}
 	return res;
 }
 
-Var *structToStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structToStr(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[0]);
@@ -36,7 +36,7 @@ Var *structToStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *structDefSetTypeName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structDefSetTypeName(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -50,7 +50,7 @@ Var *structDefSetTypeName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *structDefGetFields(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structDefGetFields(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
 	VarStructDef *def = as<VarStructDef>(args[0]);
@@ -61,7 +61,7 @@ Var *structDefGetFields(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *structDefGetFieldValue(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structDefGetFieldValue(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 			    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -76,14 +76,14 @@ Var *structDefGetFieldValue(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res ? res : vm.getNil();
 }
 
-Var *structDefLen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structDefLen(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	VarStructDef *def = as<VarStructDef>(args[0]);
 	return vm.makeVar<VarInt>(loc, def->getAttrCount());
 }
 
-Var *structGetFields(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structGetFields(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[0]);
@@ -94,7 +94,7 @@ Var *structGetFields(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *structSetFieldValue(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structSetFieldValue(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -120,7 +120,7 @@ Var *structSetFieldValue(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *structLen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *structLen(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarStruct *st = as<VarStruct>(args[0]);

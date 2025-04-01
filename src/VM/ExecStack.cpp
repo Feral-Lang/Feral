@@ -1,11 +1,11 @@
 #include "VM/ExecStack.hpp"
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 namespace fer
 {
 
-ExecStack::ExecStack(Interpreter &vm) : vm(vm) {}
+ExecStack::ExecStack(InterpreterThread &vm) : vm(vm) {}
 ExecStack::~ExecStack()
 {
 	for(auto &e : stack) vm.decVarRef(e);

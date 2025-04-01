@@ -14,14 +14,14 @@ struct ErrorHandlingInfo
 	Var *errMsg;
 };
 
-class Interpreter;
+class InterpreterThread;
 class FailStack
 {
 	Vector<ErrorHandlingInfo> stack;
-	Interpreter &vm;
+	InterpreterThread &vm;
 
 public:
-	FailStack(Interpreter &vm);
+	FailStack(InterpreterThread &vm);
 	~FailStack();
 
 	inline void pushScope() { stack.emplace_back(); }

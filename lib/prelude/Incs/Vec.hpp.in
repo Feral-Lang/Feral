@@ -1,4 +1,4 @@
-Var *vecNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecNew(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	auto refloc    = assn_args.find("refs");
@@ -41,43 +41,43 @@ Var *vecNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecSize(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecSize(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
-Var *vecCapacity(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecCapacity(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
-Var *vecIsRef(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecIsRef(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecEmpty(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecEmpty(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecFront(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecFront(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
-Var *vecBack(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecBack(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
-Var *vecPush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecPush(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -92,7 +92,7 @@ Var *vecPush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecPop(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecPop(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -105,18 +105,15 @@ Var *vecPop(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecClear(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *v = as<VarVec>(args[0]);
-	for(auto &e : v->getVal()) {
-		vm.decVarRef(e);
-	}
-	v->clear();
+	v->clear(vm.getGlobalState());
 	return args[0];
 }
 
-Var *vecSetAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecSetAt(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -143,7 +140,7 @@ Var *vecSetAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecErase(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -163,7 +160,7 @@ Var *vecErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecInsert(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -189,7 +186,7 @@ Var *vecInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecAppend(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecAppend(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarVec>()) {
@@ -230,7 +227,7 @@ Var *vecAppend(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return dest;
 }
 
-Var *vecSwap(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecSwap(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -247,7 +244,7 @@ Var *vecSwap(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecReverse(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecReverse(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarVec *res = as<VarVec>(args[0]);
@@ -255,7 +252,7 @@ Var *vecReverse(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *vecAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecAt(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -269,7 +266,7 @@ Var *vecAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res->at(pos);
 }
 
-Var *vecSub(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecSub(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -307,7 +304,7 @@ Var *vecSub(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecSlice(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecSlice(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -344,13 +341,13 @@ Var *vecSlice(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *vecEach(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecEach(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
-Var *vecIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *vecIteratorNext(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarVecIterator *it = as<VarVecIterator>(args[0]);

@@ -43,6 +43,12 @@ public:
 
 	// Helper function - only use if seeing memory issues.
 	void dumpMem(char *pool);
+
+	template<typename T, typename... Args> T *alloc(Args &&...args)
+	{
+		void *m = alloc(sizeof(T), alignof(T));
+		return new(m) T(std::forward<Args>(args)...);
+	}
 };
 
 // Base class for anything that uses the allocator
@@ -69,8 +75,7 @@ public:
 	typename std::enable_if<std::is_base_of<IAllocated, T>::value, T *>::type
 	alloc(Args... args)
 	{
-		void *m = mem.alloc(sizeof(T), alignof(T));
-		T *res	= new(m) T(std::forward<Args>(args)...);
+		T *res = mem.alloc<T>(std::forward<Args>(args)...);
 		allocs.push_front(res);
 		return res;
 	}

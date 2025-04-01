@@ -1,11 +1,11 @@
 #include <chrono>
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 namespace fer
 {
 
-Var *sysclkNow(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *sysclkNow(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	VarInt *res = vm.makeVar<VarInt>(loc, 0);
@@ -16,7 +16,7 @@ Var *sysclkNow(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *formatTime(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *formatTime(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {

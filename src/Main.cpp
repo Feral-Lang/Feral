@@ -13,8 +13,8 @@ using namespace fer;
 
 // Uses its own AST Allocator which gets deleted when control leaves the function.
 // `bc` is the output variable here.
-bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef path, StringRef code,
-		 bool exprOnly);
+bool ParseSource(InterpreterThread &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
+		 StringRef code, bool exprOnly);
 
 int main(int argc, char **argv)
 {
@@ -74,11 +74,11 @@ int main(int argc, char **argv)
 	}
 
 	Interpreter vm(args, ParseSource);
-	return vm.compileAndRun({}, fs::absPath(file).c_str());
+	return vm.runFile({}, fs::absPath(file).c_str());
 }
 
-bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef path, StringRef code,
-		 bool exprOnly)
+bool ParseSource(InterpreterThread &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
+		 StringRef code, bool exprOnly)
 {
 	Vector<lex::Lexeme> tokens;
 	if(!lex::tokenize(moduleId, path, code, tokens)) {

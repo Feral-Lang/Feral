@@ -1,10 +1,10 @@
 #include "VM/FailStack.hpp"
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 namespace fer
 {
-FailStack::FailStack(Interpreter &vm) : vm(vm) {}
+FailStack::FailStack(InterpreterThread &vm) : vm(vm) {}
 FailStack::~FailStack()
 {
 	assert(stack.empty() && "Expected fail stack to be empty, but it is not");

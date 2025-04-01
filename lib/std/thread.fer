@@ -1,0 +1,6 @@
+loadlib('std/Thread');
+let os = import('std/os');
+
+let newProc = fn(args...) {
+	return new(os.exec, args...);
+};

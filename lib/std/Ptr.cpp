@@ -1,41 +1,44 @@
 #include "Ptr.hpp"
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 namespace fer
 {
 
 VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, false, false), val(val) {}
-void VarPtr::onCreate(Interpreter &vm) { vm.incVarRef(val); }
-void VarPtr::onDestroy(Interpreter &vm) { vm.decVarRef(val); }
-Var *VarPtr::onCopy(Interpreter &vm, ModuleLoc loc) { return vm.makeVarWithRef<VarPtr>(loc, val); }
-void VarPtr::onSet(Interpreter &vm, Var *from) { setVal(vm, as<VarPtr>(from)->val); }
-void VarPtr::setVal(Interpreter &vm, Var *newval)
+void VarPtr::onCreate(InterpreterState &vms) { vms.incVarRef(val); }
+void VarPtr::onDestroy(InterpreterState &vms) { vms.decVarRef(val); }
+Var *VarPtr::onCopy(InterpreterState &vms, ModuleLoc loc)
 {
-	vm.decVarRef(val);
+	return vms.makeVarWithRef<VarPtr>(loc, val);
+}
+void VarPtr::onSet(InterpreterState &vms, Var *from) { setVal(vms, as<VarPtr>(from)->val); }
+void VarPtr::setVal(InterpreterState &vms, Var *newval)
+{
+	vms.decVarRef(val);
 	val = newval;
-	vm.incVarRef(val);
+	vms.incVarRef(val);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *ptrNewNative(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrNewNative(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
-Var *ptrSet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrSet(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarPtr *self = as<VarPtr>(args[0]);
-	self->setVal(vm, args[1]);
+	self->setVal(vm.getGlobalState(), args[1]);
 	return args[0];
 }
 
-Var *ptrGet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrGet(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarPtr>(args[0])->getVal();

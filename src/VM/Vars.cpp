@@ -1,14 +1,14 @@
 #include "VM/Vars.hpp"
 
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterState.hpp"
 
 namespace fer
 {
 
-VarFrame::VarFrame(Interpreter &vm) : vm(vm) {}
+VarFrame::VarFrame(InterpreterState &vms) : vms(vms) {}
 VarFrame::~VarFrame()
 {
-	for(auto &v : vars) vm.decVarRef(v.second);
+	for(auto &v : vars) vms.decVarRef(v.second);
 }
 
 Var *VarFrame::get(StringRef name)
@@ -21,20 +21,20 @@ Var *VarFrame::get(StringRef name)
 void VarFrame::add(StringRef name, Var *val, bool iref)
 {
 	auto loc = vars.find(name);
-	if(loc != vars.end()) vm.decVarRef(loc->second);
-	if(iref) vm.incVarRef(val);
+	if(loc != vars.end()) vms.decVarRef(loc->second);
+	if(iref) vms.incVarRef(val);
 	vars.insert_or_assign(String(name), val);
 }
 bool VarFrame::rem(StringRef name, bool dref)
 {
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return false;
-	if(dref) vm.decVarRef(loc->second);
+	if(dref) vms.decVarRef(loc->second);
 	vars.erase(loc);
 	return true;
 }
 
-VarStack::VarStack(Interpreter &vm) : vm(vm) { pushStack(1); }
+VarStack::VarStack(InterpreterState &vms) : vms(vms) { pushStack(1); }
 VarStack::~VarStack()
 {
 	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) delete *layer;
@@ -42,7 +42,7 @@ VarStack::~VarStack()
 
 void VarStack::pushStack(size_t count)
 {
-	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame(vm));
+	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame(vms));
 }
 void VarStack::popStack(size_t count)
 {
@@ -64,7 +64,7 @@ Var *VarStack::get(StringRef name)
 void VarStack::pushLoop()
 {
 	loops_from.push_back(stack.size());
-	stack.push_back(new VarFrame(vm));
+	stack.push_back(new VarFrame(vms));
 }
 void VarStack::popLoop()
 {
@@ -88,7 +88,7 @@ bool VarStack::rem(StringRef name, bool dref)
 	return false;
 }
 
-Vars::Vars(Interpreter &vm) : fnstack(-1), vm(vm) { fnvars[0] = new VarStack(vm); }
+Vars::Vars(InterpreterState &vms) : fnstack(-1), vms(vms) { fnvars[0] = new VarStack(vms); }
 Vars::~Vars()
 {
 	assert(fnstack == 0 || fnstack == -1);
@@ -116,7 +116,7 @@ void Vars::pushFn()
 {
 	++fnstack;
 	if(fnstack == 0) return;
-	fnvars[fnstack] = new VarStack(vm);
+	fnvars[fnstack] = new VarStack(vms);
 }
 void Vars::popFn()
 {
@@ -128,12 +128,12 @@ void Vars::popFn()
 }
 void Vars::stash(StringRef name, Var *val, bool iref)
 {
-	if(iref) vm.incVarRef(val);
+	if(iref) vms.incVarRef(val);
 	stashed.insert({String(name), val});
 }
 void Vars::unstash()
 {
-	for(auto &s : stashed) vm.decVarRef(s.second);
+	for(auto &s : stashed) vms.decVarRef(s.second);
 	stashed.clear();
 }
 

@@ -6,7 +6,7 @@
 
 #include "Env.hpp"
 #include "FS.hpp"
-#include "VM/Interpreter.hpp"
+#include "VM/InterpreterThread.hpp"
 
 #if defined(FER_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
@@ -30,7 +30,7 @@ int execInternal(const String &file);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *sleepCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *sleepCustom(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -43,7 +43,7 @@ Var *sleepCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *getEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *getEnv(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -57,7 +57,7 @@ Var *getEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
-Var *setEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *setEnv(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -85,7 +85,7 @@ Var *setEnv(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, env::set(var.c_str(), val.c_str(), overwrite));
 }
 
-Var *execCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *execCustom(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	Span<Var *> argsToUse = args;
@@ -208,7 +208,7 @@ Var *execCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *systemCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *systemCustom(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -225,7 +225,7 @@ Var *systemCustom(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *osGetName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *osGetName(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 #if defined(FER_OS_WINDOWS)
@@ -243,7 +243,7 @@ Var *osGetName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 #endif
 }
 
-Var *osStrErr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *osStrErr(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -258,7 +258,7 @@ Var *osStrErr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////// Extra Functions /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *osGetCWD(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *osGetCWD(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
@@ -270,7 +270,7 @@ Var *osGetCWD(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *osSetCWD(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *osSetCWD(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -283,7 +283,7 @@ Var *osSetCWD(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 #if !defined(FER_OS_WINDOWS)
-Var *osChmod(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *osChmod(InterpreterThread &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
