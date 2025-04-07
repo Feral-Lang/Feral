@@ -23,15 +23,18 @@ bool addDLLDirectory(StringRef dir);
 void remDLLDirectories();
 #endif
 
-Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
-	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), failstack(mem),
-	  execstack(mem), globals(mem), prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// CommonState //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+CommonState::CommonState(ArgParser &argparser, ParseSourceFn parseSourceFn)
+	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), globals(mem),
+	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
 	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
-	  nil(makeVarWithRef<VarNil>(ModuleLoc())), recurseMax(DEFAULT_MAX_RECURSE_COUNT),
-	  recurseCount(0), exitcode(0), recurseExceeded(false), exitcalled(false)
+	  nil(makeVarWithRef<VarNil>(ModuleLoc())), recurseMax(DEFAULT_MAX_RECURSE_COUNT)
 {
 #if defined(FER_OS_WINDOWS)
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
@@ -75,8 +78,7 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	}
 #endif
 }
-
-Interpreter::~Interpreter()
+CommonState::~CommonState()
 {
 	decVarRef(nil);
 	decVarRef(fals);
@@ -96,10 +98,239 @@ Interpreter::~Interpreter()
 	remDLLDirectories();
 #endif
 }
+void CommonState::tryAddModulePathsFromDir(String dir)
+{
+	// Paths which have already been searched in for the .modulePaths file
+	static Set<String> searchedPaths;
+	if(searchedPaths.contains(dir)) return;
+	searchedPaths.insert(dir);
+	String path = dir + "/.modulePaths";
+	return tryAddModulePathsFromFile(path.c_str());
+}
+void CommonState::tryAddModulePathsFromFile(const char *file)
+{
+	if(!fs::exists(file)) return;
+	String modulePaths;
+	if(!fs::read(file, modulePaths, true)) return;
+	for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
+		if(_path.empty()) continue;
+		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
+		moduleDirs->insert(moduleDirs->begin(), moduleLoc);
+	}
+}
+
+bool CommonState::findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+{
+	return findFileIn(dirs, name, getFeralImportExtension(), srcDir);
+}
+bool CommonState::findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+{
+	name.insert(name.find_last_of('/') + 1, "libferal");
+	return findFileIn(dirs, name, getNativeModuleExtension(), srcDir);
+}
+bool CommonState::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
+{
+	static char testpath[MAX_PATH_CHARS];
+	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
+	   (name.size() < 2 || name[1] != ':'))
+	{
+		for(auto locVar : dirs->getVal()) {
+			auto &loc = as<VarStr>(locVar)->getVal();
+			strncpy(testpath, loc.data(), loc.size());
+			testpath[loc.size()] = '\0';
+			strcat(testpath, "/");
+			strcat(testpath, name.c_str());
+			if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
+			if(fs::exists(testpath)) {
+				name = fs::absPath(testpath);
+				return true;
+			}
+		}
+	} else {
+		if(name.front() == '~') {
+			name.erase(name.begin());
+			static StringRef home = fs::home();
+			name.insert(name.begin(), home.begin(), home.end());
+		} else if(name.front() == '.' && (name.size() == 1 || name[1] != '.')) {
+			assert(srcDir.size() > 0 &&
+			       "dot based module search cannot be done on empty modulestack");
+			StringRef dir = fs::parentDir(srcDir);
+			name.erase(name.begin());
+			name.insert(name.begin(), dir.begin(), dir.end());
+		} else if(name.size() > 1 && name[0] == '.' && name[1] == '.') {
+			assert(srcDir.size() > 0 &&
+			       "dot based module search cannot be done on empty modulestack");
+			StringRef dir = fs::parentDir(srcDir);
+			name.erase(name.begin());
+			name.erase(name.begin());
+			StringRef parentdir = fs::parentDir(dir);
+			name.insert(name.begin(), parentdir.begin(), parentdir.end());
+		}
+		strcpy(testpath, name.c_str());
+		if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
+		if(fs::exists(testpath)) {
+			name = fs::absPath(testpath);
+			return true;
+		}
+	}
+	return false;
+}
+
+void CommonState::addGlobal(StringRef name, Var *val, bool iref)
+{
+	if(globals.exists(name)) return;
+	globals.add(name, val, iref);
+}
+Var *CommonState::getGlobal(StringRef name) { return globals.get(name); }
+
+void CommonState::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+{
+	addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
+}
+VarFn *CommonState::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+{
+	VarFn *f =
+	makeVarWithRef<VarFn>(loc, -1, "", is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
+	for(size_t i = 0; i < args; ++i) f->pushParam("");
+	return f;
+}
+
+void CommonState::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
+{
+	auto loc    = typefns.find(_typeid);
+	VarFrame *f = nullptr;
+	if(loc == typefns.end()) {
+		typefns[_typeid] = f = new VarFrame(mem);
+	} else {
+		f = loc->second;
+	}
+	if(f->exists(name)) {
+		err.fail({}, "type function: ", name, " already exists");
+		assert(false);
+	}
+	f->add(name, fn, iref);
+}
+Var *CommonState::getTypeFn(Var *var, StringRef name)
+{
+	auto loc = typefns.find(var->getTypeFnID());
+	Var *res = nullptr;
+	if(loc != typefns.end()) {
+		res = loc->second->get(name);
+		if(res) return res;
+	} else if(var->isAttrBased()) {
+		loc = typefns.find(var->getType());
+		if(loc != typefns.end()) {
+			res = loc->second->get(name);
+			if(res) return res;
+		}
+	}
+	return typefns[typeID<VarAll>()]->get(name);
+}
+
+void CommonState::setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
+StringRef CommonState::getTypeName(size_t _typeid)
+{
+	auto loc = typenames.find(_typeid);
+	if(loc == typenames.end()) {
+		typenames.insert({_typeid, "typeID<"});
+		loc = typenames.find(_typeid);
+		loc->second += std::to_string(_typeid);
+		loc->second += ">";
+	}
+	return loc->second;
+}
+
+Var *CommonState::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
+{
+	switch(dataty) {
+	case DataType::NIL: return nil;
+	case DataType::BOOL: return std::get<bool>(d) ? tru : fals;
+	case DataType::INT: return makeVar<VarInt>(loc, std::get<int64_t>(d));
+	case DataType::FLT: return makeVar<VarFlt>(loc, std::get<long double>(d));
+	case DataType::STR: return makeVar<VarStr>(loc, std::get<String>(d));
+	default: err.fail(loc, "internal error: invalid data type encountered");
+	}
+	return nullptr;
+}
+
+bool CommonState::hasModule(StringRef path)
+{
+	for(auto &it : modules) {
+		if(it.second->getPath() == path) return true;
+	}
+	return false;
+}
+VarModule *CommonState::getModule(StringRef path)
+{
+	for(auto &it : modules) {
+		if(it.second->getPath() == path) return it.second;
+	}
+	return nullptr;
+}
+
+void CommonState::initTypeNames()
+{
+	registerType<VarAll>({}, "All");
+
+	registerType<VarNil>({}, "Nil");
+	registerType<VarBool>({}, "Bool");
+	registerType<VarInt>({}, "Int");
+	registerType<VarFlt>({}, "Flt");
+	registerType<VarStr>({}, "Str");
+	registerType<VarVec>({}, "Vec");
+	registerType<VarMap>({}, "Map");
+	registerType<VarFn>({}, "Func");
+	registerType<VarModule>({}, "Module");
+	registerType<VarTypeID>({}, "TypeID");
+	registerType<VarStructDef>({}, "StructDef");
+	registerType<VarStruct>({}, "Struct");
+	registerType<VarFile>({}, "File");
+	registerType<VarBytebuffer>({}, "Bytebuffer");
+	registerType<VarIntIterator>({}, "IntIterator");
+	registerType<VarVecIterator>({}, "VecIterator");
+	registerType<VarMapIterator>({}, "MapIterator");
+	registerType<VarFileIterator>({}, "FileIterator");
+
+	globals.add("AllTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarAll>()), false);
+
+	globals.add("NilTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarNil>()), false);
+	globals.add("BoolTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBool>()), false);
+	globals.add("IntTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarInt>()), false);
+	globals.add("FltTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFlt>()), false);
+	globals.add("StrTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStr>()), false);
+	globals.add("VecTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVec>()), false);
+	globals.add("MapTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMap>()), false);
+	globals.add("FuncTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFn>()), false);
+	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarModule>()), false);
+	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarTypeID>()), false);
+	globals.add("StructDefTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStructDef>()),
+		    false);
+	globals.add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()), false);
+	globals.add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
+	globals.add("BytebufferTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()),
+		    false);
+	globals.add("IntIteratorTy",
+		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarIntIterator>()), false);
+	globals.add("VecIteratorTy",
+		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVecIterator>()), false);
+	globals.add("MapIteratorTy",
+		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMapIterator>()), false);
+	globals.add("FileIteratorTy",
+		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFileIterator>()), false);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// Interpreter //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+Interpreter::Interpreter(InterpreterManager &mgr)
+	: mgr(mgr), cs(mgr.getCommonState()), failstack(cs.mem), execstack(cs.mem), recurseCount(0),
+	  exitcode(0), recurseExceeded(false), exitcalled(false)
+{}
+Interpreter::~Interpreter() {}
 
 int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
 {
-	static bool firstSource = true;
 	String code;
 
 	if(!fs::read(file, code, true)) {
@@ -113,29 +344,9 @@ int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
 		return 1;
 	}
 
-	if(argparser.has("dry")) return 0;
+	if(cs.argparser.has("dry")) return 0;
 
 	pushModule(moduleId);
-	if(firstSource) {
-		firstSource = false;
-		moduleFinders->push(genNativeFn({}, "basicModuleFinder", basicModuleFinder, 2));
-		setupCoreFuncs(*this, {});
-		// loadlib must be setup here because it is needed to load even the core module from
-		// <prelude>.
-		if(!findImportModuleIn(moduleDirs, prelude)) {
-			err.fail(loc, "Failed to find prelude: ", prelude);
-			return 1;
-		}
-		int res = compileAndRun(loc, prelude.c_str());
-		if(res != 0) {
-			err.fail(loc, "Failed to import prelude: ", prelude);
-			popModule();
-			removeModule(moduleId);
-			return 1;
-		}
-		// set the prelude/feral global variable
-		addGlobal("feral", getModule(prelude));
-	}
 	int res = execute();
 	popModule();
 	return res;
@@ -146,7 +357,7 @@ ModuleId Interpreter::addModule(ModuleLoc loc, StringRef path, String &&code, bo
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
-	if(!parseSourceFn(*this, bc, moduleIdCtr, path, code, exprOnly)) {
+	if(!cs.parseSourceFn(*this, bc, moduleIdCtr, path, code, exprOnly)) {
 		fail(loc, "failed to parse source: ", path);
 		return -1;
 	}
@@ -154,43 +365,24 @@ ModuleId Interpreter::addModule(ModuleLoc loc, StringRef path, String &&code, bo
 	if(virtualPath) err.setCodeForId(moduleIdCtr, std::move(code));
 	VarModule *mod =
 	makeVarWithRef<VarModule>(loc, path, std::move(bc), moduleIdCtr, existingVars);
-	modules.insert_or_assign(moduleIdCtr, mod);
+	LockGuard<Mutex> globalGuard(cs.globalMutex);
+	cs.modules.insert_or_assign(moduleIdCtr, mod);
 	return moduleIdCtr++;
 }
 void Interpreter::removeModule(ModuleId moduleId)
 {
-	auto loc = modules.find(moduleId);
-	if(loc == modules.end()) return;
+	auto loc = cs.modules.find(moduleId);
+	if(loc == cs.modules.end()) return;
+	LockGuard<Mutex> globalGuard(cs.globalMutex);
 	decVarRef(loc->second);
-	modules.erase(loc);
+	cs.modules.erase(loc);
 }
 void Interpreter::pushModule(ModuleId moduleId)
 {
-	auto mloc = modules.find(moduleId);
+	auto mloc = cs.modules.find(moduleId);
 	modulestack.push_back(mloc->second);
 }
 void Interpreter::popModule() { modulestack.pop_back(); }
-
-void Interpreter::tryAddModulePathsFromDir(String dir)
-{
-	// Paths which have already been searched in for the .modulePaths file
-	static Set<String> searchedPaths;
-	if(searchedPaths.contains(dir)) return;
-	searchedPaths.insert(dir);
-	String path = dir + "/.modulePaths";
-	return tryAddModulePathsFromFile(path.c_str());
-}
-void Interpreter::tryAddModulePathsFromFile(const char *file)
-{
-	if(!fs::exists(file)) return;
-	String modulePaths;
-	if(!fs::read(file, modulePaths, true)) return;
-	for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
-		if(_path.empty()) continue;
-		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
-		moduleDirs->insert(moduleDirs->begin(), moduleLoc);
-	}
-}
 
 bool Interpreter::findImportModuleIn(VarVec *dirs, String &name)
 {
@@ -288,81 +480,8 @@ bool Interpreter::loadNativeModule(ModuleLoc loc, const String &modpath, StringR
 	tmp = "Deinit";
 	tmp += moduleName;
 	ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modpath, tmp.c_str());
-	if(deinitfn) dlldeinitfns[modpath] = deinitfn;
+	if(deinitfn) cs.dlldeinitfns[modpath] = deinitfn;
 	return true;
-}
-
-void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
-{
-	if(globals.exists(name)) return;
-	globals.add(name, val, iref);
-}
-void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
-{
-	addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
-}
-VarFn *Interpreter::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
-{
-	VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
-					 is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
-	for(size_t i = 0; i < args; ++i) f->pushParam("");
-	return f;
-}
-void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
-{
-	auto loc    = typefns.find(_typeid);
-	VarFrame *f = nullptr;
-	if(loc == typefns.end()) {
-		typefns[_typeid] = f = new VarFrame(mem);
-	} else {
-		f = loc->second;
-	}
-	if(f->exists(name)) {
-		err.fail({}, "type function: ", name, " already exists");
-		assert(false);
-	}
-	f->add(name, fn, iref);
-}
-Var *Interpreter::getTypeFn(Var *var, StringRef name)
-{
-	auto loc = typefns.find(var->getTypeFnID());
-	Var *res = nullptr;
-	if(loc != typefns.end()) {
-		res = loc->second->get(name);
-		if(res) return res;
-	} else if(var->isAttrBased()) {
-		loc = typefns.find(var->getType());
-		if(loc != typefns.end()) {
-			res = loc->second->get(name);
-			if(res) return res;
-		}
-	}
-	return typefns[typeID<VarAll>()]->get(name);
-}
-
-StringRef Interpreter::getTypeName(size_t _typeid)
-{
-	auto loc = typenames.find(_typeid);
-	if(loc == typenames.end()) {
-		typenames.insert({_typeid, "typeID<"});
-		loc = typenames.find(_typeid);
-		loc->second += std::to_string(_typeid);
-		loc->second += ">";
-	}
-	return loc->second;
-}
-
-Var *Interpreter::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
-{
-	switch(dataty) {
-	case DataType::NIL: return nil;
-	case DataType::BOOL: return std::get<bool>(d) ? tru : fals;
-	case DataType::INT: return makeVar<VarInt>(loc, std::get<int64_t>(d));
-	case DataType::FLT: return makeVar<VarFlt>(loc, std::get<long double>(d));
-	case DataType::STR: return makeVar<VarStr>(loc, std::get<String>(d));
-	default: err.fail(loc, "internal error: invalid data type encountered");
-	}
-	return nullptr;
 }
 
 bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
@@ -398,7 +517,6 @@ bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var
 bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
 			  Span<Var *> args, const StringMap<AssnArgData> &assn_args)
 {
-	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
 	bool memcall = args[0] != nullptr;
 	if(!callable->call(*this, loc, args, assn_args)) {
 		if(memcall) {
@@ -410,6 +528,14 @@ bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&re
 	}
 	retdata = popExecStack(false);
 	return true;
+}
+Var *Interpreter::callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
+				   const StringMap<AssnArgData> &assn_args)
+{
+	Var *retData = nullptr;
+	bool res     = callVar(loc, name, callable, retData, args, assn_args);
+	if(!res) return nullptr;
+	return retData;
 }
 
 Var *Interpreter::eval(ModuleLoc loc, StringRef code, bool isExpr)
@@ -439,71 +565,71 @@ done:
 	return res;
 }
 
-bool Interpreter::hasModule(StringRef path)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////// InterpreterManager //////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+InterpreterManager::InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn)
+	: cs(argparser, parseSourceFn)
 {
-	for(auto &it : modules) {
-		if(it.second->getPath() == path) return true;
+	if(!loadPrelude()) throw "Failed to load prelude";
+}
+InterpreterManager::~InterpreterManager()
+{
+	for(auto &item : freeMem) {
+		cs.mem.free(item);
 	}
-	return false;
 }
-VarModule *Interpreter::getModule(StringRef path)
+
+bool InterpreterManager::loadPrelude()
 {
-	for(auto &it : modules) {
-		if(it.second->getPath() == path) return it.second;
+	VarFn *bmfFn = cs.genNativeFn({}, "basicModuleFinder", basicModuleFinder, 2);
+	cs.moduleFinders->push(bmfFn);
+	// loadlib must be setup here because it is needed to load even the core module from
+	// <prelude>.
+	setupCoreFuncs(cs, {});
+	if(!cs.findImportModuleIn(cs.moduleDirs, cs.prelude, fs::getCWD())) {
+		err.fail({}, "Failed to find prelude: ", cs.prelude);
+		return 1;
 	}
-	return nullptr;
+	int res = runFile({}, cs.prelude.c_str());
+	if(res != 0) {
+		err.fail({}, "Failed to import prelude: ", cs.prelude);
+		return false;
+	}
+	// set the prelude/feral global variable
+	cs.addGlobal("feral", cs.getModule(cs.prelude));
+	return true;
 }
 
-void Interpreter::initTypeNames()
+int InterpreterManager::runFile(ModuleLoc loc, const char *file)
 {
-	registerType<VarAll>({}, "All");
-
-	registerType<VarNil>({}, "Nil");
-	registerType<VarBool>({}, "Bool");
-	registerType<VarInt>({}, "Int");
-	registerType<VarFlt>({}, "Flt");
-	registerType<VarStr>({}, "Str");
-	registerType<VarVec>({}, "Vec");
-	registerType<VarMap>({}, "Map");
-	registerType<VarFn>({}, "Func");
-	registerType<VarModule>({}, "Module");
-	registerType<VarTypeID>({}, "TypeID");
-	registerType<VarStructDef>({}, "StructDef");
-	registerType<VarStruct>({}, "Struct");
-	registerType<VarFile>({}, "File");
-	registerType<VarBytebuffer>({}, "Bytebuffer");
-	registerType<VarIntIterator>({}, "IntIterator");
-	registerType<VarVecIterator>({}, "VecIterator");
-	registerType<VarMapIterator>({}, "MapIterator");
-	registerType<VarFileIterator>({}, "FileIterator");
-
-	globals.add("AllTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarAll>()), false);
-
-	globals.add("NilTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarNil>()), false);
-	globals.add("BoolTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBool>()), false);
-	globals.add("IntTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarInt>()), false);
-	globals.add("FltTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFlt>()), false);
-	globals.add("StrTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStr>()), false);
-	globals.add("VecTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVec>()), false);
-	globals.add("MapTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMap>()), false);
-	globals.add("FuncTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFn>()), false);
-	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarModule>()), false);
-	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarTypeID>()), false);
-	globals.add("StructDefTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStructDef>()),
-		    false);
-	globals.add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()), false);
-	globals.add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
-	globals.add("BytebufferTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()),
-		    false);
-	globals.add("IntIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarIntIterator>()), false);
-	globals.add("VecIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVecIterator>()), false);
-	globals.add("MapIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMapIterator>()), false);
-	globals.add("FileIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFileIterator>()), false);
+	Interpreter *vm = createInterpreter();
+	int res		= vm->compileAndRun(loc, file);
+	destroyInterpreter(vm);
+	return res;
 }
+
+Interpreter *InterpreterManager::createInterpreter()
+{
+	Interpreter *vm = nullptr;
+	if(!freeMem.empty()) {
+		vm = new(freeMem.front()) Interpreter(*this);
+		freeMem.pop_front();
+	}
+	if(!vm) vm = cs.mem.alloc<Interpreter>(*this);
+	return vm;
+}
+
+void InterpreterManager::destroyInterpreter(Interpreter *vm)
+{
+	vm->~Interpreter();
+	freeMem.push_front(vm);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// Other Functions ///////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(FER_OS_WINDOWS)
 bool addDLLDirectory(StringRef dir)

@@ -353,7 +353,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) execstack.push(nil);
+			if(!ins.getDataBool()) execstack.push(cs.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {

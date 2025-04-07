@@ -3,7 +3,7 @@
 namespace fer
 {
 
-void setupCoreFuncs(Interpreter &vm, ModuleLoc loc);
+void setupCoreFuncs(CommonState &cs, ModuleLoc loc);
 
 // This one is setup in Interpreter.cpp since it is required to be appended to moduleFinders before
 // any module (feral/native) can be loaded.

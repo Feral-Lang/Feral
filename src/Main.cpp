@@ -73,8 +73,8 @@ int main(int argc, char **argv)
 		file = args.getSource().c_str();
 	}
 
-	Interpreter vm(args, ParseSource);
-	return vm.compileAndRun({}, fs::absPath(file).c_str());
+	InterpreterManager ip(args, ParseSource);
+	return ip.runFile({}, fs::absPath(file).c_str());
 }
 
 bool ParseSource(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef path, StringRef code,
