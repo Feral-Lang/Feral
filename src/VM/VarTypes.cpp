@@ -66,7 +66,7 @@ void Var::setThreadSafe(bool value)
 	else if(!value && mtx) delete mtx;
 }
 
-Var *Var::call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	return nullptr;
@@ -422,7 +422,7 @@ void VarFn::onSet(MemoryManager &mem, Var *from)
 	body	    = tmp->body;
 	is_native   = tmp->is_native;
 }
-Var *VarFn::call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	Var::ScopedThreadLock _(this);
@@ -520,7 +520,8 @@ Var *VarModule::getAttr(StringRef name)
 	return vars->get(name);
 }
 
-void VarModule::addNativeFn(Interpreter &vm, StringRef name, NativeFn body, size_t args, bool is_va)
+void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
+			    bool is_va)
 {
 	Var::ScopedThreadLock _(this);
 	return addNativeFn(vm.getMemoryManager(), name, body, args, is_va);
@@ -587,7 +588,7 @@ void VarStructDef::onSet(MemoryManager &mem, Var *from)
 	id = st->id;
 }
 
-Var *VarStructDef::call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
 	Var::ScopedThreadLock _(this);

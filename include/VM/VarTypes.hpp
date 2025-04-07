@@ -16,7 +16,7 @@ enum class VarInfo
 };
 
 struct AssnArgData;
-class Interpreter;
+class VirtualMachine;
 
 class Var : public IAllocated
 {
@@ -27,7 +27,7 @@ class Var : public IAllocated
 	// for VarInfo
 	size_t info;
 
-	friend class Interpreter;
+	friend class VirtualMachine;
 
 	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 	inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
@@ -92,7 +92,7 @@ public:
 
 	inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
 
-	virtual Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);
 	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
@@ -406,7 +406,7 @@ struct AssnArgData
 	Var *val;
 };
 
-typedef Var *(*NativeFn)(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args);
 
 struct FeralFnBody
@@ -440,7 +440,7 @@ public:
 	VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
 
-	Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	inline void pushParam(const String &param) { params.push_back(param); }
@@ -489,7 +489,7 @@ public:
 	bool existsAttr(StringRef name) override;
 	Var *getAttr(StringRef name) override;
 
-	void addNativeFn(Interpreter &vm, StringRef name, NativeFn body, size_t args = 0,
+	void addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args = 0,
 			 bool is_va = false);
 	void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
 			 bool is_va = false);
@@ -517,7 +517,7 @@ public:
 	VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
 
 	// returns VarStruct
-	Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;

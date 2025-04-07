@@ -24,7 +24,7 @@ public:
 	// created)
 	// If ignoreMatch is true, it will ignore the first match, ie. the regex equivalent in
 	// string, and go directly for the capture groups if any.
-	bool match(Interpreter &vm, StringRef data, ModuleLoc loc = {}, Var *captures = nullptr,
+	bool match(VirtualMachine &vm, StringRef data, ModuleLoc loc = {}, Var *captures = nullptr,
 		   bool ignoreMatch = false);
 };
 

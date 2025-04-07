@@ -3,7 +3,7 @@
 namespace fer
 {
 
-int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
+int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurseCount;
 	VarModule *varmod  = getCurrModule();
@@ -353,7 +353,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) execstack.push(cs.nil);
+			if(!ins.getDataBool()) execstack.push(ip.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
@@ -438,7 +438,7 @@ fail:
 	return 1;
 }
 
-void Interpreter::dumpExecStack(OStream &os)
+void VirtualMachine::dumpExecStack(OStream &os)
 {
 	for(auto &e : execstack.get()) {
 		if(e->is<VarInt>()) {

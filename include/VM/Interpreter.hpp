@@ -10,20 +10,20 @@
 namespace fer
 {
 
-class InterpreterManager;
+class Interpreter;
 
-typedef bool (*ParseSourceFn)(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
+typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
 			      StringRef code, bool exprOnly);
 
-typedef bool (*ModInitFn)(Interpreter &vm, ModuleLoc loc);
-typedef void (*ModDeinitFn)(InterpreterManager &im);
-#define INIT_MODULE(name) extern "C" bool Init##name(Interpreter &vm, ModuleLoc loc)
-#define DEINIT_MODULE(name) extern "C" void Deinit##name(InterpreterManager &im)
+typedef bool (*ModInitFn)(VirtualMachine &vm, ModuleLoc loc);
+typedef void (*ModDeinitFn)(Interpreter &ip);
+#define INIT_MODULE(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
+#define DEINIT_MODULE(name) extern "C" void Deinit##name(Interpreter &ip)
 
-class InterpreterManager
+class Interpreter
 {
 	// Used to store VirtualMachine memory after one is free'd
-	UniList<Interpreter *> freeVMMem;
+	UniList<VirtualMachine *> freeVMMem;
 
 	ArgParser &argparser;
 	ParseSourceFn parseSourceFn;
@@ -56,18 +56,18 @@ class InterpreterManager
 	// This is the one that's used for checking, and it can be modified by Feral program
 	size_t recurseMax;
 
-	friend class Interpreter;
+	friend class VirtualMachine;
 
 	bool loadPrelude();
 
 public:
-	InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn);
-	~InterpreterManager();
+	Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn);
+	~Interpreter();
 
 	int runFile(ModuleLoc loc, const char *file);
 
-	Interpreter *createInterpreter();
-	void destroyInterpreter(Interpreter *vm);
+	VirtualMachine *createVM();
+	void destroyVM(VirtualMachine *vm);
 
 	// Must be used with full path of directory
 	void tryAddModulePathsFromDir(String dir);
@@ -164,9 +164,10 @@ public:
 	}
 };
 
-class Interpreter
+// Each thread in Interpreter
+class VirtualMachine
 {
-	InterpreterManager &cs;
+	Interpreter &ip;
 	Vector<VarModule *> modulestack;
 	FailStack failstack;
 	ExecStack execstack;
@@ -176,8 +177,8 @@ class Interpreter
 	bool exitcalled;
 
 public:
-	Interpreter(InterpreterManager &mgr);
-	~Interpreter();
+	VirtualMachine(Interpreter &ip);
+	~VirtualMachine();
 
 	int compileAndRun(ModuleLoc loc, const char *file);
 	// Must pushModule before calling this function, and popModule after calling it.
@@ -216,44 +217,44 @@ public:
 
 	inline void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	{
-		return cs.addTypeFn(_typeid, name, fn, iref);
+		return ip.addTypeFn(_typeid, name, fn, iref);
 	}
-	inline Var *getTypeFn(Var *var, StringRef name) { return cs.getTypeFn(var, name); }
+	inline Var *getTypeFn(Var *var, StringRef name) { return ip.getTypeFn(var, name); }
 
 	// Must be used with full path of directory
 	inline void tryAddModulePathsFromDir(String dir)
 	{
-		return cs.tryAddModulePathsFromDir(dir);
+		return ip.tryAddModulePathsFromDir(dir);
 	}
 	inline void tryAddModulePathsFromFile(const char *file)
 	{
-		return cs.tryAddModulePathsFromFile(file);
+		return ip.tryAddModulePathsFromFile(file);
 	}
 
 	inline void addGlobal(StringRef name, Var *val, bool iref = true)
 	{
-		return cs.addGlobal(name, val, iref);
+		return ip.addGlobal(name, val, iref);
 	}
-	inline Var *getGlobal(StringRef name) { return cs.getGlobal(name); }
+	inline Var *getGlobal(StringRef name) { return ip.getGlobal(name); }
 
 	inline void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
 				bool is_va = false)
 	{
-		return cs.addNativeFn(loc, name, fn, args, is_va);
+		return ip.addNativeFn(loc, name, fn, args, is_va);
 	}
 	inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
 				  bool is_va = false)
 	{
-		return cs.genNativeFn(loc, name, fn, args, is_va);
+		return ip.genNativeFn(loc, name, fn, args, is_va);
 	}
 
-	inline void setTypeName(size_t _typeid, StringRef name) { cs.setTypeName(_typeid, name); }
-	inline StringRef getTypeName(size_t _typeid) { return cs.getTypeName(_typeid); }
+	inline void setTypeName(size_t _typeid, StringRef name) { ip.setTypeName(_typeid, name); }
+	inline StringRef getTypeName(size_t _typeid) { return ip.getTypeName(_typeid); }
 
 	// supposed to call the overloaded delete operator in Var
 	inline Var *getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
 	{
-		return cs.getConst(loc, d, dataty);
+		return ip.getConst(loc, d, dataty);
 	}
 
 	inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }
@@ -263,70 +264,70 @@ public:
 	inline void setExitCalled(bool called) { exitcalled = called; }
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
 
-	inline ArgParser &getArgParser() { return cs.argparser; }
-	inline MemoryManager &getMemoryManager() { return cs.mem; }
-	inline VarVec *getModuleDirs() { return cs.moduleDirs; }
-	inline VarVec *getModuleFinders() { return cs.moduleFinders; }
-	inline StringRef getBinaryPath() { return cs.binaryPath; }
-	inline VarBool *getTrue() { return cs.tru; }
-	inline VarBool *getFalse() { return cs.fals; }
-	inline VarNil *getNil() { return cs.nil; }
-	inline void setRecurseMax(size_t count) { cs.recurseMax = count; }
-	inline size_t getRecurseMax() { return cs.recurseMax; }
-	inline VarVec *getCLIArgs() { return cs.cmdargs; }
+	inline ArgParser &getArgParser() { return ip.argparser; }
+	inline MemoryManager &getMemoryManager() { return ip.mem; }
+	inline VarVec *getModuleDirs() { return ip.moduleDirs; }
+	inline VarVec *getModuleFinders() { return ip.moduleFinders; }
+	inline StringRef getBinaryPath() { return ip.binaryPath; }
+	inline VarBool *getTrue() { return ip.tru; }
+	inline VarBool *getFalse() { return ip.fals; }
+	inline VarNil *getNil() { return ip.nil; }
+	inline void setRecurseMax(size_t count) { ip.recurseMax = count; }
+	inline size_t getRecurseMax() { return ip.recurseMax; }
+	inline VarVec *getCLIArgs() { return ip.cmdargs; }
 
-	inline bool hasModule(StringRef path) { return cs.hasModule(path); }
-	inline VarModule *getModule(StringRef path) { return cs.getModule(path); }
-	inline StringRef getTypeName(Var *var) { return cs.getTypeName(var->getTypeFnID()); }
-	inline const char *getGlobalModulePathsFile() { return cs.getGlobalModulePathsFile(); }
-	inline StringRef getFeralImportExtension() { return cs.getFeralImportExtension(); }
-	inline StringRef getNativeModuleExtension() { return cs.getNativeModuleExtension(); }
+	inline bool hasModule(StringRef path) { return ip.hasModule(path); }
+	inline VarModule *getModule(StringRef path) { return ip.getModule(path); }
+	inline StringRef getTypeName(Var *var) { return ip.getTypeName(var->getTypeFnID()); }
+	inline const char *getGlobalModulePathsFile() { return ip.getGlobalModulePathsFile(); }
+	inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
+	inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }
 
 	// supposed to call the overloaded new operator in Var
 	template<typename T, typename... Args>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	makeVarWithRef(Args &&...args)
 	{
-		return cs.makeVarWithRef<T>(std::forward<Args>(args)...);
+		return ip.makeVarWithRef<T>(std::forward<Args>(args)...);
 	}
 	// used in native function calls - sets ref to zero
 	template<typename T, typename... Args>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
 	{
-		return cs.makeVar<T>(std::forward<Args>(args)...);
+		return ip.makeVar<T>(std::forward<Args>(args)...);
 	}
 	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
 	// being used elsewhere.
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, void>::type unmakeVar(T *var)
 	{
-		return cs.unmakeVar(var);
+		return ip.unmakeVar(var);
 	}
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
 	{
-		return cs.incVarRef(var);
+		return ip.incVarRef(var);
 	}
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	decVarRef(T *&var, bool del = true)
 	{
-		return cs.decVarRef(var, del);
+		return ip.decVarRef(var, del);
 	}
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	copyVar(ModuleLoc loc, T *var)
 	{
-		return cs.copyVar(loc, var);
+		return ip.copyVar(loc, var);
 	}
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
 	{
-		return cs.setVar(var, from);
+		return ip.setVar(var, from);
 	}
 
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
 	registerType(ModuleLoc loc, String name)
 	{
-		return cs.registerType<T>(loc, name,
+		return ip.registerType<T>(loc, name,
 					  modulestack.empty() ? nullptr : modulestack.back());
 	}
 

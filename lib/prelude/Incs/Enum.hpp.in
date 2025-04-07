@@ -1,4 +1,4 @@
-Var *createEnum(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	MemoryManager &mem = vm.getMemoryManager();

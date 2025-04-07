@@ -14,7 +14,7 @@
 namespace fer
 {
 
-Var *loadModule(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args);
 
 #if defined(FER_OS_WINDOWS)
@@ -24,10 +24,10 @@ void remDLLDirectories();
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////// InterpreterManager ////////////////////////////////////////////
+/////////////////////////////////////// Interpreter //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-InterpreterManager::InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn)
+Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), globals(mem),
 	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
 	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -80,7 +80,7 @@ InterpreterManager::InterpreterManager(ArgParser &argparser, ParseSourceFn parse
 
 	if(!loadPrelude()) throw "Failed to load prelude";
 }
-InterpreterManager::~InterpreterManager()
+Interpreter::~Interpreter()
 {
 	decVarRef(nil);
 	decVarRef(fals);
@@ -105,7 +105,7 @@ InterpreterManager::~InterpreterManager()
 #endif
 }
 
-bool InterpreterManager::loadPrelude()
+bool Interpreter::loadPrelude()
 {
 	VarFn *bmfFn = genNativeFn({}, "basicModuleFinder", basicModuleFinder, 2);
 	moduleFinders->push(bmfFn);
@@ -126,32 +126,32 @@ bool InterpreterManager::loadPrelude()
 	return true;
 }
 
-int InterpreterManager::runFile(ModuleLoc loc, const char *file)
+int Interpreter::runFile(ModuleLoc loc, const char *file)
 {
-	Interpreter *vm = createInterpreter();
-	int res		= vm->compileAndRun(loc, file);
-	destroyInterpreter(vm);
+	VirtualMachine *vm = createVM();
+	int res		   = vm->compileAndRun(loc, file);
+	destroyVM(vm);
 	return res;
 }
 
-Interpreter *InterpreterManager::createInterpreter()
+VirtualMachine *Interpreter::createVM()
 {
-	Interpreter *vm = nullptr;
+	VirtualMachine *vm = nullptr;
 	if(!freeVMMem.empty()) {
-		vm = new(freeVMMem.front()) Interpreter(*this);
+		vm = new(freeVMMem.front()) VirtualMachine(*this);
 		freeVMMem.pop_front();
 	}
-	if(!vm) vm = mem.alloc<Interpreter>(*this);
+	if(!vm) vm = mem.alloc<VirtualMachine>(*this);
 	return vm;
 }
 
-void InterpreterManager::destroyInterpreter(Interpreter *vm)
+void Interpreter::destroyVM(VirtualMachine *vm)
 {
-	vm->~Interpreter();
+	vm->~VirtualMachine();
 	freeVMMem.push_front(vm);
 }
 
-void InterpreterManager::tryAddModulePathsFromDir(String dir)
+void Interpreter::tryAddModulePathsFromDir(String dir)
 {
 	// Paths which have already been searched in for the .modulePaths file
 	static Set<String> searchedPaths;
@@ -160,7 +160,7 @@ void InterpreterManager::tryAddModulePathsFromDir(String dir)
 	String path = dir + "/.modulePaths";
 	return tryAddModulePathsFromFile(path.c_str());
 }
-void InterpreterManager::tryAddModulePathsFromFile(const char *file)
+void Interpreter::tryAddModulePathsFromFile(const char *file)
 {
 	if(!fs::exists(file)) return;
 	String modulePaths;
@@ -172,16 +172,16 @@ void InterpreterManager::tryAddModulePathsFromFile(const char *file)
 	}
 }
 
-bool InterpreterManager::findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+bool Interpreter::findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir)
 {
 	return findFileIn(dirs, name, getFeralImportExtension(), srcDir);
 }
-bool InterpreterManager::findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+bool Interpreter::findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir)
 {
 	name.insert(name.find_last_of('/') + 1, "libferal");
 	return findFileIn(dirs, name, getNativeModuleExtension(), srcDir);
 }
-bool InterpreterManager::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
+bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
 {
 	static char testpath[MAX_PATH_CHARS];
 	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
@@ -229,20 +229,18 @@ bool InterpreterManager::findFileIn(VarVec *dirs, String &name, StringRef ext, S
 	return false;
 }
 
-void InterpreterManager::addGlobal(StringRef name, Var *val, bool iref)
+void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
 {
 	if(globals.exists(name)) return;
 	globals.add(name, val, iref);
 }
-Var *InterpreterManager::getGlobal(StringRef name) { return globals.get(name); }
+Var *Interpreter::getGlobal(StringRef name) { return globals.get(name); }
 
-void InterpreterManager::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-				     bool is_va)
+void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
 {
 	addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
 }
-VarFn *InterpreterManager::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-				       bool is_va)
+VarFn *Interpreter::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
 {
 	VarFn *f =
 	makeVarWithRef<VarFn>(loc, -1, "", is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
@@ -250,7 +248,7 @@ VarFn *InterpreterManager::genNativeFn(ModuleLoc loc, StringRef name, NativeFn f
 	return f;
 }
 
-void InterpreterManager::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
+void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
@@ -265,7 +263,7 @@ void InterpreterManager::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool
 	}
 	f->add(name, fn, iref);
 }
-Var *InterpreterManager::getTypeFn(Var *var, StringRef name)
+Var *Interpreter::getTypeFn(Var *var, StringRef name)
 {
 	auto loc = typefns.find(var->getTypeFnID());
 	Var *res = nullptr;
@@ -282,8 +280,8 @@ Var *InterpreterManager::getTypeFn(Var *var, StringRef name)
 	return typefns[typeID<VarAll>()]->get(name);
 }
 
-void InterpreterManager::setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
-StringRef InterpreterManager::getTypeName(size_t _typeid)
+void Interpreter::setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
+StringRef Interpreter::getTypeName(size_t _typeid)
 {
 	auto loc = typenames.find(_typeid);
 	if(loc == typenames.end()) {
@@ -295,7 +293,7 @@ StringRef InterpreterManager::getTypeName(size_t _typeid)
 	return loc->second;
 }
 
-Var *InterpreterManager::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
+Var *Interpreter::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
 {
 	switch(dataty) {
 	case DataType::NIL: return nil;
@@ -308,14 +306,14 @@ Var *InterpreterManager::getConst(ModuleLoc loc, const Instruction::Data &d, Dat
 	return nullptr;
 }
 
-bool InterpreterManager::hasModule(StringRef path)
+bool Interpreter::hasModule(StringRef path)
 {
 	for(auto &it : modules) {
 		if(it.second->getPath() == path) return true;
 	}
 	return false;
 }
-VarModule *InterpreterManager::getModule(StringRef path)
+VarModule *Interpreter::getModule(StringRef path)
 {
 	for(auto &it : modules) {
 		if(it.second->getPath() == path) return it.second;
@@ -323,7 +321,7 @@ VarModule *InterpreterManager::getModule(StringRef path)
 	return nullptr;
 }
 
-void InterpreterManager::initTypeNames()
+void Interpreter::initTypeNames()
 {
 	registerType<VarAll>({}, "All");
 
@@ -375,16 +373,16 @@ void InterpreterManager::initTypeNames()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// Interpreter //////////////////////////////////////////////
+//////////////////////////////////// VirtualMachine //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Interpreter::Interpreter(InterpreterManager &mgr)
-	: cs(mgr), failstack(cs.mem), execstack(cs.mem), recurseCount(0), exitcode(0),
+VirtualMachine::VirtualMachine(Interpreter &ip)
+	: ip(ip), failstack(ip.mem), execstack(ip.mem), recurseCount(0), exitcode(0),
 	  recurseExceeded(false), exitcalled(false)
 {}
-Interpreter::~Interpreter() {}
+VirtualMachine::~VirtualMachine() {}
 
-int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
+int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {
 	String code;
 
@@ -399,7 +397,7 @@ int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
 		return 1;
 	}
 
-	if(cs.argparser.has("dry")) return 0;
+	if(ip.argparser.has("dry")) return 0;
 
 	pushModule(moduleId);
 	int res = execute();
@@ -407,12 +405,12 @@ int Interpreter::compileAndRun(ModuleLoc loc, const char *file)
 	return res;
 }
 
-ModuleId Interpreter::addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
-				bool exprOnly, Vars *existingVars)
+ModuleId VirtualMachine::addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
+				   bool exprOnly, Vars *existingVars)
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
-	if(!cs.parseSourceFn(*this, bc, moduleIdCtr, path, code, exprOnly)) {
+	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, path, code, exprOnly)) {
 		fail(loc, "failed to parse source: ", path);
 		return -1;
 	}
@@ -420,35 +418,35 @@ ModuleId Interpreter::addModule(ModuleLoc loc, StringRef path, String &&code, bo
 	if(virtualPath) err.setCodeForId(moduleIdCtr, std::move(code));
 	VarModule *mod =
 	makeVarWithRef<VarModule>(loc, path, std::move(bc), moduleIdCtr, existingVars);
-	LockGuard<Mutex> globalGuard(cs.globalMutex);
-	cs.modules.insert_or_assign(moduleIdCtr, mod);
+	LockGuard<Mutex> globalGuard(ip.globalMutex);
+	ip.modules.insert_or_assign(moduleIdCtr, mod);
 	return moduleIdCtr++;
 }
-void Interpreter::removeModule(ModuleId moduleId)
+void VirtualMachine::removeModule(ModuleId moduleId)
 {
-	auto loc = cs.modules.find(moduleId);
-	if(loc == cs.modules.end()) return;
-	LockGuard<Mutex> globalGuard(cs.globalMutex);
+	auto loc = ip.modules.find(moduleId);
+	if(loc == ip.modules.end()) return;
+	LockGuard<Mutex> globalGuard(ip.globalMutex);
 	decVarRef(loc->second);
-	cs.modules.erase(loc);
+	ip.modules.erase(loc);
 }
-void Interpreter::pushModule(ModuleId moduleId)
+void VirtualMachine::pushModule(ModuleId moduleId)
 {
-	auto mloc = cs.modules.find(moduleId);
+	auto mloc = ip.modules.find(moduleId);
 	modulestack.push_back(mloc->second);
 }
-void Interpreter::popModule() { modulestack.pop_back(); }
+void VirtualMachine::popModule() { modulestack.pop_back(); }
 
-bool Interpreter::findImportModuleIn(VarVec *dirs, String &name)
+bool VirtualMachine::findImportModuleIn(VarVec *dirs, String &name)
 {
 	return findFileIn(dirs, name, getFeralImportExtension());
 }
-bool Interpreter::findNativeModuleIn(VarVec *dirs, String &name)
+bool VirtualMachine::findNativeModuleIn(VarVec *dirs, String &name)
 {
 	name.insert(name.find_last_of('/') + 1, "libferal");
 	return findFileIn(dirs, name, getNativeModuleExtension());
 }
-bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext)
+bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext)
 {
 	static char testpath[MAX_PATH_CHARS];
 	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
@@ -496,7 +494,7 @@ bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext)
 	return false;
 }
 
-bool Interpreter::loadNativeModule(ModuleLoc loc, const String &modpath, StringRef moduleStr)
+bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, StringRef moduleStr)
 {
 #if defined(FER_OS_WINDOWS)
 	// append the parent dir to dll search paths
@@ -535,12 +533,12 @@ bool Interpreter::loadNativeModule(ModuleLoc loc, const String &modpath, StringR
 	tmp = "Deinit";
 	tmp += moduleName;
 	ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modpath, tmp.c_str());
-	if(deinitfn) cs.dlldeinitfns[modpath] = deinitfn;
+	if(deinitfn) ip.dlldeinitfns[modpath] = deinitfn;
 	return true;
 }
 
-bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
-			  const StringMap<AssnArgData> &assn_args)
+bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
+			     const StringMap<AssnArgData> &assn_args)
 {
 	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
 	bool memcall = args[0] != nullptr;
@@ -569,8 +567,8 @@ bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var
 	return callVar(loc, name, fn, retdata, args, assn_args);
 }
 
-bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
-			  Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
+			     Span<Var *> args, const StringMap<AssnArgData> &assn_args)
 {
 	bool memcall = args[0] != nullptr;
 	if(!callable->call(*this, loc, args, assn_args)) {
@@ -584,8 +582,8 @@ bool Interpreter::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&re
 	retdata = popExecStack(false);
 	return true;
 }
-Var *Interpreter::callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-				   const StringMap<AssnArgData> &assn_args)
+Var *VirtualMachine::callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable,
+				      Span<Var *> args, const StringMap<AssnArgData> &assn_args)
 {
 	Var *retData = nullptr;
 	bool res     = callVar(loc, name, callable, retData, args, assn_args);
@@ -593,7 +591,7 @@ Var *Interpreter::callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable,
 	return retData;
 }
 
-Var *Interpreter::eval(ModuleLoc loc, StringRef code, bool isExpr)
+Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 {
 	static ModuleId evalCtr = 0;
 

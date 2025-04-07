@@ -25,13 +25,13 @@ void VarPtr::setVal(MemoryManager &mem, Var *newval)
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *ptrNewNative(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
-Var *ptrSet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarPtr *self = as<VarPtr>(args[0]);
@@ -39,7 +39,7 @@ Var *ptrSet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *ptrGet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *ptrGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarPtr>(args[0])->getVal();

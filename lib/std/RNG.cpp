@@ -11,7 +11,7 @@ static std::default_random_engine rng;
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *rngSeed(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *rngSeed(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -23,7 +23,7 @@ Var *rngSeed(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 // [0, to)
-Var *rngGet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *rngGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {

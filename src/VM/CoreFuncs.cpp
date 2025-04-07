@@ -5,7 +5,7 @@ namespace fer
 
 static RecursiveMutex loadMtx;
 
-bool loadCommon(Interpreter &vm, ModuleLoc loc, Var *modname, bool isImport, String &result)
+bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, String &result)
 {
 	if(!modname->is<VarStr>()) {
 		vm.fail(loc,
@@ -40,7 +40,7 @@ bool loadCommon(Interpreter &vm, ModuleLoc loc, Var *modname, bool isImport, Str
 	return true;
 }
 
-Var *loadFile(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *loadFile(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	LockGuard<RecursiveMutex> _(loadMtx);
@@ -57,7 +57,7 @@ Var *loadFile(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getModule(file);
 }
 
-Var *loadLibrary(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *loadLibrary(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	LockGuard<RecursiveMutex> _(loadMtx);
@@ -70,13 +70,13 @@ Var *loadLibrary(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-void setupCoreFuncs(InterpreterManager &im, ModuleLoc loc)
+void setupCoreFuncs(Interpreter &ip, ModuleLoc loc)
 {
-	im.addNativeFn(loc, "import", loadFile, 1);
-	im.addNativeFn(loc, "loadlib", loadLibrary, 1);
+	ip.addNativeFn(loc, "import", loadFile, 1);
+	ip.addNativeFn(loc, "loadlib", loadLibrary, 1);
 }
 
-Var *basicModuleFinder(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
