@@ -425,7 +425,7 @@ void VarFn::onSet(MemoryManager &mem, Var *from)
 Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
-	Var::ScopedThreadLock _(this);
+	Var::ScopedThreadLock _(args[0]);
 	MemoryManager &mem = vm.getMemoryManager();
 	// -1 for self
 	if(args.size() - 1 < params.size() - assn_params.size() ||
