@@ -10,19 +10,21 @@
 namespace fer
 {
 
-class CommonState;
 class InterpreterManager;
 
 typedef bool (*ParseSourceFn)(Interpreter &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
 			      StringRef code, bool exprOnly);
 
 typedef bool (*ModInitFn)(Interpreter &vm, ModuleLoc loc);
-typedef void (*ModDeinitFn)(CommonState &cs);
+typedef void (*ModDeinitFn)(InterpreterManager &im);
 #define INIT_MODULE(name) extern "C" bool Init##name(Interpreter &vm, ModuleLoc loc)
-#define DEINIT_MODULE(name) extern "C" void Deinit##name(CommonState &cs)
+#define DEINIT_MODULE(name) extern "C" void Deinit##name(InterpreterManager &im)
 
-struct CommonState
+class InterpreterManager
 {
+	// Used to store VirtualMachine memory after one is free'd
+	UniList<Interpreter *> freeVMMem;
+
 	ArgParser &argparser;
 	ParseSourceFn parseSourceFn;
 	MemoryManager mem;
@@ -54,8 +56,18 @@ struct CommonState
 	// This is the one that's used for checking, and it can be modified by Feral program
 	size_t recurseMax;
 
-	CommonState(ArgParser &argparser, ParseSourceFn parseSourceFn);
-	~CommonState();
+	friend class Interpreter;
+
+	bool loadPrelude();
+
+public:
+	InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn);
+	~InterpreterManager();
+
+	int runFile(ModuleLoc loc, const char *file);
+
+	Interpreter *createInterpreter();
+	void destroyInterpreter(Interpreter *vm);
 
 	// Must be used with full path of directory
 	void tryAddModulePathsFromDir(String dir);
@@ -154,8 +166,7 @@ struct CommonState
 
 class Interpreter
 {
-	InterpreterManager &mgr;
-	CommonState &cs;
+	InterpreterManager &cs;
 	Vector<VarModule *> modulestack;
 	FailStack failstack;
 	ExecStack execstack;
@@ -252,8 +263,6 @@ public:
 	inline void setExitCalled(bool called) { exitcalled = called; }
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
 
-	inline InterpreterManager &getManager() { return mgr; }
-	inline CommonState &getCommonState() { return cs; }
 	inline ArgParser &getArgParser() { return cs.argparser; }
 	inline MemoryManager &getMemoryManager() { return cs.mem; }
 	inline VarVec *getModuleDirs() { return cs.moduleDirs; }
@@ -375,26 +384,6 @@ public:
 		// Lose the error msg to the void if the error is handled but not stored in a
 		// variable.
 	}
-};
-
-class InterpreterManager
-{
-	CommonState cs;
-	// Used to store InterpreterThread memory after one is free'd
-	UniList<void *> freeMem;
-
-	bool loadPrelude();
-
-public:
-	InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn);
-	~InterpreterManager();
-
-	int runFile(ModuleLoc loc, const char *file);
-
-	Interpreter *createInterpreter();
-	void destroyInterpreter(Interpreter *vm);
-
-	inline CommonState &getCommonState() { return cs; }
 };
 
 } // namespace fer

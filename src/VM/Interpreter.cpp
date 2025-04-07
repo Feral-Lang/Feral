@@ -24,10 +24,10 @@ void remDLLDirectories();
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////// CommonState //////////////////////////////////////////////
+////////////////////////////////// InterpreterManager ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-CommonState::CommonState(ArgParser &argparser, ParseSourceFn parseSourceFn)
+InterpreterManager::InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), globals(mem),
 	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
 	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -77,8 +77,10 @@ CommonState::CommonState(ArgParser &argparser, ParseSourceFn parseSourceFn)
 		addDLLDirectory(as<VarStr>(modDir)->getVal());
 	}
 #endif
+
+	if(!loadPrelude()) throw "Failed to load prelude";
 }
-CommonState::~CommonState()
+InterpreterManager::~InterpreterManager()
 {
 	decVarRef(nil);
 	decVarRef(fals);
@@ -94,11 +96,62 @@ CommonState::~CommonState()
 	}
 	for(auto &mod : modules) decVarRef(mod.second);
 
+	for(auto &item : freeVMMem) {
+		mem.free(item);
+	}
+
 #if defined(FER_OS_WINDOWS)
 	remDLLDirectories();
 #endif
 }
-void CommonState::tryAddModulePathsFromDir(String dir)
+
+bool InterpreterManager::loadPrelude()
+{
+	VarFn *bmfFn = genNativeFn({}, "basicModuleFinder", basicModuleFinder, 2);
+	moduleFinders->push(bmfFn);
+	// loadlib must be setup here because it is needed to load even the core module from
+	// <prelude>.
+	setupCoreFuncs(*this, {});
+	if(!findImportModuleIn(moduleDirs, prelude, fs::getCWD())) {
+		err.fail({}, "Failed to find prelude: ", prelude);
+		return 1;
+	}
+	int res = runFile({}, prelude.c_str());
+	if(res != 0) {
+		err.fail({}, "Failed to import prelude: ", prelude);
+		return false;
+	}
+	// set the prelude/feral global variable
+	addGlobal("feral", getModule(prelude));
+	return true;
+}
+
+int InterpreterManager::runFile(ModuleLoc loc, const char *file)
+{
+	Interpreter *vm = createInterpreter();
+	int res		= vm->compileAndRun(loc, file);
+	destroyInterpreter(vm);
+	return res;
+}
+
+Interpreter *InterpreterManager::createInterpreter()
+{
+	Interpreter *vm = nullptr;
+	if(!freeVMMem.empty()) {
+		vm = new(freeVMMem.front()) Interpreter(*this);
+		freeVMMem.pop_front();
+	}
+	if(!vm) vm = mem.alloc<Interpreter>(*this);
+	return vm;
+}
+
+void InterpreterManager::destroyInterpreter(Interpreter *vm)
+{
+	vm->~Interpreter();
+	freeVMMem.push_front(vm);
+}
+
+void InterpreterManager::tryAddModulePathsFromDir(String dir)
 {
 	// Paths which have already been searched in for the .modulePaths file
 	static Set<String> searchedPaths;
@@ -107,7 +160,7 @@ void CommonState::tryAddModulePathsFromDir(String dir)
 	String path = dir + "/.modulePaths";
 	return tryAddModulePathsFromFile(path.c_str());
 }
-void CommonState::tryAddModulePathsFromFile(const char *file)
+void InterpreterManager::tryAddModulePathsFromFile(const char *file)
 {
 	if(!fs::exists(file)) return;
 	String modulePaths;
@@ -119,16 +172,16 @@ void CommonState::tryAddModulePathsFromFile(const char *file)
 	}
 }
 
-bool CommonState::findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+bool InterpreterManager::findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir)
 {
 	return findFileIn(dirs, name, getFeralImportExtension(), srcDir);
 }
-bool CommonState::findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir)
+bool InterpreterManager::findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir)
 {
 	name.insert(name.find_last_of('/') + 1, "libferal");
 	return findFileIn(dirs, name, getNativeModuleExtension(), srcDir);
 }
-bool CommonState::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
+bool InterpreterManager::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
 {
 	static char testpath[MAX_PATH_CHARS];
 	if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
@@ -176,18 +229,20 @@ bool CommonState::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRe
 	return false;
 }
 
-void CommonState::addGlobal(StringRef name, Var *val, bool iref)
+void InterpreterManager::addGlobal(StringRef name, Var *val, bool iref)
 {
 	if(globals.exists(name)) return;
 	globals.add(name, val, iref);
 }
-Var *CommonState::getGlobal(StringRef name) { return globals.get(name); }
+Var *InterpreterManager::getGlobal(StringRef name) { return globals.get(name); }
 
-void CommonState::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+void InterpreterManager::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
+				     bool is_va)
 {
 	addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
 }
-VarFn *CommonState::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+VarFn *InterpreterManager::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
+				       bool is_va)
 {
 	VarFn *f =
 	makeVarWithRef<VarFn>(loc, -1, "", is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
@@ -195,7 +250,7 @@ VarFn *CommonState::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size
 	return f;
 }
 
-void CommonState::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
+void InterpreterManager::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
@@ -210,7 +265,7 @@ void CommonState::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	}
 	f->add(name, fn, iref);
 }
-Var *CommonState::getTypeFn(Var *var, StringRef name)
+Var *InterpreterManager::getTypeFn(Var *var, StringRef name)
 {
 	auto loc = typefns.find(var->getTypeFnID());
 	Var *res = nullptr;
@@ -227,8 +282,8 @@ Var *CommonState::getTypeFn(Var *var, StringRef name)
 	return typefns[typeID<VarAll>()]->get(name);
 }
 
-void CommonState::setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
-StringRef CommonState::getTypeName(size_t _typeid)
+void InterpreterManager::setTypeName(size_t _typeid, StringRef name) { typenames[_typeid] = name; }
+StringRef InterpreterManager::getTypeName(size_t _typeid)
 {
 	auto loc = typenames.find(_typeid);
 	if(loc == typenames.end()) {
@@ -240,7 +295,7 @@ StringRef CommonState::getTypeName(size_t _typeid)
 	return loc->second;
 }
 
-Var *CommonState::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
+Var *InterpreterManager::getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
 {
 	switch(dataty) {
 	case DataType::NIL: return nil;
@@ -253,14 +308,14 @@ Var *CommonState::getConst(ModuleLoc loc, const Instruction::Data &d, DataType d
 	return nullptr;
 }
 
-bool CommonState::hasModule(StringRef path)
+bool InterpreterManager::hasModule(StringRef path)
 {
 	for(auto &it : modules) {
 		if(it.second->getPath() == path) return true;
 	}
 	return false;
 }
-VarModule *CommonState::getModule(StringRef path)
+VarModule *InterpreterManager::getModule(StringRef path)
 {
 	for(auto &it : modules) {
 		if(it.second->getPath() == path) return it.second;
@@ -268,7 +323,7 @@ VarModule *CommonState::getModule(StringRef path)
 	return nullptr;
 }
 
-void CommonState::initTypeNames()
+void InterpreterManager::initTypeNames()
 {
 	registerType<VarAll>({}, "All");
 
@@ -324,8 +379,8 @@ void CommonState::initTypeNames()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Interpreter::Interpreter(InterpreterManager &mgr)
-	: mgr(mgr), cs(mgr.getCommonState()), failstack(cs.mem), execstack(cs.mem), recurseCount(0),
-	  exitcode(0), recurseExceeded(false), exitcalled(false)
+	: cs(mgr), failstack(cs.mem), execstack(cs.mem), recurseCount(0), exitcode(0),
+	  recurseExceeded(false), exitcalled(false)
 {}
 Interpreter::~Interpreter() {}
 
@@ -563,68 +618,6 @@ Var *Interpreter::eval(ModuleLoc loc, StringRef code, bool isExpr)
 	else res = getNil();
 done:
 	return res;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////// InterpreterManager //////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-InterpreterManager::InterpreterManager(ArgParser &argparser, ParseSourceFn parseSourceFn)
-	: cs(argparser, parseSourceFn)
-{
-	if(!loadPrelude()) throw "Failed to load prelude";
-}
-InterpreterManager::~InterpreterManager()
-{
-	for(auto &item : freeMem) {
-		cs.mem.free(item);
-	}
-}
-
-bool InterpreterManager::loadPrelude()
-{
-	VarFn *bmfFn = cs.genNativeFn({}, "basicModuleFinder", basicModuleFinder, 2);
-	cs.moduleFinders->push(bmfFn);
-	// loadlib must be setup here because it is needed to load even the core module from
-	// <prelude>.
-	setupCoreFuncs(cs, {});
-	if(!cs.findImportModuleIn(cs.moduleDirs, cs.prelude, fs::getCWD())) {
-		err.fail({}, "Failed to find prelude: ", cs.prelude);
-		return 1;
-	}
-	int res = runFile({}, cs.prelude.c_str());
-	if(res != 0) {
-		err.fail({}, "Failed to import prelude: ", cs.prelude);
-		return false;
-	}
-	// set the prelude/feral global variable
-	cs.addGlobal("feral", cs.getModule(cs.prelude));
-	return true;
-}
-
-int InterpreterManager::runFile(ModuleLoc loc, const char *file)
-{
-	Interpreter *vm = createInterpreter();
-	int res		= vm->compileAndRun(loc, file);
-	destroyInterpreter(vm);
-	return res;
-}
-
-Interpreter *InterpreterManager::createInterpreter()
-{
-	Interpreter *vm = nullptr;
-	if(!freeMem.empty()) {
-		vm = new(freeMem.front()) Interpreter(*this);
-		freeMem.pop_front();
-	}
-	if(!vm) vm = cs.mem.alloc<Interpreter>(*this);
-	return vm;
-}
-
-void InterpreterManager::destroyInterpreter(Interpreter *vm)
-{
-	vm->~Interpreter();
-	freeMem.push_front(vm);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

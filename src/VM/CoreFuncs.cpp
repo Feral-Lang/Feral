@@ -70,10 +70,10 @@ Var *loadLibrary(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-void setupCoreFuncs(CommonState &cs, ModuleLoc loc)
+void setupCoreFuncs(InterpreterManager &im, ModuleLoc loc)
 {
-	cs.addNativeFn(loc, "import", loadFile, 1);
-	cs.addNativeFn(loc, "loadlib", loadLibrary, 1);
+	im.addNativeFn(loc, "import", loadFile, 1);
+	im.addNativeFn(loc, "loadlib", loadLibrary, 1);
 }
 
 Var *basicModuleFinder(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
