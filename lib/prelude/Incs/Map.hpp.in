@@ -72,15 +72,16 @@ Var *mapEmpty(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 Var *mapInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	VarMap *map = as<VarMap>(args[0]);
-	Var *v	    = nullptr;
+	MemoryManager &mem = vm.getMemoryManager();
+	VarMap *map	   = as<VarMap>(args[0]);
+	Var *v		   = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	const String &key = as<VarStr>(v)->getVal();
 	if(map->isRefMap()) {
-		map->setAttr(vm, key, args[2], true);
+		map->setAttr(mem, key, args[2], true);
 	} else {
-		map->setAttr(vm, key, vm.copyVar(loc, args[2]), false);
+		map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
 	}
 	return args[0];
 }
@@ -104,7 +105,7 @@ Var *mapErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 Var *mapClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	as<VarMap>(args[0])->clear(vm);
+	as<VarMap>(args[0])->clear(vm.getMemoryManager());
 	return vm.getNil();
 }
 
@@ -143,7 +144,7 @@ Var *mapIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 {
 	VarMapIterator *it = as<VarMapIterator>(args[0]);
 	Var *res	   = nullptr;
-	if(!it->next(vm, loc, res)) return vm.getNil();
+	if(!it->next(vm.getMemoryManager(), loc, res)) return vm.getNil();
 	res->setLoadAsRef();
 	return res;
 }

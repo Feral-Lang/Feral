@@ -33,11 +33,11 @@ VarMultiProc::~VarMultiProc()
 		if(res != nullptr) delete res;
 	}
 }
-Var *VarMultiProc::onCopy(Interpreter &vm, ModuleLoc loc)
+Var *VarMultiProc::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-	return vm.makeVarWithRef<VarMultiProc>(loc, thread, res, id, false);
+	return Var::makeVarWithRef<VarMultiProc>(mem, loc, thread, res, id, false);
 }
-void VarMultiProc::onSet(Interpreter &vm, Var *from)
+void VarMultiProc::onSet(MemoryManager &mem, Var *from)
 {
 	VarMultiProc *t = as<VarMultiProc>(from);
 	owner		= false;

@@ -88,9 +88,10 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
 				if(val->getRef() == 1) {
-					in->setAttr(*this, name, val, true);
+					in->setAttr(getMemoryManager(), name, val, true);
 				} else {
-					in->setAttr(*this, name, copyVar(ins.getLoc(), val), false);
+					in->setAttr(getMemoryManager(), name,
+						    copyVar(ins.getLoc(), val), false);
 				}
 			} else {
 				if(!val->isCallable()) {

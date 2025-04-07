@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <cstring>
 #include <deque>
@@ -75,18 +76,19 @@ using ssize_t = int32_t;
 #endif
 #endif
 
-using Mutex	= std::mutex;
-using Regex	= std::regex;
-using String	= std::string;
-using Thread	= std::thread;
-using IStream	= std::istream;
-using OStream	= std::ostream;
-using FStream	= std::fstream;
-using Nullptr	= std::nullptr_t;
-using IOStream	= std::iostream;
-using IFStream	= std::ifstream;
-using OFStream	= std::ofstream;
-using StringRef = std::string_view;
+using Mutex	     = std::mutex;
+using Regex	     = std::regex;
+using String	     = std::string;
+using Thread	     = std::thread;
+using IStream	     = std::istream;
+using OStream	     = std::ostream;
+using FStream	     = std::fstream;
+using Nullptr	     = std::nullptr_t;
+using IOStream	     = std::iostream;
+using IFStream	     = std::ifstream;
+using OFStream	     = std::ofstream;
+using StringRef	     = std::string_view;
+using RecursiveMutex = std::recursive_mutex;
 
 #if defined(FER_OS_WINDOWS)
 using WString	 = std::wstring;
@@ -108,6 +110,7 @@ struct StringHash
 template<typename T> using Set		   = std::unordered_set<T>;
 template<typename T> using Span		   = std::span<T>;
 template<typename T> using Deque	   = std::deque<T>;
+template<typename T> using Atomic	   = std::atomic<T>;
 template<typename T> using Vector	   = std::vector<T>;
 template<typename T> using UniList	   = std::forward_list<T>; // singly linked list
 template<typename T> using InitList	   = std::initializer_list<T>;

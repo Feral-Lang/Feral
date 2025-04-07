@@ -1,9 +1,10 @@
 Var *createStruct(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
-	VarStructDef *res = vm.makeVar<VarStructDef>(loc, assn_args.size());
+	MemoryManager &mem = vm.getMemoryManager();
+	VarStructDef *res  = vm.makeVar<VarStructDef>(loc, assn_args.size());
 	for(auto &attr : assn_args) {
-		res->setAttr(vm, attr.first, attr.second.val, true);
+		res->setAttr(mem, attr.first, attr.second.val, true);
 		res->setAttrOrderAt(attr.second.pos, attr.first);
 	}
 	return res;

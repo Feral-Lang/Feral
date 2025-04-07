@@ -1,5 +1,6 @@
 #include "Allocator.hpp"
 
+#include "Core.hpp"
 #include "Logger.hpp"
 
 // aligned_alloc doesn't exist on Windows, so we use _aligned_malloc and _aligned_free instead.
@@ -15,7 +16,8 @@
 namespace fer
 {
 
-static size_t totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0, chunkReuseCount = 0;
+static Atomic<size_t> totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0,
+		      chunkReuseCount = 0;
 
 MemoryManager::MemoryManager(StringRef name) : name(name) { allocPool(); }
 MemoryManager::~MemoryManager()
@@ -32,10 +34,10 @@ MemoryManager::~MemoryManager()
 	freechunks.clear();
 	for(auto &p : pools) AlignedFree(p.mem);
 	logger.trace("=============== ", name, " memory manager stats: ===============");
-	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes);
-	logger.trace("--                Allocated bytes from pools: ", totalPoolAlloc);
-	logger.trace("--                             Request count: ", totalAllocRequests);
-	logger.trace("--                         Chunk Reuse count: ", chunkReuseCount);
+	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes.load());
+	logger.trace("--                Allocated bytes from pools: ", totalPoolAlloc.load());
+	logger.trace("--                             Request count: ", totalAllocRequests.load());
+	logger.trace("--                         Chunk Reuse count: ", chunkReuseCount.load());
 }
 
 size_t MemoryManager::nextPow2(size_t sz)
@@ -67,16 +69,15 @@ void *MemoryManager::alloc(size_t size, size_t align)
 	size_t allocSz = size + MAX_ALIGNMENT;
 	allocSz	       = nextPow2(allocSz);
 
-	++totalAllocRequests;
-
 	char *loc = nullptr;
 
+	++totalAllocRequests;
 	if(allocSz > POOL_SIZE) {
 		totalAllocBytes += allocSz;
 		loc = (char *)AlignedAlloc(MAX_ALIGNMENT, allocSz);
 	} else {
-		LockGuard<Mutex> mtxlock(mtx);
 		totalPoolAlloc += allocSz;
+		LockGuard<RecursiveMutex> mtxlock(mtx);
 		// there is a free chunk available in the chunk list
 		auto &freechunkloc = freechunks[allocSz];
 		if(!freechunkloc.empty()) {
@@ -118,7 +119,7 @@ void MemoryManager::free(void *data)
 		AlignedFree(loc - MAX_ALIGNMENT);
 		return;
 	}
-	LockGuard<Mutex> mtxlock(mtx);
+	LockGuard<RecursiveMutex> mtxlock(mtx);
 	freechunks[sz].push_front(loc);
 }
 

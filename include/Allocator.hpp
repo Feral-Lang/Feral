@@ -27,7 +27,7 @@ class MemoryManager
 	// then, in a mutithreaded environment, the manager should be able to choose one of the
 	// available arenas and allocate memory from that (therefore increasing speed, compared to a
 	// global mutex).
-	Mutex mtx;
+	RecursiveMutex mtx;
 	String name;
 
 	// works upto MAX_ROUNDUP

@@ -6,15 +6,19 @@ namespace fer
 {
 
 VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, false, false), val(val) {}
-void VarPtr::onCreate(Interpreter &vm) { vm.incVarRef(val); }
-void VarPtr::onDestroy(Interpreter &vm) { vm.decVarRef(val); }
-Var *VarPtr::onCopy(Interpreter &vm, ModuleLoc loc) { return vm.makeVarWithRef<VarPtr>(loc, val); }
-void VarPtr::onSet(Interpreter &vm, Var *from) { setVal(vm, as<VarPtr>(from)->val); }
-void VarPtr::setVal(Interpreter &vm, Var *newval)
+void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
+void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
+Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-	vm.decVarRef(val);
+	return Var::makeVarWithRef<VarPtr>(mem, loc, val);
+}
+void VarPtr::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarPtr>(from)->val); }
+void VarPtr::setVal(MemoryManager &mem, Var *newval)
+{
+	Var::ScopedThreadLock _(this);
+	Var::decVarRef(mem, val);
 	val = newval;
-	vm.incVarRef(val);
+	Var::incVarRef(val);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +35,7 @@ Var *ptrSet(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	VarPtr *self = as<VarPtr>(args[0]);
-	self->setVal(vm, args[1]);
+	self->setVal(vm.getMemoryManager(), args[1]);
 	return args[0];
 }
 

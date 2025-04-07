@@ -12,8 +12,8 @@ class VarRegex : public Var
 	using svmatch	 = std::match_results<StringRef::const_iterator>;
 	using svsubmatch = std::sub_match<StringRef::const_iterator>;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarRegex(ModuleLoc loc, StringRef exprStr,

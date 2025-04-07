@@ -24,11 +24,11 @@ void remDLLDirectories();
 #endif
 
 Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
-	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), failstack(*this),
-	  execstack(*this), globals(*this),
+	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), failstack(mem),
+	  execstack(mem), globals(mem), prelude("prelude/prelude"), binaryPath(env::getProcPath()),
 	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
-	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)), prelude("prelude/prelude"),
-	  binaryPath(env::getProcPath()), tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
+	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
+	  tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
 	  nil(makeVarWithRef<VarNil>(ModuleLoc())), recurseMax(DEFAULT_MAX_RECURSE_COUNT),
 	  recurseCount(0), exitcode(0), recurseExceeded(false), exitcalled(false)
@@ -38,6 +38,11 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 				 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
 				 LOAD_LIBRARY_SEARCH_USER_DIRS);
 #endif
+	moduleDirs->setThreadSafe(true);
+	moduleFinders->setThreadSafe(true);
+	// tru, fals, and nil don't need to be set as thread safe because their values are never
+	// meant to be modified.
+
 	initTypeNames();
 
 	Span<StringRef> vmArgs = argparser.getCodeExecArgs();
@@ -308,7 +313,7 @@ void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
 	if(loc == typefns.end()) {
-		typefns[_typeid] = f = new VarFrame(*this);
+		typefns[_typeid] = f = new VarFrame(mem);
 	} else {
 		f = loc->second;
 	}

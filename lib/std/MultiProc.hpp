@@ -12,8 +12,8 @@ class VarMultiProc : public Var
 	size_t id;
 	bool owner;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, bool owner = true);

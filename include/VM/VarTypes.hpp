@@ -21,7 +21,8 @@ class Interpreter;
 class Var : public IAllocated
 {
 	ModuleLoc loc;
-	size_t ref;
+	Atomic<size_t> ref;
+	RecursiveMutex *mtx;
 
 	// for VarInfo
 	size_t info;
@@ -36,33 +37,45 @@ class Var : public IAllocated
 	inline size_t getRef() const { return ref; }
 
 	// Proxy functions to use the functions to be implemented by the Var's.
-	void create(Interpreter &vm);
-	void destroy(Interpreter &vm);
-	Var *copy(Interpreter &vm, ModuleLoc loc);
-	void set(Interpreter &vm, Var *from);
+	void create(MemoryManager &mem);
+	void destroy(MemoryManager &mem);
+	Var *copy(MemoryManager &mem, ModuleLoc loc);
+	void set(MemoryManager &mem, Var *from);
 
 	// Following functions are to be implemented by the Var's as needed.
 
 	// Called by vm.makeVar*() after Var's constructor.
 	// By default, it does nothing.
-	virtual void onCreate(Interpreter &vm);
+	virtual void onCreate(MemoryManager &mem);
 	// Called by vm.unmakeVar() before Var's destructor.
 	// By default, it does nothing.
-	virtual void onDestroy(Interpreter &vm);
+	virtual void onDestroy(MemoryManager &mem);
 	// Copy this variable.
 	// By default (if not overriden), it just increments ref and returns `this`.
-	virtual Var *onCopy(Interpreter &vm, ModuleLoc loc);
+	virtual Var *onCopy(MemoryManager &mem, ModuleLoc loc);
 	// Set value(s) in this variable using a different variable of the same type.
 	// As such, no type checking is required to cast `from` to the class in which
 	// this function is implemented.
-	virtual void onSet(Interpreter &vm, Var *from);
+	virtual void onSet(MemoryManager &mem, Var *from);
 
 protected:
 	Var(ModuleLoc loc, bool callable, bool attr_based);
 	// No need to override the destructor. Override onDestroy() instead.
 	virtual ~Var();
 
+	// Mutex functions
+	inline void acquireThreadLock()
+	{
+		if(mtx) mtx->lock();
+	}
+	inline void releaseThreadLock()
+	{
+		if(mtx) mtx->unlock();
+	}
+
 public:
+	void setThreadSafe(bool value);
+
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const
 	{
@@ -73,7 +86,6 @@ public:
 
 	inline ModuleLoc getLoc() const { return loc; }
 	inline size_t getType() { return typeid(*this).hash_code(); }
-	virtual size_t getTypeFnID();
 
 	inline bool isCallable() const { return info & (size_t)VarInfo::CALLABLE; }
 	inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
@@ -82,9 +94,85 @@ public:
 
 	virtual Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);
-	virtual void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref);
+	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
 	virtual Var *getAttr(StringRef name);
+	virtual size_t getTypeFnID();
+
+	class ScopedThreadLock
+	{
+		Var *var;
+
+	public:
+		ScopedThreadLock(Var *var);
+		~ScopedThreadLock();
+	};
+
+	// supposed to call the overloaded new operator in Var
+	template<typename T, typename... Args> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	makeVarWithRef(MemoryManager &mem, Args &&...args)
+	{
+		T *res = new(mem.alloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
+		res->create(mem);
+		return res;
+	}
+	// used in native function calls - sets ref to zero
+	template<typename T, typename... Args> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	makeVar(MemoryManager &mem, Args &&...args)
+	{
+		T *res = makeVarWithRef<T>(mem, std::forward<Args>(args)...);
+		res->dref();
+		return res;
+	}
+	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
+	// being used elsewhere.
+	template<typename T> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+	unmakeVar(MemoryManager &mem, T *var)
+	{
+		var->destroy(mem);
+		var->~T();
+		mem.free(var);
+	}
+	template<typename T>
+	static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
+	{
+		if(var == nullptr) return nullptr;
+		var->iref();
+		return var;
+	}
+	template<typename T> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	decVarRef(MemoryManager &mem, T *&var, bool del = true)
+	{
+		if(var == nullptr) return nullptr;
+		if(var->dref() == 0 && del) {
+			unmakeVar(mem, var);
+			var = nullptr;
+		}
+		return var;
+	}
+	template<typename T> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	copyVar(MemoryManager &mem, ModuleLoc loc, T *var)
+	{
+		Var::ScopedThreadLock _(var);
+		if(var->isLoadAsRef()) {
+			var->unsetLoadAsRef();
+			incVarRef(var);
+			return var;
+		}
+		return var->copy(mem, loc);
+	}
+	template<typename T> static
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+	setVar(MemoryManager &mem, T *var, Var *from)
+	{
+		var->set(mem, from);
+		return var;
+	}
 };
 
 template<typename T> T *as(Var *data) { return static_cast<T *>(data); }
@@ -114,8 +202,8 @@ class VarTypeID : public Var
 {
 	size_t val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarTypeID(ModuleLoc loc, size_t val);
@@ -128,8 +216,8 @@ class VarBool : public Var
 {
 	bool val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarBool(ModuleLoc loc, bool val);
@@ -142,8 +230,8 @@ class VarInt : public Var
 {
 	int64_t val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarInt(ModuleLoc loc, int64_t _val);
@@ -159,8 +247,8 @@ class VarIntIterator : public Var
 	bool started;
 	bool reversed;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarIntIterator(ModuleLoc loc);
@@ -179,8 +267,8 @@ class VarFlt : public Var
 {
 	long double val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarFlt(ModuleLoc loc, long double _val);
@@ -194,8 +282,8 @@ class VarStr : public Var
 {
 	String val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarStr(ModuleLoc loc, char val);
@@ -217,15 +305,15 @@ class VarVec : public Var
 	using Iterator	    = Vector<Var *>::iterator;
 	using ConstIterator = Vector<Var *>::const_iterator;
 
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarVec(ModuleLoc loc, size_t reservesz, bool asrefs);
 	VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs);
 
-	void setVal(Interpreter &vm, Span<Var *> newval);
+	void setVal(MemoryManager &mem, Span<Var *> newval);
 
 	inline Iterator insert(ConstIterator iter, Var *data) { return val.insert(iter, data); }
 	inline Iterator erase(ConstIterator iter) { return val.erase(iter); }
@@ -253,10 +341,10 @@ class VarVecIterator : public Var
 	VarVec *vec;
 	size_t curr;
 
-	void onCreate(Interpreter &vm) override;
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarVecIterator(ModuleLoc loc, VarVec *vec);
@@ -270,19 +358,19 @@ class VarMap : public Var
 	Vector<String> pos; // Only used by kwargs.
 	bool asrefs;
 
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarMap(ModuleLoc loc, size_t reservesz, bool asrefs);
 	VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs);
 
-	void setVal(Interpreter &vm, const StringMap<Var *> &newval);
-	void clear(Interpreter &vm);
+	void setVal(MemoryManager &mem, const StringMap<Var *> &newval);
+	void clear(MemoryManager &mem);
 
 	// not inline because Var is incomplete type
-	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
+	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 	bool existsAttr(StringRef name) override;
 	Var *getAttr(StringRef name) override;
 
@@ -300,15 +388,15 @@ class VarMapIterator : public Var
 	VarMap *map;
 	StringMap<Var *>::iterator curr;
 
-	void onCreate(Interpreter &vm) override;
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarMapIterator(ModuleLoc loc, VarMap *map);
 
-	bool next(Interpreter &vm, ModuleLoc loc, Var *&val);
+	bool next(MemoryManager &mem, ModuleLoc loc, Var *&val);
 };
 
 // used in native function calls
@@ -343,9 +431,9 @@ class VarFn : public Var
 	FnBody body;
 	bool is_native;
 
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
@@ -389,19 +477,21 @@ class VarModule : public Var
 	Vars *vars;
 	bool ownsVars;
 
-	void onCreate(Interpreter &vm) override;
-	void onDestroy(Interpreter &vm) override;
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
 
 public:
 	VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
 		  Vars *vars = nullptr);
 
 	// not inline because Vars is incomplete type
-	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
+	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 	bool existsAttr(StringRef name) override;
 	Var *getAttr(StringRef name) override;
 
 	void addNativeFn(Interpreter &vm, StringRef name, NativeFn body, size_t args = 0,
+			 bool is_va = false);
+	void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
 			 bool is_va = false);
 	void addNativeVar(StringRef name, Var *val, bool iref = true, bool module_level = false);
 
@@ -418,9 +508,9 @@ class VarStructDef : public Var
 	// type id of struct (struct id) which will be used as typeID for struct objects
 	size_t id;
 
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarStructDef(ModuleLoc loc, size_t attrscount);
@@ -430,7 +520,7 @@ public:
 	Var *call(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
-	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
+	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
 	Var *getAttr(StringRef name) override;
 
@@ -452,10 +542,10 @@ class VarStruct : public Var
 	VarStructDef *base;
 	size_t id;
 
-	void onCreate(Interpreter &vm) override;
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	// base can be nullptr (as is the case for enums)
@@ -463,7 +553,7 @@ public:
 	// base can be nullptr (as is the case for enums)
 	VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount, size_t id);
 
-	void setAttr(Interpreter &vm, StringRef name, Var *val, bool iref) override;
+	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 
 	inline size_t getTypeFnID() override { return id; }
 
@@ -481,9 +571,9 @@ class VarFile : public Var
 	String mode;
 	bool owner;
 
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool owner = true);
@@ -500,10 +590,10 @@ class VarFileIterator : public Var
 {
 	VarFile *file;
 
-	void onCreate(Interpreter &vm) override;
-	void onDestroy(Interpreter &vm) override;
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarFileIterator(ModuleLoc loc, VarFile *file);
@@ -517,8 +607,8 @@ class VarBytebuffer : public Var
 	size_t bufsz;
 	size_t buflen;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, char *buf = nullptr);

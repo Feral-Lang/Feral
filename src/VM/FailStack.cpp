@@ -1,10 +1,8 @@
 #include "VM/FailStack.hpp"
 
-#include "VM/Interpreter.hpp"
-
 namespace fer
 {
-FailStack::FailStack(Interpreter &vm) : vm(vm) {}
+FailStack::FailStack(MemoryManager &mem) : mem(mem) {}
 FailStack::~FailStack()
 {
 	assert(stack.empty() && "Expected fail stack to be empty, but it is not");
@@ -22,7 +20,7 @@ void FailStack::initFrame(size_t recurseLevel, StringRef varName, size_t blkBegi
 
 void FailStack::reset()
 {
-	if(stack.back().errMsg) vm.decVarRef(stack.back().errMsg);
+	if(stack.back().errMsg) Var::decVarRef(mem, stack.back().errMsg);
 	stack.back() = {};
 }
 

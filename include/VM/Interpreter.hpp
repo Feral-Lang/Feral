@@ -125,60 +125,40 @@ public:
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	makeVarWithRef(Args &&...args)
 	{
-		T *res = new(mem.alloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
-		res->create(*this);
-		return res;
+		return Var::makeVarWithRef<T>(mem, std::forward<Args>(args)...);
 	}
 	// used in native function calls - sets ref to zero
 	template<typename T, typename... Args>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
 	{
-		T *res = makeVarWithRef<T>(std::forward<Args>(args)...);
-		res->dref();
-		return res;
+		return Var::makeVar<T>(mem, std::forward<Args>(args)...);
 	}
 	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
 	// being used elsewhere.
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, void>::type unmakeVar(T *var)
 	{
-		var->destroy(*this);
-		var->~T();
-		mem.free(var);
+		return Var::unmakeVar<T>(mem, var);
 	}
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
 	{
-		if(var == nullptr) return nullptr;
-		var->iref();
-		return var;
+		return Var::incVarRef<T>(var);
 	}
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	decVarRef(T *&var, bool del = true)
 	{
-		if(var == nullptr) return nullptr;
-		var->dref();
-		if(del && var->getRef() == 0) {
-			unmakeVar(var);
-			var = nullptr;
-		}
-		return var;
+		return Var::decVarRef<T>(mem, var, del);
 	}
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	copyVar(ModuleLoc loc, T *var)
 	{
-		if(var->isLoadAsRef()) {
-			var->unsetLoadAsRef();
-			incVarRef(var);
-			return var;
-		}
-		return var->copy(*this, loc);
+		return Var::copyVar<T>(mem, loc, var);
 	}
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
 	{
-		var->set(*this, from);
-		return var;
+		return Var::setVar<T>(mem, var, from);
 	}
 
 	template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
