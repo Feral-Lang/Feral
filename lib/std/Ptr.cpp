@@ -15,7 +15,6 @@ Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)
 void VarPtr::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarPtr>(from)->val); }
 void VarPtr::setVal(MemoryManager &mem, Var *newval)
 {
-	Var::ScopedThreadLock _(this);
 	Var::decVarRef(mem, val);
 	val = newval;
 	Var::incVarRef(val);

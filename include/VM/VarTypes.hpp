@@ -22,7 +22,6 @@ class Var : public IAllocated
 {
 	ModuleLoc loc;
 	Atomic<size_t> ref;
-	RecursiveMutex *mtx;
 
 	// for VarInfo
 	size_t info;
@@ -63,19 +62,7 @@ protected:
 	// No need to override the destructor. Override onDestroy() instead.
 	virtual ~Var();
 
-	// Mutex functions
-	inline void acquireThreadLock()
-	{
-		if(mtx) mtx->lock();
-	}
-	inline void releaseThreadLock()
-	{
-		if(mtx) mtx->unlock();
-	}
-
 public:
-	void setThreadSafe(bool value);
-
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const
 	{
@@ -98,15 +85,6 @@ public:
 	virtual bool existsAttr(StringRef name);
 	virtual Var *getAttr(StringRef name);
 	virtual size_t getTypeFnID();
-
-	class ScopedThreadLock
-	{
-		Var *var;
-
-	public:
-		ScopedThreadLock(Var *var);
-		~ScopedThreadLock();
-	};
 
 	// supposed to call the overloaded new operator in Var
 	template<typename T, typename... Args> static
@@ -158,7 +136,6 @@ public:
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	copyVar(MemoryManager &mem, ModuleLoc loc, T *var)
 	{
-		Var::ScopedThreadLock _(var);
 		if(var->isLoadAsRef()) {
 			var->unsetLoadAsRef();
 			incVarRef(var);

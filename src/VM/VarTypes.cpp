@@ -19,52 +19,22 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, bool callable, bool attr_based) : loc(loc), ref(1), mtx(nullptr), info(0)
+Var::Var(ModuleLoc loc, bool callable, bool attr_based) : loc(loc), ref(1), info(0)
 {
 	if(callable) info |= (size_t)VarInfo::CALLABLE;
 	if(attr_based) info |= (size_t)VarInfo::ATTR_BASED;
 }
-Var::~Var()
-{
-	if(mtx) delete mtx;
-}
+Var::~Var() {}
 
-void Var::create(MemoryManager &mem)
-{
-	acquireThreadLock();
-	onCreate(mem);
-	releaseThreadLock();
-}
-void Var::destroy(MemoryManager &mem)
-{
-	acquireThreadLock();
-	onDestroy(mem);
-	releaseThreadLock();
-}
-Var *Var::copy(MemoryManager &mem, ModuleLoc loc)
-{
-	acquireThreadLock();
-	Var *data = onCopy(mem, loc);
-	releaseThreadLock();
-	return data;
-}
-void Var::set(MemoryManager &mem, Var *from)
-{
-	acquireThreadLock();
-	onSet(mem, from);
-	releaseThreadLock();
-}
+void Var::create(MemoryManager &mem) { onCreate(mem); }
+void Var::destroy(MemoryManager &mem) { onDestroy(mem); }
+Var *Var::copy(MemoryManager &mem, ModuleLoc loc) { return onCopy(mem, loc); }
+void Var::set(MemoryManager &mem, Var *from) { onSet(mem, from); }
 
 void Var::onCreate(MemoryManager &mem) {}
 void Var::onDestroy(MemoryManager &mem) {}
 Var *Var::onCopy(MemoryManager &mem, ModuleLoc loc) { return incVarRef(this); }
 void Var::onSet(MemoryManager &mem, Var *from) {}
-
-void Var::setThreadSafe(bool value)
-{
-	if(value && !mtx) mtx = new RecursiveMutex();
-	else if(!value && mtx) delete mtx;
-}
 
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
@@ -75,15 +45,6 @@ void Var::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
 size_t Var::getTypeFnID() { return getType(); }
-
-Var::ScopedThreadLock::ScopedThreadLock(Var *var) : var(var)
-{
-	if(var) var->acquireThreadLock();
-}
-Var::ScopedThreadLock::~ScopedThreadLock()
-{
-	if(var) var->releaseThreadLock();
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
@@ -162,7 +123,6 @@ void VarIntIterator::onSet(MemoryManager &mem, Var *from)
 
 bool VarIntIterator::next(int64_t &val)
 {
-	Var::ScopedThreadLock _(this);
 	if(reversed) {
 		if(curr <= end) return false;
 	} else {
@@ -242,7 +202,6 @@ Var *VarVec::onCopy(MemoryManager &mem, ModuleLoc loc)
 void VarVec::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarVec>(from)->getVal()); }
 void VarVec::setVal(MemoryManager &mem, Span<Var *> newval)
 {
-	Var::ScopedThreadLock _(this);
 	for(auto &v : val) decVarRef(mem, v);
 	val.clear();
 	if(asrefs) {
@@ -279,7 +238,6 @@ void VarVecIterator::onSet(MemoryManager &mem, Var *from)
 
 bool VarVecIterator::next(Var *&val)
 {
-	Var::ScopedThreadLock _(this);
 	if(curr >= vec->getVal().size()) return false;
 	val = vec->getVal()[curr++];
 	return true;
@@ -306,7 +264,6 @@ Var *VarMap::onCopy(MemoryManager &mem, ModuleLoc loc)
 void VarMap::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarMap>(from)->getVal()); }
 void VarMap::setVal(MemoryManager &mem, const StringMap<Var *> &newval)
 {
-	Var::ScopedThreadLock _(this);
 	clear(mem);
 	if(asrefs) {
 		for(auto &v : newval) {
@@ -319,13 +276,11 @@ void VarMap::setVal(MemoryManager &mem, const StringMap<Var *> &newval)
 }
 void VarMap::clear(MemoryManager &mem)
 {
-	Var::ScopedThreadLock _(this);
 	for(auto &v : val) decVarRef(mem, v.second);
 	val.clear();
 }
 void VarMap::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = this->val.find(name);
 	if(iref) incVarRef(val);
 	if(loc == this->val.end()) {
@@ -335,14 +290,9 @@ void VarMap::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 	decVarRef(mem, loc->second);
 	loc->second = val;
 }
-bool VarMap::existsAttr(StringRef name)
-{
-	Var::ScopedThreadLock _(this);
-	return this->val.find(name) != this->val.end();
-}
+bool VarMap::existsAttr(StringRef name) { return this->val.find(name) != this->val.end(); }
 Var *VarMap::getAttr(StringRef name)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = this->val.find(name);
 	if(loc == this->val.end()) return nullptr;
 	return loc->second;
@@ -372,7 +322,6 @@ void VarMapIterator::onSet(MemoryManager &mem, Var *from)
 
 bool VarMapIterator::next(MemoryManager &mem, ModuleLoc loc, Var *&val)
 {
-	Var::ScopedThreadLock _(this);
 	if(curr == map->getVal().end()) return false;
 	StringMap<Var *> attrs;
 	val = makeVar<VarStruct>(mem, loc, nullptr, 2, typeID<VarMapIterator>());
@@ -425,7 +374,6 @@ void VarFn::onSet(MemoryManager &mem, Var *from)
 Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
-	Var::ScopedThreadLock _(args[0]);
 	MemoryManager &mem = vm.getMemoryManager();
 	// -1 for self
 	if(args.size() - 1 < params.size() - assn_params.size() ||
@@ -506,30 +454,19 @@ void VarModule::onDestroy(MemoryManager &mem)
 }
 void VarModule::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
-	Var::ScopedThreadLock _(this);
 	vars->add(name, val, iref);
 }
-bool VarModule::existsAttr(StringRef name)
-{
-	Var::ScopedThreadLock _(this);
-	return vars->exists(name);
-}
-Var *VarModule::getAttr(StringRef name)
-{
-	Var::ScopedThreadLock _(this);
-	return vars->get(name);
-}
+bool VarModule::existsAttr(StringRef name) { return vars->exists(name); }
+Var *VarModule::getAttr(StringRef name) { return vars->get(name); }
 
 void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
 			    bool is_va)
 {
-	Var::ScopedThreadLock _(this);
 	return addNativeFn(vm.getMemoryManager(), name, body, args, is_va);
 }
 void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args,
 			    bool is_va)
 {
-	Var::ScopedThreadLock _(this);
 	VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", is_va ? "." : "", args, 0,
 					   FnBody{.native = body}, true);
 	for(size_t i = 0; i < args; ++i) res->pushParam("");
@@ -537,7 +474,6 @@ void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, s
 }
 void VarModule::addNativeVar(StringRef name, Var *val, bool iref, bool module_level)
 {
-	Var::ScopedThreadLock _(this);
 	if(module_level) vars->addm(name, val, iref);
 	else vars->add(name, val, iref);
 }
@@ -591,7 +527,6 @@ void VarStructDef::onSet(MemoryManager &mem, Var *from)
 Var *VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
-	Var::ScopedThreadLock _(this);
 	MemoryManager &mem = vm.getMemoryManager();
 	for(auto &aa : assn_args) {
 		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
@@ -645,7 +580,6 @@ fail:
 
 void VarStructDef::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = attrs.find(name);
 	if(loc != attrs.end()) {
 		decVarRef(mem, loc->second);
@@ -656,7 +590,6 @@ void VarStructDef::setAttr(MemoryManager &mem, StringRef name, Var *val, bool ir
 
 Var *VarStructDef::getAttr(StringRef name)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = attrs.find(name);
 	if(loc == attrs.end()) return nullptr;
 	return loc->second;
@@ -715,7 +648,6 @@ void VarStruct::onSet(MemoryManager &mem, Var *from)
 
 void VarStruct::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = attrs.find(name);
 	if(loc != attrs.end()) {
 		decVarRef(mem, loc->second);
@@ -726,7 +658,6 @@ void VarStruct::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 
 Var *VarStruct::getAttr(StringRef name)
 {
-	Var::ScopedThreadLock _(this);
 	auto loc = attrs.find(name);
 	if(loc == attrs.end()) return base ? base->getAttr(name) : nullptr;
 	return loc->second;
@@ -778,7 +709,6 @@ void VarFileIterator::onSet(MemoryManager &mem, Var *from)
 
 bool VarFileIterator::next(VarStr *&val)
 {
-	Var::ScopedThreadLock _(this);
 	if(!val) return false;
 	char *lineptr	= NULL;
 	size_t len	= 0;
@@ -820,7 +750,6 @@ void VarBytebuffer::onSet(MemoryManager &mem, Var *from)
 }
 void VarBytebuffer::setData(char *newbuf, size_t newlen)
 {
-	Var::ScopedThreadLock _(this);
 	if(newlen == 0) return;
 	if(bufsz > 0 && newlen > bufsz) {
 		buffer = (char *)realloc(buffer, newlen);

@@ -41,11 +41,6 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 				 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
 				 LOAD_LIBRARY_SEARCH_USER_DIRS);
 #endif
-	moduleDirs->setThreadSafe(true);
-	moduleFinders->setThreadSafe(true);
-	// tru, fals, and nil don't need to be set as thread safe because their values are never
-	// meant to be modified.
-
 	initTypeNames();
 
 	Span<StringRef> vmArgs = argparser.getCodeExecArgs();

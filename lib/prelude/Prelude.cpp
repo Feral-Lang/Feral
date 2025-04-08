@@ -73,18 +73,6 @@ Var *allNilCoalesce(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
-Var *allSetThreadSafe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		      const StringMap<AssnArgData> &assn_args)
-{
-	if(!args[1]->is<VarBool>()) {
-		vm.fail(loc, "expected parameter for setThreadSafe to be bool, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	args[0]->setThreadSafe(as<VarBool>(args[1])->getVal());
-	return vm.getNil();
-}
-
 Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
@@ -364,7 +352,6 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarAll>(loc, "==", allEq, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "!=", allNe, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce, 1);
-	vm.addNativeTypeFn<VarAll>(loc, "setThreadSafe", allSetThreadSafe, 1);
 	vm.addNativeTypeFn<VarAll>(loc, "copy", allCopy, 0);
 
 	// to bool
