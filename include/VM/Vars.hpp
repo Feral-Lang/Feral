@@ -63,7 +63,7 @@ class Vars
 {
 	StringMap<Var *> stashed;
 	// maps function ids to VarStack
-	// 0 is the id for global scope
+	// 0 is the id for global (module) scope
 	Map<size_t, VarStack *> fnvars;
 	size_t fnstack;
 	MemoryManager &mem;
