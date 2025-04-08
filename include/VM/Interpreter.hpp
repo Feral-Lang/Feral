@@ -264,6 +264,7 @@ public:
 	inline void setExitCalled(bool called) { exitcalled = called; }
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
 
+	inline Interpreter &getInterpreter() { return ip; }
 	inline ArgParser &getArgParser() { return ip.argparser; }
 	inline MemoryManager &getMemoryManager() { return ip.mem; }
 	inline VarVec *getModuleDirs() { return ip.moduleDirs; }
