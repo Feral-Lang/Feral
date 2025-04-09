@@ -33,11 +33,11 @@ MemoryManager::~MemoryManager()
 	}
 	freechunks.clear();
 	for(auto &p : pools) AlignedFree(p.mem);
-	logger.trace("=============== ", name, " memory manager stats: ===============");
-	logger.trace("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes.load());
-	logger.trace("--                Allocated bytes from pools: ", totalPoolAlloc.load());
-	logger.trace("--                             Request count: ", totalAllocRequests.load());
-	logger.trace("--                         Chunk Reuse count: ", chunkReuseCount.load());
+	logger.info("=============== ", name, " memory manager stats: ===============");
+	logger.info("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes.load());
+	logger.info("--                Allocated bytes from pools: ", totalPoolAlloc.load());
+	logger.info("--                             Request count: ", totalAllocRequests.load());
+	logger.info("--                         Chunk Reuse count: ", chunkReuseCount.load());
 }
 
 size_t MemoryManager::nextPow2(size_t sz)
@@ -66,8 +66,11 @@ void *MemoryManager::alloc(size_t size, size_t align)
 
 	// Add MAX_ALIGNMENT instead of SIZE_BYTES - since MAX_ALIGNMENT is guaranteed
 	// (static_assert) to be a multiple of SIZE_BYTES.
-	size_t allocSz = size + MAX_ALIGNMENT;
-	allocSz	       = nextPow2(allocSz);
+	size_t alignedSz = size + MAX_ALIGNMENT;
+	size_t allocSz	 = nextPow2(alignedSz);
+
+	logger.trace("Allocating: ", allocSz, " (aligned size: ", alignedSz,
+		     ") (original size: ", size, ")\n");
 
 	char *loc = nullptr;
 
