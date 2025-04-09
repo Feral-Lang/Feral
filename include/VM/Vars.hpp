@@ -5,11 +5,11 @@
 namespace fer
 {
 
-class VarFrame
+class VarFrame : public IAllocated
 {
 	MemoryManager &mem;
-	StringMap<Var *> vars;
 	RecursiveMutex mtx;
+	StringMap<Var *> vars;
 
 	friend class MemoryManager;
 
