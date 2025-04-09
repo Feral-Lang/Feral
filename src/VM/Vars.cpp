@@ -44,21 +44,24 @@ bool VarFrame::rem(StringRef name, bool dref)
 	vars.erase(loc);
 	return true;
 }
+VarFrame *VarFrame::create(MemoryManager &mem) { return mem.alloc<VarFrame>(mem); }
+void VarFrame::destroy(MemoryManager &mem, VarFrame *frame)
+{
+	frame->~VarFrame();
+	mem.free(frame);
+}
 
 VarStack::VarStack(MemoryManager &mem) : mem(mem) { pushStack(1); }
-VarStack::~VarStack()
-{
-	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) delete *layer;
-}
+VarStack::~VarStack() { popStack(stack.size()); }
 
 void VarStack::pushStack(size_t count)
 {
-	for(size_t i = 0; i < count; ++i) stack.push_back(new VarFrame(mem));
+	for(size_t i = 0; i < count; ++i) stack.push_back(VarFrame::create(mem));
 }
 void VarStack::popStack(size_t count)
 {
 	for(size_t i = 0; i < count; ++i) {
-		delete stack.back();
+		VarFrame::destroy(mem, stack.back());
 		stack.pop_back();
 	}
 }
@@ -75,7 +78,7 @@ Var *VarStack::get(StringRef name)
 void VarStack::pushLoop()
 {
 	loops_from.push_back(stack.size());
-	stack.push_back(new VarFrame(mem));
+	pushStack(1);
 }
 void VarStack::popLoop()
 {

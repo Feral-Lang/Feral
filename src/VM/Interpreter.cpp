@@ -28,9 +28,9 @@ void remDLLDirectories();
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
-	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"), globals(mem),
-	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
-	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
+	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
+	  globals(VarFrame::create(mem)), prelude("prelude/prelude"),
+	  binaryPath(env::getProcPath()), moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
@@ -87,8 +87,9 @@ Interpreter::~Interpreter()
 	decVarRef(moduleFinders);
 	decVarRef(moduleDirs);
 	for(auto &typefn : typefns) {
-		delete typefn.second;
+		VarFrame::destroy(mem, typefn.second);
 	}
+	VarFrame::destroy(mem, globals);
 	for(auto &deinitfn : dlldeinitfns) {
 		deinitfn.second(*this);
 	}
@@ -227,10 +228,10 @@ bool Interpreter::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRe
 
 void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
 {
-	if(globals.exists(name)) return;
-	globals.add(name, val, iref);
+	if(globals->exists(name)) return;
+	globals->add(name, val, iref);
 }
-Var *Interpreter::getGlobal(StringRef name) { return globals.get(name); }
+Var *Interpreter::getGlobal(StringRef name) { return globals->get(name); }
 
 void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
 {
@@ -249,7 +250,7 @@ void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	auto loc    = typefns.find(_typeid);
 	VarFrame *f = nullptr;
 	if(loc == typefns.end()) {
-		typefns[_typeid] = f = new VarFrame(mem);
+		typefns[_typeid] = f = VarFrame::create(mem);
 	} else {
 		f = loc->second;
 	}
@@ -340,32 +341,35 @@ void Interpreter::initTypeNames()
 	registerType<VarMapIterator>({}, "MapIterator");
 	registerType<VarFileIterator>({}, "FileIterator");
 
-	globals.add("AllTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarAll>()), false);
+	globals->add("AllTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarAll>()), false);
 
-	globals.add("NilTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarNil>()), false);
-	globals.add("BoolTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBool>()), false);
-	globals.add("IntTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarInt>()), false);
-	globals.add("FltTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFlt>()), false);
-	globals.add("StrTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStr>()), false);
-	globals.add("VecTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVec>()), false);
-	globals.add("MapTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMap>()), false);
-	globals.add("FuncTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFn>()), false);
-	globals.add("ModuleTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarModule>()), false);
-	globals.add("TypeIDTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarTypeID>()), false);
-	globals.add("StructDefTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStructDef>()),
-		    false);
-	globals.add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()), false);
-	globals.add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
-	globals.add("BytebufferTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()),
-		    false);
-	globals.add("IntIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarIntIterator>()), false);
-	globals.add("VecIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVecIterator>()), false);
-	globals.add("MapIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMapIterator>()), false);
-	globals.add("FileIteratorTy",
-		    makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFileIterator>()), false);
+	globals->add("NilTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarNil>()), false);
+	globals->add("BoolTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBool>()), false);
+	globals->add("IntTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarInt>()), false);
+	globals->add("FltTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFlt>()), false);
+	globals->add("StrTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStr>()), false);
+	globals->add("VecTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVec>()), false);
+	globals->add("MapTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMap>()), false);
+	globals->add("FuncTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFn>()), false);
+	globals->add("ModuleTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarModule>()),
+		     false);
+	globals->add("TypeIDTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarTypeID>()),
+		     false);
+	globals->add("StructDefTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStructDef>()),
+		     false);
+	globals->add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()),
+		     false);
+	globals->add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
+	globals->add("BytebufferTy",
+		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()), false);
+	globals->add("IntIteratorTy",
+		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarIntIterator>()), false);
+	globals->add("VecIteratorTy",
+		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVecIterator>()), false);
+	globals->add("MapIteratorTy",
+		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMapIterator>()), false);
+	globals->add("FileIteratorTy",
+		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFileIterator>()), false);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

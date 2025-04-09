@@ -32,7 +32,7 @@ class Interpreter
 	// All functions to call before unloading dlls
 	StringMap<ModDeinitFn> dlldeinitfns;
 	// Global vars/objects that are required
-	VarFrame globals;
+	VarFrame *globals;
 	// Names of types (optional)
 	Map<size_t, String> typenames;
 	// Functions for all C++ types

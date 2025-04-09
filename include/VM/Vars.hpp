@@ -11,10 +11,12 @@ class VarFrame
 	StringMap<Var *> vars;
 	RecursiveMutex mtx;
 
-public:
+	friend class MemoryManager;
+
 	VarFrame(MemoryManager &mem);
 	~VarFrame();
 
+public:
 	inline StringMap<Var *> &get() { return vars; }
 	inline bool exists(StringRef name) { return vars.find(name) != vars.end(); }
 
@@ -25,6 +27,9 @@ public:
 
 	void add(StringRef name, Var *val, bool iref);
 	bool rem(StringRef name, bool dref);
+
+	static VarFrame *create(MemoryManager &mem);
+	static void destroy(MemoryManager &mem, VarFrame *frame);
 };
 
 class VarStack
