@@ -391,22 +391,22 @@ Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		return vm.getNil();
 	}
 	vm.pushModule(moduleId);
-	Vars *vars = vm.getCurrModule()->getVars();
+	Vars &vars = vm.getVars();
 	// take care of 'self' (always present - either data or nullptr)
-	if(args[0] != nullptr) vars->stash("self", args[0]);
+	if(args[0] != nullptr) vars.stash("self", args[0]);
 	// default arguments
 	Set<StringRef> found_args;
 	size_t i = 1;
 	for(auto &a : params) {
 		if(i == args.size()) break;
-		vars->stash(a, args[i++]);
+		vars.stash(a, args[i++]);
 		found_args.insert(a);
 	}
 	// add all default args which have not been overwritten by args
 	for(auto &aa : assn_params) {
 		if(found_args.find(aa.first) != found_args.end()) continue;
 		Var *cpy = copyVar(mem, loc, aa.second);
-		vars->stash(aa.first, cpy, false); // copy will make sure there is ref = 1 already
+		vars.stash(aa.first, cpy, false); // copy will make sure there is ref = 1 already
 	}
 	if(!var_arg.empty()) {
 		VarVec *v = makeVarWithRef<VarVec>(mem, loc, args.size(), false);
@@ -415,7 +415,7 @@ Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			v->push(args[i]);
 			++i;
 		}
-		vars->stash(var_arg, v, false);
+		vars.stash(var_arg, v, false);
 	}
 	if(!kw_arg.empty()) {
 		VarMap *m = makeVarWithRef<VarMap>(mem, loc, assn_args.size(), false);
@@ -425,10 +425,10 @@ Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			m->insert(a.first, a.second.val);
 			m->setPos(a.second.pos, a.first);
 		}
-		vars->stash(kw_arg, m, false);
+		vars.stash(kw_arg, m, false);
 	}
 	if(vm.execute(true, false, body.feral.begin, body.feral.end) != 0 && !vm.isExitCalled()) {
-		vars->unstash();
+		vars.unstash();
 		vm.popModule();
 		return nullptr;
 	}
@@ -440,24 +440,25 @@ Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////// VarModule ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarModule::VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId, Vars *vars)
-	: Var(loc, false, true), path(path), bc(std::move(bc)), moduleId(moduleId), vars(vars),
-	  ownsVars(vars == nullptr)
+VarModule::VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
+		     VarStack *varStack)
+	: Var(loc, false, true), path(path), bc(std::move(bc)), moduleId(moduleId),
+	  varStack(varStack), ownsVars(varStack == nullptr)
 {}
 void VarModule::onCreate(MemoryManager &mem)
 {
-	if(vars == nullptr) this->vars = new Vars(mem);
+	if(varStack == nullptr) this->varStack = new VarStack(mem);
 }
 void VarModule::onDestroy(MemoryManager &mem)
 {
-	if(vars && ownsVars) delete vars;
+	if(varStack && ownsVars) delete varStack;
 }
 void VarModule::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
-	vars->add(name, val, iref);
+	varStack->add(name, val, iref);
 }
-bool VarModule::existsAttr(StringRef name) { return vars->exists(name); }
-Var *VarModule::getAttr(StringRef name) { return vars->get(name); }
+bool VarModule::existsAttr(StringRef name) { return varStack->exists(name); }
+Var *VarModule::getAttr(StringRef name) { return varStack->get(name); }
 
 void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
 			    bool is_va)
@@ -470,12 +471,11 @@ void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, s
 	VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", is_va ? "." : "", args, 0,
 					   FnBody{.native = body}, true);
 	for(size_t i = 0; i < args; ++i) res->pushParam("");
-	vars->add(name, res, false);
+	varStack->add(name, res, false);
 }
-void VarModule::addNativeVar(StringRef name, Var *val, bool iref, bool module_level)
+void VarModule::addNativeVar(StringRef name, Var *val, bool iref)
 {
-	if(module_level) vars->addm(name, val, iref);
-	else vars->add(name, val, iref);
+	varStack->add(name, val, iref);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

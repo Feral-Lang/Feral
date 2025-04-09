@@ -11,13 +11,25 @@ VarFrame::~VarFrame()
 
 Var *VarFrame::get(StringRef name)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return nullptr;
 	return loc->second;
 }
 
+void VarFrame::dump(OStream &os, size_t tab)
+{
+	String tabs(tab, '\t');
+	os << tabs << "VarFrame\n";
+	tabs += '\t';
+	for(auto it : vars) {
+		os << tabs << it.first << "\n";
+	}
+}
+
 void VarFrame::add(StringRef name, Var *val, bool iref)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc != vars.end()) Var::decVarRef(mem, loc->second);
 	if(iref) Var::incVarRef(val);
@@ -25,6 +37,7 @@ void VarFrame::add(StringRef name, Var *val, bool iref)
 }
 bool VarFrame::rem(StringRef name, bool dref)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return false;
 	if(dref) Var::decVarRef(mem, loc->second);
@@ -78,6 +91,15 @@ void VarStack::continueLoop()
 	if(stack.size() - 1 > loops_from.back()) popStack(stack.size() - 1 - loops_from.back());
 }
 
+void VarStack::dump(OStream &os, size_t tab)
+{
+	String tabs(tab, '\t');
+	os << tabs << "VarStack\n";
+	for(auto &item : stack) {
+		item->dump(os, tab + 1);
+	}
+}
+
 bool VarStack::rem(StringRef name, bool dref)
 {
 	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
@@ -86,12 +108,8 @@ bool VarStack::rem(StringRef name, bool dref)
 	return false;
 }
 
-Vars::Vars(MemoryManager &mem) : fnstack(-1), mem(mem) { fnvars[0] = new VarStack(mem); }
-Vars::~Vars()
-{
-	assert(fnstack == 0 || fnstack == -1);
-	delete fnvars[0];
-}
+Vars::Vars(MemoryManager &mem) : fnstack(-1), mem(mem) {}
+Vars::~Vars() { assert(fnstack == -1); }
 
 Var *Vars::get(StringRef name)
 {
@@ -108,6 +126,24 @@ void Vars::pushBlk(size_t count)
 	fnvars[fnstack]->pushStack(count);
 	for(auto &s : stashed) fnvars[fnstack]->add(s.first, s.second, false);
 	stashed.clear();
+}
+
+void Vars::pushModScope(VarStack *modScope)
+{
+	modScopeStack.push_back(modScope);
+	fnvars[0] = modScope;
+	if(fnstack == -1) fnstack = 0;
+}
+void Vars::popModScope()
+{
+	assert(modScopeStack.size() > 0);
+	modScopeStack.pop_back();
+	if(modScopeStack.empty()) {
+		fnvars[0] = nullptr;
+		fnstack	  = -1;
+	} else {
+		fnvars[0] = modScopeStack.back();
+	}
 }
 
 void Vars::pushFn()
@@ -134,5 +170,19 @@ void Vars::unstash()
 	for(auto &s : stashed) Var::decVarRef(mem, s.second);
 	stashed.clear();
 }
+
+void Vars::dump(OStream &os)
+{
+	for(auto it : fnvars) {
+		os << "-- In Vars (" << it.first << "):\n";
+		it.second->dump(os, 1);
+	}
+}
+
+Vars::ScopedModScope::ScopedModScope(Vars &vars, VarStack *modScope) : vars(vars)
+{
+	vars.pushModScope(modScope);
+}
+Vars::ScopedModScope::~ScopedModScope() { vars.popModScope(); }
 
 } // namespace fer

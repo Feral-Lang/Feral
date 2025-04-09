@@ -77,6 +77,9 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 }
 Interpreter::~Interpreter()
 {
+	for(auto &mod : modules) {
+		decVarRef(mod.second);
+	}
 	decVarRef(nil);
 	decVarRef(fals);
 	decVarRef(tru);
@@ -89,8 +92,6 @@ Interpreter::~Interpreter()
 	for(auto &deinitfn : dlldeinitfns) {
 		deinitfn.second(*this);
 	}
-	for(auto &mod : modules) decVarRef(mod.second);
-
 	for(auto &item : freeVMMem) {
 		mem.free(item);
 	}
@@ -372,7 +373,7 @@ void Interpreter::initTypeNames()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VirtualMachine::VirtualMachine(Interpreter &ip)
-	: ip(ip), failstack(ip.mem), execstack(ip.mem), recurseCount(0), exitcode(0),
+	: ip(ip), vars(ip.mem), failstack(ip.mem), execstack(ip.mem), recurseCount(0), exitcode(0),
 	  recurseExceeded(false), exitcalled(false)
 {}
 VirtualMachine::~VirtualMachine() {}
@@ -401,7 +402,7 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 }
 
 ModuleId VirtualMachine::addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
-				   bool exprOnly, Vars *existingVars)
+				   bool exprOnly, VarStack *existingVarStack)
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
@@ -412,7 +413,7 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, StringRef path, String &&code,
 	err.setPathForId(moduleIdCtr, path);
 	if(virtualPath) err.setCodeForId(moduleIdCtr, std::move(code));
 	VarModule *mod =
-	makeVarWithRef<VarModule>(loc, path, std::move(bc), moduleIdCtr, existingVars);
+	makeVarWithRef<VarModule>(loc, path, std::move(bc), moduleIdCtr, existingVarStack);
 	LockGuard<Mutex> globalGuard(ip.globalMutex);
 	ip.modules.insert_or_assign(moduleIdCtr, mod);
 	return moduleIdCtr++;
@@ -542,8 +543,7 @@ bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<
 		if(args[0]->isAttrBased()) fn = args[0]->getAttr(name);
 		if(!fn) fn = getTypeFn(args[0], name);
 	} else {
-		Vars *vars = getCurrModule()->getVars();
-		fn	   = vars->get(name);
+		fn = getVars().get(name);
 		if(!fn) fn = getGlobal(name);
 	}
 	if(!fn) {
@@ -598,13 +598,13 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 	path += ">";
 
 	ModuleId moduleId =
-	addModule(loc, path, String(code), true, isExpr, getCurrModule()->getVars());
+	addModule(loc, path, String(code), true, isExpr, getVars().getCurrModScope());
 	if(moduleId == (ModuleId)-1) {
 		fail(loc, "Failed to parse eval code: ", code);
 		return nullptr;
 	}
 	pushModule(moduleId);
-	ec = execute(false, false);
+	ec = execute();
 	popModule();
 	if(ec) goto done;
 	if(!execstack.empty()) res = execstack.pop(false);

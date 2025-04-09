@@ -160,7 +160,7 @@ public:
 		VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
 		name += "Ty";
 		if(!module) addGlobal(name, tyvar, false);
-		else module->addNativeVar(name, tyvar, false, true);
+		else module->addNativeVar(name, tyvar, false);
 	}
 };
 
@@ -168,6 +168,7 @@ public:
 class VirtualMachine
 {
 	Interpreter &ip;
+	Vars vars;
 	Vector<VarModule *> modulestack;
 	FailStack failstack;
 	ExecStack execstack;
@@ -182,11 +183,11 @@ public:
 
 	int compileAndRun(ModuleLoc loc, const char *file);
 	// Must pushModule before calling this function, and popModule after calling it.
-	int execute(bool addFunc = true, bool addBlk = false, size_t begin = 0, size_t end = 0);
+	int execute(bool addFunc = false, bool addBlk = false, size_t begin = 0, size_t end = 0);
 
 	// virtualPath == true for paths like `<eval>` and `<repl>`.
 	ModuleId addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
-			   bool exprOnly, Vars *existingVars = nullptr);
+			   bool exprOnly, VarStack *existingVarStack = nullptr);
 	void removeModule(ModuleId moduleId);
 	void pushModule(ModuleId moduleId);
 	void popModule();
@@ -257,6 +258,7 @@ public:
 		return ip.getConst(loc, d, dataty);
 	}
 
+	inline Vars &getVars() { return vars; }
 	inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }
 	inline Var *popExecStack(bool dref = true) { return execstack.pop(dref); }
 	inline VarModule *getCurrModule() { return modulestack.back(); }

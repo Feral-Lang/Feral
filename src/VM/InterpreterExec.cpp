@@ -7,18 +7,20 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurseCount;
 	VarModule *varmod  = getCurrModule();
-	Vars *vars	   = varmod->getVars();
+	Vars &vars	   = getVars();
 	const Bytecode &bc = varmod->getBytecode();
 	size_t bcsz	   = end == 0 ? bc.size() : end;
+
+	Vars::ScopedModScope _(vars, varmod->getVarStack());
 
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
 	StringMap<AssnArgData> assn_args;
 	size_t currBlkSize = 0;
 
-	if(addFunc) vars->pushFn();
-	else currBlkSize = vars->getBlkSize();
-	if(addBlk) vars->pushBlk(1);
+	if(addFunc) vars.pushFn();
+	else currBlkSize = vars.getBlkSize();
+	if(addBlk) vars.pushBlk(1);
 
 	for(size_t i = begin; i < bcsz; ++i) {
 		const Instruction &ins = bc.getInstrAt(i);
@@ -43,7 +45,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				}
 				execstack.push(res);
 			} else {
-				Var *res = vars->get(ins.getDataStr());
+				Var *res = vars.get(ins.getDataStr());
 				if(!res) {
 					res = getGlobal(ins.getDataStr());
 					if(!res) {
@@ -71,9 +73,9 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			}
 			// only copy if reference count > 1 (no point in copying unique values)
 			if(val->getRef() == 1) {
-				vars->add(name, val, true);
+				vars.add(name, val, true);
 			} else {
-				vars->add(name, copyVar(ins.getLoc(), val), false);
+				vars.add(name, copyVar(ins.getLoc(), val), false);
 			}
 			decVarRef(val);
 			break;
@@ -135,11 +137,11 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::PUSH_BLOCK: {
-			vars->pushBlk(ins.getDataInt());
+			vars.pushBlk(ins.getDataInt());
 			break;
 		}
 		case Opcode::POP_BLOCK: {
-			vars->popBlk(ins.getDataInt());
+			vars.popBlk(ins.getDataInt());
 			break;
 		}
 		case Opcode::JMP: {
@@ -357,15 +359,15 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
-			vars->pushLoop();
+			vars.pushLoop();
 			break;
 		}
 		case Opcode::POP_LOOP: {
-			vars->popLoop();
+			vars.popLoop();
 			break;
 		}
 		case Opcode::CONTINUE: {
-			vars->continueLoop();
+			vars.continueLoop();
 			i = ins.getDataInt() - 1;
 			break;
 		}
@@ -405,14 +407,14 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				if(!err)
 					err =
 					makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
-				vars->stash(varName, err, false);
+				vars.stash(varName, err, false);
 			}
 			if(recurseExceeded) {
 				break;
 			}
 			pushModule(getCurrModule()->getModuleId());
 			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
-				if(!failstack.getVarName().empty()) vars->unstash();
+				if(!failstack.getVarName().empty()) vars.unstash();
 				popModule();
 				goto handle_err;
 			}
@@ -425,15 +427,15 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		}
 	}
 done:
-	if(addBlk) vars->popBlk(1);
-	if(addFunc) vars->popFn();
-	else vars->resizeBlkTo(currBlkSize);
+	if(addBlk) vars.popBlk(1);
+	if(addFunc) vars.popFn();
+	else vars.resizeBlkTo(currBlkSize);
 	--recurseCount;
 	return exitcode;
 fail:
-	if(addBlk) vars->popBlk(1);
-	if(addFunc) vars->popFn();
-	else vars->resizeBlkTo(currBlkSize);
+	if(addBlk) vars.popBlk(1);
+	if(addFunc) vars.popFn();
+	else vars.resizeBlkTo(currBlkSize);
 	--recurseCount;
 	return 1;
 }

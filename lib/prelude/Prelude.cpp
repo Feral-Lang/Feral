@@ -226,10 +226,10 @@ Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		providedMod = true;
 	}
 
-	Vars *moduleVars = mod->getVars();
+	Vars &moduleVars = vm.getVars();
 	StringRef var	 = as<VarStr>(args[1])->getVal();
-	return moduleVars->get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
-									   : vm.getFalse();
+	return moduleVars.get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
+									  : vm.getFalse();
 }
 
 Var *setMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,

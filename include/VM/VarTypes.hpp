@@ -444,14 +444,14 @@ public:
 	inline bool isNative() { return is_native; }
 };
 
-class Vars;
+class VarStack;
 // A VarModule cannot be copied. It will always return self when a copy is attempted.
 class VarModule : public Var
 {
 	String path;
 	Bytecode bc;
 	ModuleId moduleId;
-	Vars *vars;
+	VarStack *varStack;
 	bool ownsVars;
 
 	void onCreate(MemoryManager &mem) override;
@@ -459,7 +459,7 @@ class VarModule : public Var
 
 public:
 	VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
-		  Vars *vars = nullptr);
+		  VarStack *varStack = nullptr);
 
 	// not inline because Vars is incomplete type
 	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
@@ -470,12 +470,12 @@ public:
 			 bool is_va = false);
 	void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
 			 bool is_va = false);
-	void addNativeVar(StringRef name, Var *val, bool iref = true, bool module_level = false);
+	void addNativeVar(StringRef name, Var *val, bool iref = true);
 
 	inline StringRef getPath() { return path; }
 	inline const Bytecode &getBytecode() { return bc; }
 	inline ModuleId getModuleId() { return moduleId; }
-	inline Vars *getVars() { return vars; }
+	inline VarStack *getVarStack() { return varStack; }
 };
 
 class VarStructDef : public Var

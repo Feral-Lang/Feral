@@ -62,8 +62,16 @@ VarMutex::~VarMutex() {}
 VarLockGuard::VarLockGuard(ModuleLoc loc, VarMutex *mtx) : Var(loc, false, false), mtx(mtx) {}
 VarLockGuard::~VarLockGuard() {}
 
-void VarLockGuard::onCreate(MemoryManager &mem) { incVarRef(mtx); }
-void VarLockGuard::onDestroy(MemoryManager &mem) { decVarRef(mem, mtx); }
+void VarLockGuard::onCreate(MemoryManager &mem)
+{
+	incVarRef(mtx);
+	mtx->lock();
+}
+void VarLockGuard::onDestroy(MemoryManager &mem)
+{
+	mtx->unlock();
+	decVarRef(mem, mtx);
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// VarThread //////////////////////////////////////////
@@ -104,7 +112,7 @@ VarThread::~VarThread()
 {
 	if(res) {
 		res->wait();
-		thread->join();
+		if(thread->joinable()) thread->join();
 		delete res;
 		delete thread;
 	}
@@ -166,7 +174,7 @@ Var *atomicBoolSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 Var *atomicBoolGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarBool>(loc, as<VarAtomicBool>(args[0])->getVal());
+	return as<VarAtomicBool>(args[0])->getVal() ? vm.getTrue() : vm.getFalse();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,6 +218,26 @@ Var *mutexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarMutex>(loc);
+}
+
+Var *mutexLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args)
+{
+	as<VarMutex>(args[0])->lock();
+	return vm.getNil();
+}
+
+Var *mutexTryLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		  const StringMap<AssnArgData> &assn_args)
+{
+	return as<VarMutex>(args[0])->tryLock() ? vm.getTrue() : vm.getFalse();
+}
+
+Var *mutexUnlock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		 const StringMap<AssnArgData> &assn_args)
+{
+	as<VarMutex>(args[0])->unlock();
+	return vm.getNil();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -319,6 +347,11 @@ INIT_MODULE(MultiProc)
 	vm.addNativeTypeFn<VarAtomicBool>(loc, "get", atomicBoolGet, 0);
 	vm.addNativeTypeFn<VarAtomicInt>(loc, "set", atomicIntSet, 1);
 	vm.addNativeTypeFn<VarAtomicInt>(loc, "get", atomicIntGet, 0);
+
+	vm.addNativeTypeFn<VarMutex>(loc, "lock", mutexLock, 0);
+	vm.addNativeTypeFn<VarMutex>(loc, "tryLock", mutexTryLock, 0);
+	vm.addNativeTypeFn<VarMutex>(loc, "unlock", mutexUnlock, 0);
+
 	vm.addNativeTypeFn<VarThread>(loc, "getId", threadGetId, 0);
 	vm.addNativeTypeFn<VarThread>(loc, "getName", threadGetName, 0);
 	vm.addNativeTypeFn<VarThread>(loc, "isDone", threadIsDone, 0);
