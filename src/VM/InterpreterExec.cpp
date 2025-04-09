@@ -24,7 +24,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 
 	for(size_t i = begin; i < bcsz; ++i) {
 		const Instruction &ins = bc.getInstrAt(i);
-		// std::cout << "[" << i << ": " << ins.getLoc()->getMod()->getPath() << "] ";
+		// std::cout << "[" << i << ": " << getCurrModule()->getPath() << "] ";
 		// ins.dump(std::cout);
 		// std::cout << " :: ";
 		// dumpExecStack(std::cout);
@@ -397,25 +397,26 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!failstack.isUsable() || recurseCount != failstack.getRecurseLevel())
+			if(!failstack.hasErr() || recurseCount != failstack.getRecurseLevel())
 				goto fail;
 			StringRef varName = failstack.getVarName();
 			size_t blkBegin	  = failstack.getBlkBegin();
 			size_t blkEnd	  = failstack.getBlkEnd();
+			Var *err	  = failstack.getErr();
 			if(!varName.empty()) {
-				Var *err = failstack.getErr();
-				if(!err)
-					err =
-					makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
-				vars.stash(varName, err, false);
+				if(!err) err = makeVar<VarStr>(ins.getLoc(), "unknown failure");
+				vars.stash(varName, err, true);
 			}
 			if(recurseExceeded) {
 				break;
 			}
 			pushModule(getCurrModule()->getModuleId());
 			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
-				if(!failstack.getVarName().empty()) vars.unstash();
+				if(!varName.empty()) vars.unstash();
 				popModule();
+				// Must pop failstack scope because this is a failure in the the
+				// scope itself - it can't recover using the POP_JMP instruction.
+				failstack.popScope();
 				goto handle_err;
 			}
 			// POP_JMP instr will take care of popping from jmps and failstack.
@@ -456,7 +457,7 @@ void VirtualMachine::dumpExecStack(OStream &os)
 		} else {
 			os << getTypeName(e);
 		}
-		std::cout << " ";
+		std::cout << " -- ";
 	}
 }
 

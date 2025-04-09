@@ -10,7 +10,6 @@ FailStack::~FailStack()
 
 void FailStack::initFrame(size_t recurseLevel, StringRef varName, size_t blkBegin, size_t blkEnd)
 {
-	stack.back().usable	  = true;
 	stack.back().recurseLevel = recurseLevel;
 	stack.back().varName	  = varName;
 	stack.back().blkBegin	  = blkBegin;

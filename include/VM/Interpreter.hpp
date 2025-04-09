@@ -378,9 +378,9 @@ public:
 
 	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
 	{
-		if(!failstack.isUsable() || exitcalled) {
+		if(!failstack.canSetErr() || exitcalled) {
 			err.fail(loc, std::forward<Args>(args)...);
-		} else if(!failstack.getVarName().empty() && !failstack.getErr()) {
+		} else {
 			VarStr *str = makeVarWithRef<VarStr>(loc, "");
 			utils::appendToString(str->getVal(), std::forward<Args>(args)...);
 			failstack.setErr(str);
