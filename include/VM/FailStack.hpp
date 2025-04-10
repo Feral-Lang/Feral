@@ -34,7 +34,6 @@ public:
 
 	inline void setErr(Var *var) { stack.back().errMsg = var; }
 
-	inline bool canSetErr() { return !stack.empty() && !stack.back().errMsg; }
 	inline bool hasErr() { return !stack.empty() && stack.back().errMsg; }
 	inline size_t getRecurseLevel() { return stack.back().recurseLevel; }
 	inline StringRef getVarName() { return stack.back().varName; }

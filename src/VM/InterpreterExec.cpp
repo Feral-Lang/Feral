@@ -319,7 +319,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// there'll be a GIANT stack trace
 			if(!res) {
 				if(!recurseExceeded) {
-					fail(ins.getLoc(),
+					warn(ins.getLoc(),
 					     "function call failed, check the error above");
 				}
 				goto fncall_fail;
@@ -399,6 +399,10 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		handle_err:
 			if(!failstack.hasErr() || recurseCount != failstack.getRecurseLevel())
 				goto fail;
+			if(recurseExceeded) {
+				if(recurseCount != failstack.getRecurseLevel()) goto fail;
+				recurseExceeded = false;
+			}
 			StringRef varName = failstack.getVarName();
 			size_t blkBegin	  = failstack.getBlkBegin();
 			size_t blkEnd	  = failstack.getBlkEnd();
@@ -406,9 +410,6 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			if(!varName.empty()) {
 				if(!err) err = makeVar<VarStr>(ins.getLoc(), "unknown failure");
 				vars.stash(varName, err, true);
-			}
-			if(recurseExceeded) {
-				break;
 			}
 			pushModule(getCurrModule()->getModuleId());
 			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {

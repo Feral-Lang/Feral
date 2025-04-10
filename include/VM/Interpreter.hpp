@@ -376,17 +376,29 @@ public:
 		return true;
 	}
 
-	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
+	template<typename... Args> bool fail(ModuleLoc loc, Args &&...args)
 	{
-		if(!failstack.canSetErr() || exitcalled) {
-			err.fail(loc, std::forward<Args>(args)...);
-		} else {
-			VarStr *str = makeVarWithRef<VarStr>(loc, "");
-			utils::appendToString(str->getVal(), std::forward<Args>(args)...);
-			failstack.setErr(str);
+		if(failstack.empty() || exitcalled) {
+			warn(loc, std::forward<Args>(args)...);
+			return false;
 		}
-		// Lose the error msg to the void if the error is handled but not stored in a
-		// variable.
+		if(failstack.hasErr()) {
+			err.fail(loc, std::forward<Args>(args)...);
+			return false;
+		}
+		VarStr *str = makeVarWithRef<VarStr>(loc, "");
+		utils::appendToString(str->getVal(), std::forward<Args>(args)...);
+		failstack.setErr(str);
+		return true;
+	}
+
+	// Only shows output if failstack is not in use.
+	template<typename... Args> void warn(ModuleLoc loc, Args &&...args)
+	{
+		if(failstack.empty() || exitcalled) {
+			err.fail(loc, std::forward<Args>(args)...);
+		}
+		// Lose the error msg to the void if failstack is already in place.
 	}
 };
 
