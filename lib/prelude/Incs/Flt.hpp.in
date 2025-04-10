@@ -1,5 +1,5 @@
 #define ARITHF_FUNC(fn, oper)                                                                   \
-	Var *flt##fn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,                          \
+	Var *flt##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                       \
 		     const StringMap<AssnArgData> &assn_args)                                   \
 	{                                                                                       \
 		if(args[1]->is<VarInt>()) {                                                     \
@@ -15,7 +15,7 @@
 	}
 
 #define ARITHF_ASSN_FUNC(fn, oper)                                                              \
-	Var *fltAssn##fn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,                      \
+	Var *fltAssn##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                   \
 			 const StringMap<AssnArgData> &assn_args)                               \
 	{                                                                                       \
 		if(args[1]->is<VarInt>()) {                                                     \
@@ -33,7 +33,7 @@
 	}
 
 #define LOGICF_FUNC(name, checksym)                                                          \
-	Var *flt##name(Interpreter &vm, ModuleLoc loc, Span<Var *> args,                     \
+	Var *flt##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                  \
 		       const StringMap<AssnArgData> &assn_args)                              \
 	{                                                                                    \
 		if(args[1]->is<VarFlt>()) {                                                  \
@@ -70,7 +70,7 @@ LOGICF_FUNC(GT, >)
 LOGICF_FUNC(LE, <=)
 LOGICF_FUNC(GE, >=)
 
-Var *fltEQ(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFlt>()) return vm.getFalse();
@@ -80,7 +80,7 @@ Var *fltEQ(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       : vm.getFalse();
 }
 
-Var *fltNE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarFlt>()) return vm.getTrue();
@@ -90,14 +90,14 @@ Var *fltNE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	       : vm.getTrue();
 }
 
-Var *fltPreInc(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltPreInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() + 1);
 	return args[0];
 }
 
-Var *fltPostInc(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltPostInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->getVal());
@@ -105,14 +105,14 @@ Var *fltPostInc(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fltPreDec(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltPreDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() - 1);
 	return args[0];
 }
 
-Var *fltPostDec(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltPostDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->getVal());
@@ -120,19 +120,19 @@ Var *fltPostDec(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fltUSub(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltUSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFlt>(loc, -as<VarFlt>(args[0])->getVal());
 }
 
-Var *fltRound(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltRound(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, std::round(as<VarFlt>(args[0])->getVal()));
 }
 
-Var *fltPow(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltPow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -143,7 +143,7 @@ Var *fltPow(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	loc, std::pow(as<VarFlt>(args[0])->getVal(), as<VarInt>(args[1])->getVal()));
 }
 
-Var *fltSqRoot(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltSqRoot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFlt>(loc, std::sqrt(as<VarFlt>(args[0])->getVal()));

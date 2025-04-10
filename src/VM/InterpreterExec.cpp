@@ -3,26 +3,28 @@
 namespace fer
 {
 
-int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
+int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurseCount;
 	VarModule *varmod  = getCurrModule();
-	Vars *vars	   = varmod->getVars();
+	Vars &vars	   = getVars();
 	const Bytecode &bc = varmod->getBytecode();
 	size_t bcsz	   = end == 0 ? bc.size() : end;
+
+	Vars::ScopedModScope _(vars, varmod->getVarStack());
 
 	Vector<FeralFnBody> bodies;
 	Vector<Var *> args;
 	StringMap<AssnArgData> assn_args;
 	size_t currBlkSize = 0;
 
-	if(addFunc) vars->pushFn();
-	else currBlkSize = vars->getBlkSize();
-	if(addBlk) vars->pushBlk(1);
+	if(addFunc) vars.pushFn();
+	else currBlkSize = vars.getBlkSize();
+	if(addBlk) vars.pushBlk(1);
 
 	for(size_t i = begin; i < bcsz; ++i) {
 		const Instruction &ins = bc.getInstrAt(i);
-		// std::cout << "[" << i << ": " << ins.getLoc()->getMod()->getPath() << "] ";
+		// std::cout << "[" << i << ": " << getCurrModule()->getPath() << "] ";
 		// ins.dump(std::cout);
 		// std::cout << " :: ";
 		// dumpExecStack(std::cout);
@@ -43,7 +45,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				}
 				execstack.push(res);
 			} else {
-				Var *res = vars->get(ins.getDataStr());
+				Var *res = vars.get(ins.getDataStr());
 				if(!res) {
 					res = getGlobal(ins.getDataStr());
 					if(!res) {
@@ -71,9 +73,9 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			}
 			// only copy if reference count > 1 (no point in copying unique values)
 			if(val->getRef() == 1) {
-				vars->add(name, val, true);
+				vars.add(name, val, true);
 			} else {
-				vars->add(name, copyVar(ins.getLoc(), val), false);
+				vars.add(name, copyVar(ins.getLoc(), val), false);
 			}
 			decVarRef(val);
 			break;
@@ -88,9 +90,10 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
 				if(val->getRef() == 1) {
-					in->setAttr(*this, name, val, true);
+					in->setAttr(getMemoryManager(), name, val, true);
 				} else {
-					in->setAttr(*this, name, copyVar(ins.getLoc(), val), false);
+					in->setAttr(getMemoryManager(), name,
+						    copyVar(ins.getLoc(), val), false);
 				}
 			} else {
 				if(!val->isCallable()) {
@@ -134,11 +137,11 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::PUSH_BLOCK: {
-			vars->pushBlk(ins.getDataInt());
+			vars.pushBlk(ins.getDataInt());
 			break;
 		}
 		case Opcode::POP_BLOCK: {
-			vars->popBlk(ins.getDataInt());
+			vars.popBlk(ins.getDataInt());
 			break;
 		}
 		case Opcode::JMP: {
@@ -316,7 +319,7 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// there'll be a GIANT stack trace
 			if(!res) {
 				if(!recurseExceeded) {
-					fail(ins.getLoc(),
+					warn(ins.getLoc(),
 					     "function call failed, check the error above");
 				}
 				goto fncall_fail;
@@ -352,19 +355,19 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) execstack.push(nil);
+			if(!ins.getDataBool()) execstack.push(ip.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
-			vars->pushLoop();
+			vars.pushLoop();
 			break;
 		}
 		case Opcode::POP_LOOP: {
-			vars->popLoop();
+			vars.popLoop();
 			break;
 		}
 		case Opcode::CONTINUE: {
-			vars->continueLoop();
+			vars.continueLoop();
 			i = ins.getDataInt() - 1;
 			break;
 		}
@@ -394,25 +397,27 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!failstack.isUsable() || recurseCount != failstack.getRecurseLevel())
+			if(!failstack.hasErr() || recurseCount != failstack.getRecurseLevel())
 				goto fail;
+			if(recurseExceeded) {
+				if(recurseCount != failstack.getRecurseLevel()) goto fail;
+				recurseExceeded = false;
+			}
 			StringRef varName = failstack.getVarName();
 			size_t blkBegin	  = failstack.getBlkBegin();
 			size_t blkEnd	  = failstack.getBlkEnd();
+			Var *err	  = failstack.getErr();
 			if(!varName.empty()) {
-				Var *err = failstack.getErr();
-				if(!err)
-					err =
-					makeVarWithRef<VarStr>(ins.getLoc(), "unknown failure");
-				vars->stash(varName, err, false);
-			}
-			if(recurseExceeded) {
-				break;
+				if(!err) err = makeVar<VarStr>(ins.getLoc(), "unknown failure");
+				vars.stash(varName, err, true);
 			}
 			pushModule(getCurrModule()->getModuleId());
 			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
-				if(!failstack.getVarName().empty()) vars->unstash();
+				if(!varName.empty()) vars.unstash();
 				popModule();
+				// Must pop failstack scope because this is a failure in the the
+				// scope itself - it can't recover using the POP_JMP instruction.
+				failstack.popScope();
 				goto handle_err;
 			}
 			// POP_JMP instr will take care of popping from jmps and failstack.
@@ -424,20 +429,20 @@ int Interpreter::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		}
 	}
 done:
-	if(addBlk) vars->popBlk(1);
-	if(addFunc) vars->popFn();
-	else vars->resizeBlkTo(currBlkSize);
+	if(addBlk) vars.popBlk(1);
+	if(addFunc) vars.popFn();
+	else vars.resizeBlkTo(currBlkSize);
 	--recurseCount;
 	return exitcode;
 fail:
-	if(addBlk) vars->popBlk(1);
-	if(addFunc) vars->popFn();
-	else vars->resizeBlkTo(currBlkSize);
+	if(addBlk) vars.popBlk(1);
+	if(addFunc) vars.popFn();
+	else vars.resizeBlkTo(currBlkSize);
 	--recurseCount;
 	return 1;
 }
 
-void Interpreter::dumpExecStack(OStream &os)
+void VirtualMachine::dumpExecStack(OStream &os)
 {
 	for(auto &e : execstack.get()) {
 		if(e->is<VarInt>()) {
@@ -453,7 +458,7 @@ void Interpreter::dumpExecStack(OStream &os)
 		} else {
 			os << getTypeName(e);
 		}
-		std::cout << " ";
+		std::cout << " -- ";
 	}
 }
 

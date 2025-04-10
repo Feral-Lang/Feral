@@ -1,4 +1,4 @@
-Var *mapNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if((args.size() - 1) % 2 != 0) {
@@ -51,41 +51,42 @@ Var *mapNew(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
 }
 
-Var *mapSize(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
 }
 
-Var *mapIsRef(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapEmpty(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	VarMap *map = as<VarMap>(args[0]);
-	Var *v	    = nullptr;
+	MemoryManager &mem = vm.getMemoryManager();
+	VarMap *map	   = as<VarMap>(args[0]);
+	Var *v		   = nullptr;
 	Array<Var *, 1> tmp{args[1]};
 	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
 	const String &key = as<VarStr>(v)->getVal();
 	if(map->isRefMap()) {
-		map->setAttr(vm, key, args[2], true);
+		map->setAttr(mem, key, args[2], true);
 	} else {
-		map->setAttr(vm, key, vm.copyVar(loc, args[2]), false);
+		map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
 	}
 	return args[0];
 }
 
-Var *mapErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
@@ -101,14 +102,14 @@ Var *mapErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *mapClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	as<VarMap>(args[0])->clear(vm);
+	as<VarMap>(args[0])->clear(vm.getMemoryManager());
 	return vm.getNil();
 }
 
-Var *mapAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	VarMap *map = as<VarMap>(args[0]);
@@ -120,7 +121,7 @@ Var *mapAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res ? res : vm.getNil();
 }
 
-Var *mapFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	VarMap *map = as<VarMap>(args[0]);
@@ -132,18 +133,18 @@ Var *mapFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapEach(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
 }
 
-Var *mapIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *mapIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args)
 {
 	VarMapIterator *it = as<VarMapIterator>(args[0]);
 	Var *res	   = nullptr;
-	if(!it->next(vm, loc, res)) return vm.getNil();
+	if(!it->next(vm.getMemoryManager(), loc, res)) return vm.getNil();
 	res->setLoadAsRef();
 	return res;
 }

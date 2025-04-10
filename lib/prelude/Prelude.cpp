@@ -37,43 +37,43 @@ namespace fer
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
 
-Var *allGetTypeID(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allGetTypeID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
-Var *allGetTypeFnID(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allGetTypeFnID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
-Var *allGetTypeStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allGetTypeStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
-Var *allEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *allNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *allNilCoalesce(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allNilCoalesce(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
-Var *allCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	Var *copy = vm.copyVar(loc, args[0]);
@@ -86,14 +86,14 @@ Var *allCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 // If a new instance is created and simply returned without storing in a container,
 // there is no point in calling this since reference count of that object will be 1
 // and hence the VM won't create a copy of it when used in creating a new var.
-Var *reference(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *reference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	args[1]->setLoadAsRef();
 	return args[1];
 }
 
-Var *raise(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	String res;
@@ -108,7 +108,7 @@ Var *raise(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return nullptr;
 }
 
-Var *evaluateCode(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *evaluateCode(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -125,7 +125,7 @@ Var *evaluateCode(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.decVarRef(res, false);
 }
 
-Var *evaluateExpr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -145,7 +145,7 @@ Var *evaluateExpr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 // getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
 // vice-versa.
 
-Var *getOSName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	String name;
@@ -163,7 +163,7 @@ Var *getOSName(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, name);
 }
 
-Var *getOSDistro(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	String distro;
@@ -199,7 +199,7 @@ Var *getOSDistro(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 
 // Stuff from std/sys module
 
-Var *_exit(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *_exit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -211,7 +211,7 @@ Var *_exit(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *varExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -226,13 +226,13 @@ Var *varExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 		providedMod = true;
 	}
 
-	Vars *moduleVars = mod->getVars();
+	Vars &moduleVars = vm.getVars();
 	StringRef var	 = as<VarStr>(args[1])->getVal();
-	return moduleVars->get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
-									   : vm.getFalse();
+	return moduleVars.get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
+									  : vm.getFalse();
 }
 
-Var *setMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *setMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -244,13 +244,13 @@ Var *setMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *getMaxCallstacks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *getMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, vm.getRecurseMax());
 }
 
-Var *addGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -284,7 +284,7 @@ Var *addGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, added);
 }
 
-Var *removeGlobalModulePaths(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *removeGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			     const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {

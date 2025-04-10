@@ -5,24 +5,31 @@
 namespace fer
 {
 
-class Interpreter;
-class VarFrame
+class VarFrame : public IAllocated
 {
+	MemoryManager &mem;
+	RecursiveMutex mtx;
 	StringMap<Var *> vars;
-	Interpreter &vm;
 
-public:
-	VarFrame(Interpreter &vm);
+	friend class MemoryManager;
+
+	VarFrame(MemoryManager &mem);
 	~VarFrame();
 
+public:
 	inline StringMap<Var *> &get() { return vars; }
 	inline bool exists(StringRef name) { return vars.find(name) != vars.end(); }
 
 	// use this instead of exists() if the Var* retrieval is actually required
 	Var *get(StringRef name);
 
+	void dump(OStream &os, size_t tab = 0);
+
 	void add(StringRef name, Var *val, bool iref);
 	bool rem(StringRef name, bool dref);
+
+	static VarFrame *create(MemoryManager &mem);
+	static void destroy(MemoryManager &mem, VarFrame *frame);
 };
 
 class VarStack
@@ -33,10 +40,10 @@ class VarStack
 	// This is so because otherwise, on vector resize, it will cause the VarFrame object to
 	// delete and reconstruct, therefore incorrectly calling the dref() calls
 	Vector<VarFrame *> stack;
-	Interpreter &vm;
+	MemoryManager &mem;
 
 public:
-	VarStack(Interpreter &vm);
+	VarStack(MemoryManager &mem);
 	~VarStack();
 
 	void pushStack(size_t count);
@@ -51,6 +58,8 @@ public:
 	void popLoop();
 	void continueLoop();
 
+	void dump(OStream &os, size_t tab = 0);
+
 	inline size_t size() { return stack.size(); }
 	inline void resizeTo(size_t count)
 	{
@@ -63,14 +72,15 @@ public:
 class Vars
 {
 	StringMap<Var *> stashed;
+	Vector<VarStack *> modScopeStack;
 	// maps function ids to VarStack
-	// 0 is the id for global scope
+	// 0 is the id for global (module) scope
 	Map<size_t, VarStack *> fnvars;
 	size_t fnstack;
-	Interpreter &vm;
+	MemoryManager &mem;
 
 public:
-	Vars(Interpreter &vm);
+	Vars(MemoryManager &mem);
 	~Vars();
 
 	// checks if variable exists in current scope ONLY
@@ -84,10 +94,19 @@ public:
 	inline size_t getBlkSize() { return fnvars[fnstack]->size(); }
 	inline void resizeBlkTo(size_t count) { fnvars[fnstack]->resizeTo(count); }
 
+	void pushModScope(VarStack *modScope);
+	void popModScope();
 	void pushFn();
 	void popFn();
 	void stash(StringRef name, Var *val, bool iref = true);
 	void unstash();
+
+	void dump(OStream &os);
+
+	inline VarStack *getCurrModScope()
+	{
+		return modScopeStack.empty() ? nullptr : modScopeStack.back();
+	}
 
 	inline void pushLoop() { fnvars[fnstack]->pushLoop(); }
 	inline void popLoop() { fnvars[fnstack]->popLoop(); }
@@ -100,6 +119,15 @@ public:
 	// add variable to module level unconditionally (for vm.registerNewType())
 	inline void addm(StringRef name, Var *val, bool iref) { fnvars[0]->add(name, val, iref); }
 	inline bool rem(StringRef name, bool dref) { return fnvars[fnstack]->rem(name, dref); }
+
+	class ScopedModScope
+	{
+		Vars &vars;
+
+	public:
+		ScopedModScope(Vars &vars, VarStack *modScope);
+		~ScopedModScope();
+	};
 };
 
 } // namespace fer

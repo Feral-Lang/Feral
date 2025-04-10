@@ -1,1 +1,8 @@
 loadlib('std/MultiProc');
+
+let os = import('std/os');
+
+let run = fn(.kw, args...) {
+	let threadName = kw.at('name') ?? 'osExec';
+	return newThread(name = threadName, os.exec, args...);
+};
