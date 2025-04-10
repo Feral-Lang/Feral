@@ -1,34 +1,34 @@
-Var *nilToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *nilToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, 0);
 }
 
-Var *boolToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *boolToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
 }
 
-Var *typeIDToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *typeIDToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
 }
 
-Var *intToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *intToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return args[0];
 }
 
-Var *fltToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fltToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
 }
 
-Var *strToInt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	StringRef num = as<VarStr>(args[0])->getVal();

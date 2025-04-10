@@ -5,14 +5,13 @@
 namespace fer
 {
 
-class Interpreter;
 class ExecStack
 {
 	Vector<Var *> stack;
-	Interpreter &vm;
+	MemoryManager &mem;
 
 public:
-	ExecStack(Interpreter &vm);
+	ExecStack(MemoryManager &mem);
 	~ExecStack();
 
 	void push(Var *val, bool iref = true);

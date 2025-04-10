@@ -5,7 +5,7 @@ enum WalkEntry
 	RECURSE = 1 << 2,
 };
 
-void getEntriesInternal(Interpreter &vm, ModuleLoc loc, const String &dirstr, VarVec *v,
+void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr, VarVec *v,
 			Regex regex, size_t flags)
 {
 	String entry;
@@ -36,7 +36,7 @@ void getEntriesInternal(Interpreter &vm, ModuleLoc loc, const String &dirstr, Va
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *fsOpen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -64,7 +64,7 @@ Var *fsOpen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarFile>(loc, file, mode, mustClose);
 }
 
-Var *fsWalkDir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -100,7 +100,7 @@ Var *fsWalkDir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fsAbsPath(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -111,7 +111,7 @@ Var *fsAbsPath(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
 }
 
-Var *fileReopen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	VarFile *filev = as<VarFile>(args[0]);
@@ -138,7 +138,7 @@ Var *fileReopen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *fileLines(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
@@ -163,7 +163,7 @@ Var *fileLines(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fileSeek(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
@@ -182,13 +182,13 @@ Var *fileSeek(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
 }
 
-Var *fileEachLine(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileEachLine(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
 }
 
-Var *fileIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		      const StringMap<AssnArgData> &assn_args)
 {
 	VarFileIterator *it = as<VarFileIterator>(args[0]);
@@ -200,7 +200,7 @@ Var *fileIteratorNext(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fileReadAll(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
@@ -220,7 +220,7 @@ Var *fileReadAll(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *fileReadBlocks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	FILE *const file = as<VarFile>(args[0])->getFile();
@@ -293,7 +293,7 @@ Var *fileReadBlocks(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 // TODO: write tests
 
 // equivalent to open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)
-Var *fdCreate(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -313,7 +313,7 @@ Var *fdCreate(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdOpen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -334,7 +334,7 @@ Var *fdOpen(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdRead(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -360,7 +360,7 @@ Var *fdRead(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdWrite(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -395,7 +395,7 @@ Var *fdWrite(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdClose(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -413,7 +413,7 @@ Var *fdClose(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fsExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -423,7 +423,7 @@ Var *fsExists(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *fsInstall(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -457,7 +457,7 @@ Var *fsInstall(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *fsMkdir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -477,7 +477,7 @@ Var *fsMkdir(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *fsMklink(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -500,7 +500,7 @@ Var *fsMklink(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *fsRemove(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	for(size_t i = 1; i < args.size(); ++i) {
@@ -520,7 +520,7 @@ Var *fsRemove(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *fsCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	// args must have: nullptr, [src]+, dest
@@ -553,7 +553,7 @@ Var *fsCopy(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.getNil();
 }
 
-Var *fsMove(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *fsMove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {

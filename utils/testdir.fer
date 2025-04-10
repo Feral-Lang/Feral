@@ -21,6 +21,15 @@ let stat = import('std/stat');
 let time = import('std/time');
 let mproc = import('std/multiproc');
 
+let fmtWithPath = fn(path, fmtStrs) {
+	if fmtStrs.empty() { return nil; }
+	let v = vec.new(refs = true);
+	for fmtStr in fmtStrs.each() {
+		v.push(fs.fmtWithPath(fmtStr, path));
+	}
+	return v;
+};
+
 if feral.args.empty() {
 	io.println('Usage: ', feral.binaryPath, ' ', __SRC_PATH__, ' <directory>');
 	feral.exit(1);
@@ -48,28 +57,29 @@ for line in cfgfile.eachLine() {
 	cfgstr += line + '\n';
 }
 let cfg = fecl.loads(cfgstr);
-let file_pattern = cfg['FilePattern'];
-let exec_cmd = cfg['ExecCmd'];
-let clean_cmd = cfg['CleanCmd'];
+let filePattern = cfg['FilePattern'];
+let execCmd = cfg['ExecCmd'];
+let cleanCmd = cfg['CleanCmd'];
 
-let files = fs.walkDir(feral.args[0], fs.WALK_RECURSE, file_pattern);
+let files = fs.walkDir(feral.args[0], fs.WALK_RECURSE, filePattern);
+files.sort();
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
 inline if os.name == 'windows' {
 # Apparently, $null cannot be accessed by more than one process at a time.
-let max_procs = 1;
+let maxProcs = 1;
 } else {
-let max_procs = mproc.getConcurrency();
+let maxProcs = mproc.getConcurrency();
 }
 
-let waitProcs = fn(max_procs, with_valgrind, counter = true) {
-	while tpool.len() >= max_procs {
+let waitProcs = fn(maxProcs, withValgrind, counter = true) {
+	while tpool.len() >= maxProcs {
 		for let i = 0; i < tpool.len(); ++i {
 			if !tpool[i].isDone() { continue; }
 			let t = tpool[i];
 			if t.getResult() != 0 {
 				if counter { ++failed; }
-				if with_valgrind {
+				if withValgrind {
 					io.cprintln('{r}failed {y}', files[t.getId()], '{c} with valgrind{0}, {y}code{0}: {r}', t.getResult(),'{0}');
 				} else {
 					io.cprintln('{r}failed {y}', files[t.getId()], '{0}, {y}code{0}: {r}', t.getResult(),'{0}');
@@ -80,46 +90,52 @@ let waitProcs = fn(max_procs, with_valgrind, counter = true) {
 			}
 			tpool.erase(i--);
 		}
-		if tpool.len() >= max_procs { os.sleep(1); } # 1 ms sleep
+		if tpool.len() >= maxProcs { os.sleep(1); } # 1 ms sleep
 	}
 };
 
-let valgrind = '';
+let valgrindCmd = vec.new(refs = true);
 if feral.args.find('--valgrind') {
-	valgrind = os.findExec('valgrind');
-	if valgrind == nil {
+	let valgrindExec = os.findExec('valgrind');
+	if valgrindExec == nil {
 		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
 		feral.exit(1);
 	}
 	# --log-fd=1 to pour the valgrind output on stdout so that we
 	# don't have to redirect entire stderr to io.null
-	valgrind += ' --log-fd=1 ';
+	valgrindCmd.push(valgrindExec);
+	valgrindCmd.push('--log-fd=1');
+	valgrindCmd.push('--leak-check=full');
+	valgrindCmd.push('--show-leak-kinds=all');
 }
 
-let time_begin = time.now();
+let timeBegin = time.now();
 
 for file in files.each() {
-	waitProcs(max_procs, !valgrind.empty());
-	let cmd = fs.fmtWithPath(exec_cmd, file);
-	if !valgrind.empty() {
-		io.cprintln('{c}test{0}({g}valgrind{0}): {y}', cmd, '{0} ...');
+	waitProcs(maxProcs, !valgrindCmd.empty());
+	let cmd = valgrindCmd;
+	cmd.append(fmtWithPath(file, execCmd));
+	cmd.push('^>' + io.null);
+	if !valgrindCmd.empty() {
+		io.cprintln('{c}test{0}({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
 	} else {
-		io.cprintln('{c}test{0}: {y}', cmd, '{0} ...');
+		io.cprintln('{c}test{0}: {y}', cmd.join(' '), '{0} ...');
 	}
 	io.fflush(io.stdout);
-	tpool.push(mproc.new(valgrind + cmd + ' >' + io.null));
+	tpool.push(mproc.run(cmd));
 }
-waitProcs(1, !valgrind.empty());
+waitProcs(1, !valgrindCmd.empty());
 
-let tot_time = time.now() - time_begin;
+let tot_time = time.now() - timeBegin;
 
-if !clean_cmd.empty() {
+if !cleanCmd.empty() {
 	for file in files.each() {
-		waitProcs(max_procs, !valgrind.empty(), false);
-		let cmd = fs.fmtWithPath(clean_cmd, file);
-		io.cprintln('{c}clean{0}: {y}', cmd, '{0} ...');
+		waitProcs(maxProcs, !valgrind.empty(), false);
+		let cmd = fmtWithPath(file, cleanCmd);
+		cmd.push('^>' + io.null);
+		io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
 		io.fflush(io.stdout);
-		tpool.push(mproc.new(cmd + ' >' + io.null));
+		tpool.push(mproc.run(cmd));
 	}
 	waitProcs(1, !valgrind.empty(), false);
 }

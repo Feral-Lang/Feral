@@ -7,21 +7,19 @@ namespace fer
 
 struct ErrorHandlingInfo
 {
-	bool usable;
 	size_t recurseLevel;
 	StringRef varName;
 	size_t blkBegin, blkEnd;
 	Var *errMsg;
 };
 
-class Interpreter;
 class FailStack
 {
 	Vector<ErrorHandlingInfo> stack;
-	Interpreter &vm;
+	MemoryManager &mem;
 
 public:
-	FailStack(Interpreter &vm);
+	FailStack(MemoryManager &mem);
 	~FailStack();
 
 	inline void pushScope() { stack.emplace_back(); }
@@ -36,7 +34,7 @@ public:
 
 	inline void setErr(Var *var) { stack.back().errMsg = var; }
 
-	inline bool isUsable() { return !stack.empty() && stack.back().usable; }
+	inline bool hasErr() { return !stack.empty() && stack.back().errMsg; }
 	inline size_t getRecurseLevel() { return stack.back().recurseLevel; }
 	inline StringRef getVarName() { return stack.back().varName; }
 	inline size_t getBlkBegin() { return stack.back().blkBegin; }

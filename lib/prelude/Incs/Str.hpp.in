@@ -1,4 +1,4 @@
-Var *strAdd(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strAdd(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -13,7 +13,7 @@ Var *strAdd(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *strMul(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -30,7 +30,7 @@ Var *strMul(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return res;
 }
 
-Var *strAddAssn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strAddAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -43,7 +43,7 @@ Var *strAddAssn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strMulAssn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -62,7 +62,7 @@ Var *strMulAssn(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 
 // logical functions
 
-Var *strLT(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strLT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -75,7 +75,7 @@ Var *strLT(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs < rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strGT(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strGT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -87,7 +87,7 @@ Var *strGT(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs > rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strLE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strLE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -99,7 +99,7 @@ Var *strLE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs <= rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strGE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strGE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -111,7 +111,7 @@ Var *strGE(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs >= rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getFalse();
@@ -120,7 +120,7 @@ Var *strEq(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs == rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) return vm.getTrue();
@@ -129,7 +129,7 @@ Var *strNe(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return lhs != rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -147,7 +147,7 @@ Var *strAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////// Utility /////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Vector<Var *> _strSplit(Interpreter &vm, ModuleLoc loc, StringRef data, StringRef delim,
+Vector<Var *> _strSplit(VirtualMachine &vm, ModuleLoc loc, StringRef data, StringRef delim,
 			int64_t maxDelimCount);
 
 static String str_replace(String &s, StringRef from, StringRef to);
@@ -156,40 +156,40 @@ static inline void trim(String &s);
 size_t sizePow(size_t base, int exp);
 size_t strToBin(StringRef str);
 
-Var *strSize(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size());
 }
 
-Var *strClear(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	as<VarStr>(args[0])->getVal().clear();
 	return vm.getNil();
 }
 
-Var *strEmpty(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	return as<VarStr>(args[0])->getVal().size() == 0 ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strFront(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	const String &str = as<VarStr>(args[0])->getVal();
 	return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.front());
 }
 
-Var *strBack(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	String &str = as<VarStr>(args[0])->getVal();
 	return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.back());
 }
 
-Var *strPush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -203,7 +203,7 @@ Var *strPush(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strPop(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
 	String &str = as<VarStr>(args[0])->getVal();
@@ -211,7 +211,7 @@ Var *strPop(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strIsChAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -241,7 +241,7 @@ Var *strIsChAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return chars.find(dest[pos]) == String::npos ? vm.getFalse() : vm.getTrue();
 }
 
-Var *strSetAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -268,7 +268,7 @@ Var *strSetAt(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -296,7 +296,7 @@ Var *strInsert(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -310,7 +310,7 @@ Var *strErase(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -327,7 +327,7 @@ Var *strFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, pos);
 }
 
-Var *strRFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -344,7 +344,7 @@ Var *strRFind(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarInt>(loc, pos);
 }
 
-Var *strSubstr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strSubstr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarInt>()) {
@@ -366,13 +366,13 @@ Var *strSubstr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, str.substr(pos, len));
 }
 
-Var *strLast(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strLast(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size() - 1);
 }
 
-Var *strTrim(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strTrim(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
 	String &str = as<VarStr>(args[0])->getVal();
@@ -380,7 +380,7 @@ Var *strTrim(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
-Var *strLower(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strLower(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	String str = as<VarStr>(args[0])->getVal();
@@ -391,7 +391,7 @@ Var *strLower(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, str);
 }
 
-Var *strUpper(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strUpper(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	String str = as<VarStr>(args[0])->getVal();
@@ -402,7 +402,7 @@ Var *strUpper(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, str);
 }
 
-Var *strSplit(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strSplit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
 	VarStr *str = as<VarStr>(args[0]);
@@ -427,7 +427,7 @@ Var *strSplit(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	loc, std::move(_strSplit(vm, loc, str->getVal(), delim, maxDelimCount)), false);
 }
 
-Var *strStartsWith(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strStartsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		   const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -441,7 +441,7 @@ Var *strStartsWith(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarBool>(loc, str.rfind(with, 0) == 0);
 }
 
-Var *strEndsWith(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strEndsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {
@@ -456,7 +456,7 @@ Var *strEndsWith(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
 
-Var *strFormat(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strFormat(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	String str    = as<VarStr>(args[0])->getVal();
@@ -503,7 +503,7 @@ Var *strFormat(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, std::move(str));
 }
 
-Var *hexStrToBinStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *hexStrToBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		    const StringMap<AssnArgData> &assn_args)
 {
 	static std::unordered_map<char, const char *> hextobin = {
@@ -526,7 +526,7 @@ Var *hexStrToBinStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, bin);
 }
 
-Var *utf8CharFromBinStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
 	String str = as<VarStr>(args[0])->getVal();
@@ -579,7 +579,8 @@ Var *utf8CharFromBinStr(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 // character (str[0]) to its ASCII (int)
-Var *byt(Interpreter &vm, ModuleLoc loc, Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+Var *byt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	 const StringMap<AssnArgData> &assn_args)
 {
 	const String &str = as<VarStr>(args[0])->getVal();
 	if(str.empty()) return vm.makeVar<VarInt>(loc, 0);
@@ -587,13 +588,14 @@ Var *byt(Interpreter &vm, ModuleLoc loc, Span<Var *> args, const StringMap<AssnA
 }
 
 // ASCII (int) to character (str)
-Var *chr(Interpreter &vm, ModuleLoc loc, Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+Var *chr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	 const StringMap<AssnArgData> &assn_args)
 {
 	uint8_t byt = (uint8_t)as<VarInt>(args[0])->getVal();
 	return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 
-Vector<Var *> _strSplit(Interpreter &vm, ModuleLoc loc, StringRef data, StringRef delim,
+Vector<Var *> _strSplit(VirtualMachine &vm, ModuleLoc loc, StringRef data, StringRef delim,
 			int64_t maxDelimCount)
 {
 	String temp;
@@ -613,7 +615,7 @@ Vector<Var *> _strSplit(Interpreter &vm, ModuleLoc loc, StringRef data, StringRe
 	return vec;
 }
 
-Var *strReplace(Interpreter &vm, ModuleLoc loc, Span<Var *> args,
+Var *strReplace(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args)
 {
 	if(!args[1]->is<VarStr>()) {

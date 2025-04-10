@@ -46,4 +46,10 @@ f() or err {
 	assert.eq(err, expectErr1);
 };
 
+fx() or err {
+	assert.eq(err, expectErr1) or err {
+		assert.eq(err, 'raised: assertion `variable \'fx\' does not exist` == `stack overflow, current max: ' + feral.getMaxCallstacks().str() + '` failed');
+	};
+};
+
 assert.eq(i, feral.getMaxCallstacks() - 1); # 1 to max - 1 = max (since 1 is included)

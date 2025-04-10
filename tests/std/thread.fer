@@ -1,0 +1,45 @@
+let io = import('std/io');
+let os = import('std/os');
+let vec = import('std/vec');
+let mproc = import('std/multiproc');
+
+let mtx = mproc.newMutex();
+let shouldStop = mproc.newAtomicBool(false);
+let q = vec.new();
+
+let producer = fn() {
+	let i = 0;
+	while !shouldStop.get() {
+		mtx.lock();
+		if q.len() > 10 {
+			io.println('Skipping production as queue has > 10 items');
+		} else {
+			q.push(i);
+			io.println('Producer (', mproc.getCurrentThreadId(), ') generated: ', i++);
+		}
+		mtx.unlock();
+		os.sleep(1);
+	}
+};
+
+let consumer = fn() {
+	while !shouldStop.get() {
+		mtx.lock();
+		if !q.empty() {
+			let x = q.front();
+			q.erase(0);
+			io.println('Consumer (', mproc.getCurrentThreadId(), ') consumed: ', x);
+		}
+		mtx.unlock();
+		os.sleep(1);
+	}
+};
+
+let tpool = vec.new(refs = true);
+tpool.push(mproc.newThread(name = 'producer-1', producer));
+tpool.push(mproc.newThread(name = 'producer-2', producer));
+tpool.push(mproc.newThread(name = 'consumer-1', consumer));
+tpool.push(mproc.newThread(name = 'consumer-2', consumer));
+
+os.sleep(5);
+shouldStop.set(true);

@@ -1,29 +1,85 @@
 #pragma once
 
-#include "VM/VarTypes.hpp"
+#include "VM/Interpreter.hpp"
 
 namespace fer
 {
 
-class VarMultiProc : public Var
+class VarAtomicBool : public Var
 {
-	Thread *thread;
-	SharedFuture<int> *res;
-	size_t id;
-	bool owner;
+	Atomic<bool> val;
 
-	Var *onCopy(Interpreter &vm, ModuleLoc loc) override;
-	void onSet(Interpreter &vm, Var *from) override;
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
-	VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, bool owner = true);
-	VarMultiProc(ModuleLoc loc, Thread *thread, SharedFuture<int> *res, size_t id,
-		     bool owner = true);
-	~VarMultiProc();
+	VarAtomicBool(ModuleLoc loc, bool _val);
 
+	inline void setVal(bool newval) { val.store(newval); }
+	inline bool getVal() { return val.load(); }
+};
+
+class VarAtomicInt : public Var
+{
+	Atomic<int64_t> val;
+
+	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
+	void onSet(MemoryManager &mem, Var *from) override;
+
+public:
+	VarAtomicInt(ModuleLoc loc, int64_t _val);
+	VarAtomicInt(ModuleLoc loc, const char *_val);
+
+	inline void setVal(int64_t newval) { val.store(newval); }
+	inline int64_t getVal() { return val.load(); }
+};
+
+class VarMutex : public Var
+{
+	RecursiveMutex mtx;
+
+public:
+	VarMutex(ModuleLoc loc);
+	~VarMutex();
+
+	inline void lock() { mtx.lock(); }
+	inline bool tryLock() { return mtx.try_lock(); }
+	inline void unlock() { return mtx.unlock(); }
+	inline RecursiveMutex &getMutex() { return mtx; }
+};
+
+class VarLockGuard : public Var
+{
+	VarMutex *mtx;
+
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+
+public:
+	VarLockGuard(ModuleLoc loc, VarMutex *mtx);
+	~VarLockGuard();
+};
+
+class VarThread : public Var
+{
+	String name;
+	VirtualMachine *vm;
+	SharedFuture<Var *> *res;
+	Thread *thread;
+	Var *callable;
+	Vector<Var *> args;
+	StringMap<AssnArgData> assn_args;
+
+public:
+	VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable,
+		  Span<Var *> _args, const StringMap<AssnArgData> &_assn_args);
+	~VarThread();
+
+	inline StringRef getName() { return name; }
+	inline VirtualMachine *&getVM() { return vm; }
+	inline SharedFuture<Var *> *&getFuture() { return res; }
 	inline Thread *&getThread() { return thread; }
-	inline SharedFuture<int> *&getFuture() { return res; }
-	inline size_t getId() { return id; }
+	inline Thread::id getThreadId() { return thread->get_id(); }
 };
 
 } // namespace fer
