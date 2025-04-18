@@ -11,7 +11,6 @@ VarFrame::~VarFrame()
 
 Var *VarFrame::get(StringRef name)
 {
-	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return nullptr;
 	return loc->second;
@@ -29,7 +28,6 @@ void VarFrame::dump(OStream &os, size_t tab)
 
 void VarFrame::add(StringRef name, Var *val, bool iref)
 {
-	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc != vars.end()) Var::decVarRef(mem, loc->second);
 	if(iref) Var::incVarRef(val);
@@ -37,7 +35,6 @@ void VarFrame::add(StringRef name, Var *val, bool iref)
 }
 bool VarFrame::rem(StringRef name, bool dref)
 {
-	LockGuard<RecursiveMutex> _(mtx);
 	auto loc = vars.find(name);
 	if(loc == vars.end()) return false;
 	if(dref) Var::decVarRef(mem, loc->second);
@@ -56,10 +53,12 @@ VarStack::~VarStack() { popStack(stack.size()); }
 
 void VarStack::pushStack(size_t count)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	for(size_t i = 0; i < count; ++i) stack.push_back(VarFrame::create(mem));
 }
 void VarStack::popStack(size_t count)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	for(size_t i = 0; i < count; ++i) {
 		VarFrame::destroy(mem, stack.back());
 		stack.pop_back();
@@ -68,6 +67,7 @@ void VarStack::popStack(size_t count)
 
 Var *VarStack::get(StringRef name)
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
 		Var *res = (*layer)->get(name);
 		if(res) return res;
@@ -77,11 +77,13 @@ Var *VarStack::get(StringRef name)
 
 void VarStack::pushLoop()
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	loops_from.push_back(stack.size());
 	pushStack(1);
 }
 void VarStack::popLoop()
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
 	if(stack.size() - 1 >= loops_from.back()) {
 		popStack(stack.size() - loops_from.back());
@@ -90,8 +92,18 @@ void VarStack::popLoop()
 }
 void VarStack::continueLoop()
 {
+	LockGuard<RecursiveMutex> _(mtx);
 	assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
 	if(stack.size() - 1 > loops_from.back()) popStack(stack.size() - 1 - loops_from.back());
+}
+
+bool VarStack::rem(StringRef name, bool dref)
+{
+	LockGuard<RecursiveMutex> _(mtx);
+	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
+		if((*layer)->rem(name, dref)) return true;
+	}
+	return false;
 }
 
 void VarStack::dump(OStream &os, size_t tab)
@@ -101,14 +113,6 @@ void VarStack::dump(OStream &os, size_t tab)
 	for(auto &item : stack) {
 		item->dump(os, tab + 1);
 	}
-}
-
-bool VarStack::rem(StringRef name, bool dref)
-{
-	for(auto layer = stack.rbegin(); layer != stack.rend(); ++layer) {
-		if((*layer)->rem(name, dref)) return true;
-	}
-	return false;
 }
 
 Vars::Vars(MemoryManager &mem) : fnstack(-1), mem(mem) {}
