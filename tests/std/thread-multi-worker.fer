@@ -1,0 +1,37 @@
+let io = import('std/io');
+let os = import('std/os');
+let vec = import('std/vec');
+let mproc = import('std/multiproc');
+
+let listMtx = mproc.newMutex();
+let tasklist = vec.new();
+
+let workerFn = fn(threadId) {
+	while true {
+		let lock = mproc.newLockGuard(listMtx);
+		if tasklist.empty() { continue; }
+		if tasklist.front() == nil { break; }
+		let data = tasklist.front();
+		tasklist.erase(0);
+		io.println('In thread: ', threadId, ', received data: ', data);
+	}
+};
+
+let workers = vec.new(refs = true);
+workers.push(mproc.newThread(workerFn, 0));
+workers.push(mproc.newThread(workerFn, 1));
+workers.push(mproc.newThread(workerFn, 2));
+workers.push(mproc.newThread(workerFn, 3));
+
+for let i = 0; i < 1000; ++i {
+	let lock = mproc.newLockGuard(listMtx);
+	tasklist.push(i);
+}
+{
+	let lock = mproc.newLockGuard(listMtx);
+	tasklist.push(nil);
+}
+
+for w in workers.each() {
+	w.join();
+}
