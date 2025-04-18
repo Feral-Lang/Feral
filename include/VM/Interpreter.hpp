@@ -61,14 +61,16 @@ class Interpreter
 
 	bool loadPrelude();
 
+	VirtualMachine *createVM();
+	void destroyVM(VirtualMachine *vm);
+
 public:
 	Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn);
 	~Interpreter();
 
 	int runFile(ModuleLoc loc, const char *file);
-
-	VirtualMachine *createVM();
-	void destroyVM(VirtualMachine *vm);
+	Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
+			 const StringMap<AssnArgData> &assn_args);
 
 	// Must be used with full path of directory
 	void tryAddModulePathsFromDir(String dir);
