@@ -1,0 +1,20 @@
+let io = import('std/io');
+let os = import('std/os');
+let vec = import('std/vec');
+let mproc = import('std/multiproc');
+
+let mtx = mproc.newMutex();
+let shouldStop = mproc.newAtomicBool(false);
+let q = vec.new();
+
+let test = fn() {
+	let i = 0;
+	while !shouldStop.get() { os.sleep(1); }
+	raise('Failed');
+};
+
+let t = mproc.newThread(name = 'test', test);
+os.sleep(5);
+shouldStop.set(true);
+
+# Make this return 1 because test() will fail
