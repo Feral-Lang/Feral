@@ -1,5 +1,7 @@
 #include "VM/Interpreter.hpp"
 
+#include <chrono>
+
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -28,7 +30,7 @@ void remDLLDirectories();
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
-	: argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
+	: vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
 	  globals(VarFrame::create(mem)), prelude("prelude/prelude"),
 	  binaryPath(env::getProcPath()), moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -77,6 +79,10 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 }
 Interpreter::~Interpreter()
 {
+	using namespace std::chrono_literals;
+	while(vmCount.load() > 1) {
+		std::this_thread::sleep_for(1ms);
+	}
 	for(auto &mod : modules) {
 		decVarRef(mod.second);
 	}
@@ -379,8 +385,10 @@ void Interpreter::initTypeNames()
 VirtualMachine::VirtualMachine(Interpreter &ip)
 	: ip(ip), vars(ip.mem), failstack(ip.mem), execstack(ip.mem), recurseCount(0), exitcode(0),
 	  recurseExceeded(false), exitcalled(false)
-{}
-VirtualMachine::~VirtualMachine() {}
+{
+	ip.incVMCount();
+}
+VirtualMachine::~VirtualMachine() { ip.decVMCount(); }
 
 int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {

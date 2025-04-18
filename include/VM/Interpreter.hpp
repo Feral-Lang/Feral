@@ -24,6 +24,7 @@ class Interpreter
 {
 	// Used to store VirtualMachine memory after one is free'd
 	UniList<VirtualMachine *> freeVMMem;
+	Atomic<size_t> vmCount;
 
 	ArgParser &argparser;
 	ParseSourceFn parseSourceFn;
@@ -99,6 +100,9 @@ public:
 	VarModule *getModule(StringRef path);
 
 	void initTypeNames();
+
+	inline void incVMCount() { ++vmCount; }
+	inline void decVMCount() { --vmCount; }
 
 	inline const char *getGlobalModulePathsFile() { return GLOBAL_MODULE_PATHS_FILE_PATH; }
 	inline StringRef getFeralImportExtension() { return ".fer"; }
