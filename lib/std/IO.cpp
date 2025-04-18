@@ -19,6 +19,35 @@ static constexpr size_t MAX_SCAN_LINE_LEN = 1024;
 StringRef getColor(StringRef code);
 int applyColors(String &str);
 
+inline ssize_t writeToFile(FILE *file, StringRef data)
+{
+	return fwrite(data.data(), sizeof(char), data.size(), file);
+}
+inline ssize_t writeToFileWithCol(FILE *file, StringRef data)
+{
+	String s(data);
+	applyColors(s);
+	return writeToFile(file, s);
+}
+ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> args, bool withCols)
+{
+	ssize_t count = 0;
+	for(auto &a : args) {
+		if(a->is<VarStr>()) {
+			const String &s = as<VarStr>(a)->getVal();
+			count += withCols ? writeToFileWithCol(file, s) : writeToFile(file, s);
+			continue;
+		}
+		Var *v = nullptr;
+		Array<Var *, 1> tmp{a};
+		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return -1;
+		const String &s = as<VarStr>(v)->getVal();
+		count += withCols ? writeToFileWithCol(file, s) : writeToFile(file, s);
+		vm.decVarRef(v);
+	}
+	return count;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,128 +55,68 @@ int applyColors(String &str);
 Var *print(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *println(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
-	count += write(STDOUT_FILENO, "\n", 1);
+	ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
+	if(count < 0) return nullptr;
+	count += writeToFile(stdout, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *cprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *cprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += write(STDOUT_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
-	count += write(STDOUT_FILENO, "\n", 1);
+	ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
+	if(count < 0) return nullptr;
+	count += writeToFile(stdout, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *eprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	    const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += write(STDERR_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *eprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	      const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += write(STDERR_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
-	count += write(STDERR_FILENO, "\n", 1);
+	ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
+	if(count < 0) return nullptr;
+	count += writeToFile(stderr, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *ecprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += write(STDERR_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
 Var *ecprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	ssize_t count = 0;
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += write(STDERR_FILENO, str.data(), str.size());
-		vm.decVarRef(v);
-	}
-	count += write(STDERR_FILENO, "\n", 1);
+	ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
+	if(count < 0) return nullptr;
+	count += writeToFile(stderr, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -165,15 +134,8 @@ Var *fprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		return nullptr;
 	}
 	FILE *f	      = as<VarFile>(args[1])->getFile();
-	ssize_t count = 0;
-	for(size_t i = 2; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, f, {args.begin() + 2, args.end()}, false);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -191,16 +153,9 @@ Var *fprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		return nullptr;
 	}
 	FILE *f	      = as<VarFile>(args[1])->getFile();
-	ssize_t count = 0;
-	for(size_t i = 2; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &str = as<VarStr>(v)->getVal();
-		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		vm.decVarRef(v);
-	}
-	count += fwrite("\n", sizeof(char), 1, f);
+	ssize_t count = printBase(vm, loc, f, {args.begin() + 2, args.end()}, false);
+	if(count < 0) return nullptr;
+	count += writeToFile(f, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -218,16 +173,8 @@ Var *fcprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		return nullptr;
 	}
 	FILE *f	      = as<VarFile>(args[1])->getFile();
-	ssize_t count = 0;
-	for(size_t i = 2; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		vm.decVarRef(v);
-	}
+	ssize_t count = printBase(vm, loc, f, {args.begin() + 2, args.end()}, true);
+	if(count < 0) return nullptr;
 	return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -245,17 +192,9 @@ Var *fcprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		return nullptr;
 	}
 	FILE *f	      = as<VarFile>(args[1])->getFile();
-	ssize_t count = 0;
-	for(size_t i = 2; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		String str = as<VarStr>(v)->getVal();
-		applyColors(str);
-		count += fwrite(str.data(), sizeof(char), str.size(), f);
-		vm.decVarRef(v);
-	}
-	count += fwrite("\n", sizeof(char), 1, f);
+	ssize_t count = printBase(vm, loc, f, {args.begin() + 2, args.end()}, true);
+	if(count < 0) return nullptr;
+	count += writeToFile(f, "\n");
 	return vm.makeVar<VarInt>(loc, count);
 }
 
