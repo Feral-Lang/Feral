@@ -8,7 +8,6 @@ namespace fer
 class VarFrame : public IAllocated
 {
 	MemoryManager &mem;
-	RecursiveMutex mtx;
 	StringMap<Var *> vars;
 
 	friend class MemoryManager;
@@ -34,13 +33,14 @@ public:
 
 class VarStack
 {
+	MemoryManager &mem;
+	RecursiveMutex mtx;
 	Vector<size_t> loops_from;
 	// each VarFrame is a stack frame
 	// Vector is not used here as VarFrame has to be stored as a pointer.
 	// This is so because otherwise, on vector resize, it will cause the VarFrame object to
 	// delete and reconstruct, therefore incorrectly calling the dref() calls
 	Vector<VarFrame *> stack;
-	MemoryManager &mem;
 
 public:
 	VarStack(MemoryManager &mem);
@@ -58,6 +58,8 @@ public:
 	void popLoop();
 	void continueLoop();
 
+	bool rem(StringRef name, bool dref);
+
 	void dump(OStream &os, size_t tab = 0);
 
 	inline size_t size() { return stack.size(); }
@@ -66,7 +68,6 @@ public:
 		if(stack.size() > count) popStack(stack.size() - count);
 	}
 	inline void add(StringRef name, Var *val, bool iref) { stack.back()->add(name, val, iref); }
-	bool rem(StringRef name, bool dref);
 };
 
 class Vars
