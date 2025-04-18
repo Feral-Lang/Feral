@@ -77,13 +77,11 @@ void VarLockGuard::onDestroy(MemoryManager &mem)
 ///////////////////////////////////////////// VarThread //////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarThread::VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable,
+VarThread::VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable,
 		     Span<Var *> _args, const StringMap<AssnArgData> &_assn_args)
-	: Var(loc, false, false), name(name), vm(_vm.getInterpreter().createVM()), res(nullptr),
-	  thread(nullptr), callable(_callable)
+	: Var(loc, false, false), name(name), res(nullptr), thread(nullptr), ip(_ip),
+	  callable(_callable)
 {
-	vm->incVarRef(callable);
-
 	args.reserve(_args.size() + 1); // +1 for self/nullptr
 	auto selfArgLoc = _assn_args.find("selfVar");
 	Var *selfVar	= nullptr;
@@ -98,17 +96,22 @@ VarThread::VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_c
 		if(aa.first == "selfVar") continue;
 		assn_args.insert(aa);
 	}
+}
+VarThread::~VarThread() {}
 
+void VarThread::onCreate(MemoryManager &mem)
+{
+	Var::incVarRef(callable);
 	for(auto &a : args) {
-		if(a) vm->incVarRef(a);
+		if(a) Var::incVarRef(a);
 	}
-	for(auto &aa : assn_args) vm->incVarRef(aa.second.val);
-	PackagedTask<Var *()> task(std::bind(&VirtualMachine::callVarAndReturn, vm, getLoc(), name,
-					     callable, args, assn_args));
+	for(auto &aa : assn_args) Var::incVarRef(aa.second.val);
+	PackagedTask<Var *()> task(
+	std::bind(&Interpreter::runCallable, &ip, getLoc(), name, callable, args, assn_args));
 	res    = new SharedFuture<Var *>(task.get_future());
 	thread = new Thread(std::move(task));
 }
-VarThread::~VarThread()
+void VarThread::onDestroy(MemoryManager &mem)
 {
 	if(res) {
 		res->wait();
@@ -116,12 +119,11 @@ VarThread::~VarThread()
 		delete res;
 		delete thread;
 	}
-	for(auto &aa : assn_args) vm->decVarRef(aa.second.val);
+	for(auto &aa : assn_args) Var::decVarRef(mem, aa.second.val);
 	for(auto &a : args) {
-		if(a) vm->decVarRef(a);
+		if(a) Var::decVarRef(mem, a);
 	}
-	vm->decVarRef(callable);
-	vm->getInterpreter().destroyVM(vm);
+	Var::decVarRef(mem, callable);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -280,7 +282,8 @@ Var *threadNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	}
 	Var *callable = args[1];
 	Span<Var *> passArgs(args.begin() + 2, args.end());
-	VarThread *t = vm.makeVar<VarThread>(loc, name, vm, callable, passArgs, assn_args);
+	VarThread *t =
+	vm.makeVar<VarThread>(loc, name, vm.getInterpreter(), callable, passArgs, assn_args);
 	return t;
 }
 

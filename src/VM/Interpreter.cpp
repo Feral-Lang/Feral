@@ -1,7 +1,5 @@
 #include "VM/Interpreter.hpp"
 
-#include <chrono>
-
 #include "Env.hpp"
 #include "Error.hpp"
 #include "FS.hpp"
@@ -10,6 +8,7 @@
 #include "VM/DynLib.hpp"
 
 #if defined(FER_OS_WINDOWS)
+#include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
 #include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
 #endif
 
@@ -53,7 +52,8 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 		cmdargs->push(makeVarWithRef<VarStr>(ModuleLoc(), a));
 	}
 
-	VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), INSTALL_PATH);
+	VarStr *moduleLoc =
+	makeVarWithRef<VarStr>(ModuleLoc(), fs::parentDir(fs::parentDir(binaryPath)));
 	moduleLoc->getVal() += "/lib/feral";
 	moduleDirs->insert(moduleDirs->begin(), moduleLoc);
 
@@ -80,7 +80,7 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 Interpreter::~Interpreter()
 {
 	using namespace std::chrono_literals;
-	while(vmCount.load() > 1) {
+	while(vmCount.load() > 0) {
 		std::this_thread::sleep_for(1ms);
 	}
 	for(auto &mod : modules) {
@@ -129,14 +129,6 @@ bool Interpreter::loadPrelude()
 	return true;
 }
 
-int Interpreter::runFile(ModuleLoc loc, const char *file)
-{
-	VirtualMachine *vm = createVM();
-	int res		   = vm->compileAndRun(loc, file);
-	destroyVM(vm);
-	return res;
-}
-
 VirtualMachine *Interpreter::createVM()
 {
 	VirtualMachine *vm = nullptr;
@@ -147,11 +139,26 @@ VirtualMachine *Interpreter::createVM()
 	if(!vm) vm = mem.alloc<VirtualMachine>(*this);
 	return vm;
 }
-
 void Interpreter::destroyVM(VirtualMachine *vm)
 {
 	vm->~VirtualMachine();
 	freeVMMem.push_front(vm);
+}
+
+int Interpreter::runFile(ModuleLoc loc, const char *file)
+{
+	VirtualMachine *vm = createVM();
+	int res		   = vm->compileAndRun(loc, file);
+	destroyVM(vm);
+	return res;
+}
+Var *Interpreter::runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
+			      const StringMap<AssnArgData> &assn_args)
+{
+	VirtualMachine *vm = createVM();
+	Var *res	   = vm->callVarAndReturn(loc, name, callable, args, assn_args);
+	destroyVM(vm);
+	return res;
 }
 
 void Interpreter::tryAddModulePathsFromDir(String dir)

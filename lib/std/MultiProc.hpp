@@ -63,20 +63,22 @@ public:
 class VarThread : public Var
 {
 	String name;
-	VirtualMachine *vm;
 	SharedFuture<Var *> *res;
 	Thread *thread;
+	Interpreter &ip;
 	Var *callable;
 	Vector<Var *> args;
 	StringMap<AssnArgData> assn_args;
 
+	void onCreate(MemoryManager &mem) override;
+	void onDestroy(MemoryManager &mem) override;
+
 public:
-	VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable,
+	VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable,
 		  Span<Var *> _args, const StringMap<AssnArgData> &_assn_args);
 	~VarThread();
 
 	inline StringRef getName() { return name; }
-	inline VirtualMachine *&getVM() { return vm; }
 	inline SharedFuture<Var *> *&getFuture() { return res; }
 	inline Thread *&getThread() { return thread; }
 	inline Thread::id getThreadId() { return thread->get_id(); }
