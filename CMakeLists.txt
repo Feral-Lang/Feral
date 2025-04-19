@@ -127,10 +127,10 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX AND DEFINED WITH_COVERAGE)
-    set(WITH_COVERAGE "-D_WITH_COVERAGE")
-    include(CodeCoverage)
-    APPEND_COVERAGE_COMPILER_FLAGS()
-    setup_target_for_coverage_gcovr_html(NAME feral_cov EXECUTABLE ${PROJECT_SOURCE_DIR}/codecov.sh ${PROJECT_SOURCE_DIR})
+	set(WITH_COVERAGE "-D_WITH_COVERAGE")
+	include(CodeCoverage)
+	APPEND_COVERAGE_COMPILER_FLAGS()
+	setup_target_for_coverage_gcovr_html(NAME feral_cov EXECUTABLE ${PROJECT_SOURCE_DIR}/codecov.sh ${PROJECT_SOURCE_DIR})
 endif()
 
 # Finally! The sources!!!!!
@@ -148,13 +148,13 @@ add_library(libferal SHARED ${SRCS} ${INCS})
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
 target_include_directories(libferal PRIVATE ${PROJECT_SOURCE_DIR}/include)
 set_target_properties(libferal
-    PROPERTIES
-    PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
-    LINK_FLAGS "${EXTRA_LD_FLAGS}"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral" # for so (non-windows)
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for dll (windows)
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for lib (windows)
-    INSTALL_RPATH_USE_LINK_PATH TRUE
+	PROPERTIES
+	PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
+	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral" # for so (non-windows)
+	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for dll (windows)
+	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for lib (windows)
+	INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 install(TARGETS libferal
 	LIBRARY
@@ -180,6 +180,7 @@ install(TARGETS feral
 	  DESTINATION bin
 	  COMPONENT Binaries
 )
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT feral)
 
 # Install CMake modules
 # install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
@@ -219,7 +220,9 @@ if(NOT NOSTDLIB STREQUAL "true")
 		get_filename_component(moddir ${m} DIRECTORY)
 		set(dep "")
 		# Add dependencies here for a library if needed.
-		add_library(${modname} SHARED "${mod}")
+		# End
+		file(GLOB_RECURSE header RELATIVE "${PROJECT_SOURCE_DIR}" "lib/*${modname}.hpp")
+		add_library(${modname} SHARED "${mod}" "${header}")
 		target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
 		target_link_libraries(${modname} libferal ${dep})
 		set_target_properties(${modname}
