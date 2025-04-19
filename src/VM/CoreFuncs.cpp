@@ -32,11 +32,14 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
 	result = as<VarStr>(ret)->getVal();
 	vm.decVarRef(ret);
 
-	size_t nameLoc = result.rfind(as<VarStr>(modname)->getVal());
-	// nameLoc cannot be String::npos since result is the string where modname was found.
-	// - 1 for the last slash in the path.
-	String dir = result.substr(0, nameLoc - 1);
-	vm.tryAddModulePathsFromDir(dir);
+	if(isImport) {
+		size_t nameLoc = result.rfind(as<VarStr>(modname)->getVal());
+		// nameLoc cannot be String::npos since result is the string where modname was
+		// found.
+		// - 1 for the last slash in the path.
+		String dir = result.substr(0, nameLoc - 1);
+		vm.tryAddModulePathsFromDir(dir);
+	}
 	return true;
 }
 
