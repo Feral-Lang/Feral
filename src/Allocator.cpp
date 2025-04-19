@@ -19,17 +19,52 @@ namespace fer
 static Atomic<size_t> totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0,
 		      chunkReuseCount = 0;
 
+// alloc address must be AFTER sizeof(AllocDetail)
+inline void setAllocDetail(size_t alloc, size_t memSz, size_t next)
+{
+	*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES) = {memSz, next};
+}
+// alloc address must be AFTER sizeof(AllocDetail)
+inline void setAllocDetailNext(size_t alloc, size_t next)
+{
+	(*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES)).next = next;
+}
+// alloc address must be AFTER sizeof(AllocDetail)
+inline void setAllocDetailMemSz(size_t alloc, size_t memSz)
+{
+	(*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES)).memSz = memSz;
+}
+
+// alloc address must be AFTER sizeof(AllocDetail)
+inline AllocDetail getAllocDetail(size_t alloc)
+{
+	return *(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES);
+}
+// alloc address must be AFTER sizeof(AllocDetail)
+inline size_t getAllocDetailNext(size_t alloc)
+{
+	return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES)).next;
+}
+// alloc address must be AFTER sizeof(AllocDetail)
+inline size_t getAllocDetailMemSz(size_t alloc)
+{
+	return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES)).memSz;
+}
+
 MemoryManager::MemoryManager(StringRef name) : name(name) { allocPool(); }
 MemoryManager::~MemoryManager()
 {
 	// clear out the allocations that are larger than MAX_ROUNDUP
-	for(auto &c : freechunks) {
-		if(c.first > POOL_SIZE) {
-			for(auto &blk : c.second) {
-				AlignedFree(blk);
-			}
+	for(auto &it : freechunks) {
+		if(it.first > POOL_SIZE || it.second == 0) continue;
+		size_t allocAddr = it.second;
+		AllocDetail detail;
+		while(allocAddr > 0) {
+			detail = getAllocDetail(allocAddr);
+			if(detail.memSz <= POOL_SIZE) break;
+			AlignedFree((char *)allocAddr - ALLOC_DETAIL_BYTES);
+			allocAddr = detail.next;
 		}
-		c.second.clear();
 	}
 	freechunks.clear();
 	for(auto &p : pools) AlignedFree(p.mem);
@@ -64,12 +99,12 @@ void *MemoryManager::alloc(size_t size, size_t align)
 	// align is unused for now.
 	if(size == 0) return nullptr;
 
-	// Add MAX_ALIGNMENT instead of SIZE_BYTES - since MAX_ALIGNMENT is guaranteed
-	// (static_assert) to be a multiple of SIZE_BYTES.
-	size_t alignedSz = size + MAX_ALIGNMENT;
-	size_t allocSz	 = nextPow2(alignedSz);
+	// Add ALLOC_DETAIL_BYTES to the size since it is guaranteed
+	// (static_assert) to be a multiple of MAX_ALIGNMENT.
+	size_t requiredSz = size + ALLOC_DETAIL_BYTES;
+	size_t allocSz	  = nextPow2(requiredSz);
 
-	logger.trace("Allocating: ", allocSz, " (aligned size: ", alignedSz,
+	logger.trace("Allocating: ", allocSz, " (required size: ", requiredSz,
 		     ") (original size: ", size, ")\n");
 
 	char *loc = nullptr;
@@ -82,10 +117,13 @@ void *MemoryManager::alloc(size_t size, size_t align)
 		totalPoolAlloc += allocSz;
 		LockGuard<RecursiveMutex> mtxlock(mtx);
 		// there is a free chunk available in the chunk list
-		auto &freechunkloc = freechunks[allocSz];
-		if(!freechunkloc.empty()) {
-			loc = freechunkloc.front();
-			freechunkloc.pop_front();
+		size_t addr = 0;
+		auto it	    = freechunks.find(allocSz);
+		if(it != freechunks.end()) addr = it->second;
+		if(addr != 0) {
+			loc	   = (char *)addr;
+			it->second = getAllocDetailNext(addr);
+			setAllocDetailNext(addr, 0);
 			++chunkReuseCount;
 			// No need to size size bytes here because they would have already been set
 			// when they were taken from the pool.
@@ -108,8 +146,8 @@ void *MemoryManager::alloc(size_t size, size_t align)
 			p.head += allocSz;
 		}
 	}
-	loc += MAX_ALIGNMENT;
-	*((size_t *)(loc - SIZE_BYTES)) = allocSz;
+	loc += ALLOC_DETAIL_BYTES;
+	setAllocDetail((size_t)loc, allocSz, 0);
 	return loc;
 }
 
@@ -117,13 +155,19 @@ void MemoryManager::free(void *data)
 {
 	if(data == nullptr) return;
 	char *loc = (char *)data;
-	size_t sz = *((size_t *)(loc - SIZE_BYTES));
+	size_t sz = getAllocDetailMemSz((size_t)loc);
 	if(sz > POOL_SIZE) {
-		AlignedFree(loc - MAX_ALIGNMENT);
+		AlignedFree(loc - ALLOC_DETAIL_BYTES);
 		return;
 	}
 	LockGuard<RecursiveMutex> mtxlock(mtx);
-	freechunks[sz].push_front(loc);
+	auto mapLoc = freechunks.find(sz);
+	if(mapLoc == freechunks.end()) {
+		freechunks.insert({sz, (size_t)loc});
+		return;
+	}
+	setAllocDetailNext((size_t)loc, mapLoc->second);
+	mapLoc->second = (size_t)loc;
 }
 
 void MemoryManager::dumpMem(char *pool)

@@ -423,7 +423,11 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// POP_JMP instr will take care of popping from jmps and failstack.
 			i = blkEnd - 1;
 			popModule();
-			if(isExitCalled()) goto done;
+			if(isExitCalled()) {
+				// Will never reach POP_JMP, so pop the failstack here.
+				failstack.popScope();
+				goto done;
+			}
 			break;
 		}
 		}

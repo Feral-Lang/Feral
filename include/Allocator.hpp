@@ -5,13 +5,26 @@
 namespace fer
 {
 
-constexpr size_t MAX_ROUNDUP   = 2048;
-constexpr size_t POOL_SIZE     = 8 * 1024;
-constexpr size_t MAX_ALIGNMENT = alignof(std::max_align_t);
-constexpr size_t SIZE_BYTES    = sizeof(size_t);
+struct AllocDetail
+{
+	// Allocation size
+	size_t memSz;
+	// Address of next free allocation of the same size
+	// The address points to the usable location, so to get AllocDetail from there,
+	// you must do: (char*)loc - sizeof(AllocDetail)
+	size_t next;
+};
 
-static_assert(MAX_ALIGNMENT % SIZE_BYTES == 0,
-	      "Max alignment must be a multiple of sizeof(size_t)");
+constexpr size_t MAX_ROUNDUP	    = 2048;
+constexpr size_t POOL_SIZE	    = 8 * 1024;
+constexpr size_t MAX_ALIGNMENT	    = alignof(std::max_align_t);
+constexpr size_t ALLOC_DETAIL_BYTES = sizeof(AllocDetail);
+
+// Extra allocation bytes must be a multiple of MAX_ALIGNMENT.
+// That way, when we allocate the memory, and move forward by ALLOC_DETAIL_BYTES,
+// we are still on an address that is a multiple of MAX_ALIGNMENT.
+static_assert(ALLOC_DETAIL_BYTES % MAX_ALIGNMENT == 0,
+	      "sizeof(AllocDetail) must be a multiple of max alignment");
 
 struct MemPool
 {
@@ -21,7 +34,9 @@ struct MemPool
 
 class MemoryManager
 {
-	Map<size_t, UniList<char *>> freechunks;
+	// The size_t at freechunks[sz] is an address which holds an allocation.
+	// This address is after ALLOC_DETAIL_BYTES bytes.
+	Map<size_t, size_t> freechunks;
 	Vector<MemPool> pools;
 	// TODO: have multiple arenas and then use mutexes individual to those arenas
 	// then, in a mutithreaded environment, the manager should be able to choose one of the
