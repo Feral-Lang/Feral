@@ -104,6 +104,7 @@ if feral.args.find('--valgrind') {
 	# --log-fd=1 to pour the valgrind output on stdout so that we
 	# don't have to redirect entire stderr to io.null
 	valgrindCmd.push(valgrindExec);
+	valgrindCmd.push('--fair-sched=yes');
 	valgrindCmd.push('--log-fd=1');
 	valgrindCmd.push('--leak-check=full');
 	valgrindCmd.push('--show-leak-kinds=all');
