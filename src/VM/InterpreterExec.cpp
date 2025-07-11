@@ -43,7 +43,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 					fail(ins.getLoc(), "invalid data received as const");
 					goto handle_err;
 				}
-				execstack.push(res);
+				pushExecStack(res);
 			} else {
 				Var *res = vars.get(ins.getDataStr());
 				if(!res) {
@@ -54,17 +54,17 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 						goto handle_err;
 					}
 				}
-				execstack.push(res);
+				pushExecStack(res);
 			}
 			break;
 		}
 		case Opcode::UNLOAD: {
-			for(size_t i = 0; i < ins.getDataInt(); ++i) execstack.pop();
+			for(size_t i = 0; i < ins.getDataInt(); ++i) popExecStack();
 			break;
 		}
 		case Opcode::CREATE: {
 			StringRef name = ins.getDataStr();
-			Var *val       = execstack.pop(false);
+			Var *val       = popExecStack(false);
 			if(!val) {
 				fail(ins.getLoc(),
 				     "expected a value in stack for creating variable: ", name,
@@ -84,8 +84,8 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// back() and pop() are not combined because pop can cause the Var* to be
 			// destroyed
 			StringRef name = ins.getDataStr();
-			Var *in	       = execstack.pop(false);
-			Var *val       = execstack.pop(false);
+			Var *in	       = popExecStack(false);
+			Var *val       = popExecStack(false);
 			if(in->isAttrBased()) {
 				// only copy if reference count > 1 (no point in copying unique
 				// values) or if loadAsRef() of value is false
@@ -119,8 +119,8 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				     " item(s), required 2 for store operation");
 				goto handle_err;
 			}
-			Var *var = execstack.pop(false);
-			Var *val = execstack.pop(false);
+			Var *var = popExecStack(false);
+			Var *val = popExecStack(false);
 			// TODO: check if this works for assigning one struct instance of type X to
 			// another struct instance of type Y
 			if(var->getType() != val->getType()) {
@@ -132,7 +132,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				goto handle_err;
 			}
 			setVar(var, val);
-			execstack.push(var, false);
+			pushExecStack(var, false);
 			decVarRef(val);
 			break;
 		}
@@ -150,7 +150,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		}
 		case Opcode::JMP_NIL: {
 			if(execstack.back()->is<VarNil>()) {
-				execstack.pop();
+				popExecStack();
 				i = ins.getDataInt() - 1;
 			}
 			break;
@@ -175,17 +175,17 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				     "conditional jump requires boolean"
 				     " (or int/float) data, found: ",
 				     getTypeName(var));
-				execstack.pop();
+				popExecStack();
 				goto handle_err;
 			}
 			if(ins.getOpcode() == Opcode::JMP_TRUE_POP ||
 			   ins.getOpcode() == Opcode::JMP_TRUE)
 			{
 				if(res) i = ins.getDataInt() - 1;
-				if(!res || ins.getOpcode() == Opcode::JMP_TRUE_POP) execstack.pop();
+				if(!res || ins.getOpcode() == Opcode::JMP_TRUE_POP) popExecStack();
 			} else {
 				if(!res) i = ins.getDataInt() - 1;
-				if(res || ins.getOpcode() == Opcode::JMP_FALSE_POP) execstack.pop();
+				if(res || ins.getOpcode() == Opcode::JMP_FALSE_POP) popExecStack();
 			}
 			break;
 		}
@@ -199,11 +199,11 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			String kw, va;
 			if(arginfo[0] == '1') {
 				kw = as<VarStr>(execstack.back())->getVal();
-				execstack.pop();
+				popExecStack();
 			}
 			if(arginfo[1] == '1') {
 				va = as<VarStr>(execstack.back())->getVal();
-				execstack.pop();
+				popExecStack();
 			}
 			size_t argcount = 0, assnarg_count = 0;
 			for(size_t i = 0; i < arginfo.size(); ++i) {
@@ -216,15 +216,15 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			bodies.pop_back();
 			for(size_t i = 2; i < arginfo.size(); ++i) {
 				String name = as<VarStr>(execstack.back())->getVal();
-				execstack.pop();
+				popExecStack();
 				if(arginfo[i] == '1') {
 					Var *data = execstack.back();
-					execstack.pop(false);
+					popExecStack(false);
 					fn->insertAssnParam(name, data);
 				}
 				fn->pushParam(name);
 			}
-			execstack.push(fn, false);
+			pushExecStack(fn, false);
 			break;
 		}
 		case Opcode::MEM_CALL: // fallthrough
@@ -243,7 +243,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			size_t kwargpos	  = 0;
 			for(size_t i = 0; i < arginfo.size(); ++i) {
 				if(arginfo[i] == '2') { // unpack
-					Var *a = execstack.pop(false);
+					Var *a = popExecStack(false);
 					if(!a->is<VarVec>() && !a->is<VarMap>()) {
 						fail(
 						ins.getLoc(),
@@ -270,7 +270,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 					decVarRef(a);
 				} else if(arginfo[i] == '1') {
 					String name = as<VarStr>(execstack.back())->getVal();
-					execstack.pop();
+					popExecStack();
 					auto loc   = assn_args.find(name);
 					size_t pos = 0;
 					if(loc != assn_args.end()) {
@@ -279,21 +279,21 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 					} else {
 						pos = kwargpos++;
 					}
-					assn_args[name] = {pos, execstack.pop(false)};
+					assn_args[name] = {pos, popExecStack(false)};
 				} else if(arginfo[i] == '0') {
-					args.push_back(execstack.pop(false));
+					args.push_back(popExecStack(false));
 				}
 			}
 
 			// fetch the function
 			if(memcall) {
 				fnname = as<VarStr>(execstack.back())->getVal();
-				execstack.pop();
-				self = execstack.pop(false);
+				popExecStack();
+				self = popExecStack(false);
 				if(self->isAttrBased()) fnbase = self->getAttr(fnname);
 				if(!fnbase) fnbase = getTypeFn(self, fnname);
 			} else {
-				fnbase = execstack.pop(false);
+				fnbase = popExecStack(false);
 			}
 			if(!fnbase) {
 				if(memcall) {
@@ -324,7 +324,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				}
 				goto fncall_fail;
 			}
-			if(!res->is<VarNil>()) execstack.push(res);
+			if(!res->is<VarNil>()) pushExecStack(res);
 
 			// cleanup
 			for(auto &a : args) decVarRef(a);
@@ -340,7 +340,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		}
 		case Opcode::ATTR: {
 			StringRef attr = ins.getDataStr();
-			Var *inbase    = execstack.pop(false);
+			Var *inbase    = popExecStack(false);
 			Var *val       = nullptr;
 			if(inbase->isAttrBased()) val = inbase->getAttr(attr);
 			if(!val) val = getTypeFn(inbase, attr);
@@ -350,12 +350,12 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				decVarRef(inbase);
 				goto handle_err;
 			}
-			execstack.push(val);
+			pushExecStack(val);
 			decVarRef(inbase);
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) execstack.push(ip.nil);
+			if(!ins.getDataBool()) pushExecStack(ip.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
