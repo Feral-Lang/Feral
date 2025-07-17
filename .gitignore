@@ -18,7 +18,6 @@ $null
 
 # Build files #
 ###############
-CMakeLists.txt
 testbin/
 build/
 dockerbuild/
