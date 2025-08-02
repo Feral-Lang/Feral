@@ -2,9 +2,7 @@
 
 #include <iostream>
 
-namespace fer
-{
-namespace tio
+namespace fer::tio
 {
 
 static Vector<bool> &_tab()
@@ -42,5 +40,4 @@ void printf(InitList<StringRef> data)
 	for(auto &d : data) std::cout << d;
 }
 
-} // namespace tio
-} // namespace fer
+} // namespace fer::tio

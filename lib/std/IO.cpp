@@ -2,7 +2,7 @@
 
 #include "VM/Interpreter.hpp"
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 #include <io.h>
 
 #include "FS.hpp" // For STDOUT_FILENO

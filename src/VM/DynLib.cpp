@@ -2,7 +2,7 @@
 
 #include "Error.hpp"
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 // Windows dlfcn equivalent functions.
 // Thanks to this person's youth:
 // https://stackoverflow.com/questions/53530566/loading-dll-in-windows-c-for-cross-platform-design
@@ -85,7 +85,7 @@ void *DynLib::get(StringRef filepath, const char *sym)
 } // namespace fer
 
 // Windows dlfcn equivalent function definitions
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 void *dlopen(const char *filename, int flags)
 {
 	// We need to set current working directory to the module's directory because

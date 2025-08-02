@@ -8,7 +8,7 @@
 #include "FS.hpp"
 #include "VM/Interpreter.hpp"
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
@@ -21,7 +21,7 @@
 namespace fer
 {
 
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 // only used for chmod
 int execInternal(const String &file);
 #endif
@@ -115,7 +115,7 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		cmd += arg;
 		if(!isArgOperator) cmd += "\"";
 	}
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	// Apparently, popen on Windows eradicates the outermost quotes.
 	// If this is not present, any argument with space (including program name), will not be
 	// read as a single string.
@@ -202,7 +202,7 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		}
 	}
 
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 	res = WEXITSTATUS(res);
 #endif
 	return vm.makeVar<VarInt>(loc, res);
@@ -219,7 +219,7 @@ Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	const String &cmd = as<VarStr>(args[1])->getVal();
 
 	int res = std::system(cmd.c_str());
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 	res = WEXITSTATUS(res);
 #endif
 	return vm.makeVar<VarInt>(loc, res);
@@ -228,15 +228,15 @@ Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 Var *osGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	return vm.makeVar<VarStr>(loc, "windows");
-#elif defined(FER_OS_ANDROID)
+#elif defined(CORE_OS_ANDROID)
 	return vm.makeVar<VarStr>(loc, "android");
-#elif defined(FER_OS_LINUX)
+#elif defined(CORE_OS_LINUX)
 	return vm.makeVar<VarStr>(loc, "linux");
-#elif defined(FER_OS_APPLE)
+#elif defined(CORE_OS_APPLE)
 	return vm.makeVar<VarStr>(loc, "macos");
-#elif defined(FER_OS_BSD)
+#elif defined(CORE_OS_BSD)
 	return vm.makeVar<VarStr>(loc, "bsd");
 #else
 	return vm.makeVar<VarStr>(loc, "unknown");
@@ -282,7 +282,7 @@ Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarBool>(loc, fs::setCWD(dir.c_str()));
 }
 
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 Var *osChmod(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	     const StringMap<AssnArgData> &assn_args)
 {
@@ -336,14 +336,14 @@ INIT_MODULE(OS)
 	mod->addNativeFn(vm, "getCWD", osGetCWD);
 	mod->addNativeFn(vm, "setCWD", osSetCWD, 1);
 
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 	mod->addNativeFn(vm, "chmodNative", osChmod, 3);
 #endif
 
 	return true;
 }
 
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 int execInternal(const String &cmd)
 {
 	FILE *pipe = popen(cmd.c_str(), "r");
@@ -356,7 +356,7 @@ int execInternal(const String &cmd)
 	free(line);
 	int res = pclose(pipe);
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	return res;
 #else
 	return WEXITSTATUS(res);

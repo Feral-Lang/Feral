@@ -7,7 +7,7 @@
 #include "VM/CoreFuncs.hpp"
 #include "VM/DynLib.hpp"
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 #include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
 #include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
 #endif
@@ -18,7 +18,7 @@ namespace fer
 Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		const StringMap<AssnArgData> &assn_args);
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
 bool addDLLDirectory(StringRef dir);
 void remDLLDirectories();
@@ -28,7 +28,7 @@ void remDLLDirectories();
 /////////////////////////////////////// Interpreter //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
+Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn)
 	: vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
 	  globals(VarFrame::create(mem)), prelude("prelude/prelude"),
 	  binaryPath(env::getProcPath()), moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -37,14 +37,14 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
 	  nil(makeVarWithRef<VarNil>(ModuleLoc())), recurseMax(DEFAULT_MAX_RECURSE_COUNT)
 {
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
 				 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
 				 LOAD_LIBRARY_SEARCH_USER_DIRS);
 #endif
 	initTypeNames();
 
-	Span<StringRef> vmArgs = argparser.getCodeExecArgs();
+	Span<StringRef> vmArgs = argparser.getPassthrough();
 
 	cmdargs = makeVarWithRef<VarVec>(ModuleLoc(), vmArgs.size(), false);
 	for(size_t i = 0; i < vmArgs.size(); ++i) {
@@ -69,7 +69,7 @@ Interpreter::Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn)
 	// manager.
 	tryAddModulePathsFromFile(getGlobalModulePathsFile());
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	for(auto &modDir : moduleDirs->getVal()) {
 		addDLLDirectory(as<VarStr>(modDir)->getVal());
 	}
@@ -103,7 +103,7 @@ Interpreter::~Interpreter()
 		mem.free(item);
 	}
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	remDLLDirectories();
 #endif
 }
@@ -174,7 +174,7 @@ void Interpreter::tryAddModulePathsFromFile(const char *file)
 {
 	if(!fs::exists(file)) return;
 	String modulePaths;
-	if(!fs::read(file, modulePaths, true)) return;
+	if(!fs::read(file, modulePaths).getCode()) return;
 	for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
 		if(_path.empty()) continue;
 		VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
@@ -401,8 +401,9 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {
 	String code;
 
-	if(!fs::read(file, code, true)) {
-		err.fail(loc, "Failed to read file: ", file);
+	Status<bool> readRes = fs::read(file, code);
+	if(!readRes.getCode()) {
+		err.fail(loc, "Failed to read file: ", file, ": ", readRes.getMsg());
 		return 1;
 	}
 
@@ -511,7 +512,7 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext)
 
 bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, StringRef moduleStr)
 {
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	// append the parent dir to dll search paths
 	StringRef parentdir = fs::parentDir(modpath);
 	if(!addDLLDirectory(parentdir)) {
@@ -636,7 +637,7 @@ done:
 ////////////////////////////////////// Other Functions ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 bool addDLLDirectory(StringRef dir)
 {
 	if(dllDirectories.find(dir) != dllDirectories.end()) return true;

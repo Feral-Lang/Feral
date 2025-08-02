@@ -2,13 +2,13 @@
 
 constexpr char const *PROJECT_NAME = "@PROJECT_NAME@";
 
-constexpr int PROJECT_MAJOR = @SOURCE_VERSION_MAJOR@;
-constexpr int PROJECT_MINOR = @SOURCE_VERSION_MINOR@;
-constexpr int PROJECT_PATCH = @SOURCE_VERSION_PATCH@;
+constexpr int PROJECT_MAJOR = @PROJECT_VERSION_MAJOR@;
+constexpr int PROJECT_MINOR = @PROJECT_VERSION_MINOR@;
+constexpr int PROJECT_PATCH = @PROJECT_VERSION_PATCH@;
 
-constexpr char const *PROJECT_MAJOR_STR = "@SOURCE_VERSION_MAJOR@";
-constexpr char const *PROJECT_MINOR_STR = "@SOURCE_VERSION_MINOR@";
-constexpr char const *PROJECT_PATCH_STR = "@SOURCE_VERSION_PATCH@";
+constexpr char const *PROJECT_MAJOR_STR = "@PROJECT_VERSION_MAJOR@";
+constexpr char const *PROJECT_MINOR_STR = "@PROJECT_VERSION_MINOR@";
+constexpr char const *PROJECT_PATCH_STR = "@PROJECT_VERSION_PATCH@";
 
 constexpr char const *CMAKE_BUILD_TYPE = "@CMAKE_BUILD_TYPE@";
 constexpr char const *BUILD_COMPILER   = "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
@@ -22,7 +22,7 @@ constexpr char const *MIN_CMAKE_VERSION = "@CMAKE_MINIMUM_REQUIRED_VERSION@";
 constexpr char const *CMAKE_VERSION	= "@CMAKE_VERSION@";
 
 constexpr char const *INSTALL_PATH = "@CMAKE_INSTALL_PREFIX@";
-constexpr char const *TEMP_PATH	   = "@CMAKE_INSTALL_PREFIX@/lib/feral/temp";
+constexpr char const *TEMP_PATH	   = "@CMAKE_INSTALL_PREFIX@/tmp";
 
 constexpr char const *GLOBAL_MODULE_PATHS_FILE_PATH = "@CMAKE_INSTALL_PREFIX@/lib/feral/.modulePaths";
 
@@ -33,7 +33,7 @@ constexpr char const *MODULE_EXTENSION_NO_DOT = "fer";
 
 constexpr size_t MAX_PATH_CHARS = 4096;
 
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 // Windows' max recurse count seems to be ~200. So 100 should do.
 constexpr size_t DEFAULT_MAX_RECURSE_COUNT = 100;
 #else

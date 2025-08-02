@@ -10,7 +10,7 @@ class VarFrame : public IAllocated
 	MemoryManager &mem;
 	StringMap<Var *> vars;
 
-	friend class MemoryManager;
+	friend class core::MemoryManager;
 
 	VarFrame(MemoryManager &mem);
 	~VarFrame();

@@ -5,8 +5,8 @@
 #include "FS.hpp" // used by File.hpp.in
 #include "VM/Interpreter.hpp"
 
-// These headers are below the Feral headers (above), because FER_OS_WINDOWS is defined in them.
-#if defined(FER_OS_WINDOWS)
+// These headers are below the Feral headers (above), because CORE_OS_WINDOWS is defined in them.
+#if defined(CORE_OS_WINDOWS)
 #include <io.h>
 #else
 #include <dirent.h>
@@ -149,15 +149,15 @@ Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
 	String name;
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 	name = "windows";
-#elif defined(FER_OS_LINUX)
+#elif defined(CORE_OS_LINUX)
 	name = "linux";
-#elif defined(FER_OS_ANDROID)
+#elif defined(CORE_OS_ANDROID)
 	name = "android";
-#elif defined(FER_OS_BSD)
+#elif defined(CORE_OS_BSD)
 	name = "bsd";
-#elif defined(FER_OS_APPLE)
+#elif defined(CORE_OS_APPLE)
 	name = "macos";
 #endif
 	return vm.makeVar<VarStr>(loc, name);
@@ -167,31 +167,31 @@ Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	String distro;
-#if defined(FER_OS_WINDOWS)
-#if defined(FER_OS_WINDOWS64)
+#if defined(CORE_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS64)
 	distro = "windows64";
 #else
 	distro = "windows";
 #endif
-#elif defined(FER_OS_LINUX)
+#elif defined(CORE_OS_LINUX)
 	distro = "linux"; // arch,ubuntu,etc.
-#elif defined(FER_OS_ANDROID)
+#elif defined(CORE_OS_ANDROID)
 	distro = "android"; // version name - lollipop, marshmellow, etc.
-#elif defined(FER_OS_BSD)
-#if defined(FER_OS_FREEBSD)
+#elif defined(CORE_OS_BSD)
+#if defined(CORE_OS_FREEBSD)
 	distro = "freebsd";
-#elif defined(FER_OS_NETBSD)
+#elif defined(CORE_OS_NETBSD)
 	distro = "netbsd";
-#elif defined(FER_OS_OPENBSD)
+#elif defined(CORE_OS_OPENBSD)
 	distro = "openbsd";
-#elif defined(FER_OS_BSDI)
+#elif defined(CORE_OS_BSDI)
 	distro = "bsdi";
-#elif defined(FER_OS_DRAGONFLYBSD)
+#elif defined(CORE_OS_DRAGONFLYBSD)
 	distro = "dragonflybsd";
 #else
 	distro = "bsd";
 #endif
-#elif defined(FER_OS_APPLE)
+#elif defined(CORE_OS_APPLE)
 	distro = "macos";
 #endif
 	return vm.makeVar<VarStr>(loc, distro);
@@ -267,7 +267,7 @@ Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
+	if(fs::read(vm.getGlobalModulePathsFile(), data).getCode()) {
 		existingData = utils::stringDelim(data, "\n");
 	}
 	FILE *f	     = fopen(vm.getGlobalModulePathsFile(), "a+");
@@ -301,7 +301,7 @@ Var *removeGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args
 	}
 	String data;
 	Vector<StringRef> existingData;
-	if(fs::read(vm.getGlobalModulePathsFile(), data, true)) {
+	if(fs::read(vm.getGlobalModulePathsFile(), data).getCode()) {
 		existingData = utils::stringDelim(data, "\n");
 	}
 	size_t removed = 0;
@@ -639,16 +639,16 @@ INIT_MODULE(Prelude)
 	mod->addNativeVar("FS_O_RDWR", vm.makeVar<VarInt>(loc, O_RDWR));
 	mod->addNativeVar("FS_O_APPEND", vm.makeVar<VarInt>(loc, O_APPEND));
 	mod->addNativeVar("FS_O_CREAT", vm.makeVar<VarInt>(loc, O_CREAT));
-#if defined(FER_OS_LINUX) || defined(FER_OS_APPLE)
+#if defined(CORE_OS_LINUX) || defined(CORE_OS_APPLE)
 	mod->addNativeVar("FS_O_DSYNC", vm.makeVar<VarInt>(loc, O_DSYNC));
 #endif
 	mod->addNativeVar("FS_O_EXCL", vm.makeVar<VarInt>(loc, O_EXCL));
-#if !defined(FER_OS_WINDOWS)
+#if !defined(CORE_OS_WINDOWS)
 	mod->addNativeVar("FS_O_NOCTTY", vm.makeVar<VarInt>(loc, O_NOCTTY));
 	mod->addNativeVar("FS_O_NONBLOCK", vm.makeVar<VarInt>(loc, O_NONBLOCK));
 	mod->addNativeVar("FS_O_SYNC", vm.makeVar<VarInt>(loc, O_SYNC));
 #endif
-#if defined(FER_OS_LINUX)
+#if defined(CORE_OS_LINUX)
 	mod->addNativeVar("FS_O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
 #endif
 	mod->addNativeVar("FS_O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));

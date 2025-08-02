@@ -1,12 +1,6 @@
-#include "Args.hpp"
 #include "AST/Parser.hpp"
 #include "AST/Passes/Codegen.hpp"
 #include "AST/Passes/Simplify.hpp"
-#include "Core.hpp"
-#include "Env.hpp"
-#include "Error.hpp"
-#include "FS.hpp"
-#include "Logger.hpp"
 #include "VM/Interpreter.hpp"
 
 using namespace fer;
@@ -18,17 +12,31 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
 
 int main(int argc, char **argv)
 {
-	ArgParser args(argc, (const char **)argv);
-	args.add("version").setShort("v").setHelp("prints program version");
-	args.add("tokens").setShort("t").setHelp("shows lexical tokens");
-	args.add("parse").setShort("p").setHelp("shows AST");
-	args.add("optparse").setShort("P").setHelp("shows optimized AST (AST after passes)");
-	args.add("ir").setShort("i").setHelp("shows codegen IR");
-	args.add("dry").setShort("d").setHelp("dry run - generate IR but don't run the VM");
-	args.add("logerr").setShort("e").setHelp("show logs on stderr");
-	args.add("verbose").setShort("V").setHelp("show verbose compiler output");
-	args.add("trace").setShort("T").setHelp("show trace (even more verbose) compiler output");
-	if(!args.parse()) return 1;
+	args::ArgParser args(argc, (const char **)argv);
+	args.add("version").addOpt("--version").addOpt("-v").setHelp("prints program version");
+	args.add("tokens").addOpt("--tokens").addOpt("-t").setHelp("shows lexical tokens");
+	args.add("parse").addOpt("--parse").addOpt("-p").setHelp("shows AST");
+	args.add("optparse")
+	.addOpt("--optparse")
+	.addOpt("-P")
+	.setHelp("shows optimized AST (AST after passes)");
+	args.add("ir").addOpt("--ir").addOpt("-i").setHelp("shows codegen IR");
+	args.add("dry").addOpt("--dry").addOpt("-d").setHelp(
+	"dry run - generate IR but don't run the VM");
+	args.add("logerr").addOpt("--logerr").addOpt("-e").setHelp("show logs on stderr");
+	args.add("verbose")
+	.addOpt("--verbose")
+	.addOpt("-V")
+	.setHelp("show verbose compiler output");
+	args.add("trace").addOpt("--trace").addOpt("-T").setHelp(
+	"show trace (even more verbose) compiler output");
+	args.add("source").setHelp("Source file to compile/run");
+	args.setLastArg("source");
+	Status<bool> argsRes = args.parse();
+	if(!argsRes.getCode()) {
+		std::cerr << "Failed to parse cli args: " << argsRes.getMsg() << "\n";
+		return 1;
+	}
 
 	if(args.has("help")) {
 		args.printHelp(std::cout);
@@ -47,34 +55,32 @@ int main(int argc, char **argv)
 	if(args.has("verbose")) logger.setLevel(LogLevels::INFO);
 	else if(args.has("trace")) logger.setLevel(LogLevels::TRACE);
 
-	if(args.getSource().empty()) {
+	String srcFile(args.getValue("source"));
+	if(srcFile.empty()) {
 		// args.setSource("<repl>");
 		// return ExecInteractive(args);
-		std::cout << "FATAL: Unimplemented interactive mode\n";
+		std::cerr << "FATAL: Unimplemented interactive mode\n";
 		return 1;
 	}
 
-	const char *file = args.getSource().c_str();
-
-	if(!fs::exists(file)) {
-		String binfile(fs::parentDir(env::getProcPath()));
-#if defined(FER_OS_WINDOWS)
-		binfile += "\\";
+	if(!fs::exists(srcFile)) {
+		String binFile(fs::parentDir(env::getProcPath()));
+#if defined(CORE_OS_WINDOWS)
+		binFile += "\\";
 #else
-		binfile += "/";
+		binFile += "/";
 #endif
-		binfile += file;
-		binfile += ".fer";
-		if(!fs::exists(binfile)) {
-			err.fail({}, "File ", file, " does not exist");
+		binFile += srcFile;
+		binFile += ".fer";
+		if(!fs::exists(binFile)) {
+			err.fail({}, "File ", srcFile, " does not exist");
 			return 1;
 		}
-		args.setSource(binfile);
-		file = args.getSource().c_str();
+		srcFile = binFile;
 	}
 
 	Interpreter ip(args, ParseSource);
-	return ip.runFile({}, fs::absPath(file).c_str());
+	return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str());
 }
 
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
@@ -86,7 +92,7 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
 		return false;
 	}
 
-	ArgParser &args = vm.getArgParser();
+	args::ArgParser &args = vm.getArgParser();
 
 	if(args.has("tokens")) {
 		std::cout << "====================== Tokens for: " << path

@@ -55,7 +55,7 @@ void ErrorHandler::outputString(ModuleLoc loc, bool iswarn, const String &e)
 	if(!fs::exists(path) && code.empty()) goto justError;
 	if(code.empty()) {
 		String codeData;
-		if(!fs::read(path.c_str(), codeData, true)) goto justError;
+		if(!fs::read(path.c_str(), codeData).getCode()) goto justError;
 		setCodeForId(loc.id, std::move(codeData));
 		code = getCodeForId(loc.id);
 	}

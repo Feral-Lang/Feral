@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include "Allocator.hpp"
-#include "Error.hpp"
 #include "Lexer.hpp"
 #include "VM/Bytecode.hpp"
 

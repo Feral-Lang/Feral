@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Allocator.hpp"
 #include "AST/Stmts.hpp"
 
 namespace fer::ast

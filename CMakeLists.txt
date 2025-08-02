@@ -1,14 +1,15 @@
-if(WIN32)
-	cmake_minimum_required(VERSION 3.30.1)
-else()
-	cmake_minimum_required(VERSION 3.25.0)
-endif()
+cmake_minimum_required(VERSION 3.31)
 
-project(Feral C CXX)
+project(Feral
+	DESCRIPTION "Feral Programming Language Reference Compiler and Interpreter"
+	LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(PROJECT_VERSION_MAJOR "1")
+set(PROJECT_VERSION_MINOR "0")
+set(PROJECT_VERSION_PATCH "0")
+
+include(FetchContent)
+include(GNUInstallDirs)
 
 if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 	message("-- Install messages are now lazily shown")
@@ -16,11 +17,7 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 endif()
 
 # Add external path
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/external")
-
-set(SOURCE_VERSION_MAJOR 0)
-set(SOURCE_VERSION_MINOR 0)
-set(SOURCE_VERSION_PATCH 1)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
 	if(WIN32)
@@ -30,19 +27,17 @@ if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
 		set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
 	endif()
 endif()
+
 set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
 set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+if(APPLE)
+	set(CMAKE_MACOSX_RPATH TRUE)
+endif()
 add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
 
-set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR TRUE)
 if(WIN32)
-	# This makes the debug information embedded in object file, therefore multiple files can be compiled simultaneously.
-	# If it is not present, cmake defaults to ProgramDatabase which causes all sources in parallel to attempt accessing
-	# a single file which is something like vc143.pdb, therefore causing the compilation to fail.
-	# https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_DEBUG_INFORMATION_FORMAT.html
-	set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
-	message("-- Set CMake MSVC debug information format to: $<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
 	# Disable deprecated warnings on Windows
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 		add_compile_options("-Wno-deprecated-declarations")
@@ -51,13 +46,6 @@ if(WIN32)
 		find_program(CCACHE_PROGRAM sccache)
 	endif()
 else()
-	set(ORIGIN "$ORIGIN")
-	if(APPLE)
-		set(ORIGIN "@loader_path")
-		set(CMAKE_MACOSX_RPATH TRUE)
-	endif()
-	list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}/../lib/feral" "${ORIGIN}/.." "${ORIGIN}/.")
-	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 	if("${CCACHE_PROGRAM}" STREQUAL "")
 		find_program(CCACHE_PROGRAM ccache)
@@ -74,13 +62,6 @@ if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
 	if(NOT APPLE)
 		add_definitions(-D_WITH_GETLINE)
 	endif()
-endif()
-# Because Android has issues with dlopen()'s RTLD_GLOBAL; See:
-# https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-search-order
-# https://android.googlesource.com/platform/bionic/+/30b17e32f0b403a97cef7c4d1fcab471fa316340/linker/linker_namespaces.cpp#100
-# https://android-ndk.narkive.com/iNWj05IV/weak-symbol-linking-when-loading-dynamic-libraries
-if(ANDROID)
-	set(EXTRA_LD_FLAGS "-z global")
 endif()
 
 string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
@@ -135,6 +116,15 @@ endif()
 
 # Finally! The sources!!!!!
 
+# Fetch LibCore
+FetchContent_Declare(
+	libcore
+	GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
+	GIT_TAG        1.0.0
+)
+
+FetchContent_MakeAvailable(libcore)
+
 # Set Config.inl.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_DIR}/include/Config.inl" @ONLY)
 
@@ -143,44 +133,43 @@ file(GLOB_RECURSE INCS RELATIVE "${PROJECT_SOURCE_DIR}" "include/*.hpp")
 file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(libferal SHARED ${SRCS} ${INCS})
+target_compile_features(libferal PUBLIC cxx_std_20)
+target_link_libraries(libferal libcore::libcore)
 # For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport) depending on
 # if the the DLL is being generated, or is being used.
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
-target_include_directories(libferal PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(libferal PRIVATE "${PROJECT_SOURCE_DIR}/include")
 set_target_properties(libferal
 	PROPERTIES
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+	POSITION_INDEPENDENT_CODE TRUE
 	PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral" # for so (non-windows)
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for dll (windows)
-	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin$<0:>" # for lib (windows)
-	INSTALL_RPATH_USE_LINK_PATH TRUE
+	ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for lib (windows)
+	LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib" # for so (non-windows)
+	RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)
 )
-install(TARGETS libferal
-	LIBRARY
-	  DESTINATION "lib/feral"
-	RUNTIME
-	  DESTINATION "bin$<0:>"
-	ARCHIVE
-	  DESTINATION "bin$<0:>"
-)
+install(TARGETS libferal)
 
 # Feral Binary
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp")
-target_include_directories(feral PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_compile_features(libferal PUBLIC cxx_std_20)
+target_include_directories(feral PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(feral libferal)
 set_target_properties(feral
 	PROPERTIES
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<0:>"
-	INSTALL_RPATH_USE_LINK_PATH TRUE
+	RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>"
 )
 install(TARGETS feral
 	RUNTIME
 	  DESTINATION bin
 	  COMPONENT Binaries
 )
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT feral)
+set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT feral)
 
 # Install CMake modules
 # install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
@@ -193,10 +182,10 @@ foreach(libModule ${libModules})
 	get_filename_component(libModuleDir "${libModule}" DIRECTORY)
 	add_custom_command(TARGET feral POST_BUILD
 			   COMMAND ${CMAKE_COMMAND} -E make_directory
-			   	"${CMAKE_BINARY_DIR}/lib/feral/${libModuleDir}"
+			   	"${PROJECT_BINARY_DIR}/lib/feral/${libModuleDir}"
 			   COMMAND ${CMAKE_COMMAND} -E copy
 				"${PROJECT_SOURCE_DIR}/lib/${libModule}"
-				"${CMAKE_BINARY_DIR}/lib/feral/${libModule}")
+				"${PROJECT_BINARY_DIR}/lib/feral/${libModule}")
 endforeach()
 
 # Install C++ Includes
@@ -223,25 +212,24 @@ if(NOT NOSTDLIB STREQUAL "true")
 		# End
 		file(GLOB_RECURSE header RELATIVE "${PROJECT_SOURCE_DIR}" "lib/*${modname}.hpp")
 		add_library(${modname} SHARED "${mod}" "${header}")
-		target_include_directories(${modname} PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib)
+		target_compile_features(${modname} PUBLIC cxx_std_20)
+		target_include_directories(${modname} PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/lib")
 		target_link_libraries(${modname} libferal ${dep})
 		set_target_properties(${modname}
 			PROPERTIES
+			CXX_STANDARD_REQUIRED ON
+			CXX_EXTENSIONS OFF
 			PREFIX "libferal"
 			ARCHIVE_OUTPUT_NAME "libferal${modname}"
 			LINK_FLAGS "${EXTRA_LD_FLAGS}"
-			LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
-			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
-			ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
-			INSTALL_RPATH_USE_LINK_PATH TRUE
+			LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
+			RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
+			ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
 		)
 		install(TARGETS ${modname}
-			LIBRARY
-			DESTINATION "lib/feral/${moddir}"
-			ARCHIVE
-			DESTINATION "lib/feral/${moddir}$<0:>"
-			RUNTIME
-			DESTINATION "lib/feral/${moddir}$<0:>"
+			LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}"
+			ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}$<0:>"
+			RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}$<0:>"
 		)
 	endforeach()
 endif()

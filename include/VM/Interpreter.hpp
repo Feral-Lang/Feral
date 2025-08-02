@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Allocator.hpp"
-#include "Args.hpp"
-#include "Error.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
 #include "Vars.hpp"
@@ -26,7 +23,7 @@ class Interpreter
 	UniList<VirtualMachine *> freeVMMem;
 	Atomic<size_t> vmCount;
 
-	ArgParser &argparser;
+	args::ArgParser &argparser;
 	ParseSourceFn parseSourceFn;
 	MemoryManager mem;
 	Map<ModuleId, VarModule *> modules;
@@ -65,7 +62,7 @@ class Interpreter
 	void destroyVM(VirtualMachine *vm);
 
 public:
-	Interpreter(ArgParser &argparser, ParseSourceFn parseSourceFn);
+	Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn);
 	~Interpreter();
 
 	int runFile(ModuleLoc loc, const char *file);
@@ -110,9 +107,9 @@ public:
 	inline StringRef getFeralImportExtension() { return ".fer"; }
 	inline StringRef getNativeModuleExtension()
 	{
-#if defined(FER_OS_WINDOWS)
+#if defined(CORE_OS_WINDOWS)
 		return ".dll";
-#elif defined(FER_OS_APPLE)
+#elif defined(CORE_OS_APPLE)
 		return ".dylib";
 #else
 		return ".so";
@@ -273,7 +270,7 @@ public:
 	inline void setExitCode(int exit_code) { exitcode = exit_code; }
 
 	inline Interpreter &getInterpreter() { return ip; }
-	inline ArgParser &getArgParser() { return ip.argparser; }
+	inline args::ArgParser &getArgParser() { return ip.argparser; }
 	inline MemoryManager &getMemoryManager() { return ip.mem; }
 	inline VarVec *getModuleDirs() { return ip.moduleDirs; }
 	inline VarVec *getModuleFinders() { return ip.moduleFinders; }
