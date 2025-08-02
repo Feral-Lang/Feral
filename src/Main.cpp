@@ -13,25 +13,19 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
 int main(int argc, char **argv)
 {
 	args::ArgParser args(argc, (const char **)argv);
-	args.add("version").addOpt("--version").addOpt("-v").setHelp("prints program version");
-	args.add("tokens").addOpt("--tokens").addOpt("-t").setHelp("shows lexical tokens");
-	args.add("parse").addOpt("--parse").addOpt("-p").setHelp("shows AST");
-	args.add("optparse")
-	.addOpt("--optparse")
-	.addOpt("-P")
-	.setHelp("shows optimized AST (AST after passes)");
-	args.add("ir").addOpt("--ir").addOpt("-i").setHelp("shows codegen IR");
-	args.add("dry").addOpt("--dry").addOpt("-d").setHelp(
-	"dry run - generate IR but don't run the VM");
-	args.add("logerr").addOpt("--logerr").addOpt("-e").setHelp("show logs on stderr");
-	args.add("verbose")
-	.addOpt("--verbose")
-	.addOpt("-V")
-	.setHelp("show verbose compiler output");
-	args.add("trace").addOpt("--trace").addOpt("-T").setHelp(
-	"show trace (even more verbose) compiler output");
-	args.add("source").setHelp("Source file to compile/run");
+	// clang-format off
+	args.addArg("version").addOpts("--version", "-v").setHelp("prints program version");
+	args.addArg("tokens").addOpts("--tokens", "-t").setHelp("shows lexical tokens");
+	args.addArg("parse").addOpts("--parse", "-p").setHelp("shows AST");
+	args.addArg("optparse").addOpts("--optparse", "-P").setHelp("shows optimized AST (AST after passes)");
+	args.addArg("ir").addOpts("--ir", "-i").setHelp("shows codegen IR");
+	args.addArg("dry").addOpts("--dry", "-d").setHelp("dry run - generate IR but don't run the VM");
+	args.addArg("logerr").addOpts("--logerr", "-e").setHelp("show logs on stderr");
+	args.addArg("verbose").addOpts("--verbose", "-V").setHelp("show verbose compiler output");
+	args.addArg("trace").addOpts("--trace", "-T").setHelp("show trace (even more verbose) compiler output");
+	args.addArg("source").setHelp("Source file to compile/run");
 	args.setLastArg("source");
+	// clang-format on
 	Status<bool> argsRes = args.parse();
 	if(!argsRes.getCode()) {
 		std::cerr << "Failed to parse cli args: " << argsRes.getMsg() << "\n";

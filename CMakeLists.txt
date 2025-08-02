@@ -118,12 +118,12 @@ endif()
 
 # Fetch LibCore
 FetchContent_Declare(
-	libcore
+	LibCore
 	GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-	GIT_TAG        1.0.0
+	GIT_TAG        1.0.1
 )
 
-FetchContent_MakeAvailable(libcore)
+FetchContent_MakeAvailable(LibCore)
 
 # Set Config.inl.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_DIR}/include/Config.inl" @ONLY)
@@ -134,11 +134,12 @@ file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(libferal SHARED ${SRCS} ${INCS})
 target_compile_features(libferal PUBLIC cxx_std_20)
-target_link_libraries(libferal libcore::libcore)
+target_link_libraries(libferal LibCore::LibCore)
 # For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport) depending on
 # if the the DLL is being generated, or is being used.
-target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
 target_include_directories(libferal PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
+target_compile_definitions(libferal PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 set_target_properties(libferal
 	PROPERTIES
 	CXX_STANDARD_REQUIRED ON
@@ -146,6 +147,7 @@ set_target_properties(libferal
 	POSITION_INDEPENDENT_CODE TRUE
 	PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
+	MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
 	ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for lib (windows)
 	LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib" # for so (non-windows)
 	RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)
@@ -154,8 +156,9 @@ install(TARGETS libferal)
 
 # Feral Binary
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp")
-target_compile_features(libferal PUBLIC cxx_std_20)
+target_compile_features(feral PUBLIC cxx_std_20)
 target_include_directories(feral PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(feral PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 target_link_libraries(feral libferal)
 set_target_properties(feral
 	PROPERTIES
@@ -214,6 +217,7 @@ if(NOT NOSTDLIB STREQUAL "true")
 		add_library(${modname} SHARED "${mod}" "${header}")
 		target_compile_features(${modname} PUBLIC cxx_std_20)
 		target_include_directories(${modname} PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/lib")
+		target_compile_definitions(${modname} PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 		target_link_libraries(${modname} libferal ${dep})
 		set_target_properties(${modname}
 			PROPERTIES
@@ -222,6 +226,7 @@ if(NOT NOSTDLIB STREQUAL "true")
 			PREFIX "libferal"
 			ARCHIVE_OUTPUT_NAME "libferal${modname}"
 			LINK_FLAGS "${EXTRA_LD_FLAGS}"
+			MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
 			LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
 			RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
 			ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
