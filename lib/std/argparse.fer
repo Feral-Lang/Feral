@@ -3,184 +3,185 @@ let map = import('std/map');
 let vec = import('std/vec');
 
 let Arg = struct(
-	reqd = false,
-	expectVal = false,
-	present = false,
-	short = '',
-	long = '',
+	name = '',
 	help = '',
-	value = ''
+	opts = vec.new(),
+	val = '',
+	reqd = false,
+	valReqd = false,
+	found = false
 );
 Arg.setTypeName('Arg');
 
-# args: bool
-let setReqd in Arg = fn(isReqd) { self.reqd = isReqd; return ref(self); };
-# args: bool
-let setValReqd in Arg = fn(expectsVal) { self.expectVal = expectsVal; return ref(self); };
-# args: bool
-let setPresent in Arg = fn(isPresent) { self.present = isPresent; return ref(self); };
-# args: string
-let setShort in Arg = fn(shortFlag) { self.short = shortFlag; return ref(self); };
-# args: string
-let setLong in Arg = fn(longFlag) { self.long = longFlag; return ref(self); };
-# args: string
-let setHelp in Arg = fn(helpString) { self.help = helpString; return ref(self); };
-# args: string
-let setValue in Arg = fn(valueString) { self.value = valueString; return ref(self); };
+let setName in Arg = fn(name) { self.name = name; return ref(self); };
+let setHelp in Arg = fn(help) { self.help = help; return ref(self); };
+let setVal in Arg = fn(val) { self.val = val; return ref(self); };
+let setReqd in Arg = fn(reqd) { self.reqd = reqd; return ref(self); };
+let setValReqd in Arg = fn(valReqd) { self.valReqd = valReqd; return ref(self); };
+let setFound in Arg = fn(found) { self.found = found; return ref(self); };
+let addOpts in Arg = fn(opts...) {
+	for o in opts.each() {
+		self.opts.push(o);
+	}
+	return ref(self);
+};
 
-let isReqd in Arg = fn() { return self.reqd; };
-let expectsVal in Arg = fn() { return self.expectVal; };
-let isPresent in Arg = fn() { return self.present; };
-let getShort in Arg = fn() { return self.short; };
-let getLong in Arg = fn() { return self.long; };
+let getName in Arg = fn() { return self.name; };
 let getHelp in Arg = fn() { return self.help; };
-let getValue in Arg = fn() { return self.value; };
+let getOpts in Arg = fn() { return self.opts; };
+let getVal in Arg = fn() { return self.val; };
+let isRequired in Arg = fn() { return self.reqd; };
+let isPositional in Arg = fn() { return self.opts.empty(); };
+let requiresValue in Arg = fn() { return self.valReqd || self.isPositional(); };
+let isFound in Arg = fn() { return self.found; };
+let getOpt in Arg = fn(idx) { return self.opts[idx]; };
+
+let hasOpt in Arg = fn(opt) { return self.opts.find(opt); };
 
 ###############################################################################################
 # ArgParser type
 ###############################################################################################
 let ArgParser = struct(
-	nooptargs = vec.new(refs = true),
-	args = map.new(refs = true), # long -> Arg
-	shrtargs = map.new() # short -> long
+	argv = vec.new(refs = true),
+	argDefs = vec.new(refs = true),
+	lastParsedArg = '',
+	passThroughFrom = -1
 );
 ArgParser.setTypeName('ArgParser');
 
-let new = fn() { return ArgParser(); };
-
-let add in ArgParser = fn(long, short = '') {
-	let arg = Arg(short = short, long = long);
-	self.args.insert(long, arg);
-	if !short.empty() { self.shrtargs.insert(short, long); }
-	return ref(arg);
-};
-
-let has in ArgParser = fn(long) {
-	if !self.args.find(long) { return false; }
-	return self.args[long].isPresent();
-};
-
-let getValue in ArgParser = fn(long) {
-	if !self.args.find(long) {
-		raise('arg key: ', long, ' does not exist');
+let new = fn(args) {
+	let parser = ArgParser();
+	for a in args.each() {
+		parser.argv.push(a);
 	}
-	return self.args[long].getValue();
+	parser.addArg('help').addOpts('--help', '-h').setHelp('prints help information for program');
+	return ref(parser);
 };
 
-let getArgs in ArgParser = fn() {
-	return ref(self.nooptargs);
+let addArg in ArgParser = fn(name) {
+	let a = Arg(name = name);
+	self.argDefs.push(a);
+	return ref(a);
 };
 
-let getArgAt in ArgParser = fn(index) {
-	if index >= self.nooptargs.len() {
-		raise('index ', index, ' out of bounds, max: ', self.nooptargs.len());
+let getArg in ArgParser = fn(name) {
+	for a in self.argDefs.each() {
+		if a.getName() == name { return ref(a); }
 	}
-	return ref(self.nooptargs[index]);
+	return nil;
 };
 
-let getArgsCount in ArgParser = fn() {
-	return self.nooptargs.len();
-};
-
-let popArg in ArgParser = fn() {
-	if self.nooptargs.empty() {
-		raise('ArgParser.popArg() called but there is no arg in the list');
+let has in ArgParser = fn(name) {
+	for a in self.argDefs.each() {
+		if a.getName() != name { continue; }
+		return a.isFound();
 	}
-	let data = ref(self.nooptargs[0]);
-	self.nooptargs.erase(0);
-	return ref(data);
+	return false;
 };
 
-let getArgsFrom in ArgParser = fn(index) {
-	if index >= self.nooptargs.len() {
-		raise('index ', index, ' out of bounds, max: ', self.nooptargs.len());
+let getValue in ArgParser = fn(name) {
+	for a in self.argDefs.each() {
+		if a.getName() != name { continue; }
+		return a.getVal();
 	}
-	let v = vec.new();
-	for let i = index; i < self.nooptargs.len(); ++i {
-		v.push(self.nooptargs[i]);
-	}
-	return v;
+	return "";
 };
 
-# args: vec(str)
-let parse in ArgParser = fn(args) {
-	let longs = self.args.keys();
-	let longscount = longs.len();
+let getPassthrough in ArgParser = fn() {
+	let res = vec.new(refs = true);
+	if self.passThroughFrom == -1 || self.passThroughFrom >= self.argv.len() { return res; }
+	for let i = self.passThroughFrom; i < self.argv.len(); ++i {
+		res.push(self.argv[i]);
+	}
+	return res;
+};
 
+let parse in ArgParser = fn() {
 	let expectKey = '';
-	let expectVal = false;
-
-	for let i = 0; i < args.len(); ++i {
-		let arg = args[i];
-		if expectVal {
-			self.args[expectKey].setValue(arg);
-			expectVal = false;
-			continue;
-		}
-		if arg.find('--') == 0 {
-			arg = arg.substr(2);
-			let found = false;
-			if !self.args.find(arg) {
-				raise('invalid option: --', arg);
+	let expectingValIdx = -1;
+	let stopParsing = false;
+	for let i = 1; i < self.argv.len(); ++i {
+		let arg = ref(self.argv[i]);
+		let isOpt = !arg.empty() && arg[0] == '-';
+		if expectingValIdx != -1 {
+			if isOpt {
+				raise('expected value for arg: ', self.argDefs[expectingValIdx].getName(),
+				      ', but found option: ', arg);
 			}
-			let a = ref(self.args[arg]);
-			a.setPresent(true);
-			if a.isReqd() { a.setReqd(false); }
-			if a.expectsVal() {
-				expectKey = a.getLong();
-				expectVal = true;
+			self.argDefs[expectingValIdx].setVal(arg);
+			self.argDefs[expectingValIdx].setFound(true);
+			expectingValIdx = -1;
+			if stopParsing {
+				self.passThroughFrom = i + 1;
+				break;
 			}
 			continue;
 		}
-		if arg.find('-') == 0 {
-			arg = arg.substr(1);
-			for let i = 0; i < arg.len(); ++i {
-				if !self.shrtargs.find(arg[i]) {
-					raise('invalid option: -', arg[i]);
+		if arg == '--' {
+			self.passThroughFrom = i + 1;
+			break;
+		}
+		let matched = -1;
+		for let j = 0; j < self.argDefs.len(); ++j {
+			let a = ref(self.argDefs[j]);
+			if isOpt && a.isPositional() { continue; }
+			if isOpt {
+				if !a.hasOpt(arg) { continue; }
+				if a.isFound() {
+					raise('found a repeated option: ', arg);
 				}
-				let a = ref(self.args[self.shrtargs[arg[i]]]);
-				a.setPresent(true);
-				if a.isReqd() { a.setReqd(false); }
-				if a.expectsVal() {
-					expectKey = a.getLong();
-					expectVal = true;
-					break;
-				}
+				matched = j;
+				if a.requiresValue() { expectingValIdx = j; }
+				a.setFound(!a.requiresValue());
+				break;
 			}
-			continue;
+			if !a.isPositional() || a.isFound() { continue; }
+			if !a.isFound() {
+				a.setVal(arg);
+				a.setFound(true);
+				matched = j;
+				break;
+			}
+			raise('found a repeated argument: ', arg);
 		}
-		self.nooptargs.push(arg);
+		if matched == -1 {
+			raise('invalid argument: ', arg, ', use --help');
+		}
+		stopParsing = self.argDefs[matched].getName() == self.lastParsedArg;
+		if stopParsing && expectingValIdx == -1 {
+			self.passThroughFrom = i + 1;
+			break;
+		}
 	}
-	if expectVal {
-		raise('value expected for option: --', expectKey);
+	if expectingValIdx != -1 {
+		raise('expected value for argument: ', self.argDefs[expectingValIdx].getName(),
+		      ', but there are no more args to parse');
+	}
+	for a in self.argDefs.each() {
+		if !a.isFound() && a.isRequired() {
+			raise('required argument: ', a.getName(), ' was not found');
+		}
 	}
 };
 
-# file like io.stdout
+# file:  like io.stdout
 let printHelp in ArgParser = fn(file) {
-	io.fprint(file, 'usage: <script>');
-	let longs = self.args.keys();
-
-	for let i = 0; i < longs.len(); ++i {
-		let a = ref(self.args[longs[i]]);
-		if !a.isReqd() { continue; }
-		io.fprint(f, ' [', longs[i], ']');
+	io.fprint(file, 'Usage: <script>');
+	for a in self.argDefs.each() {
+		if !a.isPositional() { continue; }
+		io.fprint(file, ' ', a.getName());
 	}
-	io.fprintln(file, ' <args>\n');
-	if !longs.empty() {
-		io.fprintln(file, 'Option:');
-	}
-	for let i = 0; i < longs.len(); ++i {
-		let a = ref(self.args[longs[i]]);
-		if !a.getShort().empty() {
-			io.fprint(file, '-', a.getShort(), ', ');
+	io.fprint(file, ' <option args>\n\n');
+	for a in self.argDefs.each() {
+		let opts = ref(a.getOpts());
+		for let i = 0; i < opts.len(); ++i {
+			io.fprint(file, opts[i]);
+			if i != opts.len() - 1 { io.fprint(file, '/'); }
 		}
-		io.fprint(file, '--', a.getLong());
-		if a.expectsVal() {
-			io.fprint(file, ' [value]\t');
-		} else {
-			io.fprint(file, '\t\t');
-		}
-		io.fprintln(file, a.getHelp());
+		if opts.empty() { io.fprint(file, a.getName(), ' (positional)'); }
+		if a.isRequired() { io.fprint(file, ' (required)'); }
+		else { io.fprint(file, ' (optional)'); }
+		if a.requiresValue() { io.fprint(file, ' (requires value)'); }
+		io.fprint(file, '\t\t', a.getHelp(), '\n');
 	}
 };

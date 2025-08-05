@@ -80,9 +80,9 @@ let waitProcs = fn(maxProcs, withValgrind, counter = true) {
 			if t.getResult() != 0 {
 				if counter { ++failed; }
 				if withValgrind {
-					io.cprintln('{r}failed {y}', files[t.getId()], '{c} with valgrind{0}, {y}code{0}: {r}', t.getResult(),'{0}');
+					io.cprintln('{r}failed {y}', t.getName(), '{c} with valgrind{0}, {y}code{0}: {r}', t.getResult(),'{0}');
 				} else {
-					io.cprintln('{r}failed {y}', files[t.getId()], '{0}, {y}code{0}: {r}', t.getResult(),'{0}');
+					io.cprintln('{r}failed {y}', t.getName(), '{0}, {y}code{0}: {r}', t.getResult(),'{0}');
 				}
 				io.fflush(io.stdout);
 			} else {
@@ -123,7 +123,7 @@ for file in files.each() {
 		io.cprintln('{c}test{0}: {y}', cmd.join(' '), '{0} ...');
 	}
 	io.fflush(io.stdout);
-	tpool.push(mproc.run(cmd));
+	tpool.push(mproc.run(cmd, name = file));
 }
 waitProcs(1, !valgrindCmd.empty());
 

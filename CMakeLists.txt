@@ -5,7 +5,7 @@ project(Feral
 	LANGUAGES CXX)
 
 set(PROJECT_VERSION_MAJOR "1")
-set(PROJECT_VERSION_MINOR "0")
+set(PROJECT_VERSION_MINOR "1")
 set(PROJECT_VERSION_PATCH "0")
 
 include(FetchContent)
@@ -175,8 +175,8 @@ install(TARGETS feral
 set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT feral)
 
 # Install CMake modules
-# install(DIRECTORY "${CMAKE_SOURCE_DIR}/external/"
-# 	DESTINATION "${CMAKE_INSTALL_PREFIX}/external"
+# install(DIRECTORY "${CMAKE_SOURCE_DIR}/cmake/"
+# 	DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake"
 # )
 
 # Copy the lib/*.fer files to the build/lib directory

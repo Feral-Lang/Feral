@@ -4,17 +4,20 @@ let io = import('std/io');
 let vec = import('std/vec');
 let argparse = import('std/argparse');
 
-let args = argparse.new();
-args.add("help", "h").setHelp("prints program usage syntax");
-args.add("version", "v").setHelp("prints program version");
-args.add("value", "e").setValReqd(true).setHelp("Enter a value");
-args.parse(vec.new('1', '2', '3', '-vh', '--value', '4'));
+let argv = vec.new(refs = true, 'mainProg', '--version', '--v1', 'value1', '--v2', 'posVal', '--', 'skipped1', 'skipped2');
 
-assert.eq(args.has('help'), true);
+let args = argparse.new(argv);
+# help is present by default.
+args.addArg("version").addOpts('--version', '-v').setHelp("prints program version");
+args.addArg("v1").addOpts('--v1').setValReqd(true).setHelp("Enter value 1");
+args.addArg("v2").addOpts('--v2').setHelp("Just a flag");
+args.addArg("simple").setValReqd(true).setHelp("Positional arg");
+args.parse();
+
+assert.ne(args.getArg('help'), nil);
 assert.eq(args.has('version'), true);
-assert.eq(args.has('value'), true);
-assert.eq(args.getValue('value'), '4');
-assert.eq(args.getArgAt(1), '2');
-assert.eq(args.getArgsFrom(1), vec.new('2', '3'));
-
-args.printHelp(io.stdout);
+assert.eq(args.has('v1'), true);
+assert.eq(args.has('v2'), true);
+assert.eq(args.getValue('v1'), 'value1');
+assert.eq(args.getValue('simple'), 'posVal');
+assert.eq(args.getPassthrough(), vec.new(refs = true, 'skipped1', 'skipped2'));
