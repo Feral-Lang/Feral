@@ -1,0 +1,39 @@
+let Status = struct(
+	val = nil,
+	msg = ''
+);
+Status.setTypename('Status');
+
+let Result = struct(
+	val = nil,
+	isok = false
+);
+Result.setTypename('Result');
+
+let ok = fn(val) { return Result(val = val, isok = true); };
+let err = fn(val, msg...) {
+	let r = Result(val = Status(val), isok = false);
+	for m in msg.each() {
+		r.val.msg += m.str();
+	}
+	return ref(r);
+};
+
+let isOk in Result = fn() { return self.isok; };
+let isErr in Result = fn() { return !self.isok; };
+
+let getVal in Result = fn() { return ref(self.val); };
+
+let str in Status = fn() {
+	let s = self.val.str();
+	s += ':';
+	s += msg;
+	return ref(s);
+};
+
+let str in Result = fn() {
+	let s = self.isOk() ? 'Result<OK :: ' : 'Resultt<Err :: ';
+	s += val.str();
+	s += '>';
+	return ref(s);
+};
