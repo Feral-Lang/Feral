@@ -9,8 +9,8 @@ namespace fer
 
 class Interpreter;
 
-typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
-			      StringRef code, bool exprOnly);
+typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, fs::File &f,
+			      bool exprOnly);
 
 typedef bool (*ModInitFn)(VirtualMachine &vm, ModuleLoc loc);
 typedef void (*ModDeinitFn)(Interpreter &ip);
@@ -188,9 +188,8 @@ public:
 	// Must pushModule before calling this function, and popModule after calling it.
 	int execute(bool addFunc = false, bool addBlk = false, size_t begin = 0, size_t end = 0);
 
-	// virtualPath == true for paths like `<eval>` and `<repl>`.
-	ModuleId addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
-			   bool exprOnly, VarStack *existingVarStack = nullptr);
+	ModuleId addModule(ModuleLoc loc, fs::File &&f, bool exprOnly,
+			   VarStack *existingVarStack = nullptr);
 	void removeModule(ModuleId moduleId);
 	void pushModule(ModuleId moduleId);
 	void popModule();

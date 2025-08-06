@@ -156,7 +156,9 @@ String Lexeme::str(int64_t pad) const
 	res += "[";
 	res += utils::toString(loc.id);
 	res += ":";
-	res += utils::toString(loc.offset);
+	res += utils::toString(loc.offStart);
+	res += " .. ";
+	res += utils::toString(loc.offEnd);
 	res += "]";
 	if(!tok.isData()) return res;
 	len = res.size() - len;
@@ -187,11 +189,12 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quote_type, size_t &i,
 		 size_t &line_start, String &buf);
 TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, size_t line_start);
 
-bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks)
+bool tokenize(ModuleId moduleId, fs::File &f, Vector<Lexeme> &toks)
 {
 	int comment_block = 0; // int to handle nested comment blocks
 	bool comment_line = false;
 
+	StringRef data	  = f.getData();
 	size_t len	  = data.size();
 	size_t i	  = 0;
 	size_t line	  = 0;
@@ -212,7 +215,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 		}
 		if(CURR == '*' && NEXT == '/') {
 			if(!comment_block) {
-				err.fail(ModuleLoc(moduleId, i),
+				err.fail(ModuleLoc(moduleId, i, i + 1),
 					 "encountered multi line comment "
 					 "terminator '*/' in non comment block");
 				return false;
@@ -250,20 +253,20 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 			if(str == "__SRC_PATH__") {
 				// toRawString() because in codegen, all strings are passed through
 				// fromRawString()
-				tmpstr	  = utils::toRawString(path);
+				tmpstr	  = utils::toRawString(f.getPath());
 				str	  = tmpstr;
 				str_class = STR;
 			} else if(str == "__SRC_DIR__") {
-				tmpstr	  = utils::toRawString(fs::parentDir(path));
+				tmpstr	  = utils::toRawString(fs::parentDir(f.getPath()));
 				str	  = tmpstr;
 				str_class = STR;
 			}
 			if(str_class == STR || str_class == IDEN) {
 				// place either the data itself (type = STR, IDEN)
-				toks.emplace_back(ModuleLoc(moduleId, startPos), str_class, str);
+				toks.emplace_back(ModuleLoc(moduleId, startPos, i), str_class, str);
 			} else {
 				// or the type
-				toks.emplace_back(ModuleLoc(moduleId, startPos), str_class);
+				toks.emplace_back(ModuleLoc(moduleId, startPos, i), str_class);
 			}
 			continue;
 		}
@@ -284,7 +287,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 				long double fltval;
 				std::from_chars(num.data(), num.data() + num.size(), fltval);
 #endif
-				toks.emplace_back(ModuleLoc(moduleId, i - num.size()), fltval);
+				toks.emplace_back(ModuleLoc(moduleId, i - num.size(), i), fltval);
 				continue;
 			}
 			int64_t intval;
@@ -294,7 +297,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 				num = num.substr(base == 8 ? 1 : 2);
 			}
 			std::from_chars(num.data(), num.data() + num.size(), intval, base);
-			toks.emplace_back(ModuleLoc(moduleId, i - num.size()), intval);
+			toks.emplace_back(ModuleLoc(moduleId, i - num.size(), i), intval);
 			continue;
 		}
 
@@ -305,7 +308,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 			char quote_type = 0;
 			if(!getConstStr(moduleId, data, quote_type, i, line, line_start, buf))
 				return false;
-			toks.emplace_back(ModuleLoc(moduleId, startloc), STR, buf);
+			toks.emplace_back(ModuleLoc(moduleId, startloc, i), STR, buf);
 			continue;
 		}
 
@@ -313,7 +316,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
 		size_t begin	= i;
 		TokType op_type = getOperator(moduleId, data, i, line, line_start);
 		if(op_type == INVALID) return false;
-		toks.emplace_back(ModuleLoc(moduleId, begin), op_type);
+		toks.emplace_back(ModuleLoc(moduleId, begin, i), op_type);
 	}
 	return true;
 }
@@ -419,7 +422,7 @@ String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t
 		}
 		case '.':
 			if(!read_base && base != 10) {
-				err.fail(ModuleLoc(moduleId, first_digit_at),
+				err.fail(ModuleLoc(moduleId, first_digit_at, i),
 					 "encountered dot (.) character when base is not 10 (",
 					 base, ") ");
 				return "";
@@ -431,7 +434,7 @@ String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t
 					goto end;
 				}
 			} else {
-				err.fail(ModuleLoc(moduleId, first_digit_at),
+				err.fail(ModuleLoc(moduleId, first_digit_at, i),
 					 "encountered dot (.) character when the "
 					 "number being retrieved (from column ",
 					 first_digit_at + 1, ") already had one");
@@ -443,7 +446,7 @@ String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t
 		default:
 		fail:
 			if(isalnum(c)) {
-				err.fail(ModuleLoc(moduleId, first_digit_at),
+				err.fail(ModuleLoc(moduleId, first_digit_at, i),
 					 "encountered invalid character '", c,
 					 "' while retrieving a number of base ", base);
 				return "";
@@ -484,7 +487,7 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quote_type, size_t &i,
 		continuous_backslash = 0;
 	}
 	if(CURR != quote_type) {
-		err.fail(ModuleLoc(moduleId, starting_at), "no matching quote for '", quote_type,
+		err.fail(ModuleLoc(moduleId, starting_at, i), "no matching quote for '", quote_type,
 			 "' found");
 		return false;
 	}
@@ -676,7 +679,8 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
 	case ']': SET_OP_TYPE_BRK(RBRACK);
 	case '}': SET_OP_TYPE_BRK(RBRACE);
 	default:
-		err.fail(ModuleLoc(moduleId, starting_at), "unknown operator '", CURR, "' found");
+		err.fail(ModuleLoc(moduleId, starting_at, i), "unknown operator '", CURR,
+			 "' found");
 		op_type = INVALID;
 	}
 

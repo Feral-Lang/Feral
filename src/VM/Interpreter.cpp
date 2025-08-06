@@ -399,15 +399,13 @@ VirtualMachine::~VirtualMachine() { ip.decVMCount(); }
 
 int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {
-	String code;
-
-	Status<bool> readRes = fs::read(file, code);
-	if(!readRes.getCode()) {
-		err.fail(loc, "Failed to read file: ", file, ": ", readRes.getMsg());
+	Result<fs::File, bool> readRes = fs::File::create(file, false);
+	if(readRes.isErr()) {
+		err.fail({}, "Failed to read file: ", file, ": ", readRes.errRef().getMsg());
 		return 1;
 	}
 
-	ModuleId moduleId = addModule(loc, file, std::move(code), false, false);
+	ModuleId moduleId = addModule(loc, readRes.val(), false);
 	if(moduleId == (ModuleId)-1) {
 		err.fail(loc, "Failed to parse module: ", file);
 		return 1;
@@ -421,19 +419,18 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 	return res;
 }
 
-ModuleId VirtualMachine::addModule(ModuleLoc loc, StringRef path, String &&code, bool virtualPath,
-				   bool exprOnly, VarStack *existingVarStack)
+ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File &&f, bool exprOnly,
+				   VarStack *existingVarStack)
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
-	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, path, code, exprOnly)) {
-		fail(loc, "failed to parse source: ", path);
+	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f, exprOnly)) {
+		fail(loc, "failed to parse source: ", f.getPath());
 		return -1;
 	}
-	err.setPathForId(moduleIdCtr, path);
-	if(virtualPath) err.setCodeForId(moduleIdCtr, std::move(code));
-	VarModule *mod =
-	makeVarWithRef<VarModule>(loc, path, std::move(bc), moduleIdCtr, existingVarStack);
+	err.addFile(moduleIdCtr, std::move(f));
+	VarModule *mod = makeVarWithRef<VarModule>(loc, err.getPathForId(moduleIdCtr),
+						   std::move(bc), moduleIdCtr, existingVarStack);
 	LockGuard<Mutex> globalGuard(ip.globalMutex);
 	ip.modules.insert_or_assign(moduleIdCtr, mod);
 	return moduleIdCtr++;
@@ -617,8 +614,9 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 	path += utils::toString(evalCtr++);
 	path += ">";
 
-	ModuleId moduleId =
-	addModule(loc, path, String(code), true, isExpr, getVars().getCurrModScope());
+	Result<fs::File, bool> fres = fs::File::create(path.c_str(), true);
+	fres.valRef().append(code);
+	ModuleId moduleId = addModule(loc, fres.val(), isExpr, getVars().getCurrModScope());
 	if(moduleId == (ModuleId)-1) {
 		fail(loc, "Failed to parse eval code: ", code);
 		return nullptr;
