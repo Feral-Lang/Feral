@@ -37,5 +37,12 @@ Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		vm.fail(loc, "string '", num, "' is not a number");
 		return nullptr;
 	}
-	return vm.makeVar<VarInt>(loc, std::stoll(as<VarStr>(args[0])->getVal()));
+	if(!args[1]->is<VarInt>()) {
+		vm.fail(loc, "expected base to be an integer, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	int64_t base = as<VarInt>(args[1])->getVal();
+	int64_t val;
+	std::from_chars(num.data(), num.data() + num.size(), val, base);
+	return vm.makeVar<VarInt>(loc, val);
 }

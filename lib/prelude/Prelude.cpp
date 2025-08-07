@@ -1,3 +1,4 @@
+#include <charconv>
 #include <cmath> // std::round()
 #include <fcntl.h>
 #include <filesystem> // used by File.hpp.in
@@ -377,7 +378,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarBool>(loc, "int", boolToInt, 0);
 	vm.addNativeTypeFn<VarInt>(loc, "int", intToInt, 0);
 	vm.addNativeTypeFn<VarFlt>(loc, "int", fltToInt, 0);
-	vm.addNativeTypeFn<VarStr>(loc, "int", strToInt, 0);
+	vm.addNativeTypeFn<VarStr>(loc, "intNative", strToInt, 1);
 	vm.addNativeTypeFn<VarTypeID>(loc, "int", typeIDToInt, 0);
 
 	// to float

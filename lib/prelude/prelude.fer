@@ -19,6 +19,10 @@ let setMaxCallstacks = fn(size = DEFAULT_MAX_CALLSTACKS) {
 
 # Str
 
+let int in StrTy = fn(base = 10) {
+	return self.intNative(base);
+};
+
 let sub in StrTy = fn(begin = 0, len = -1) {
 	if len == -1 { len = self.len(); }
 	return self.substrNative(begin, len);
