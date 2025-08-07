@@ -104,7 +104,7 @@ let parentDir = fn(path) {
 	let dirname = '';
 	let locslash = path.rfind('/');
 	if locslash == -1 { dirname = '.'; }
-	else { dirname = path.substr(0, locslash); }
+	else { dirname = path.sub(0, locslash); }
 	return dirname;
 };
 
@@ -127,19 +127,19 @@ let fmtWithPath = fn(fmtstr, fpath) {
 		if locdot == -1 {
 			filename = fpath;
 		} else {
-			filename = fpath.substr(0, fpath.len() - locdot);
+			filename = fpath.sub(0, fpath.len() - locdot);
 		}
 	}
 	else {
-		dirname = fpath.substr(0, locslash);
+		dirname = fpath.sub(0, locslash);
 		if locdot == -1 {
-			filename = fpath.substr(locslash + 1, fpath.len() - locslash);
+			filename = fpath.sub(locslash + 1, fpath.len() - locslash);
 		} else {
-			filename = fpath.substr(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
+			filename = fpath.sub(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
 		}
 	}
 	if locdot == -1 { ext = ''; }
-	else { ext = fpath.substr(locdot + 1, fpath.len() - locdot); }
+	else { ext = fpath.sub(locdot + 1, fpath.len() - locdot); }
 
 	let res = fmtstr;
 	for let i = 0; i < res.len(); ++i {

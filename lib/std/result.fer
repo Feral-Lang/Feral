@@ -10,7 +10,7 @@ let Result = struct(
 );
 Result.setTypename('Result');
 
-let ok = fn(val) { return Result(val = val, isok = true); };
+let ok = fn(val) { return Result(val = ref(val), isok = true); };
 let err = fn(val, msg...) {
 	let r = Result(val = Status(val), isok = false);
 	for m in msg.each() {

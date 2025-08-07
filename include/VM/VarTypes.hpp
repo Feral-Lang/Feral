@@ -25,7 +25,6 @@ class Var : public IAllocated
 
 	friend class VirtualMachine;
 
-	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 	inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
 
 	inline void iref() { ++ref; }
@@ -75,6 +74,7 @@ public:
 	inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
 
 	inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
+	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 
 	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);

@@ -228,10 +228,7 @@ Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	}
 	size_t pos   = as<VarInt>(args[1])->getVal();
 	String &dest = as<VarStr>(args[0])->getVal();
-	if(pos >= dest.size()) {
-		vm.fail(loc, "position ", pos, " is not within string of length: ", dest.size());
-		return nullptr;
-	}
+	if(pos >= dest.size()) return vm.getFalse();
 	String chars;
 	if(args[2]->is<VarInt>()) {
 		chars = as<VarInt>(args[2])->getVal();

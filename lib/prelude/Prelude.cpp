@@ -92,6 +92,12 @@ Var *reference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	args[1]->setLoadAsRef();
 	return args[1];
 }
+Var *unreference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		 const StringMap<AssnArgData> &assn_args)
+{
+	args[1]->unsetLoadAsRef();
+	return args[1];
+}
 
 Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	   const StringMap<AssnArgData> &assn_args)
@@ -328,6 +334,7 @@ INIT_MODULE(Prelude)
 
 	// global functions
 	vm.addNativeFn(loc, "ref", reference, 1);
+	vm.addNativeFn(loc, "unref", unreference, 1);
 	vm.addNativeFn(loc, "raise", raise, 1, true);
 	vm.addNativeFn(loc, "evalCode", evaluateCode, 1);
 	vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);

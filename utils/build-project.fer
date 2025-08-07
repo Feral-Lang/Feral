@@ -62,7 +62,7 @@ if !fs.exists(cmakeCachePath) {
 		if line.startsWith('CMAKE_BUILD_TYPE') {
 			let eqPos = line.find('=');
 			if eqPos < 0 { continue; }
-			let type = line.substr(eqPos + 1);
+			let type = line.sub(eqPos + 1);
 			if type == 'Release' { existingBuildType = 'Release'; }
 			elif type == 'Debug' { existingBuildType = 'Debug'; }
 			elif type == 'RelWithDebInfo' { existingBuildType = 'RelWithDebInfo'; }
