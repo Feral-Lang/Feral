@@ -58,6 +58,8 @@ let new = fn(args) {
 	return ref(parser);
 };
 
+let setLastArg in ArgParser = fn(name) { self.lastParsedArg = name; };
+
 let addArg in ArgParser = fn(name) {
 	let a = Arg(name = name);
 	self.argDefs.push(a);
@@ -96,11 +98,11 @@ let getPassthrough in ArgParser = fn() {
 	return res;
 };
 
-let parse in ArgParser = fn() {
+let parse in ArgParser = fn(from = 0) {
 	let expectKey = '';
 	let expectingValIdx = -1;
 	let stopParsing = false;
-	for let i = 1; i < self.argv.len(); ++i {
+	for let i = from; i < self.argv.len(); ++i {
 		let arg = ref(self.argv[i]);
 		let isOpt = !arg.empty() && arg[0] == '-';
 		if expectingValIdx != -1 {

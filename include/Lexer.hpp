@@ -226,7 +226,7 @@ public:
 	inline ModuleLoc getLoc() const { return loc; }
 };
 
-bool tokenize(ModuleId moduleId, fs::File &f, Vector<Lexeme> &toks);
+bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks);
 void dumpTokens(OStream &os, Span<Lexeme> toks);
 
 } // namespace fer::lex

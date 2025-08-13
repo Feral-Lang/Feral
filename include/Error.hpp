@@ -29,13 +29,12 @@ class ErrorHandler
 	Map<ModuleId, fs::File> files;
 	size_t maxErrors;
 
-	fs::File *getFileForId(ModuleId id);
-
 public:
 	ErrorHandler(size_t maxErrors);
 
 	void addFile(ModuleId id, fs::File &&f);
 
+	fs::File *getFileForId(ModuleId id);
 	StringRef getPathForId(ModuleId id);
 
 	inline bool moduleIdExists(ModuleId id) { return paths.contains(id); }

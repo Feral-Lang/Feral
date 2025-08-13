@@ -419,16 +419,17 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 	return res;
 }
 
-ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File &&f, bool exprOnly,
+ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File &&_f, bool exprOnly,
 				   VarStack *existingVarStack)
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
-	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f, exprOnly)) {
-		fail(loc, "failed to parse source: ", f.getPath());
+	err.addFile(moduleIdCtr, std::move(_f));
+	fs::File *f = err.getFileForId(moduleIdCtr);
+	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
+		fail(loc, "failed to parse source: ", f->getPath());
 		return -1;
 	}
-	err.addFile(moduleIdCtr, std::move(f));
 	VarModule *mod = makeVarWithRef<VarModule>(loc, err.getPathForId(moduleIdCtr),
 						   std::move(bc), moduleIdCtr, existingVarStack);
 	LockGuard<Mutex> globalGuard(ip.globalMutex);

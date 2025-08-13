@@ -1234,7 +1234,8 @@ bool Parser::parseRet(Stmt *&ret)
 	if(p.accept(lex::COLS)) goto done;
 
 	if(!parseExpr17(val, false)) {
-		err.fail(p.peek().getLoc(), "failed to parse expression for return value");
+		lex::Lexeme &l = p.isValid() ? p.peek() : start;
+		err.fail(l.getLoc(), "failed to parse expression for return value");
 		return false;
 	}
 
@@ -1286,7 +1287,7 @@ bool Parser::parseDefer(Stmt *&defer)
 	}
 
 	if(!parseExpr17(val, false)) {
-		err.fail(p.peek().getLoc(), "failed to parse expression for return value");
+		err.fail(p.peek().getLoc(), "failed to parse expression for defer value");
 		return false;
 	}
 

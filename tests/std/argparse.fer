@@ -12,7 +12,7 @@ args.addArg("version").addOpts('--version', '-v').setHelp("prints program versio
 args.addArg("v1").addOpts('--v1').setValReqd(true).setHelp("Enter value 1");
 args.addArg("v2").addOpts('--v2').setHelp("Just a flag");
 args.addArg("simple").setValReqd(true).setHelp("Positional arg");
-args.parse();
+args.parse(1);
 
 assert.ne(args.getArg('help'), nil);
 assert.eq(args.has('version'), true);

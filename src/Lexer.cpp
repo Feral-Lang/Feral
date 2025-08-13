@@ -189,12 +189,11 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quote_type, size_t &i,
 		 size_t &line_start, String &buf);
 TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, size_t line_start);
 
-bool tokenize(ModuleId moduleId, fs::File &f, Vector<Lexeme> &toks)
+bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks)
 {
 	int comment_block = 0; // int to handle nested comment blocks
 	bool comment_line = false;
 
-	StringRef data	  = f.getData();
 	size_t len	  = data.size();
 	size_t i	  = 0;
 	size_t line	  = 0;
@@ -253,11 +252,11 @@ bool tokenize(ModuleId moduleId, fs::File &f, Vector<Lexeme> &toks)
 			if(str == "__SRC_PATH__") {
 				// toRawString() because in codegen, all strings are passed through
 				// fromRawString()
-				tmpstr	  = utils::toRawString(f.getPath());
+				tmpstr	  = utils::toRawString(path);
 				str	  = tmpstr;
 				str_class = STR;
 			} else if(str == "__SRC_DIR__") {
-				tmpstr	  = utils::toRawString(fs::parentDir(f.getPath()));
+				tmpstr	  = utils::toRawString(fs::parentDir(path));
 				str	  = tmpstr;
 				str_class = STR;
 			}
@@ -316,7 +315,7 @@ bool tokenize(ModuleId moduleId, fs::File &f, Vector<Lexeme> &toks)
 		size_t begin	= i;
 		TokType op_type = getOperator(moduleId, data, i, line, line_start);
 		if(op_type == INVALID) return false;
-		toks.emplace_back(ModuleLoc(moduleId, begin, i), op_type);
+		toks.emplace_back(ModuleLoc(moduleId, begin, i - 1), op_type);
 	}
 	return true;
 }

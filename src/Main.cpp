@@ -7,7 +7,8 @@ using namespace fer;
 
 // Uses its own AST Allocator which gets deleted when control leaves the function.
 // `bc` is the output variable here.
-bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, fs::File &f, bool exprOnly);
+bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
+		 StringRef data, bool exprOnly);
 
 int main(int argc, char **argv)
 {
@@ -76,11 +77,11 @@ int main(int argc, char **argv)
 	return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str());
 }
 
-bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, fs::File &f, bool exprOnly)
+bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
+		 StringRef data, bool exprOnly)
 {
 	Vector<lex::Lexeme> tokens;
-	StringRef path = f.getPath();
-	if(!lex::tokenize(moduleId, f, tokens)) {
+	if(!lex::tokenize(moduleId, path, data, tokens)) {
 		std::cout << "Failed to tokenize file: " << path << "\n";
 		return false;
 	}
