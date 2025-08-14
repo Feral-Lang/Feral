@@ -28,7 +28,7 @@ class SimplifyPass : public Pass
 	DeferStack defers;
 
 public:
-	SimplifyPass(Allocator &allocator);
+	SimplifyPass(ManagedAllocator &allocator);
 	~SimplifyPass() override;
 
 	bool visit(Stmt *stmt, Stmt **source) override;

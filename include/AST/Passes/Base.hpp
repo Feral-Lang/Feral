@@ -9,7 +9,7 @@ class Pass
 {
 protected:
 	size_t passid;
-	Allocator &allocator;
+	ManagedAllocator &allocator;
 
 	// https://stackoverflow.com/questions/51332851/alternative-id-generators-for-types
 	template<typename T> static inline std::uintptr_t passID()
@@ -19,7 +19,7 @@ protected:
 	}
 
 public:
-	Pass(const size_t &passid, Allocator &allocator);
+	Pass(const size_t &passid, ManagedAllocator &allocator);
 	virtual ~Pass();
 
 	template<typename T>

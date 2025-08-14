@@ -5,7 +5,7 @@
 namespace fer::ast
 {
 
-CodegenPass::CodegenPass(Allocator &allocator, Bytecode &bc)
+CodegenPass::CodegenPass(ManagedAllocator &allocator, Bytecode &bc)
 	: Pass(Pass::genPassID<CodegenPass>(), allocator), bc(bc)
 {}
 CodegenPass::~CodegenPass() {}

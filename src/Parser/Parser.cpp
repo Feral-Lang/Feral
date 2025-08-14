@@ -3,14 +3,16 @@
 namespace fer::ast
 {
 
-bool parse(Allocator &allocator, Vector<lex::Lexeme> &toks, Stmt *&s, bool exprOnly)
+bool parse(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks, Stmt *&s, bool exprOnly)
 {
 	Parser parser(allocator, toks);
 	return exprOnly ? parser.parseExpr(s, false) : parser.parseBlock((StmtBlock *&)s, false);
 }
 void dumpTree(OStream &os, Stmt *tree) { tree->disp(false); }
 
-Parser::Parser(Allocator &allocator, Vector<lex::Lexeme> &toks) : allocator(allocator), p(toks) {}
+Parser::Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks)
+	: allocator(allocator), p(toks)
+{}
 
 // on successful parse, returns true, and tree is allocated
 // if with_brace is true, it will attempt to find the beginning and ending brace for each block

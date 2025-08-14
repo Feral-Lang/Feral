@@ -30,8 +30,10 @@ void remDLLDirectories();
 
 Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn)
 	: vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
-	  globals(VarFrame::create(mem)), prelude("prelude/prelude"),
-	  binaryPath(env::getProcPath()), moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
+	  managedAllocator(mem, "VM::ManagedAllocator"),
+	  simpleAllocator(mem, "VM::SimpleAllocator"), globals(VarFrame::create(mem)),
+	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
 	  fals(makeVarWithRef<VarBool>(ModuleLoc(), false)),
@@ -99,9 +101,6 @@ Interpreter::~Interpreter()
 	for(auto &deinitfn : dlldeinitfns) {
 		deinitfn.second(*this);
 	}
-	for(auto &item : freeVMMem) {
-		mem.free(item);
-	}
 
 #if defined(CORE_OS_WINDOWS)
 	remDLLDirectories();
@@ -129,21 +128,8 @@ bool Interpreter::loadPrelude()
 	return true;
 }
 
-VirtualMachine *Interpreter::createVM()
-{
-	VirtualMachine *vm = nullptr;
-	if(!freeVMMem.empty()) {
-		vm = new(freeVMMem.front()) VirtualMachine(*this);
-		freeVMMem.pop_front();
-	}
-	if(!vm) vm = mem.alloc<VirtualMachine>(*this);
-	return vm;
-}
-void Interpreter::destroyVM(VirtualMachine *vm)
-{
-	vm->~VirtualMachine();
-	freeVMMem.push_front(vm);
-}
+VirtualMachine *Interpreter::createVM() { return simpleAllocator.alloc<VirtualMachine>(*this); }
+void Interpreter::destroyVM(VirtualMachine *vm) { simpleAllocator.free(vm); }
 
 int Interpreter::runFile(ModuleLoc loc, const char *file)
 {
@@ -399,13 +385,14 @@ VirtualMachine::~VirtualMachine() { ip.decVMCount(); }
 
 int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {
-	Result<fs::File, bool> readRes = fs::File::create(file, false);
-	if(readRes.isErr()) {
-		err.fail({}, "Failed to read file: ", file, ": ", readRes.errRef().getMsg());
+	fs::File *f	     = ip.managedAllocator.alloc<fs::File>(file, false);
+	Status<bool> readRes = f->read();
+	if(!readRes.getCode()) {
+		err.fail({}, "Failed to read file: ", file, ": ", readRes.getMsg());
 		return 1;
 	}
 
-	ModuleId moduleId = addModule(loc, readRes.val(), false);
+	ModuleId moduleId = addModule(loc, f, false);
 	if(moduleId == (ModuleId)-1) {
 		err.fail(loc, "Failed to parse module: ", file);
 		return 1;
@@ -419,13 +406,12 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 	return res;
 }
 
-ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File &&_f, bool exprOnly,
+ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
 				   VarStack *existingVarStack)
 {
 	static ModuleId moduleIdCtr = 0;
 	Bytecode bc;
-	err.addFile(moduleIdCtr, std::move(_f));
-	fs::File *f = err.getFileForId(moduleIdCtr);
+	err.addFile(moduleIdCtr, f);
 	if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
 		fail(loc, "failed to parse source: ", f->getPath());
 		return -1;
@@ -615,9 +601,9 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 	path += utils::toString(evalCtr++);
 	path += ">";
 
-	Result<fs::File, bool> fres = fs::File::create(path.c_str(), true);
-	fres.valRef().append(code);
-	ModuleId moduleId = addModule(loc, fres.val(), isExpr, getVars().getCurrModScope());
+	fs::File *f = ip.managedAllocator.alloc<fs::File>(path.c_str(), true);
+	f->append(code);
+	ModuleId moduleId = addModule(loc, f, isExpr, getVars().getCurrModScope());
 	if(moduleId == (ModuleId)-1) {
 		fail(loc, "Failed to parse eval code: ", code);
 		return nullptr;

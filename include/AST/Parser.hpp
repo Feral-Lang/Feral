@@ -8,11 +8,11 @@ namespace fer::ast
 
 class Parser
 {
-	Allocator &allocator;
+	ManagedAllocator &allocator;
 	ParseHelper p;
 
 public:
-	Parser(Allocator &allocator, Vector<lex::Lexeme> &toks);
+	Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks);
 
 	// on successful parse, returns true, and tree is allocated
 	// if with_brace is true, it will attempt to find the beginning and ending brace for each
@@ -62,7 +62,7 @@ public:
 };
 
 // Can modify toks since some stuff requires it (like determining pre/post operators)
-bool parse(Allocator &allocator, Vector<lex::Lexeme> &toks, Stmt *&s, bool exprOnly);
+bool parse(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks, Stmt *&s, bool exprOnly);
 void dumpTree(OStream &os, Stmt *tree);
 
 } // namespace fer::ast

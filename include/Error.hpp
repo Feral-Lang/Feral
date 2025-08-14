@@ -26,13 +26,13 @@ static_assert(sizeof(ModuleLoc) == sizeof(uint64_t));
 class ErrorHandler
 {
 	Map<ModuleId, StringRef> paths;
-	Map<ModuleId, fs::File> files;
+	Map<ModuleId, fs::File *> files;
 	size_t maxErrors;
 
 public:
 	ErrorHandler(size_t maxErrors);
 
-	void addFile(ModuleId id, fs::File &&f);
+	void addFile(ModuleId id, fs::File *f);
 
 	fs::File *getFileForId(ModuleId id);
 	StringRef getPathForId(ModuleId id);

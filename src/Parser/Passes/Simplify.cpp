@@ -41,7 +41,8 @@ void DeferStack::applyDefers(Vector<Stmt *> &stmts)
 	}
 }
 
-SimplifyPass::SimplifyPass(Allocator &allocator) : Pass(Pass::genPassID<SimplifyPass>(), allocator)
+SimplifyPass::SimplifyPass(ManagedAllocator &allocator)
+	: Pass(Pass::genPassID<SimplifyPass>(), allocator)
 {}
 SimplifyPass::~SimplifyPass() {}
 

@@ -79,8 +79,8 @@ class StmtBlock : public Stmt
 public:
 	StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top);
 	~StmtBlock();
-	static StmtBlock *create(Allocator &allocator, ModuleLoc loc, const Vector<Stmt *> &stmts,
-				 bool is_top);
+	static StmtBlock *create(ManagedAllocator &allocator, ModuleLoc loc,
+				 const Vector<Stmt *> &stmts, bool is_top);
 
 	void disp(bool has_next);
 
@@ -98,7 +98,8 @@ class StmtSimple : public Stmt
 public:
 	StmtSimple(ModuleLoc loc, const lex::Lexeme &val);
 	~StmtSimple();
-	static StmtSimple *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &val);
+	static StmtSimple *create(ManagedAllocator &allocator, ModuleLoc loc,
+				  const lex::Lexeme &val);
 
 	void disp(bool has_next);
 
@@ -118,7 +119,7 @@ class StmtFnArgs : public Stmt
 public:
 	StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector);
 	~StmtFnArgs();
-	static StmtFnArgs *create(Allocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
+	static StmtFnArgs *create(ManagedAllocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
 				  Vector<bool> &&unpack_vector);
 
 	void disp(bool has_next);
@@ -141,7 +142,7 @@ public:
 	StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs);
 	~StmtExpr();
 	// or_blk and or_blk_var can be set separately - nullptr/INVALID by default
-	static StmtExpr *create(Allocator &allocator, ModuleLoc loc, Stmt *lhs,
+	static StmtExpr *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *lhs,
 				const lex::Lexeme &oper, Stmt *rhs);
 
 	void disp(bool has_next);
@@ -171,7 +172,7 @@ public:
 	StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);
 	~StmtVar();
 	// at least one of type or val must be present
-	static StmtVar *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &name,
+	static StmtVar *create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &name,
 			       Stmt *in, Stmt *val, bool is_arg);
 
 	void disp(bool has_next);
@@ -194,8 +195,9 @@ public:
 	StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
 		  StmtSimple *vaarg);
 	~StmtFnSig();
-	static StmtFnSig *create(Allocator &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-				 StmtSimple *kwarg, StmtSimple *vaarg);
+	static StmtFnSig *create(ManagedAllocator &allocator, ModuleLoc loc,
+				 const Vector<StmtVar *> &args, StmtSimple *kwarg,
+				 StmtSimple *vaarg);
 
 	void disp(bool has_next);
 
@@ -216,7 +218,7 @@ class StmtFnDef : public Stmt
 public:
 	StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk);
 	~StmtFnDef();
-	static StmtFnDef *create(Allocator &allocator, ModuleLoc loc, StmtFnSig *sig,
+	static StmtFnDef *create(ManagedAllocator &allocator, ModuleLoc loc, StmtFnSig *sig,
 				 StmtBlock *blk);
 
 	void disp(bool has_next);
@@ -240,7 +242,7 @@ public:
 	StmtVarDecl(ModuleLoc loc, const Vector<StmtVar *> &decls);
 	~StmtVarDecl();
 
-	static StmtVarDecl *create(Allocator &allocator, ModuleLoc loc,
+	static StmtVarDecl *create(ManagedAllocator &allocator, ModuleLoc loc,
 				   const Vector<StmtVar *> &decls);
 
 	void disp(bool has_next);
@@ -276,7 +278,7 @@ class StmtCond : public Stmt
 public:
 	StmtCond(ModuleLoc loc, const Vector<Conditional> &conds);
 	~StmtCond();
-	static StmtCond *create(Allocator &allocator, ModuleLoc loc,
+	static StmtCond *create(ManagedAllocator &allocator, ModuleLoc loc,
 				const Vector<Conditional> &conds);
 
 	void disp(bool has_next);
@@ -297,7 +299,7 @@ public:
 	StmtFor(ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *blk);
 	~StmtFor();
 	// init, cond, incr can be nullptr
-	static StmtFor *create(Allocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond,
+	static StmtFor *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond,
 			       Stmt *incr, StmtBlock *blk);
 
 	void disp(bool has_next);
@@ -318,8 +320,8 @@ public:
 	StmtForIn(ModuleLoc loc, const lex::Lexeme &iter, Stmt *in, StmtBlock *blk);
 	~StmtForIn();
 	// init, cond, incr can be nullptr
-	static StmtForIn *create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &iter,
-				 Stmt *in, StmtBlock *blk);
+	static StmtForIn *create(ManagedAllocator &allocator, ModuleLoc loc,
+				 const lex::Lexeme &iter, Stmt *in, StmtBlock *blk);
 
 	void disp(bool has_next);
 
@@ -335,7 +337,7 @@ class StmtRet : public Stmt
 public:
 	StmtRet(ModuleLoc loc, Stmt *val);
 	~StmtRet();
-	static StmtRet *create(Allocator &allocator, ModuleLoc loc, Stmt *val);
+	static StmtRet *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val);
 
 	void disp(bool has_next);
 
@@ -346,7 +348,7 @@ class StmtContinue : public Stmt
 {
 public:
 	StmtContinue(ModuleLoc loc);
-	static StmtContinue *create(Allocator &allocator, ModuleLoc loc);
+	static StmtContinue *create(ManagedAllocator &allocator, ModuleLoc loc);
 
 	void disp(bool has_next);
 };
@@ -355,7 +357,7 @@ class StmtBreak : public Stmt
 {
 public:
 	StmtBreak(ModuleLoc loc);
-	static StmtBreak *create(Allocator &allocator, ModuleLoc loc);
+	static StmtBreak *create(ManagedAllocator &allocator, ModuleLoc loc);
 
 	void disp(bool has_next);
 };
@@ -367,7 +369,7 @@ class StmtDefer : public Stmt
 public:
 	StmtDefer(ModuleLoc loc, Stmt *val);
 	~StmtDefer();
-	static StmtDefer *create(Allocator &allocator, ModuleLoc loc, Stmt *val);
+	static StmtDefer *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val);
 
 	void disp(bool has_next);
 

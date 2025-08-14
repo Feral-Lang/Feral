@@ -19,13 +19,13 @@ typedef void (*ModDeinitFn)(Interpreter &ip);
 
 class Interpreter
 {
-	// Used to store VirtualMachine memory after one is free'd
-	UniList<VirtualMachine *> freeVMMem;
 	Atomic<size_t> vmCount;
 
 	args::ArgParser &argparser;
 	ParseSourceFn parseSourceFn;
 	MemoryManager mem;
+	ManagedAllocator managedAllocator;
+	SimpleAllocator simpleAllocator;
 	Map<ModuleId, VarModule *> modules;
 	// All functions to call before unloading dlls
 	StringMap<ModDeinitFn> dlldeinitfns;
@@ -168,7 +168,7 @@ public:
 };
 
 // Each thread in Interpreter
-class VirtualMachine
+class VirtualMachine : public IAllocated
 {
 	Interpreter &ip;
 	Vars vars;
@@ -188,7 +188,7 @@ public:
 	// Must pushModule before calling this function, and popModule after calling it.
 	int execute(bool addFunc = false, bool addBlk = false, size_t begin = 0, size_t end = 0);
 
-	ModuleId addModule(ModuleLoc loc, fs::File &&_f, bool exprOnly,
+	ModuleId addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
 			   VarStack *existingVarStack = nullptr);
 	void removeModule(ModuleId moduleId);
 	void pushModule(ModuleId moduleId);

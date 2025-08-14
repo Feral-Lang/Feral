@@ -42,8 +42,8 @@ StmtBlock::StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top)
 	: Stmt(BLOCK, loc), stmts(stmts), is_top(is_top), should_unload(true)
 {}
 StmtBlock::~StmtBlock() {}
-StmtBlock *StmtBlock::create(Allocator &allocator, ModuleLoc loc, const Vector<Stmt *> &stmts,
-			     bool is_top)
+StmtBlock *StmtBlock::create(ManagedAllocator &allocator, ModuleLoc loc,
+			     const Vector<Stmt *> &stmts, bool is_top)
 {
 	return allocator.alloc<StmtBlock>(loc, stmts, is_top);
 }
@@ -72,7 +72,7 @@ void StmtBlock::disp(bool has_next)
 StmtSimple::StmtSimple(ModuleLoc loc, const lex::Lexeme &val) : Stmt(SIMPLE, loc), val(val) {}
 
 StmtSimple::~StmtSimple() {}
-StmtSimple *StmtSimple::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &val)
+StmtSimple *StmtSimple::create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &val)
 {
 	return allocator.alloc<StmtSimple>(loc, val);
 }
@@ -92,7 +92,7 @@ StmtFnArgs::StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpa
 	: Stmt(FNARGS, loc), args(args), unpack_vector(unpack_vector)
 {}
 StmtFnArgs::~StmtFnArgs() {}
-StmtFnArgs *StmtFnArgs::create(Allocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
+StmtFnArgs *StmtFnArgs::create(ManagedAllocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
 			       Vector<bool> &&unpack_vector)
 {
 	return allocator.alloc<StmtFnArgs>(loc, std::move(args), std::move(unpack_vector));
@@ -122,8 +122,8 @@ StmtExpr::StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs)
 	: Stmt(EXPR, loc), lhs(lhs), oper(oper), rhs(rhs), or_blk(nullptr), or_blk_var(loc)
 {}
 StmtExpr::~StmtExpr() {}
-StmtExpr *StmtExpr::create(Allocator &allocator, ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper,
-			   Stmt *rhs)
+StmtExpr *StmtExpr::create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *lhs,
+			   const lex::Lexeme &oper, Stmt *rhs)
 {
 	return allocator.alloc<StmtExpr>(loc, lhs, oper, rhs);
 }
@@ -168,8 +168,8 @@ StmtVar::StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bo
 	: Stmt(VAR, loc), name(name), in(in), val(val), is_arg(is_arg)
 {}
 StmtVar::~StmtVar() {}
-StmtVar *StmtVar::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &name, Stmt *in,
-			 Stmt *val, bool is_arg)
+StmtVar *StmtVar::create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &name,
+			 Stmt *in, Stmt *val, bool is_arg)
 {
 	return allocator.alloc<StmtVar>(loc, name, in, val, is_arg);
 }
@@ -202,8 +202,8 @@ StmtFnSig::StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *k
 	: Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg)
 {}
 StmtFnSig::~StmtFnSig() {}
-StmtFnSig *StmtFnSig::create(Allocator &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-			     StmtSimple *kwarg, StmtSimple *vaarg)
+StmtFnSig *StmtFnSig::create(ManagedAllocator &allocator, ModuleLoc loc,
+			     const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg)
 {
 	return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg);
 }
@@ -243,7 +243,8 @@ StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
 	: Stmt(FNDEF, loc), sig(sig), blk(blk)
 {}
 StmtFnDef::~StmtFnDef() {}
-StmtFnDef *StmtFnDef::create(Allocator &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
+StmtFnDef *StmtFnDef::create(ManagedAllocator &allocator, ModuleLoc loc, StmtFnSig *sig,
+			     StmtBlock *blk)
 {
 	return allocator.alloc<StmtFnDef>(loc, sig, blk);
 }
@@ -271,7 +272,7 @@ StmtVarDecl::StmtVarDecl(ModuleLoc loc, const Vector<StmtVar *> &decls)
 	: Stmt(VARDECL, loc), decls(decls)
 {}
 StmtVarDecl::~StmtVarDecl() {}
-StmtVarDecl *StmtVarDecl::create(Allocator &allocator, ModuleLoc loc,
+StmtVarDecl *StmtVarDecl::create(ManagedAllocator &allocator, ModuleLoc loc,
 				 const Vector<StmtVar *> &decls)
 {
 	return allocator.alloc<StmtVarDecl>(loc, decls);
@@ -297,7 +298,8 @@ Conditional::~Conditional() {}
 StmtCond::StmtCond(ModuleLoc loc, const Vector<Conditional> &conds) : Stmt(COND, loc), conds(conds)
 {}
 StmtCond::~StmtCond() {}
-StmtCond *StmtCond::create(Allocator &allocator, ModuleLoc loc, const Vector<Conditional> &conds)
+StmtCond *StmtCond::create(ManagedAllocator &allocator, ModuleLoc loc,
+			   const Vector<Conditional> &conds)
 {
 	return allocator.alloc<StmtCond>(loc, conds);
 }
@@ -332,8 +334,8 @@ StmtFor::StmtFor(ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr, StmtBlock *b
 	: Stmt(FOR, loc), init(init), cond(cond), incr(incr), blk(blk)
 {}
 StmtFor::~StmtFor() {}
-StmtFor *StmtFor::create(Allocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond, Stmt *incr,
-			 StmtBlock *blk)
+StmtFor *StmtFor::create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond,
+			 Stmt *incr, StmtBlock *blk)
 {
 	return allocator.alloc<StmtFor>(loc, init, cond, incr, blk);
 }
@@ -377,8 +379,8 @@ StmtForIn::StmtForIn(ModuleLoc loc, const lex::Lexeme &iter, Stmt *in, StmtBlock
 	: Stmt(FORIN, loc), iter(iter), in(in), blk(blk)
 {}
 StmtForIn::~StmtForIn() {}
-StmtForIn *StmtForIn::create(Allocator &allocator, ModuleLoc loc, const lex::Lexeme &iter, Stmt *in,
-			     StmtBlock *blk)
+StmtForIn *StmtForIn::create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &iter,
+			     Stmt *in, StmtBlock *blk)
 {
 	return allocator.alloc<StmtForIn>(loc, iter, in, blk);
 }
@@ -406,7 +408,7 @@ void StmtForIn::disp(bool has_next)
 
 StmtRet::StmtRet(ModuleLoc loc, Stmt *val) : Stmt(RET, loc), val(val) {}
 StmtRet::~StmtRet() {}
-StmtRet *StmtRet::create(Allocator &allocator, ModuleLoc loc, Stmt *val)
+StmtRet *StmtRet::create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val)
 {
 	return allocator.alloc<StmtRet>(loc, val);
 }
@@ -429,7 +431,7 @@ void StmtRet::disp(bool has_next)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtContinue::StmtContinue(ModuleLoc loc) : Stmt(CONTINUE, loc) {}
-StmtContinue *StmtContinue::create(Allocator &allocator, ModuleLoc loc)
+StmtContinue *StmtContinue::create(ManagedAllocator &allocator, ModuleLoc loc)
 {
 	return allocator.alloc<StmtContinue>(loc);
 }
@@ -446,7 +448,7 @@ void StmtContinue::disp(bool has_next)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtBreak::StmtBreak(ModuleLoc loc) : Stmt(BREAK, loc) {}
-StmtBreak *StmtBreak::create(Allocator &allocator, ModuleLoc loc)
+StmtBreak *StmtBreak::create(ManagedAllocator &allocator, ModuleLoc loc)
 {
 	return allocator.alloc<StmtBreak>(loc);
 }
@@ -464,7 +466,7 @@ void StmtBreak::disp(bool has_next)
 
 StmtDefer::StmtDefer(ModuleLoc loc, Stmt *val) : Stmt(DEFER, loc), val(val) {}
 StmtDefer::~StmtDefer() {}
-StmtDefer *StmtDefer::create(Allocator &allocator, ModuleLoc loc, Stmt *val)
+StmtDefer *StmtDefer::create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val)
 {
 	return allocator.alloc<StmtDefer>(loc, val);
 }

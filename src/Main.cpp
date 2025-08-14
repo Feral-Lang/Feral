@@ -5,7 +5,7 @@
 
 using namespace fer;
 
-// Uses its own AST Allocator which gets deleted when control leaves the function.
+// Uses its own AST ManagedAllocator which gets deleted when control leaves the function.
 // `bc` is the output variable here.
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
 		 StringRef data, bool exprOnly);
@@ -98,7 +98,7 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
 
 	// Separate allocator for AST since we don't want the AST nodes (Stmt) to persist outside
 	// this function - because this function is supposed to generate IR for the VM to consume.
-	Allocator astallocator(mem, utils::toString("AST(", path, ")"));
+	ManagedAllocator astallocator(mem, utils::toString("AST(", path, ")"));
 	ast::Stmt *ptree = nullptr;
 	if(!ast::parse(astallocator, tokens, ptree, exprOnly)) {
 		std::cout << "Failed to parse tokens for file: " << path << "\n";
