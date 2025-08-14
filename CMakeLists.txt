@@ -16,6 +16,11 @@ if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
 	set(CMAKE_INSTALL_MESSAGE LAZY)
 endif()
 
+if("${ENABLE_ASAN}" STREQUAL "true")
+	message("-- Address sanitizer is now enabled")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif()
+
 # Add external path
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 

@@ -347,30 +347,6 @@ void VarFn::onDestroy(MemoryManager &mem)
 {
 	for(auto &aa : assn_params) decVarRef(mem, aa.second);
 }
-Var *VarFn::onCopy(MemoryManager &mem, ModuleLoc loc)
-{
-	VarFn *tmp = makeVarWithRef<VarFn>(mem, loc, moduleId, kw_arg, var_arg, params.size(),
-					   assn_params.size(), body, is_native);
-	tmp->setParams(params);
-	for(auto &aa : assn_params) incVarRef(aa.second);
-	tmp->setAssnParams(assn_params);
-	return tmp;
-}
-void VarFn::onSet(MemoryManager &mem, Var *from)
-{
-	VarFn *tmp = as<VarFn>(from);
-
-	moduleId = tmp->moduleId;
-	kw_arg	 = tmp->kw_arg;
-	var_arg	 = tmp->var_arg;
-	// I assume copy assignment operator of vector & map do not cause unnecessary reallocations
-	params = tmp->params;
-	for(auto &aa : assn_params) decVarRef(mem, aa.second);
-	for(auto &aa : tmp->assn_params) incVarRef(aa.second);
-	assn_params = tmp->assn_params;
-	body	    = tmp->body;
-	is_native   = tmp->is_native;
-}
 Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
@@ -497,31 +473,6 @@ void VarStructDef::onDestroy(MemoryManager &mem)
 	for(auto &attr : attrs) {
 		decVarRef(mem, attr.second);
 	}
-}
-
-Var *VarStructDef::onCopy(MemoryManager &mem, ModuleLoc loc)
-{
-	VarStructDef *res = makeVarWithRef<VarStructDef>(mem, loc, attrs.size(), id);
-	std::unordered_map<std::string, Var *> attrs;
-	for(auto &attr : attrs) {
-		res->attrs.insert({attr.first, copyVar(mem, loc, attr.second)});
-	}
-	res->attrorder = attrorder;
-	return res;
-}
-
-void VarStructDef::onSet(MemoryManager &mem, Var *from)
-{
-	VarStructDef *st = as<VarStructDef>(from);
-	for(auto &attr : attrs) {
-		decVarRef(mem, attr.second);
-	}
-	for(auto &attr : st->attrs) {
-		incVarRef(attr.second);
-		attrs[attr.first] = attr.second;
-	}
-	attrorder.assign(st->attrorder.begin(), st->attrorder.end());
-	id = st->id;
 }
 
 Var *VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,

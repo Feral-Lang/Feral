@@ -406,8 +406,6 @@ class VarFn : public Var
 	bool is_native;
 
 	void onDestroy(MemoryManager &mem) override;
-	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
@@ -483,8 +481,6 @@ class VarStructDef : public Var
 	size_t id;
 
 	void onDestroy(MemoryManager &mem) override;
-	Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-	void onSet(MemoryManager &mem, Var *from) override;
 
 public:
 	VarStructDef(ModuleLoc loc, size_t attrscount);
