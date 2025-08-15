@@ -20,6 +20,13 @@ let fecl = import('std/fecl');
 let stat = import('std/stat');
 let time = import('std/time');
 let mproc = import('std/multiproc');
+let argparse = import('std/argparse');
+
+let args = argparse.new(feral.args);
+args.addArg('valgrind').addOpts('--valgrind', '-v').setHelp('Run the tests with valgrind - useful for memory information');
+args.addArg('runs').addOpts('--runs', '-r').setValReqd(true).setHelp('Run the tests `n` number of times - useful for a longer multithreading check');
+args.addArg('path').setValReqd(true).setHelp('The directory where the tests are present - can be relative to current working directory');
+args.parse();
 
 let fmtWithPath = fn(path, fmtStrs) {
 	if fmtStrs.empty() { return nil; }
@@ -30,12 +37,9 @@ let fmtWithPath = fn(path, fmtStrs) {
 	return v;
 };
 
-if feral.args.empty() {
-	io.println('Usage: ', feral.binaryPath, ' ', __SRC_PATH__, ' <directory>');
-	feral.exit(1);
-}
+let testsDir = args.getValue('path');
 
-let st = stat.stat(feral.args[0]) or err {
+let st = stat.stat(testsDir) or err {
 	io.println('error: stat failed on directory: ', err);
 	feral.exit(1);
 	return nil; # unreachable
@@ -46,7 +50,7 @@ if !st.isDir() {
 	feral.exit(1);
 }
 
-let cfgname = fs.pathFrom(feral.args[0], 'config.fecl');
+let cfgname = fs.pathFrom(testsDir, 'config.fecl');
 if !fs.exists(cfgname) {
 	io.println('error: test config: \'' + cfgname + '\' not found');
 	feral.exit(1);
@@ -61,7 +65,7 @@ let filePattern = cfg['FilePattern'];
 let execCmd = cfg['ExecCmd'];
 let cleanCmd = cfg['CleanCmd'];
 
-let files = fs.walkDir(feral.args[0], fs.WALK_RECURSE, filePattern);
+let files = fs.walkDir(testsDir, fs.WALK_RECURSE, filePattern);
 files.sort();
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
@@ -95,7 +99,7 @@ let waitProcs = fn(maxProcs, withValgrind, counter = true) {
 };
 
 let valgrindCmd = vec.new(refs = true);
-if feral.args.find('--valgrind') {
+if args.has('valgrind') {
 	let valgrindExec = os.findExec('valgrind');
 	if valgrindExec == nil {
 		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
@@ -109,25 +113,33 @@ if feral.args.find('--valgrind') {
 	valgrindCmd.push('--leak-check=full');
 	valgrindCmd.push('--show-leak-kinds=all');
 }
+let runCount = 1;
+if args.has('runs') {
+	runCount = args.getValue('runs').int();
+}
 
 let timeBegin = time.now();
 
-for file in files.each() {
-	waitProcs(maxProcs, !valgrindCmd.empty());
-	let cmd = valgrindCmd;
-	cmd.append(fmtWithPath(file, execCmd));
-	cmd.push('^>' + io.null);
-	if !valgrindCmd.empty() {
-		io.cprintln('{c}test{0}({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
-	} else {
-		io.cprintln('{c}test{0}: {y}', cmd.join(' '), '{0} ...');
+let totalTests = runCount * files.len();
+let counter = 0;
+for let i = 0; i < runCount; ++i {
+	for file in files.each() {
+		waitProcs(maxProcs, !valgrindCmd.empty());
+		let cmd = valgrindCmd;
+		cmd.append(fmtWithPath(file, execCmd));
+		cmd.push('^>' + io.null);
+		if !valgrindCmd.empty() {
+			io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}) ({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
+		} else {
+			io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
+		}
+		io.fflush(io.stdout);
+		tpool.push(mproc.run(cmd, name = file));
 	}
-	io.fflush(io.stdout);
-	tpool.push(mproc.run(cmd, name = file));
 }
 waitProcs(1, !valgrindCmd.empty());
 
-let tot_time = time.now() - timeBegin;
+let totalTime = time.now() - timeBegin;
 
 if !cleanCmd.empty() {
 	for file in files.each() {
@@ -141,9 +153,9 @@ if !cleanCmd.empty() {
 	waitProcs(1, !valgrind.empty(), false);
 }
 
-io.cprintln('total: {y}', files.len(),
+io.cprintln('total: {y}', totalTests,
 	    '{0}, passed: {g}', passed,
 	    '{0}, failed: {r}', failed,
-	    '{0}, time: {b}', time.resolve(tot_time, time.milli).round(),
+	    '{0}, time: {b}', time.resolve(totalTime, time.milli).round(),
 	    '{0} ms');
 feral.exit(failed);
