@@ -24,6 +24,8 @@ endif()
 # Add external path
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
+
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
 	if(WIN32)
 		file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}/Programs/Feral" TMP_PREFIX)
@@ -144,15 +146,12 @@ target_link_libraries(libferal LibCore::LibCore)
 # if the the DLL is being generated, or is being used.
 target_include_directories(libferal PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
-target_compile_definitions(libferal PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 set_target_properties(libferal
 	PROPERTIES
 	CXX_STANDARD_REQUIRED ON
 	CXX_EXTENSIONS OFF
-	POSITION_INDEPENDENT_CODE TRUE
 	PREFIX "" # 'lib' as prefix is not needed on linux since the name is libferal anyway
 	LINK_FLAGS "${EXTRA_LD_FLAGS}"
-	MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
 	ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for lib (windows)
 	LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib" # for so (non-windows)
 	RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)
@@ -163,7 +162,6 @@ install(TARGETS libferal)
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp")
 target_compile_features(feral PUBLIC cxx_std_20)
 target_include_directories(feral PRIVATE "${PROJECT_SOURCE_DIR}/include")
-target_compile_definitions(feral PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 target_link_libraries(feral libferal)
 set_target_properties(feral
 	PROPERTIES
@@ -222,7 +220,6 @@ if(NOT NOSTDLIB STREQUAL "true")
 		add_library(${modname} SHARED "${mod}" "${header}")
 		target_compile_features(${modname} PUBLIC cxx_std_20)
 		target_include_directories(${modname} PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/lib")
-		target_compile_definitions(${modname} PRIVATE $<$<CONFIG:Debug>:BUILD_DEBUG=true>)
 		target_link_libraries(${modname} libferal ${dep})
 		set_target_properties(${modname}
 			PROPERTIES
@@ -231,7 +228,6 @@ if(NOT NOSTDLIB STREQUAL "true")
 			PREFIX "libferal"
 			ARCHIVE_OUTPUT_NAME "libferal${modname}"
 			LINK_FLAGS "${EXTRA_LD_FLAGS}"
-			MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
 			LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
 			RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
 			ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
