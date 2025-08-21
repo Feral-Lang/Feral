@@ -1,11 +1,11 @@
-let Status = struct(
+let Err = struct(
 	code = nil,
 	msg = ''
 );
-Status.setTypeName('Status');
+Err.setTypeName('Err');
 
-let getCode in Status = fn() { return ref(self.code); };
-let getMsg in Status = fn() { return ref(self.msg); };
+let getCode in Err = fn() { return ref(self.code); };
+let getMsg in Err = fn() { return ref(self.msg); };
 
 let Result = struct(
 	val = nil,
@@ -15,7 +15,7 @@ Result.setTypeName('Result');
 
 let ok = fn(val) { return Result(ref(val), true); };
 let err = fn(code, msg...) {
-	let r = Result(Status(code), false);
+	let r = Result(Err(code), false);
 	for m in msg.each() {
 		r.val.msg += m.str();
 	}
@@ -27,15 +27,19 @@ let isErr in Result = fn() { return !self.isok; };
 
 let getVal in Result = fn() { return ref(self.val); };
 
-let str in Status = fn() {
-	let s = self.val.str();
+let str in Err = fn() {
+	let s = 'Err<';
+	s += self.val.str();
 	s += ':';
 	s += msg;
+	s += '>';
 	return ref(s);
 };
 
 let str in Result = fn() {
-	let s = self.isOk() ? 'Result<OK :: ' : 'Resultt<Err :: ';
+	let s = 'Result';
+	s += self.isok ? '(Ok)' : '(Err)';
+	s += '<';
 	s += val.str();
 	s += '>';
 	return ref(s);
