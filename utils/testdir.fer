@@ -143,14 +143,14 @@ let totalTime = time.now() - timeBegin;
 
 if !cleanCmd.empty() {
 	for file in files.each() {
-		waitProcs(maxProcs, !valgrind.empty(), false);
+		waitProcs(maxProcs, false, false);
 		let cmd = fmtWithPath(file, cleanCmd);
 		cmd.push('^>' + io.null);
 		io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
 		io.fflush(io.stdout);
 		tpool.push(mproc.run(cmd));
 	}
-	waitProcs(1, !valgrind.empty(), false);
+	waitProcs(1, false, false);
 }
 
 io.cprintln('total: {y}', totalTests,
