@@ -1,0 +1,12 @@
+let assert = import('std/assert');
+
+let result = import('std/result');
+
+let err = result.err(1, 'this is an error message; 1 + 2 = ', 1 + 2);
+let ok = result.ok(5);
+
+assert.eq(err.isOk(), false);
+assert.eq(ok.isOk(), true);
+
+assert.eq(err.getVal().getMsg(), 'this is an error message; 1 + 2 = 3');
+assert.eq(ok.getVal(), 5);
