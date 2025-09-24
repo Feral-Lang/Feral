@@ -278,8 +278,8 @@ Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			vm.getTypeName(args[1]));
 		return nullptr;
 	}
-	const String &dir = as<VarStr>(args[1])->getVal();
-	return vm.makeVar<VarBool>(loc, fs::setCWD(dir.c_str()));
+	fs::setCWD(as<VarStr>(args[1])->getVal());
+	return vm.getNil();
 }
 
 #if !defined(CORE_OS_WINDOWS)
