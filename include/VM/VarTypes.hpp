@@ -64,6 +64,11 @@ public:
 	{
 		return typeid(*this).hash_code() == typeid(T).hash_code();
 	}
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type isDerivedFrom()
+	{
+		return dynamic_cast<T *>(this) != 0;
+	}
 
 	inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 

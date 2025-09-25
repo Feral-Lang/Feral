@@ -724,7 +724,6 @@ bool Parser::parseExpr01(Stmt *&expr, bool disable_brace_after_iden)
 	Vector<Stmt *> args;
 	Stmt *arg = nullptr;
 	Vector<bool> unpack_vector; // works for variadic as well
-	bool unpack_arg = false;
 
 	// prefixed/suffixed literals
 	if(p.accept(lex::IDEN) && p.peek(1).getTok().isLiteral() ||
@@ -807,24 +806,16 @@ begin_brack:
 				if(!parseExpr17(arg, false)) return false;
 				arg =
 				StmtVar::create(allocator, name.getLoc(), name, nullptr, arg, true);
-			} else if(p.accept(lex::IDEN) &&
-				  (p.peekt(1) == lex::PreVA || p.peekt(1) == lex::PostVA))
-			{
-				// variadic unpack
-				arg = StmtSimple::create(allocator, p.peek().getLoc(), p.peek());
-				p.next();
-				p.sett(lex::PostVA);
-				p.next();
-				unpack_arg = true;
 			} else if(p.accept(lex::FN)) {
 				if(!parseFnDef(arg)) return false;
 			} else if(!parseExpr17(arg, false)) { // normal arg
 				return false;
 			}
+			unpack_vector.push_back(
+			arg->isExpr() && as<StmtExpr>(arg)->getOperTok().isType(lex::PostVA));
+			if(unpack_vector.back()) arg = as<StmtExpr>(arg)->getLHS();
 			args.push_back(arg);
-			unpack_vector.push_back(unpack_arg);
-			arg	   = nullptr;
-			unpack_arg = false;
+			arg = nullptr;
 			if(!p.acceptn(lex::COMMA)) break;
 		}
 		if(!p.acceptn(fncall ? lex::RPAREN : lex::RBRACE)) {

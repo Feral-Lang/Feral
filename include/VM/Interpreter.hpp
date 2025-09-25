@@ -53,19 +53,20 @@ class Interpreter
 	VarNil *nil;
 	// This is the one that's used for checking, and it can be modified by Feral program
 	size_t recurseMax;
+	Atomic<bool> stopExec;
 
 	friend class VirtualMachine;
 
 	bool loadPrelude();
 
-	VirtualMachine *createVM();
+	VirtualMachine *createVM(StringRef name);
 	void destroyVM(VirtualMachine *vm);
 
 public:
 	Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn);
 	~Interpreter();
 
-	int runFile(ModuleLoc loc, const char *file);
+	int runFile(ModuleLoc loc, const char *file, StringRef threadName);
 	Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args);
 
@@ -102,6 +103,9 @@ public:
 
 	inline void incVMCount() { ++vmCount; }
 	inline void decVMCount() { --vmCount; }
+
+	inline void stopExecution() { stopExec.store(true, std::memory_order_release); }
+	inline bool shouldStopExecution() { return stopExec.load(std::memory_order_relaxed); }
 
 	inline const char *getGlobalModulePathsFile() { return GLOBAL_MODULE_PATHS_FILE_PATH; }
 	inline StringRef getFeralImportExtension() { return ".fer"; }
@@ -171,6 +175,7 @@ public:
 class VirtualMachine : public IAllocated
 {
 	Interpreter &ip;
+	String name;
 	Vars vars;
 	Vector<VarModule *> modulestack;
 	FailStack failstack;
@@ -181,7 +186,7 @@ class VirtualMachine : public IAllocated
 	bool exitcalled;
 
 public:
-	VirtualMachine(Interpreter &ip);
+	VirtualMachine(Interpreter &ip, StringRef name);
 	~VirtualMachine();
 
 	int compileAndRun(ModuleLoc loc, const char *file);
@@ -217,6 +222,8 @@ public:
 	Var *eval(ModuleLoc loc, StringRef code, bool isExpr);
 
 	void dumpExecStack(OStream &os);
+
+	inline StringRef getName() { return name; }
 
 	inline void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 	{

@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 	}
 
 	Interpreter ip(args, ParseSource);
-	return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str());
+	return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str(), "Main");
 }
 
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,

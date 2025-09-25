@@ -30,6 +30,8 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 		// dumpExecStack(std::cout);
 		// std::cout << "\n";
 
+		if(ip.shouldStopExecution()) goto fail;
+
 		if(addFunc && recurseCount >= getRecurseMax()) {
 			fail(ins.getLoc(), "stack overflow, current max: ", getRecurseMax());
 			recurseExceeded = true;

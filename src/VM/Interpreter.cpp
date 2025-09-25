@@ -82,6 +82,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
 Interpreter::~Interpreter()
 {
 	using namespace std::chrono_literals;
+	stopExecution();
 	while(vmCount.load() > 0) {
 		std::this_thread::sleep_for(1ms);
 	}
@@ -118,7 +119,7 @@ bool Interpreter::loadPrelude()
 		err.fail({}, "Failed to find prelude: ", prelude);
 		return 1;
 	}
-	int res = runFile({}, prelude.c_str());
+	int res = runFile({}, prelude.c_str(), "Main");
 	if(res != 0) {
 		err.fail({}, "Failed to import prelude: ", prelude);
 		return false;
@@ -128,12 +129,15 @@ bool Interpreter::loadPrelude()
 	return true;
 }
 
-VirtualMachine *Interpreter::createVM() { return simpleAllocator.alloc<VirtualMachine>(*this); }
+VirtualMachine *Interpreter::createVM(StringRef name)
+{
+	return simpleAllocator.alloc<VirtualMachine>(*this, name);
+}
 void Interpreter::destroyVM(VirtualMachine *vm) { simpleAllocator.free(vm); }
 
-int Interpreter::runFile(ModuleLoc loc, const char *file)
+int Interpreter::runFile(ModuleLoc loc, const char *file, StringRef threadName)
 {
-	VirtualMachine *vm = createVM();
+	VirtualMachine *vm = createVM(threadName);
 	int res		   = vm->compileAndRun(loc, file);
 	destroyVM(vm);
 	return res;
@@ -141,7 +145,7 @@ int Interpreter::runFile(ModuleLoc loc, const char *file)
 Var *Interpreter::runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
 			      const StringMap<AssnArgData> &assn_args)
 {
-	VirtualMachine *vm = createVM();
+	VirtualMachine *vm = createVM(name);
 	Var *res	   = vm->callVarAndReturn(loc, name, callable, args, assn_args);
 	destroyVM(vm);
 	return res;
@@ -375,9 +379,9 @@ void Interpreter::initTypeNames()
 //////////////////////////////////// VirtualMachine //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VirtualMachine::VirtualMachine(Interpreter &ip)
-	: ip(ip), vars(ip.mem), failstack(ip.mem), execstack(ip.mem), recurseCount(0), exitcode(0),
-	  recurseExceeded(false), exitcalled(false)
+VirtualMachine::VirtualMachine(Interpreter &ip, StringRef name)
+	: ip(ip), name(name), vars(ip.mem), failstack(ip.mem), execstack(ip.mem), recurseCount(0),
+	  exitcode(0), recurseExceeded(false), exitcalled(false)
 {
 	ip.incVMCount();
 }

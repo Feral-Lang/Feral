@@ -19,7 +19,9 @@ let vec = import('std/vec');
 let fecl = import('std/fecl');
 let stat = import('std/stat');
 let time = import('std/time');
-let mproc = import('std/multiproc');
+let mutex = import('std/mutex');
+let atomic = import('std/atomic');
+let thread = import('std/thread');
 let argparse = import('std/argparse');
 
 let args = argparse.new(feral.args);
@@ -73,14 +75,14 @@ inline if os.name == 'windows' {
 # Apparently, $null cannot be accessed by more than one process at a time.
 let maxProcs = 1;
 } else {
-let maxProcs = mproc.getConcurrency();
+let maxProcs = thread.getConcurrency();
 }
 
 let waitProcs = fn(maxProcs, withValgrind, counter = true) {
 	while tpool.len() >= maxProcs {
 		for let i = 0; i < tpool.len(); ++i {
 			if !tpool[i].isDone() { continue; }
-			let t = tpool[i];
+			let t = ref(tpool[i]);
 			if t.getResult() != 0 {
 				if counter { ++failed; }
 				if withValgrind {
@@ -134,7 +136,7 @@ for let i = 0; i < runCount; ++i {
 			io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
 		}
 		io.fflush(io.stdout);
-		tpool.push(mproc.run(cmd, name = file));
+		tpool.push(thread.run(cmd, name = file));
 	}
 }
 waitProcs(1, !valgrindCmd.empty());
@@ -148,7 +150,7 @@ if !cleanCmd.empty() {
 		cmd.push('^>' + io.null);
 		io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
 		io.fflush(io.stdout);
-		tpool.push(mproc.run(cmd));
+		tpool.push(thread.run(cmd));
 	}
 	waitProcs(1, false, false);
 }

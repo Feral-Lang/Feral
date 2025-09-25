@@ -1,37 +1,59 @@
 let io = import('std/io');
 let os = import('std/os');
 let vec = import('std/vec');
-let mproc = import('std/multiproc');
+let mutex = import('std/mutex');
+let atomic = import('std/atomic');
+let thread = import('std/thread');
 
-let listMtx = mproc.newMutex();
-let tasklist = vec.new();
+let mtx = mutex.newRecursive();
+let shouldStop = atomic.newBool(false);
+let taskList = vec.new(refs = true);
 
-let workerFn = fn(threadId) {
-	while true {
-		let lock = mproc.newLockGuard(listMtx);
-		if tasklist.empty() { continue; }
-		if tasklist.front() == nil { break; }
-		let data = tasklist.front();
-		tasklist.erase(0);
-		io.println('In thread: ', threadId, ', received data: ', data);
+let Task = struct(
+	func = nil,
+	args = vec.new(refs = true)
+);
+
+Task.setTypeName('Task');
+
+let addTask = fn(func, args...) {
+	let _ = mutex.newGuard(mtx);
+	taskList.push(Task(func, args));
+};
+
+let workerFn = fn() {
+	io.println('Started worker: ', thread.getCurrentName());
+	while !shouldStop.get() {
+		mtx.lock();
+		if taskList.empty() { mtx.unlock(); os.sleep(1); continue; }
+		let t = ref(taskList.front());
+		taskList.erase(0);
+		mtx.unlock();
+		t.func(thread.getCurrentName(), t.args...);
 	}
 };
 
 let workers = vec.new(refs = true);
-workers.push(mproc.newThread(workerFn, 0));
-workers.push(mproc.newThread(workerFn, 1));
-workers.push(mproc.newThread(workerFn, 2));
-workers.push(mproc.newThread(workerFn, 3));
+workers.push(thread.new(workerFn, name = 'worker-1'));
+workers.push(thread.new(workerFn, name = 'worker-2'));
 
-for let i = 0; i < 1000; ++i {
-	let lock = mproc.newLockGuard(listMtx);
-	tasklist.push(i);
-}
-{
-	let lock = mproc.newLockGuard(listMtx);
-	tasklist.push(nil);
-}
+let f = fn(t, a1, a2) {
+	let res = a1 * a2;
+	if t == 'worker-1' { os.sleep(1); }
+	else { os.sleep(2); }
+	io.println('In worker: ', t, '; ', a1, ' x ', a2, ' = ', res);
+};
 
+for let i = 1; i <= 10; ++i {
+	addTask(f, i, 25);
+}
+while true {
+	mtx.lock();
+	if taskList.empty() { mtx.unlock(); break; }
+	mtx.unlock();
+	os.sleep(5);
+}
+shouldStop.set(true);
 for w in workers.each() {
 	w.join();
 }

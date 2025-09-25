@@ -5,8 +5,8 @@ project(Feral
 	LANGUAGES CXX)
 
 set(PROJECT_VERSION_MAJOR "1")
-set(PROJECT_VERSION_MINOR "2")
-set(PROJECT_VERSION_PATCH "1")
+set(PROJECT_VERSION_MINOR "3")
+set(PROJECT_VERSION_PATCH "0")
 
 include(FetchContent)
 include(GNUInstallDirs)
@@ -19,6 +19,11 @@ endif()
 if("${ENABLE_ASAN}" STREQUAL "true")
 	message("-- Address sanitizer is now enabled")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif()
+
+if("${ENABLE_TSAN}" STREQUAL "true")
+	message("-- Thread sanitizer is now enabled")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
 endif()
 
 # Add external path
@@ -127,7 +132,7 @@ endif()
 FetchContent_Declare(
 	LibCore
 	GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-	GIT_TAG        1.1.2
+	GIT_TAG        1.1.3
 )
 
 FetchContent_MakeAvailable(LibCore)

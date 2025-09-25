@@ -97,6 +97,12 @@ void VarStack::continueLoop()
 	if(stack.size() - 1 > loops_from.back()) popStack(stack.size() - 1 - loops_from.back());
 }
 
+void VarStack::add(StringRef name, Var *val, bool iref)
+{
+	LockGuard<RecursiveMutex> _(mtx);
+	stack.back()->add(name, val, iref);
+}
+
 bool VarStack::rem(StringRef name, bool dref)
 {
 	LockGuard<RecursiveMutex> _(mtx);

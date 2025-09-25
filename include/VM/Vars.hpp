@@ -58,6 +58,7 @@ public:
 	void popLoop();
 	void continueLoop();
 
+	void add(StringRef name, Var *val, bool iref);
 	bool rem(StringRef name, bool dref);
 
 	void dump(OStream &os, size_t tab = 0);
@@ -67,7 +68,6 @@ public:
 	{
 		if(stack.size() > count) popStack(stack.size() - count);
 	}
-	inline void add(StringRef name, Var *val, bool iref) { stack.back()->add(name, val, iref); }
 };
 
 class Vars
