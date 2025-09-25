@@ -120,18 +120,18 @@ public:
 #endif
 	}
 
-	// supposed to call the overloaded new operator in Var
+	// used in native function calls
+	template<typename T, typename... Args>
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
+	{
+		return Var::makeVar<T>(mem, std::forward<Args>(args)...);
+	}
+	// supposed to call the overloaded new operator in Var - sets ref to one
 	template<typename T, typename... Args>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	makeVarWithRef(Args &&...args)
 	{
 		return Var::makeVarWithRef<T>(mem, std::forward<Args>(args)...);
-	}
-	// used in native function calls - sets ref to zero
-	template<typename T, typename... Args>
-	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
-	{
-		return Var::makeVar<T>(mem, std::forward<Args>(args)...);
 	}
 	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
 	// being used elsewhere.
@@ -295,18 +295,18 @@ public:
 	inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
 	inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }
 
-	// supposed to call the overloaded new operator in Var
+	// used in native function calls
+	template<typename T, typename... Args>
+	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
+	{
+		return ip.makeVar<T>(std::forward<Args>(args)...);
+	}
+	// supposed to call the overloaded new operator in Var - sets ref to one
 	template<typename T, typename... Args>
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
 	makeVarWithRef(Args &&...args)
 	{
 		return ip.makeVarWithRef<T>(std::forward<Args>(args)...);
-	}
-	// used in native function calls - sets ref to zero
-	template<typename T, typename... Args>
-	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
-	{
-		return ip.makeVar<T>(std::forward<Args>(args)...);
 	}
 	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
 	// being used elsewhere.

@@ -19,7 +19,7 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, bool callable, bool attr_based) : loc(loc), ref(1), info(0)
+Var::Var(ModuleLoc loc, bool callable, bool attr_based) : loc(loc), ref(0), info(0)
 {
 	if(callable) info |= (size_t)VarInfo::CALLABLE;
 	if(attr_based) info |= (size_t)VarInfo::ATTR_BASED;

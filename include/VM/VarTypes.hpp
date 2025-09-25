@@ -88,22 +88,22 @@ public:
 	virtual Var *getAttr(StringRef name);
 	virtual size_t getTypeFnID();
 
-	// supposed to call the overloaded new operator in Var
+	// used in native function calls
 	template<typename T, typename... Args> static
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-	makeVarWithRef(MemoryManager &mem, Args &&...args)
+	makeVar(MemoryManager &mem, Args &&...args)
 	{
 		T *res = new(mem.alloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
 		res->create(mem);
 		return res;
 	}
-	// used in native function calls - sets ref to zero
+	// supposed to call the overloaded new operator in Var - sets ref to one
 	template<typename T, typename... Args> static
 	typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-	makeVar(MemoryManager &mem, Args &&...args)
+	makeVarWithRef(MemoryManager &mem, Args &&...args)
 	{
-		T *res = makeVarWithRef<T>(mem, std::forward<Args>(args)...);
-		res->dref();
+		T *res = makeVar<T>(mem, std::forward<Args>(args)...);
+		res->iref();
 		return res;
 	}
 	// Generally should be called only by vm.decVarRef(), unless you are sure that var is not
