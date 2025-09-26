@@ -59,6 +59,14 @@ protected:
 	virtual ~Var();
 
 public:
+	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+			  const StringMap<AssnArgData> &assn_args);
+	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
+	virtual bool existsAttr(StringRef name);
+	virtual Var *getAttr(StringRef name);
+	virtual size_t getTypeFnID();
+	void dump(OStream &os, VirtualMachine *vm);
+
 	template<typename T>
 	typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const
 	{
@@ -80,13 +88,6 @@ public:
 
 	inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
 	inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
-
-	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-			  const StringMap<AssnArgData> &assn_args);
-	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
-	virtual bool existsAttr(StringRef name);
-	virtual Var *getAttr(StringRef name);
-	virtual size_t getTypeFnID();
 
 	// used in native function calls
 	template<typename T, typename... Args> static

@@ -46,6 +46,24 @@ bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
 size_t Var::getTypeFnID() { return getType(); }
 
+void Var::dump(OStream &os, VirtualMachine *vm)
+{
+	os << "<" << ref << ">";
+	if(is<VarInt>()) {
+		os << "int";
+	} else if(is<VarFlt>()) {
+		os << "flt";
+	} else if(is<VarStr>()) {
+		os << "Str:" << as<VarStr>(this)->getVal();
+	} else if(is<VarNil>()) {
+		os << "nil";
+	} else if(is<VarBool>()) {
+		os << "bool:" << (as<VarBool>(this)->getVal() ? "true" : "false");
+	} else if(vm) {
+		os << vm->getTypeName(this);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
