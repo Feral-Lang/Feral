@@ -451,19 +451,7 @@ fail:
 void VirtualMachine::dumpExecStack(OStream &os)
 {
 	for(auto &e : execstack.get()) {
-		if(e->is<VarInt>()) {
-			os << "int";
-		} else if(e->is<VarFlt>()) {
-			os << "flt";
-		} else if(e->is<VarStr>()) {
-			os << "Str:" << as<VarStr>(e)->getVal();
-		} else if(e->is<VarNil>()) {
-			os << "nil";
-		} else if(e->is<VarBool>()) {
-			os << "bool:" << (as<VarBool>(e)->getVal() ? "true" : "false");
-		} else {
-			os << getTypeName(e);
-		}
+		e->dump(std::cout, this);
 		std::cout << " -- ";
 	}
 }
