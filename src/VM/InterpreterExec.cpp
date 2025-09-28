@@ -235,7 +235,6 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			// part of args anyway
 			Var *self   = nullptr; // only for memcall
 			Var *fnbase = nullptr;
-			Var *res    = nullptr;
 			String fnname;
 			// setup call args
 			args.clear();
@@ -316,17 +315,15 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			args.insert(args.begin(), self);
 
 			// call the function
-			res = fnbase->call(*this, ins.getLoc(), args, assn_args);
-			// don't show the following failure when exec stack count is exceeded or
-			// there'll be a GIANT stack trace
-			if(!res) {
+			if(!fnbase->call(*this, ins.getLoc(), args, assn_args)) {
+				// don't show the following failure when exec stack count is
+				// exceeded or there'll be a GIANT stack trace
 				if(!recurseExceeded) {
 					warn(ins.getLoc(),
 					     "function call failed, check the error above");
 				}
 				goto fncall_fail;
 			}
-			if(!res->is<VarNil>()) pushExecStack(res);
 
 			// cleanup
 			for(auto &a : args) decVarRef(a);
