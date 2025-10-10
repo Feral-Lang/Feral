@@ -195,9 +195,14 @@ let getKeyword = fn(data, i = 0, end = -1) {
 
 let expect = fn(toks, end, i, type) {
 	if i >= end { raise('expected: ' + TokenTypeStrs[type] + ', found: EOF'); }
+	let prevToks = '';
 	if toks[i].type != type {
+		for let t = i; t >= i - 5 && t >= 0; --t {
+			prevToks += toks[t].str();
+		}
 		raise('expected token at index ' + i.str() + ' to be of type: ' +
-		      TokenTypeStrs[type] + ', found: ' + TokenTypeStrs[toks[i].type]);
+		      TokenTypeStrs[type] + ', found: ' + TokenTypeStrs[toks[i].type] +
+		      '; prev tokens (up to 5): ' + prevToks);
 	}
 };
 
@@ -216,24 +221,22 @@ let parse = fn(toks, i = 0) {
 	elif toks[i].type == TokenType.LBRACE {
 		let m = map.new();
 		++i; # now after lbrace
-		parseMap(toks, sz, m, i);
-		++i; # now after map value
-		while toks[i].type == TokenType.COMMA {
-			++i; # now after comma
+		while toks[i].type != TokenType.RBRACE {
 			parseMap(toks, sz, m, i);
 			++i; # now after map value
+			if toks[i].type != TokenType.COMMA { break; }
+			++i; # now after comma
 		}
 		expect(toks, sz, i, TokenType.RBRACE);
 		return m;
 	} elif toks[i].type == TokenType.LBRACK {
 		let v = vec.new();
 		++i; # now after lbrack
-		parseVec(toks, sz, v, i);
-		++i; # now after vec element
-		while toks[i].type == TokenType.COMMA {
-			++i; # now after comma
+		while toks[i].type != TokenType.RBRACK {
 			parseVec(toks, sz, v, i);
 			++i; # now after vec element
+			if toks[i].type != TokenType.COMMA { break; }
+			++i;
 		}
 		expect(toks, sz, i, TokenType.RBRACK);
 		return v;

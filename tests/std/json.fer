@@ -17,7 +17,10 @@ let jsonPretty =
 			"key": null
 		}
 	],
-	"third": -1.27
+	"third": -1.27,
+	"fourth": [],
+	"fifth": {},
+	"sixth": 1
 }`;
 
 let js = json.loads(jsonPretty);
@@ -27,7 +30,9 @@ assert.eq(js['second'][1], 'b');
 assert.eq(js['second'][2], 1.27);
 assert.eq(js['second'][3], true);
 assert.eq(js['second'][4]['key'], nil);
-assert.eq(js['third'], -1.27);
+assert.eq(js['fourth'].len(), 0);
+assert.eq(js['fifth'].len(), 0);
+assert.eq(js['sixth'], 1);
 
 let jsonOneLineDump = json.dumps(js);
 let jsonOneLineDump2 = json.dumps(js);
