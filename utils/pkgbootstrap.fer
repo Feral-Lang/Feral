@@ -5,7 +5,7 @@ let vec = import('std/vec');
 let logging = import('std/logging');
 
 let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
-let pkgVersion = '0.0.2';
+let pkgVersion = '0.0.3';
 
 let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
 
