@@ -96,7 +96,7 @@ let waitProcs = fn(maxProcs, withValgrind, counter = true) {
 			}
 			tpool.erase(i--);
 		}
-		if tpool.len() >= maxProcs { os.sleep(1); } # 1 ms sleep
+		if tpool.len() >= maxProcs { os.sleep(1); } # 1 ms sleep; not using thread.yield() as it's slower than sleep()
 	}
 };
 

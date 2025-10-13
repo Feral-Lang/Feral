@@ -98,6 +98,13 @@ Var *getCurrentThreadName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, vm.getName());
 }
 
+Var *yieldCurrentThread(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+			const StringMap<AssnArgData> &assn_args)
+{
+	std::this_thread::yield();
+	return vm.getNil();
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// Thread //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,6 +184,7 @@ INIT_MODULE(Thread)
 	mod->addNativeFn(vm, "getConcurrency", getConcurrency);
 	mod->addNativeFn(vm, "getCurrentId", getCurrentThreadId);
 	mod->addNativeFn(vm, "getCurrentName", getCurrentThreadName);
+	mod->addNativeFn(vm, "yield", yieldCurrentThread);
 
 	mod->addNativeFn(vm, "new", threadNew, 1, true);
 

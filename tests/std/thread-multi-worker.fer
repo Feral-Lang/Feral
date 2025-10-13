@@ -25,7 +25,7 @@ let workerFn = fn() {
 	io.println('Started worker: ', thread.getCurrentName());
 	while !shouldStop.get() {
 		mtx.lock();
-		if taskList.empty() { mtx.unlock(); os.sleep(1); continue; }
+		if taskList.empty() { mtx.unlock(); thread.yield(); continue; }
 		let t = ref(taskList.front());
 		taskList.erase(0);
 		mtx.unlock();
@@ -39,8 +39,8 @@ workers.push(thread.new(workerFn, name = 'worker-2'));
 
 let f = fn(t, a1, a2) {
 	let res = a1 * a2;
-	if t == 'worker-1' { os.sleep(1); }
-	else { os.sleep(2); }
+	if t == 'worker-1' { thread.yield(); }
+	else { thread.yield(); }
 	io.println('In worker: ', t, '; ', a1, ' x ', a2, ' = ', res);
 };
 
@@ -51,7 +51,7 @@ while true {
 	mtx.lock();
 	if taskList.empty() { mtx.unlock(); break; }
 	mtx.unlock();
-	os.sleep(5);
+	thread.yield();
 }
 shouldStop.set(true);
 for w in workers.each() {
