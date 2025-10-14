@@ -15,7 +15,7 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
 	Array<Var *, 3> tmpArgs{nullptr, modname, isImport ? vm.getTrue() : vm.getFalse()};
 	Var *ret = nullptr;
 	for(auto &callable : vm.getModuleFinders()->getVal()) {
-		if(!vm.callVar(loc, "loadCommon", callable, ret, tmpArgs, {})) {
+		if(!(ret = vm.callVar(loc, "loadCommon", callable, tmpArgs, {}))) {
 			vm.fail(
 			loc, "failed to load module '", as<VarStr>(modname)->getVal(),
 			"' when attempting to call the callable: ", vm.getTypeName(callable));

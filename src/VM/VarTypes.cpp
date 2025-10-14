@@ -36,10 +36,10 @@ void Var::onDestroy(MemoryManager &mem) {}
 Var *Var::onCopy(MemoryManager &mem, ModuleLoc loc) { return incVarRef(this); }
 void Var::onSet(MemoryManager &mem, Var *from) {}
 
-bool Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	       const StringMap<AssnArgData> &assn_args)
 {
-	return false;
+	return nullptr;
 }
 void Var::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
@@ -365,7 +365,7 @@ void VarFn::onDestroy(MemoryManager &mem)
 {
 	for(auto &aa : assn_params) decVarRef(mem, aa.second);
 }
-bool VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		 const StringMap<AssnArgData> &assn_args)
 {
 	MemoryManager &mem = vm.getMemoryManager();
@@ -376,13 +376,12 @@ bool VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		vm.fail(loc, "arg count required: ", params.size(),
 			" (without default args: ", params.size() - assn_args.size(),
 			"); received: ", args.size() - 1);
-		return false;
+		return nullptr;
 	}
 	if(isNative()) {
 		Var *res = body.native(vm, loc, args, assn_args);
-		if(!res) return false;
-		vm.pushExecStack(res);
-		return true;
+		if(!res) return nullptr;
+		return incVarRef(res);
 	}
 	vm.pushModule(moduleId);
 	Vars &vars = vm.getVars();
@@ -421,11 +420,14 @@ bool VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		}
 		vars.stash(kw_arg, m, false);
 	}
-	bool res =
-	vm.execute(true, false, body.feral.begin, body.feral.end) == 0 || vm.isExitCalled();
-	if(!res) vars.unstash();
+	Var *ret = nullptr;
+	if(vm.execute(ret, true, false, body.feral.begin, body.feral.end) != 0 &&
+	   !vm.isExitCalled())
+	{
+		vars.unstash();
+	}
 	vm.popModule();
-	return res;
+	return ret;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -491,7 +493,7 @@ void VarStructDef::onDestroy(MemoryManager &mem)
 	}
 }
 
-bool VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+Var *VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			const StringMap<AssnArgData> &assn_args)
 {
 	MemoryManager &mem = vm.getMemoryManager();
@@ -499,11 +501,11 @@ bool VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
 			vm.fail(aa.second.val->getLoc(), "no attribute named '", aa.first,
 				"' in the structure definition");
-			return false;
+			return nullptr;
 		}
 	}
 
-	VarStruct *res = makeVar<VarStruct>(mem, loc, this, attrs.size(), id);
+	VarStruct *res = makeVarWithRef<VarStruct>(mem, loc, this, attrs.size(), id);
 
 	auto it = attrorder.begin();
 	for(auto argit = args.begin() + 1; argit != args.end(); ++argit) {
@@ -539,11 +541,10 @@ bool VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		++it;
 	}
 
-	vm.pushExecStack(res);
-	return true;
+	return res;
 fail:
 	vm.unmakeVar(res);
-	return false;
+	return nullptr;
 }
 
 void VarStructDef::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)

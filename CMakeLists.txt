@@ -4,9 +4,9 @@ project(Feral
 	DESCRIPTION "Feral Programming Language Reference Compiler and Interpreter"
 	LANGUAGES CXX)
 
-set(PROJECT_VERSION_MAJOR "1")
-set(PROJECT_VERSION_MINOR "3")
-set(PROJECT_VERSION_PATCH "2")
+set(PROJECT_VERSION_MAJOR "2")
+set(PROJECT_VERSION_MINOR "0")
+set(PROJECT_VERSION_PATCH "0")
 
 include(FetchContent)
 include(GNUInstallDirs)

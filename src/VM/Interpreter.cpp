@@ -146,7 +146,7 @@ Var *Interpreter::runCallable(ModuleLoc loc, StringRef name, Var *callable, Span
 			      const StringMap<AssnArgData> &assn_args)
 {
 	VirtualMachine *vm = createVM(name);
-	Var *res	   = vm->callVarAndReturn(loc, name, callable, args, assn_args);
+	Var *res	   = vm->callVar(loc, name, callable, args, assn_args);
 	destroyVM(vm);
 	return res;
 }
@@ -405,7 +405,9 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 	if(ip.argparser.has("dry")) return 0;
 
 	pushModule(moduleId);
-	int res = execute();
+	Var *ret = nullptr;
+	int res	 = execute(ret);
+	decVarRef(ret);
 	popModule();
 	return res;
 }
@@ -541,7 +543,7 @@ bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, Stri
 	return true;
 }
 
-bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
+Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
 			     const StringMap<AssnArgData> &assn_args)
 {
 	assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
@@ -561,45 +563,34 @@ bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<
 		} else {
 			fail(loc, "callable '", name, "' does not exist");
 		}
-		return false;
+		return nullptr;
 	}
 	if(!fn->isCallable()) {
 		fail(loc, "Variable '", name, "' of type '", getTypeName(fn), "' is not callable");
-		return false;
+		return nullptr;
 	}
-	return callVar(loc, name, fn, retdata, args, assn_args);
+	return callVar(loc, name, fn, args, assn_args);
 }
 
-bool VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
-			     Span<Var *> args, const StringMap<AssnArgData> &assn_args)
+Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
+			     const StringMap<AssnArgData> &assn_args)
 {
 	bool memcall = args[0] != nullptr;
-	if(!callable->call(*this, loc, args, assn_args)) {
+	Var *retdata = callable->call(*this, loc, args, assn_args);
+	if(!retdata) {
 		if(memcall) {
 			fail(loc, "call to '", name, "' failed for type: ", getTypeName(args[0]));
 		} else {
 			fail(loc, "call to '", name, "' failed");
 		}
-		return false;
+		return nullptr;
 	}
-	retdata = popExecStack(false);
-	return true;
-}
-Var *VirtualMachine::callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable,
-				      Span<Var *> args, const StringMap<AssnArgData> &assn_args)
-{
-	Var *retData = nullptr;
-	bool res     = callVar(loc, name, callable, retData, args, assn_args);
-	if(!res) return nullptr;
-	return retData;
+	return retdata;
 }
 
 Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 {
 	static ModuleId evalCtr = 0;
-
-	Var *res = nullptr;
-	int ec	 = 1;
 
 	String path = "<eval.";
 	path += utils::toString(evalCtr++);
@@ -613,13 +604,17 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 		return nullptr;
 	}
 	pushModule(moduleId);
-	ec = execute();
+	Var *tmpRet = nullptr;
+	int ec	    = execute(tmpRet);
 	popModule();
-	if(ec) goto done;
-	if(!execstack.empty()) res = popExecStack(false);
-	else res = incVarRef(getNil());
-done:
-	return res;
+	if(tmpRet) {
+		decVarRef(tmpRet);
+		fail(loc, "internal error: VirtualMachine::eval() must not generate a return value "
+			  "from execute()");
+		return nullptr;
+	}
+	if(ec) return nullptr;
+	return execstack.empty() ? incVarRef(getNil()) : popExecStack(false);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

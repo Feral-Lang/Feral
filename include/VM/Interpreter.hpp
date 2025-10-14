@@ -191,7 +191,8 @@ public:
 
 	int compileAndRun(ModuleLoc loc, const char *file);
 	// Must pushModule before calling this function, and popModule after calling it.
-	int execute(bool addFunc = false, bool addBlk = false, size_t begin = 0, size_t end = 0);
+	int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
+		    size_t end = 0);
 
 	ModuleId addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
 			   VarStack *existingVarStack = nullptr);
@@ -210,12 +211,10 @@ public:
 
 	// Used primarily within libraries & by toStr, toBool
 	// first arg must ALWAYS be self for memcall, nullptr otherwise
-	bool callVar(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
+	Var *callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args);
-	bool callVar(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata, Span<Var *> args,
+	Var *callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
 		     const StringMap<AssnArgData> &assn_args);
-	Var *callVarAndReturn(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-			      const StringMap<AssnArgData> &assn_args);
 
 	// evaluate a given expression and return its result
 	// primarily used for templates
@@ -357,7 +356,7 @@ public:
 	callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
 			 const StringMap<AssnArgData> &assn_args)
 	{
-		if(!callVar(loc, name, retdata, args, assn_args)) return false;
+		if(!(retdata = callVar(loc, name, args, assn_args))) return false;
 		if(!retdata->is<T>()) {
 			fail(loc, "'", name, "' ",
 			     !args.empty() && args[0] != nullptr ? "member" : "func",
@@ -373,7 +372,7 @@ public:
 	callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
 			 Span<Var *> args, const StringMap<AssnArgData> &assn_args)
 	{
-		if(!callVar(loc, name, callable, retdata, args, assn_args)) return false;
+		if(!(retdata = callVar(loc, name, callable, args, assn_args))) return false;
 		if(!retdata->is<T>()) {
 			fail(loc, "'", name, "' ",
 			     !args.empty() && args[0] != nullptr ? "member" : "func",

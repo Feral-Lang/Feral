@@ -3,7 +3,7 @@
 namespace fer
 {
 
-int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
+int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, size_t end)
 {
 	++recurseCount;
 	VarModule *varmod  = getCurrModule();
@@ -242,6 +242,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			bool memcall	  = ins.getOpcode() == Opcode::MEM_CALL;
 			StringRef arginfo = ins.getDataStr();
 			size_t kwargpos	  = 0;
+			Var *res	  = nullptr;
 			for(size_t i = 0; i < arginfo.size(); ++i) {
 				if(arginfo[i] == '2') { // unpack
 					Var *a = popExecStack(false);
@@ -315,7 +316,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			args.insert(args.begin(), self);
 
 			// call the function
-			if(!fnbase->call(*this, ins.getLoc(), args, assn_args)) {
+			if(!(res = fnbase->call(*this, ins.getLoc(), args, assn_args))) {
 				// don't show the following failure when exec stack count is
 				// exceeded or there'll be a GIANT stack trace
 				if(!recurseExceeded) {
@@ -324,12 +325,16 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				}
 				goto fncall_fail;
 			}
+			pushExecStack(res, false);
 
 			// cleanup
 			for(auto &a : args) decVarRef(a);
 			for(auto &aa : assn_args) decVarRef(aa.second.val);
 			if(!memcall) decVarRef(fnbase);
-			if(isExitCalled()) goto done;
+			if(isExitCalled()) {
+				ret = popExecStack(false);
+				goto done;
+			}
 			break;
 		fncall_fail:
 			for(auto &a : args) decVarRef(a);
@@ -354,7 +359,7 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 			break;
 		}
 		case Opcode::RETURN: {
-			if(!ins.getDataBool()) pushExecStack(ip.nil);
+			ret = ins.getDataBool() ? popExecStack(false) : incVarRef(ip.nil);
 			goto done;
 		}
 		case Opcode::PUSH_LOOP: {
@@ -411,14 +416,17 @@ int VirtualMachine::execute(bool addFunc, bool addBlk, size_t begin, size_t end)
 				vars.stash(varName, err, true);
 			}
 			pushModule(getCurrModule()->getModuleId());
-			if(execute(false, false, blkBegin, blkEnd) && !isExitCalled()) {
+			Var *tmpRet = nullptr;
+			if(execute(tmpRet, false, false, blkBegin, blkEnd) && !isExitCalled()) {
 				if(!varName.empty()) vars.unstash();
+				if(tmpRet) pushExecStack(tmpRet, false);
 				popModule();
 				// Must pop failstack scope because this is a failure in the the
 				// scope itself - it can't recover using the POP_JMP instruction.
 				failstack.popScope();
 				goto handle_err;
 			}
+			if(tmpRet) pushExecStack(tmpRet, false);
 			// POP_JMP instr will take care of popping from jmps and failstack.
 			i = blkEnd - 1;
 			popModule();
@@ -438,6 +446,7 @@ done:
 	--recurseCount;
 	return exitcode;
 fail:
+	if(ret) decVarRef(ret);
 	if(addBlk) vars.popBlk(1);
 	if(addFunc) vars.popFn();
 	else vars.resizeBlkTo(currBlkSize);

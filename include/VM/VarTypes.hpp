@@ -59,7 +59,7 @@ protected:
 	virtual ~Var();
 
 public:
-	virtual bool call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 			  const StringMap<AssnArgData> &assn_args);
 	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
@@ -418,7 +418,7 @@ public:
 	VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
 
-	bool call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	inline void pushParam(const String &param) { params.push_back(param); }
@@ -493,7 +493,7 @@ public:
 	VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
 
 	// returns VarStruct
-	bool call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		  const StringMap<AssnArgData> &assn_args) override;
 
 	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
