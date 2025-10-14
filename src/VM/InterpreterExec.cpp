@@ -391,9 +391,6 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
 			failstack.initFrame(recurseCount, data, blkBegin, blkEnd);
 			break;
 		}
-		case Opcode::PUSH_JMP_NAME: {
-			break;
-		}
 		case Opcode::POP_JMP: {
 			failstack.popScope();
 			break;

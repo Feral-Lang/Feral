@@ -35,7 +35,6 @@ enum class Opcode : uint8_t
 
 	// for 'or' block
 	PUSH_JMP,      // marks the position to jump to if 'or' exists in an expression
-	PUSH_JMP_NAME, // sets the variable name for last jump instr (must occur after PUSH_JMP)
 	POP_JMP,       // unmarks the position to jump to if 'or' exists in an expression
 
 	ATTR, // operand = string - attribute name
