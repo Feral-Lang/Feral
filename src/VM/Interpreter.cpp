@@ -617,7 +617,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 	popModule();
 	if(ec) goto done;
 	if(!execstack.empty()) res = popExecStack(false);
-	else res = getNil();
+	else res = incVarRef(getNil());
 done:
 	return res;
 }

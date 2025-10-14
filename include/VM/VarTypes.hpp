@@ -18,7 +18,7 @@ class VirtualMachine;
 class Var : public IAllocated
 {
 	ModuleLoc loc;
-	Atomic<size_t> ref;
+	Atomic<ssize_t> ref;
 
 	// for VarInfo
 	size_t info;
@@ -28,8 +28,8 @@ class Var : public IAllocated
 	inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
 
 	inline void iref() { ++ref; }
-	inline size_t dref() { return --ref; }
-	inline size_t getRef() const { return ref; }
+	inline ssize_t dref() { return --ref; }
+	inline ssize_t getRef() const { return ref; }
 
 	// Proxy functions to use the functions to be implemented by the Var's.
 	void create(MemoryManager &mem);
@@ -129,7 +129,7 @@ public:
 	decVarRef(MemoryManager &mem, T *&var, bool del = true)
 	{
 		if(var == nullptr) return nullptr;
-		if(var->dref() == 0 && del) {
+		if(var->dref() <= 0 && del) {
 			unmakeVar(mem, var);
 			var = nullptr;
 		}
