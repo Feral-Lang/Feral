@@ -90,7 +90,6 @@ const char *TokStrs[_LAST] = {
 
 "[]",
 "()",
-"{}",
 
 // Varargs
 "...x",

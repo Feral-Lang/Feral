@@ -22,25 +22,25 @@ public:
 	bool parseSimple(Stmt *&data);
 
 	bool parsePrefixedSuffixedLiteral(Stmt *&expr);
-	bool parseExpr(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr18(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr17(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr16(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr15(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr14(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr13(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr12(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr11(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr10(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr09(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr08(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr07(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr06(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr05(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr04(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr03(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr02(Stmt *&expr, bool disable_brace_after_iden);
-	bool parseExpr01(Stmt *&expr, bool disable_brace_after_iden);
+	bool parseExpr(Stmt *&expr);
+	bool parseExpr18(Stmt *&expr);
+	bool parseExpr17(Stmt *&expr);
+	bool parseExpr16(Stmt *&expr);
+	bool parseExpr15(Stmt *&expr);
+	bool parseExpr14(Stmt *&expr);
+	bool parseExpr13(Stmt *&expr);
+	bool parseExpr12(Stmt *&expr);
+	bool parseExpr11(Stmt *&expr);
+	bool parseExpr10(Stmt *&expr);
+	bool parseExpr09(Stmt *&expr);
+	bool parseExpr08(Stmt *&expr);
+	bool parseExpr07(Stmt *&expr);
+	bool parseExpr06(Stmt *&expr);
+	bool parseExpr05(Stmt *&expr);
+	bool parseExpr04(Stmt *&expr);
+	bool parseExpr03(Stmt *&expr);
+	bool parseExpr02(Stmt *&expr);
+	bool parseExpr01(Stmt *&expr);
 
 	// is_fn_arg is for function signature args (to make value optional)
 	bool parseVar(StmtVar *&var, bool is_fn_arg);

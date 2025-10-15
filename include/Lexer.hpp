@@ -90,7 +90,6 @@ enum TokType
 	SUBS,
 
 	FNCALL, // function call and struct template specialization
-	STCALL, // instantiate structs
 
 	// Varargs
 	PreVA,
