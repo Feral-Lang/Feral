@@ -1,24 +1,24 @@
 let eq = fn(lhs, rhs) {
-	if lhs == rhs { return; }
-	raise('assertion `', lhs, '` == `', rhs, '` failed');
+    if lhs == rhs { return; }
+    raise('assertion `', lhs, '` == `', rhs, '` failed');
 };
 let ne = fn(lhs, rhs) {
-	if lhs != rhs { return; }
-	raise('assertion `', lhs, '` != `', rhs, '` failed');
+    if lhs != rhs { return; }
+    raise('assertion `', lhs, '` != `', rhs, '` failed');
 };
 let gt = fn(lhs, rhs) {
-	if lhs > rhs { return; }
-	raise('assertion `', lhs, '` > `', rhs, '` failed');
+    if lhs > rhs { return; }
+    raise('assertion `', lhs, '` > `', rhs, '` failed');
 };
 let lt = fn(lhs, rhs) {
-	if lhs < rhs { return; }
-	raise('assertion `', lhs, '` < `', rhs, '` failed');
+    if lhs < rhs { return; }
+    raise('assertion `', lhs, '` < `', rhs, '` failed');
 };
 let ge = fn(lhs, rhs) {
-	if lhs >= rhs { return; }
-	raise('assertion `', lhs, '` >= `', rhs, '` failed');
+    if lhs >= rhs { return; }
+    raise('assertion `', lhs, '` >= `', rhs, '` failed');
 };
 let le = fn(lhs, rhs) {
-	if lhs <= rhs { return; }
-	raise('assertion `', lhs, '` <= `', rhs, '` failed');
+    if lhs <= rhs { return; }
+    raise('assertion `', lhs, '` <= `', rhs, '` failed');
 };

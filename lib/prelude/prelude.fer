@@ -8,11 +8,11 @@ loadlib('prelude/Prelude');
 # From std/sys
 
 let exit = fn(code = 0) {
-	return exitNative(code);
+    return exitNative(code);
 };
 
 let setMaxCallstacks = fn(size = DEFAULT_MAX_CALLSTACKS) {
-	setMaxCallstacksNative(size);
+    setMaxCallstacksNative(size);
 };
 
 ################################ Types ################################
@@ -20,197 +20,197 @@ let setMaxCallstacks = fn(size = DEFAULT_MAX_CALLSTACKS) {
 # Str
 
 let int in StrTy = fn(base = 10) {
-	return self.intNative(base);
+    return self.intNative(base);
 };
 
 let sub in StrTy = fn(begin = 0, len = -1) {
-	if len == -1 { len = self.len(); }
-	return self.substrNative(begin, len);
+    if len == -1 { len = self.len(); }
+    return self.substrNative(begin, len);
 };
 
 let split in StrTy = fn(delim = ' ', maxDelimCount = -1) {
-	return self.splitNative(delim, maxDelimCount);
+    return self.splitNative(delim, maxDelimCount);
 };
 
 let isAlpha in StrTy = fn() {
-	if self.empty() { return false; }
-	return (self >= 'a' && self <= 'z') || (self >= 'A' && self <= 'Z');
+    if self.empty() { return false; }
+    return (self >= 'a' && self <= 'z') || (self >= 'A' && self <= 'Z');
 };
 
 let isDigit in StrTy = fn() {
-	if self.empty() { return false; }
-	return self >= '0' && self <= '9';
+    if self.empty() { return false; }
+    return self >= '0' && self <= '9';
 };
 
 let isSpace in StrTy = fn() {
-	if self.empty() { return false; }
-	return self == ' ' || self == '\t' || self == '\r' || self == '\n';
+    if self.empty() { return false; }
+    return self == ' ' || self == '\t' || self == '\r' || self == '\n';
 };
 
 let append in StrTy = fn(data...) {
-	for item in data.each() {
-		self += item;
-	}
-	return ref(self);
+    for item in data.each() {
+        self += item;
+    }
+    return ref(self);
 };
 
 # requires the source to be a UTF-16 hex string.
 let getUTF8CharFromHexString in StrTy = fn() {
-	return self.getBinStrFromHexStr().getUTF8CharFromBinStr();
+    return self.getBinStrFromHexStr().getUTF8CharFromBinStr();
 };
 
 # Vec
 
 let '==' in VecTy = fn(other) {
-	if self._type_() != other._type_() { return false; }
-	if self.len() != other.len() { return false; }
-	let len = self.len();
-	for let i = 0; i < len; ++i {
-		if self[i] != other[i] { return false; }
-	}
-	return true;
+    if self._type_() != other._type_() { return false; }
+    if self.len() != other.len() { return false; }
+    let len = self.len();
+    for let i = 0; i < len; ++i {
+        if self[i] != other[i] { return false; }
+    }
+    return true;
 };
 
 # stores in the type - NOT object
 let find in VecTy = fn(obj) {
-	for data in self.each() {
-		if data == obj { return true; }
-	}
-	return false;
+    for data in self.each() {
+        if data == obj { return true; }
+    }
+    return false;
 };
 
 # returns true if element is found in the list, else false
 let remove in VecTy = fn(obj) {
-	let len = self.len();
-	for let i = 0; i < len; ++i {
-		if self[i] == obj {
-			self.erase(i);
-			return true;
-		}
-	}
-	return false;
+    let len = self.len();
+    for let i = 0; i < len; ++i {
+        if self[i] == obj {
+            self.erase(i);
+            return true;
+        }
+    }
+    return false;
 };
 
 let join in VecTy = fn(with) {
-	if self.empty() { return ''; }
-	let res = '';
-	let len = self.len();
-	for item in self.each() {
-		res += item.str();
-		res += with;
-	}
-	let withLen = with.len();
-	while withLen-- > 0 {
-		res.pop();
-	}
-	return res;
+    if self.empty() { return ''; }
+    let res = '';
+    let len = self.len();
+    for item in self.each() {
+        res += item.str();
+        res += with;
+    }
+    let withLen = with.len();
+    while withLen-- > 0 {
+        res.pop();
+    }
+    return res;
 };
 
 let append in VecTy = fn(src, start = 0, end = -1) {
-	return self.appendNative(src, start, end);
+    return self.appendNative(src, start, end);
 };
 
 let slice in VecTy = fn(start, end = -1) {
-	if end == -1 { end = self.len(); }
-	return self.sliceNative(start, end);
+    if end == -1 { end = self.len(); }
+    return self.sliceNative(start, end);
 };
 
 let sub in VecTy = fn(start, end = -1) {
-	if end == -1 { end = self.len(); }
-	return self.subNative(start, end);
+    if end == -1 { end = self.len(); }
+    return self.subNative(start, end);
 };
 
 # Takes 'rev' keyword argument which can be true or false (reverse or not)
 let sort in VecTy = fn(comparator = nil, .kw) {
-	if self.len() <= 1 { return; }
+    if self.len() <= 1 { return; }
 
-	let rev = kw['rev'] ?? false;
-	let cmp = comparator ?? (rev ? sortRevCmp : sortCmp);
-	quickSort(self, cmp, 0, self.len() - 1);
+    let rev = kw['rev'] ?? false;
+    let cmp = comparator ?? (rev ? sortRevCmp : sortCmp);
+    quickSort(self, cmp, 0, self.len() - 1);
 };
 
 let min in VecTy = fn(lt = fn(a, b) { return a < b; }) {
-	if self.empty() {
-		raise('cannot find min in an empty list');
-	}
-	let count = self.len();
-	let min = 0;
-	for let i = 1; i < count; ++i {
-		if lt(self[i], self[min]) { min = i; }
-	}
-	return min;
+    if self.empty() {
+        raise('cannot find min in an empty list');
+    }
+    let count = self.len();
+    let min = 0;
+    for let i = 1; i < count; ++i {
+        if lt(self[i], self[min]) { min = i; }
+    }
+    return min;
 };
 
 let max in VecTy = fn(gt = fn(a, b) { return a > b; }) {
-	if self.empty() {
-		raise('cannot find max in an empty list');
-	}
-	let count = self.len();
-	let max = 0;
-	for let i = 1; i < count; ++i {
-		if gt(self[i], self[max]) { max = i; }
-	}
-	return max;
+    if self.empty() {
+        raise('cannot find max in an empty list');
+    }
+    let count = self.len();
+    let max = 0;
+    for let i = 1; i < count; ++i {
+        if gt(self[i], self[max]) { max = i; }
+    }
+    return max;
 };
 
 let mean in VecTy = fn(onEach = fn(e) { return e; }) {
-	if self.empty() {
-		raise('cannot find mean of an empty list');
-	}
-	let count = self.len();
-	let sum = onEach(self[0]);
-	for let i = 1; i < count; ++i {
-		sum += onEach(self[i]);
-	}
-	return sum / count;
+    if self.empty() {
+        raise('cannot find mean of an empty list');
+    }
+    let count = self.len();
+    let sum = onEach(self[0]);
+    for let i = 1; i < count; ++i {
+        sum += onEach(self[i]);
+    }
+    return sum / count;
 };
 
 let str in VecTy = fn() {
-	let res = '[';
-	res += self.join(', ');
-	res += ']';
-	return res;
+    let res = '[';
+    res += self.join(', ');
+    res += ']';
+    return res;
 };
 
 # Map
 
 let '==' in MapTy = fn(other) {
-	if self._type_() != other._type_() { return false; }
-	if self.len() != other.len() { return false; }
-	for e in self.each() {
-		if other[e.0] != e.1 { return false; }
-	}
-	return true;
+    if self._type_() != other._type_() { return false; }
+    if self.len() != other.len() { return false; }
+    for e in self.each() {
+        if other[e.0] != e.1 { return false; }
+    }
+    return true;
 };
 
 let keys in MapTy = fn() {
-	let v = vecNew(refs = true);
-	for e in self.each() {
-		v.push(e.0);
-	}
-	return v;
+    let v = vecNew(refs = true);
+    for e in self.each() {
+        v.push(e.0);
+    }
+    return v;
 };
 
 let str in MapTy = fn() {
-	let res = '{';
-	for pair in self.each() {
-		res += pair.0.str();
-		res += ': ';
-		res += pair.1.str();
-		res += ', ';
-	}
-	if !self.empty() {
-		res.pop();
-		res.pop();
-	}
-	res += '}';
-	return res;
+    let res = '{';
+    for pair in self.each() {
+        res += pair.0.str();
+        res += ': ';
+        res += pair.1.str();
+        res += ', ';
+    }
+    if !self.empty() {
+        res.pop();
+        res.pop();
+    }
+    res += '}';
+    return res;
 };
 
 # FS
 
 let reopen in FileTy = fn(file, mode = 'r') {
-	return self.reopenNative(file, mode);
+    return self.reopenNative(file, mode);
 };
 
 # Sorting helpers
@@ -219,20 +219,20 @@ let sortCmp = fn(a, b) { return a < b; };
 let sortRevCmp = fn(a, b) { return a > b; };
 
 let quickSort = fn(vec, cmp, low, high) {
-	if low >= high { return; }
-	let pi = quickSortPartition(vec, cmp, low, high);
-	quickSort(vec, cmp, low, pi - 1);
-	quickSort(vec, cmp, pi + 1, high);
+    if low >= high { return; }
+    let pi = quickSortPartition(vec, cmp, low, high);
+    quickSort(vec, cmp, low, pi - 1);
+    quickSort(vec, cmp, pi + 1, high);
 };
 
 let quickSortPartition = fn(vec, cmp, low, high) {
-	let pivot = ref(vec[high]);
-	let i = low - 1;
-	for let j = low; j < high; ++j {
-		if !cmp(vec[j], pivot) { continue; }
-		++i;
-		vec.swap(i, j);
-	}
-	vec.swap(i + 1, high);
-	return i + 1;
+    let pivot = ref(vec[high]);
+    let i = low - 1;
+    for let j = low; j < high; ++j {
+        if !cmp(vec[j], pivot) { continue; }
+        ++i;
+        vec.swap(i, j);
+    }
+    vec.swap(i + 1, high);
+    return i + 1;
 };

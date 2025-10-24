@@ -3,6 +3,6 @@ loadlib('std/Thread');
 let os = import('std/os');
 
 let run = fn(.kw, args...) {
-	let threadName = kw.at('name') ?? 'osExec';
-	return new(name = threadName, os.exec, args...);
+    let threadName = kw.at('name') ?? 'osExec';
+    return new(name = threadName, os.exec, args...);
 };

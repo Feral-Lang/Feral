@@ -1,53 +1,53 @@
 Var *allToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return vm.getFalse();
+    return vm.getFalse();
 }
 
 Var *nilToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return vm.getFalse();
+    return vm.getFalse();
 }
 
 Var *boolToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assn_args)
 {
-	return args[0];
+    return args[0];
 }
 
 Var *typeIDToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assn_args)
 {
-	return vm.getTrue();
+    return vm.getTrue();
 }
 
 Var *intToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarInt>(args[0])->getVal() == 0 ? vm.getFalse() : vm.getTrue();
+    return as<VarInt>(args[0])->getVal() == 0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *fltToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarFlt>(args[0])->getVal() == 0.0 ? vm.getFalse() : vm.getTrue();
+    return as<VarFlt>(args[0])->getVal() == 0.0 ? vm.getFalse() : vm.getTrue();
 }
 
 Var *strToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarStr>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
+    return !as<VarStr>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarVec>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
+    return !as<VarVec>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return !as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
+    return !as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }

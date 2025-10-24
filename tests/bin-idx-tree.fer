@@ -8,21 +8,21 @@ for let i = 0; i < bit.capacity(); ++i { bit.push(0); }
 
 # add a value to BIT
 let add = fn(idx, val) {
-	let i = idx + 1;
-	for ; i <= data.len(); i += i & (-i) {
-		bit[i - 1] += val;
-	}
+    let i = idx + 1;
+    for ; i <= data.len(); i += i & (-i) {
+        bit[i - 1] += val;
+    }
 };
 
 # use the BIT for addition of indices [0, idx]
 let sum = fn(idx) {
-	let i = idx + 1;
-	let sum = 0;
-	while i > 0 {
-		sum += bit[i - 1];
-		i -= i & (-i);
-	}
-	return sum;
+    let i = idx + 1;
+    let sum = 0;
+    while i > 0 {
+        sum += bit[i - 1];
+        i -= i & (-i);
+    }
+    return sum;
 };
 
 # feed elements from data in BIT

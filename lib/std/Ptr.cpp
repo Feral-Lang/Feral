@@ -10,14 +10,14 @@ void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
 void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
 Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-	return Var::makeVarWithRef<VarPtr>(mem, loc, val);
+    return Var::makeVarWithRef<VarPtr>(mem, loc, val);
 }
 void VarPtr::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarPtr>(from)->val); }
 void VarPtr::setVal(MemoryManager &mem, Var *newval)
 {
-	Var::decVarRef(mem, val);
-	val = newval;
-	Var::incVarRef(val);
+    Var::decVarRef(mem, val);
+    val = newval;
+    Var::incVarRef(val);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,36 +25,36 @@ void VarPtr::setVal(MemoryManager &mem, Var *newval)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *ptrNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarPtr>(loc, args[1]);
+    return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
 Var *ptrSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	VarPtr *self = as<VarPtr>(args[0]);
-	self->setVal(vm.getMemoryManager(), args[1]);
-	return args[0];
+    VarPtr *self = as<VarPtr>(args[0]);
+    self->setVal(vm.getMemoryManager(), args[1]);
+    return args[0];
 }
 
 Var *ptrGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarPtr>(args[0])->getVal();
+    return as<VarPtr>(args[0])->getVal();
 }
 
 INIT_MODULE(Ptr)
 {
-	VarModule *mod = vm.getCurrModule();
+    VarModule *mod = vm.getCurrModule();
 
-	vm.registerType<VarPtr>(loc, "Ptr");
+    vm.registerType<VarPtr>(loc, "Ptr");
 
-	mod->addNativeFn(vm, "new", ptrNewNative, 1);
+    mod->addNativeFn(vm, "new", ptrNewNative, 1);
 
-	vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet, 1);
-	vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet, 0);
-	return true;
+    vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet, 1);
+    vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet, 0);
+    return true;
 }
 
 } // namespace fer

@@ -2,10 +2,10 @@ let assert = import('std/assert');
 
 let x = 5;
 x = y or e {
-	assert.eq(e.str(), "variable 'y' does not exist");
-	return 1;
+    assert.eq(e.str(), "variable 'y' does not exist");
+    return 1;
 };
 
 (x = y or e {}) or e {
-	assert.eq(e.str(), "type mismatch for assignment: Nil cannot be assigned to variable of type: Int");
+    assert.eq(e.str(), "type mismatch for assignment: Nil cannot be assigned to variable of type: Int");
 };

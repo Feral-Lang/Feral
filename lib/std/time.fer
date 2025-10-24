@@ -12,63 +12,63 @@ let resolution = micro; # set to micro by default
 let timeFormat = '%a %b %e %T %Z %Y';
 
 let setResolution = fn(num) {
-	resolution = num;
+    resolution = num;
 };
 
 let now = fn() {
-	return systemClockNowNative();
+    return systemClockNowNative();
 };
 
 let resolve = fn(time, resol = nil) {
-	let res = 0.0;
-	if resol == nil {
-		res = resolution;
-	} else {
-		res = resol;
-	}
-	return time.flt() * res;
+    let res = 0.0;
+    if resol == nil {
+        res = resolution;
+    } else {
+        res = resol;
+    }
+    return time.flt() * res;
 };
 
 let hours = fn(num) {
-	return num.flt() / hour;
+    return num.flt() / hour;
 };
 
 let mins = fn(num) {
-	return num.flt() / minute;
+    return num.flt() / minute;
 };
 
 let seconds = fn(num) {
-	return num.flt() / second;
+    return num.flt() / second;
 };
 
 let setFormat = fn(new_format) {
-	timeFormat = new_format;
+    timeFormat = new_format;
 };
 
 let format = fn(time, fmt = timeFormat) {
-	return formatNative(time, fmt);
+    return formatNative(time, fmt);
 };
 
 let toSeconds = fn(.kwArgs) {
-	let totalSeconds = 0;
-	if kwArgs['days'] != nil {
-		totalSeconds += kwArgs.days * 24 * 60 * 60;
-	}
-	if kwArgs['hours'] != nil {
-		totalSeconds += kwArgs.hours * 60 * 60;
-	}
-	if kwArgs['minutes'] != nil {
-		totalSeconds += kwArgs.minutes * 60;
-	}
-	if kwArgs['seconds'] != nil {
-		totalSeconds += kwArgs.seconds;
-	}
-	return ref(totalSeconds);
+    let totalSeconds = 0;
+    if kwArgs['days'] != nil {
+        totalSeconds += kwArgs.days * 24 * 60 * 60;
+    }
+    if kwArgs['hours'] != nil {
+        totalSeconds += kwArgs.hours * 60 * 60;
+    }
+    if kwArgs['minutes'] != nil {
+        totalSeconds += kwArgs.minutes * 60;
+    }
+    if kwArgs['seconds'] != nil {
+        totalSeconds += kwArgs.seconds;
+    }
+    return ref(totalSeconds);
 };
 
 let toMilliSeconds = fn(.kwArgs) {
-	return toSeconds(kwArgs...) * 1000;
+    return toSeconds(kwArgs...) * 1000;
 };
 let toMicroSeconds = fn(.kwArgs) {
-	return toSeconds(kwArgs...) * 1000 * 1000;
+    return toSeconds(kwArgs...) * 1000 * 1000;
 };

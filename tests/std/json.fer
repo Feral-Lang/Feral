@@ -5,22 +5,22 @@ let json = import('std/json');
 let jsonOneLine = '{"first": {"one": "two"}, "second": ["a", "b", 1.27, true, {"key": null}], "third": -1.27}';
 let jsonPretty =
 `{
-	"first": {
-		"one": "two"
-	},
-	"second": [
-		"a",
-		"b",
-		1.27,
-		true,
-		{
-			"key": null
-		}
-	],
-	"third": -1.27,
-	"fourth": [],
-	"fifth": {},
-	"sixth": 1
+    "first": {
+        "one": "two"
+    },
+    "second": [
+        "a",
+        "b",
+        1.27,
+        true,
+        {
+            "key": null
+        }
+    ],
+    "third": -1.27,
+    "fourth": [],
+    "fifth": {},
+    "sixth": 1
 }`;
 
 let js = json.loads(jsonPretty);
@@ -42,8 +42,8 @@ assert.eq(jsonOneLineDump, jsonOneLineDump2);
 assert.eq(jsonPrettyDump, jsonPrettyDump2);
 
 let Struct = struct(
-	name = 'name',
-	val = 5
+    name = 'name',
+    val = 5
 );
 
 let serializedJS1 = '{"val": 52, "some_field": 25}';
@@ -53,9 +53,9 @@ let st = Struct();
 let js = json.loads(serializedJS1);
 let result = true;
 json.bind(st, js) or e {
-	e == "field name 'some_field' not found";
-	result = false;
-	return nil;
+    e == "field name 'some_field' not found";
+    result = false;
+    return nil;
 };
 assert.eq(result, false);
 

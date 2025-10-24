@@ -6,8 +6,8 @@ let bin = '';
 
 let tmp = num;
 while tmp > 0 {
-	bin = (tmp % 2).str() + bin;
-	tmp /= 2;
+    bin = (tmp % 2).str() + bin;
+    tmp /= 2;
 }
 
 io.println('binary is: ', bin);
@@ -17,7 +17,7 @@ let pow = 2 ** sz;
 tmp = 0;
 
 for let i = 0; i < sz; ++i {
-	tmp += bin[i].int() * (pow >>= 1);
+    tmp += bin[i].int() * (pow >>= 1);
 }
 
 io.println('back to original: ', tmp);

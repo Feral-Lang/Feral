@@ -19,14 +19,14 @@ let y = 2;
 let arrcount = 3;
 
 let calc = fn(a, b, arrcnt) {
-	if arrcnt == 1 {
-		return a ** b; # a[3]b
-	}
-	let res = a;
-	for let i = 0; i < b - 1; ++i {
-		res = calc(a, res, arrcnt - 1);
-	}
-	return res;
+    if arrcnt == 1 {
+        return a ** b; # a[3]b
+    }
+    let res = a;
+    for let i = 0; i < b - 1; ++i {
+        res = calc(a, res, arrcnt - 1);
+    }
+    return res;
 };
 
 assert.eq(calc(x, y, arrcount), 7625597484987);

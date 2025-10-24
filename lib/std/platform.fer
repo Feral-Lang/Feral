@@ -10,54 +10,54 @@ inline if os.name == 'windows' {
 let vsWhereCmd = vec.new(refs = true, 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-latest', '-property', 'installationPath');
 
 let getVSInstallPath = fn() {
-	let out = '';
-	os.exec(vsWhereCmd, out = out);
-	return out;
+    let out = '';
+    os.exec(vsWhereCmd, out = out);
+    return out;
 };
 
 let getMSBuildPath = fn() {
-	let vs = getVSInstallPath();
-	if vs.empty() { return ''; }
-	let msbuild = fs.pathFrom(vs, 'MSBuild', 'Current', 'Bin', 'msbuild.exe');
-	if !fs.exists(msbuild) { return ''; }
-	return msbuild;
+    let vs = getVSInstallPath();
+    if vs.empty() { return ''; }
+    let msbuild = fs.pathFrom(vs, 'MSBuild', 'Current', 'Bin', 'msbuild.exe');
+    if !fs.exists(msbuild) { return ''; }
+    return msbuild;
 };
 
 }
 
 # show a notification
 let notify = fn(title, body = '') {
-	title = '\'' + title + '\'';
-	if !body.empty() { body = '\'' + body + '\''; }
-	let cmd = vec.new(refs = true);
-	if os.name == 'linux' {
-		let notify = os.findExec('notify-send');
-		if notify == nil {
-			raise('notification requires notify-send on Linux (could not find in $PATH)');
-		}
-		cmd.push(notify, '-u', 'normal', '-t', '5000', title, body);
-	} elif os.name == 'macos' {
-		let notify = os.findExec('osascript');
-		if notify == nil {
-			raise('notification requires osascript on macOS (could not find in $PATH)');
-		}
-		cmd.push(notify, '-e');
-		if body.empty() {
-			cmd.push('display notification ' + title);
-		} else {
-			cmd.push('display notification ' + body + ' with title ' + title);
-		}
-	} elif os.name == 'android' {
-		let notify = os.findExec('termux-notification');
-		if notify == nil {
-			raise('notification requires termux-notification on Android (could not find in $PATH)');
-		}
-		cmd.push(notify, '--title', title);
-		if !body.empty() {
-			cmd.push('--content', body);
-		}
-	} else {
-		raise('notifications unimplemented for this OS');
-	}
-	return os.exec(cmd);
+    title = '\'' + title + '\'';
+    if !body.empty() { body = '\'' + body + '\''; }
+    let cmd = vec.new(refs = true);
+    if os.name == 'linux' {
+        let notify = os.findExec('notify-send');
+        if notify == nil {
+            raise('notification requires notify-send on Linux (could not find in $PATH)');
+        }
+        cmd.push(notify, '-u', 'normal', '-t', '5000', title, body);
+    } elif os.name == 'macos' {
+        let notify = os.findExec('osascript');
+        if notify == nil {
+            raise('notification requires osascript on macOS (could not find in $PATH)');
+        }
+        cmd.push(notify, '-e');
+        if body.empty() {
+            cmd.push('display notification ' + title);
+        } else {
+            cmd.push('display notification ' + body + ' with title ' + title);
+        }
+    } elif os.name == 'android' {
+        let notify = os.findExec('termux-notification');
+        if notify == nil {
+            raise('notification requires termux-notification on Android (could not find in $PATH)');
+        }
+        cmd.push(notify, '--title', title);
+        if !body.empty() {
+            cmd.push('--content', body);
+        }
+    } else {
+        raise('notifications unimplemented for this OS');
+    }
+    return os.exec(cmd);
 };

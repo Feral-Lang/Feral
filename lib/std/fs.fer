@@ -51,61 +51,61 @@ let O_TRUNC = feral.FS_O_TRUNC;
 ####################################################################################
 
 let fopen = fn(file, mode = 'r', mustClose = true) {
-	return feral.fsFopen(file, mode, mustClose);
+    return feral.fsFopen(file, mode, mustClose);
 };
 
 let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
-	let res = feral.fsWalkDir(dir, mode, regex);
-	let nameOnly = kw['nameOnly'] != nil && kw['nameOnly'];
-	inline if nameOnly {
-	let dirslashed = dir;
-	if !dir.endsWith('/') { dirslashed += '/'; }
-	}
-	for i in res.each() {
-		i = normalizePath(i);
-		if nameOnly {
-			i = i.replace(dirslashed, '');
-		}
-	}
-	return res;
+    let res = feral.fsWalkDir(dir, mode, regex);
+    let nameOnly = kw['nameOnly'] != nil && kw['nameOnly'];
+    inline if nameOnly {
+    let dirslashed = dir;
+    if !dir.endsWith('/') { dirslashed += '/'; }
+    }
+    for i in res.each() {
+        i = normalizePath(i);
+        if nameOnly {
+            i = i.replace(dirslashed, '');
+        }
+    }
+    return res;
 };
 
 let fdOpen = fn(name, mode = O_RDONLY) {
-	return feral.fsFdOpen(name, mode);
+    return feral.fsFdOpen(name, mode);
 };
 
 let dirExists = fn(name) {
-	if !exists(name) { return false; }
-	return stat.stat(name).isDir();
+    if !exists(name) { return false; }
+    return stat.stat(name).isDir();
 };
 
 let pathAppend = fn(fullpath, pathparts...) {
-	for let i = 0; i < pathparts.len(); ++i {
-		if !fullpath.empty() { fullpath += '/'; }
-		fullpath += pathparts[i];
-	}
+    for let i = 0; i < pathparts.len(); ++i {
+        if !fullpath.empty() { fullpath += '/'; }
+        fullpath += pathparts[i];
+    }
 };
 
 let pathFrom = fn(pathparts...) {
-	if pathparts.empty() { return ''; }
-	let fullpath = '';
-	pathAppend(fullpath, pathparts...);
-	return fullpath;
+    if pathparts.empty() { return ''; }
+    let fullpath = '';
+    pathAppend(fullpath, pathparts...);
+    return fullpath;
 };
 
 # Converts all \ with / where needed.
 let normalizePath = fn(path) {
-	return path.replace('\\', '/').replace('//', '/');
+    return path.replace('\\', '/').replace('//', '/');
 };
 
 # can also be written as:
 #  fmtWithPath('$d', path)
 let parentDir = fn(path) {
-	let dirname = '';
-	let locslash = path.rfind('/');
-	if locslash == -1 { dirname = '.'; }
-	else { dirname = path.sub(0, locslash); }
-	return dirname;
+    let dirname = '';
+    let locslash = path.rfind('/');
+    if locslash == -1 { dirname = '.'; }
+    else { dirname = path.sub(0, locslash); }
+    return dirname;
 };
 
 # config shorthands:
@@ -116,87 +116,87 @@ let parentDir = fn(path) {
 #   $b => basename (file name without directory and extension)
 #   $e => file extension
 let fmtWithPath = fn(fmtstr, fpath) {
-	let shorthand = false;
-	let dirname = '';
-	let filename = '';
-	let ext = '';
-	let locslash = fpath.rfind('/');
-	let locdot = fpath.rfind('.');
-	if locslash == -1 {
-		dirname = '.';
-		if locdot == -1 {
-			filename = fpath;
-		} else {
-			filename = fpath.sub(0, fpath.len() - locdot);
-		}
-	}
-	else {
-		dirname = fpath.sub(0, locslash);
-		if locdot == -1 {
-			filename = fpath.sub(locslash + 1, fpath.len() - locslash);
-		} else {
-			filename = fpath.sub(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
-		}
-	}
-	if locdot == -1 { ext = ''; }
-	else { ext = fpath.sub(locdot + 1, fpath.len() - locdot); }
+    let shorthand = false;
+    let dirname = '';
+    let filename = '';
+    let ext = '';
+    let locslash = fpath.rfind('/');
+    let locdot = fpath.rfind('.');
+    if locslash == -1 {
+        dirname = '.';
+        if locdot == -1 {
+            filename = fpath;
+        } else {
+            filename = fpath.sub(0, fpath.len() - locdot);
+        }
+    }
+    else {
+        dirname = fpath.sub(0, locslash);
+        if locdot == -1 {
+            filename = fpath.sub(locslash + 1, fpath.len() - locslash);
+        } else {
+            filename = fpath.sub(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
+        }
+    }
+    if locdot == -1 { ext = ''; }
+    else { ext = fpath.sub(locdot + 1, fpath.len() - locdot); }
 
-	let res = fmtstr;
-	for let i = 0; i < res.len(); ++i {
-		if res[i] == '$' && !shorthand {
-			shorthand = true;
-			res.erase(i);
-			--i;
-			continue;
-		}
-		if !shorthand { continue; }
-		shorthand = false;
-		if res[i] == 's' {
-			res.erase(i);
-			res.insert(i, feral.binaryPath);
-			i += feral.binaryPath.len();
-			--i;
-			continue;
-		}
-		if res[i] == 'p' {
-			res.erase(i);
-			res.insert(i, fpath);
-			i += fpath.len();
-			--i;
-			continue;
-		}
-		if res[i] == 'd' {
-			res.erase(i);
-			res.insert(i, dirname);
-			i += dirname.len();
-			--i;
-			continue;
-		}
-		if res[i] == 'b' {
-			res.erase(i);
-			res.insert(i, filename);
-			i += filename.len();
-			--i;
-			continue;
-		}
-		if res[i] == 'f' {
-			res.erase(i);
-			let extdot = '';
-			if !ext.empty() {
-				extdot = '.';
-			}
-			res.insert(i, filename + extdot + ext);
-			i += filename.len() + extdot.len() + ext.len();
-			--i;
-			continue;
-		}
-		if res[i] == 'e' {
-			res.erase(i);
-			res.insert(i, ext);
-			i += ext.len();
-			--i;
-			continue;
-		}
-	}
-	return res;
+    let res = fmtstr;
+    for let i = 0; i < res.len(); ++i {
+        if res[i] == '$' && !shorthand {
+            shorthand = true;
+            res.erase(i);
+            --i;
+            continue;
+        }
+        if !shorthand { continue; }
+        shorthand = false;
+        if res[i] == 's' {
+            res.erase(i);
+            res.insert(i, feral.binaryPath);
+            i += feral.binaryPath.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'p' {
+            res.erase(i);
+            res.insert(i, fpath);
+            i += fpath.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'd' {
+            res.erase(i);
+            res.insert(i, dirname);
+            i += dirname.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'b' {
+            res.erase(i);
+            res.insert(i, filename);
+            i += filename.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'f' {
+            res.erase(i);
+            let extdot = '';
+            if !ext.empty() {
+                extdot = '.';
+            }
+            res.insert(i, filename + extdot + ext);
+            i += filename.len() + extdot.len() + ext.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'e' {
+            res.erase(i);
+            res.insert(i, ext);
+            i += ext.len();
+            --i;
+            continue;
+        }
+    }
+    return res;
 };

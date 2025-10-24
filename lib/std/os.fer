@@ -28,20 +28,20 @@ let distro = getOSDistro();
 # chmod command wrapper
 inline if name != 'windows' {
 let chmod = fn(dest, mode = '0755', recurse = true) {
-	return chmodNative(dest, mode, recurse);
+    return chmodNative(dest, mode, recurse);
 };
 }
 
 let setEnv = fn(var, val, overwrite = false) {
-	return setEnvNative(var, val, overwrite);
+    return setEnvNative(var, val, overwrite);
 };
 
 let getEnvHome = fn() {
-	let var = 'HOME';
-	if name == 'windows' {
-		var = 'USERPROFILE';
-	}
-	return getEnv(var);
+    let var = 'HOME';
+    if name == 'windows' {
+        var = 'USERPROFILE';
+    }
+    return getEnv(var);
 };
 
 inline if name == 'windows' {
@@ -53,11 +53,11 @@ let envDelimiter = ':';
 # find the given file (exec) in the PATH variables
 # return the entire file path if found, empty string if not
 let findExec = fn(exec) {
-	let PATH = getEnv('PATH');
-	if PATH == nil { return nil; }
-	for dir in PATH.split(envDelimiter).each() {
-		let p = fs.pathFrom(dir, exec);
-		if fs.exists(p) { return p; }
-	}
-	return nil;
+    let PATH = getEnv('PATH');
+    if PATH == nil { return nil; }
+    for dir in PATH.split(envDelimiter).each() {
+        let p = fs.pathFrom(dir, exec);
+        if fs.exists(p) { return p; }
+    }
+    return nil;
 };

@@ -1,59 +1,59 @@
 Var *allToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	res->getVal() += "Type: ";
-	res->getVal() += vm.getTypeName(args[0]);
-	res->getVal() += " at ";
-	char tmp[24];
-	sprintf(tmp, "%p", args[0]);
-	res->getVal() += tmp;
-	return res;
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    res->getVal() += "Type: ";
+    res->getVal() += vm.getTypeName(args[0]);
+    res->getVal() += " at ";
+    char tmp[24];
+    sprintf(tmp, "%p", args[0]);
+    res->getVal() += tmp;
+    return res;
 }
 
 Var *nilToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, "(nil)");
+    return vm.makeVar<VarStr>(loc, "(nil)");
 }
 
 Var *boolToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false");
+    return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false");
 }
 
 Var *typeIDToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assn_args)
 {
-	VarStr *res = vm.makeVar<VarStr>(loc, "typeid<");
-	res->getVal() += std::to_string(as<VarTypeID>(args[0])->getVal());
-	res->getVal() += ">";
-	return res;
+    VarStr *res = vm.makeVar<VarStr>(loc, "typeid<");
+    res->getVal() += std::to_string(as<VarTypeID>(args[0])->getVal());
+    res->getVal() += ">";
+    return res;
 }
 
 Var *intToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->getVal()));
+    return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->getVal()));
 }
 
 Var *fltToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->getVal()));
+    return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->getVal()));
 }
 
 Var *strToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return args[0];
+    return args[0];
 }
 
 Var *failureToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
+    return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
 }
 
 // TODO: vecToStr() must be done in feral code as Var::toStr() does not exist

@@ -1,6 +1,6 @@
 let Error = struct(
-	code = nil,
-	msg = ''
+    code = nil,
+    msg = ''
 );
 Error.setTypeName('Error');
 
@@ -8,18 +8,18 @@ let getCode in Error = fn() { return ref(self.code); };
 let getMsg in Error = fn() { return ref(self.msg); };
 
 let new = fn(code, msg...) {
-	let e = Error(code);
-	for m in msg.each() {
-		e.msg += m.str();
-	}
-	return ref(e);
+    let e = Error(code);
+    for m in msg.each() {
+        e.msg += m.str();
+    }
+    return ref(e);
 };
 
 let str in Error = fn() {
-	let s = 'Error<';
-	s += self.val.str();
-	s += ':';
-	s += msg;
-	s += '>';
-	return ref(s);
+    let s = 'Error<';
+    s += self.val.str();
+    s += ':';
+    s += msg;
+    s += '>';
+    return ref(s);
 };

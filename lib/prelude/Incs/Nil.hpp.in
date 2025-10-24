@@ -1,11 +1,11 @@
 Var *nilEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assn_args)
 {
-	return args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
+    return args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *nilNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assn_args)
 {
-	return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
+    return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }

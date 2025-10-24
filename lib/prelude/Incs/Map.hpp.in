@@ -1,150 +1,150 @@
 Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if((args.size() - 1) % 2 != 0) {
-		vm.fail(loc, "argument count must be even to create a map");
-		return nullptr;
-	}
-	auto refloc    = assn_args.find("refs");
-	auto caploc    = assn_args.find("cap");
-	size_t resvcap = args.size() - 1;
-	bool refs      = false;
-	if(refloc != assn_args.end()) {
-		Var *refsv = refloc->second.val;
-		if(!refsv->is<VarBool>()) {
-			vm.fail(loc,
-				"expected 'refs' named argument to be"
-				" of type bool for vec.new(), found: ",
-				vm.getTypeName(refsv));
-			return nullptr;
-		}
-		refs = as<VarBool>(refsv)->getVal();
-	}
-	if(caploc != assn_args.end()) {
-		Var *capv = caploc->second.val;
-		if(!capv->is<VarBool>()) {
-			vm.fail(loc,
-				"expected 'cap' named argument to be"
-				" of type int for vec.new(), found: ",
-				vm.getTypeName(capv));
-			return nullptr;
-		}
-		resvcap = as<VarInt>(capv)->getVal();
-	}
-	StringMap<Var *> mapval;
-	mapval.reserve(resvcap);
-	for(size_t i = 1; i < args.size(); ++i) {
-		Var *v = nullptr;
-		Array<Var *, 1> tmp{args[i]};
-		if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-		const String &key = as<VarStr>(v)->getVal();
-		auto maploc	  = mapval.find(key);
-		if(maploc != mapval.end()) vm.decVarRef(maploc->second);
-		if(refs) {
-			vm.incVarRef(args[++i]);
-			mapval[key] = args[i];
-		} else {
-			mapval[key] = vm.copyVar(loc, args[++i]);
-		}
-		vm.decVarRef(v);
-	}
-	return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
+    if((args.size() - 1) % 2 != 0) {
+        vm.fail(loc, "argument count must be even to create a map");
+        return nullptr;
+    }
+    auto refloc    = assn_args.find("refs");
+    auto caploc    = assn_args.find("cap");
+    size_t resvcap = args.size() - 1;
+    bool refs      = false;
+    if(refloc != assn_args.end()) {
+        Var *refsv = refloc->second.val;
+        if(!refsv->is<VarBool>()) {
+            vm.fail(loc,
+                    "expected 'refs' named argument to be"
+                    " of type bool for vec.new(), found: ",
+                    vm.getTypeName(refsv));
+            return nullptr;
+        }
+        refs = as<VarBool>(refsv)->getVal();
+    }
+    if(caploc != assn_args.end()) {
+        Var *capv = caploc->second.val;
+        if(!capv->is<VarBool>()) {
+            vm.fail(loc,
+                    "expected 'cap' named argument to be"
+                    " of type int for vec.new(), found: ",
+                    vm.getTypeName(capv));
+            return nullptr;
+        }
+        resvcap = as<VarInt>(capv)->getVal();
+    }
+    StringMap<Var *> mapval;
+    mapval.reserve(resvcap);
+    for(size_t i = 1; i < args.size(); ++i) {
+        Var *v = nullptr;
+        Array<Var *, 1> tmp{args[i]};
+        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+        const String &key = as<VarStr>(v)->getVal();
+        auto maploc       = mapval.find(key);
+        if(maploc != mapval.end()) vm.decVarRef(maploc->second);
+        if(refs) {
+            vm.incVarRef(args[++i]);
+            mapval[key] = args[i];
+        } else {
+            mapval[key] = vm.copyVar(loc, args[++i]);
+        }
+        vm.decVarRef(v);
+    }
+    return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
 }
 
 Var *mapSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
+    return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
 }
 
 Var *mapIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
+    return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
+    return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	MemoryManager &mem = vm.getMemoryManager();
-	VarMap *map	   = as<VarMap>(args[0]);
-	Var *v		   = nullptr;
-	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	const String &key = as<VarStr>(v)->getVal();
-	if(map->isRefMap()) {
-		map->setAttr(mem, key, args[2], true);
-	} else {
-		map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
-	}
-	return args[0];
+    MemoryManager &mem = vm.getMemoryManager();
+    VarMap *map        = as<VarMap>(args[0]);
+    Var *v             = nullptr;
+    Array<Var *, 1> tmp{args[1]};
+    if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+    const String &key = as<VarStr>(v)->getVal();
+    if(map->isRefMap()) {
+        map->setAttr(mem, key, args[2], true);
+    } else {
+        map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
+    }
+    return args[0];
 }
 
 Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
-	Var *v		      = nullptr;
-	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	auto maploc = map.find(as<VarStr>(v)->getVal());
-	if(maploc != map.end()) {
-		vm.decVarRef(maploc->second);
-		map.erase(maploc);
-	}
-	vm.decVarRef(v);
-	return args[0];
+    StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
+    Var *v                = nullptr;
+    Array<Var *, 1> tmp{args[1]};
+    if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+    auto maploc = map.find(as<VarStr>(v)->getVal());
+    if(maploc != map.end()) {
+        vm.decVarRef(maploc->second);
+        map.erase(maploc);
+    }
+    vm.decVarRef(v);
+    return args[0];
 }
 
 Var *mapClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	as<VarMap>(args[0])->clear(vm.getMemoryManager());
-	return vm.getNil();
+    as<VarMap>(args[0])->clear(vm.getMemoryManager());
+    return vm.getNil();
 }
 
 Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assn_args)
 {
-	VarMap *map = as<VarMap>(args[0]);
-	Var *v	    = nullptr;
-	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	Var *res = map->getAttr(as<VarStr>(v)->getVal());
-	vm.decVarRef(v);
-	return res ? res : vm.getNil();
+    VarMap *map = as<VarMap>(args[0]);
+    Var *v      = nullptr;
+    Array<Var *, 1> tmp{args[1]};
+    if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+    Var *res = map->getAttr(as<VarStr>(v)->getVal());
+    vm.decVarRef(v);
+    return res ? res : vm.getNil();
 }
 
 Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	VarMap *map = as<VarMap>(args[0]);
-	Var *v	    = nullptr;
-	Array<Var *, 1> tmp{args[1]};
-	if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-	bool res = map->existsAttr(as<VarStr>(v)->getVal());
-	vm.decVarRef(v);
-	return res ? vm.getTrue() : vm.getFalse();
+    VarMap *map = as<VarMap>(args[0]);
+    Var *v      = nullptr;
+    Array<Var *, 1> tmp{args[1]};
+    if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+    bool res = map->existsAttr(as<VarStr>(v)->getVal());
+    vm.decVarRef(v);
+    return res ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
+    return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
 }
 
 Var *mapIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assn_args)
 {
-	VarMapIterator *it = as<VarMapIterator>(args[0]);
-	Var *res	   = nullptr;
-	if(!it->next(vm.getMemoryManager(), loc, res)) return vm.getNil();
-	res->setLoadAsRef();
-	return res;
+    VarMapIterator *it = as<VarMapIterator>(args[0]);
+    Var *res           = nullptr;
+    if(!it->next(vm.getMemoryManager(), loc, res)) return vm.getNil();
+    res->setLoadAsRef();
+    return res;
 }

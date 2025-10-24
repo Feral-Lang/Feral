@@ -8,7 +8,7 @@ let list = vec.new(1, 5, 2, 4, 3);
 let largest = list[0];
 
 for item in list.each() {
-	if largest < item { largest = item; }
+    if largest < item { largest = item; }
 }
 
 #io.println('largest in ', list, ' is ', largest);

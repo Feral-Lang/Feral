@@ -5,19 +5,19 @@ assert.eq('some string'._typestr_(), 'Str');
 
 # raise
 let div = fn(x, y) {
-	if y == 0 {
-		raise('div by zero');
-	}
-	return x / y;
+    if y == 0 {
+        raise('div by zero');
+    }
+    return x / y;
 };
 
 let x = div(5, 0) or e {
-	let p = 0; # to prevent const folding
-	return 10 / p or e2 {
-		assert.eq(e.str(), 'raised: div by zero');
-		assert.eq(e2.str(), 'division by zero');
-		return 20; # set 20 as the value
-	};
+    let p = 0; # to prevent const folding
+    return 10 / p or e2 {
+        assert.eq(e.str(), 'raised: div by zero');
+        assert.eq(e2.str(), 'division by zero');
+        return 20; # set 20 as the value
+    };
 };
 let y = div(div(12, 0) or { return 10; }, 10);
 assert.eq(x, 20);

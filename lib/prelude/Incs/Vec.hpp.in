@@ -1,361 +1,360 @@
 Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	auto refloc    = assn_args.find("refs");
-	auto caploc    = assn_args.find("cap");
-	size_t resvcap = args.size() - 1;
-	bool refs      = false;
-	if(refloc != assn_args.end()) {
-		Var *refsv = refloc->second.val;
-		if(!refsv->is<VarBool>()) {
-			vm.fail(loc,
-				"expected 'refs' named argument to be"
-				" of type bool for vec.new(), found: ",
-				vm.getTypeName(refsv));
-			return nullptr;
-		}
-		refs = as<VarBool>(refsv)->getVal();
-	}
-	if(caploc != assn_args.end()) {
-		Var *capv = caploc->second.val;
-		if(!capv->is<VarInt>()) {
-			vm.fail(loc,
-				"expected 'cap' named argument to be"
-				" of type int for vec.new(), found: ",
-				vm.getTypeName(capv));
-			return nullptr;
-		}
-		resvcap = as<VarInt>(capv)->getVal();
-	}
-	VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
-	if(refs) {
-		for(size_t i = 1; i < args.size(); ++i) {
-			vm.incVarRef(args[i]);
-			res->push(args[i]);
-		}
-	} else {
-		for(size_t i = 1; i < args.size(); ++i) {
-			res->push(vm.copyVar(loc, args[i]));
-		}
-	}
-	return res;
+    auto refloc    = assn_args.find("refs");
+    auto caploc    = assn_args.find("cap");
+    size_t resvcap = args.size() - 1;
+    bool refs      = false;
+    if(refloc != assn_args.end()) {
+        Var *refsv = refloc->second.val;
+        if(!refsv->is<VarBool>()) {
+            vm.fail(loc,
+                    "expected 'refs' named argument to be"
+                    " of type bool for vec.new(), found: ",
+                    vm.getTypeName(refsv));
+            return nullptr;
+        }
+        refs = as<VarBool>(refsv)->getVal();
+    }
+    if(caploc != assn_args.end()) {
+        Var *capv = caploc->second.val;
+        if(!capv->is<VarInt>()) {
+            vm.fail(loc,
+                    "expected 'cap' named argument to be"
+                    " of type int for vec.new(), found: ",
+                    vm.getTypeName(capv));
+            return nullptr;
+        }
+        resvcap = as<VarInt>(capv)->getVal();
+    }
+    VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
+    if(refs) {
+        for(size_t i = 1; i < args.size(); ++i) {
+            vm.incVarRef(args[i]);
+            res->push(args[i]);
+        }
+    } else {
+        for(size_t i = 1; i < args.size(); ++i) {
+            res->push(vm.copyVar(loc, args[i]));
+        }
+    }
+    return res;
 }
 
 Var *vecSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
+    return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
 Var *vecCapacity(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
+    return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
 Var *vecIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
+    return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
+    return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
+    return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
 Var *vecBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
+    return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
 Var *vecPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	VarVec *res = as<VarVec>(args[0]);
-	for(size_t i = 1; i < args.size(); ++i) {
-		if(res->isRefVec()) {
-			vm.incVarRef(args[i]);
-			res->push(args[i]);
-		} else {
-			res->push(vm.copyVar(loc, args[i]));
-		}
-	}
-	return args[0];
+    VarVec *res = as<VarVec>(args[0]);
+    for(size_t i = 1; i < args.size(); ++i) {
+        if(res->isRefVec()) {
+            vm.incVarRef(args[i]);
+            res->push(args[i]);
+        } else {
+            res->push(vm.copyVar(loc, args[i]));
+        }
+    }
+    return args[0];
 }
 
 Var *vecPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	VarVec *res = as<VarVec>(args[0]);
-	if(res->isEmpty()) {
-		vm.fail(loc, "called pop() on an empty vector");
-		return nullptr;
-	}
-	vm.decVarRef(res->back());
-	res->pop();
-	return args[0];
+    VarVec *res = as<VarVec>(args[0]);
+    if(res->isEmpty()) {
+        vm.fail(loc, "called pop() on an empty vector");
+        return nullptr;
+    }
+    vm.decVarRef(res->back());
+    res->pop();
+    return args[0];
 }
 
 Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	VarVec *v = as<VarVec>(args[0]);
-	for(auto &e : v->getVal()) {
-		vm.decVarRef(e);
-	}
-	v->clear();
-	return args[0];
+    VarVec *v = as<VarVec>(args[0]);
+    for(auto &e : v->getVal()) {
+        vm.decVarRef(e);
+    }
+    v->clear();
+    return args[0];
 }
 
 Var *vecSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected first argument to be of "
-			"type integer for vec.set(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->getVal();
-	if(pos >= res->size()) {
-		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->size()));
-		return nullptr;
-	}
-	vm.decVarRef(res->at(pos));
-	if(res->isRefVec()) {
-		vm.incVarRef(args[2]);
-		res->at(pos) = args[2];
-	} else {
-		res->at(pos) = vm.copyVar(loc, args[2]);
-	}
-	return args[0];
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected first argument to be of "
+                "type integer for vec.set(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    VarVec *res = as<VarVec>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) {
+        vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
+                std::to_string(res->size()));
+        return nullptr;
+    }
+    vm.decVarRef(res->at(pos));
+    if(res->isRefVec()) {
+        vm.incVarRef(args[2]);
+        res->at(pos) = args[2];
+    } else {
+        res->at(pos) = vm.copyVar(loc, args[2]);
+    }
+    return args[0];
 }
 
 Var *vecErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->getVal();
-	if(pos >= res->size()) {
-		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->size()));
-		return nullptr;
-	}
-	vm.decVarRef(res->at(pos));
-	res->erase(res->begin() + pos);
-	return args[0];
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    VarVec *res = as<VarVec>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) {
+        vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
+                std::to_string(res->size()));
+        return nullptr;
+    }
+    vm.decVarRef(res->at(pos));
+    res->erase(res->begin() + pos);
+    return args[0];
 }
 
 Var *vecInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected first argument to be of"
-			" type integer for vec.insert(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->getVal();
-	if(pos >= res->size()) {
-		vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-			std::to_string(res->size()));
-		return nullptr;
-	}
-	if(res->isRefVec()) {
-		vm.incVarRef(args[2]);
-		res->insert(res->begin() + pos, args[2]);
-	} else {
-		res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
-	}
-	return args[0];
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected first argument to be of"
+                " type integer for vec.insert(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    VarVec *res = as<VarVec>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) {
+        vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
+                std::to_string(res->size()));
+        return nullptr;
+    }
+    if(res->isRefVec()) {
+        vm.incVarRef(args[2]);
+        res->insert(res->begin() + pos, args[2]);
+    } else {
+        res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
+    }
+    return args[0];
 }
 
 Var *vecAppend(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarVec>()) {
-		vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, "expected start index to be of type int for vec.append(), found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	if(!args[3]->is<VarInt>()) {
-		vm.fail(loc, "expected end index to be of type int for vec.append(), found: ",
-			vm.getTypeName(args[3]));
-		return nullptr;
-	}
-	VarVec *dest = as<VarVec>(args[0]);
-	VarVec *src  = as<VarVec>(args[1]);
-	size_t start = as<VarInt>(args[2])->getVal();
-	size_t end   = as<VarInt>(args[3])->getVal();
-	if(end == -1 || end > src->size()) end = src->size();
-	if(dest->isRefVec()) {
-		// for the loop, we are not using iterator format because self append will fail in
-		// that case
-		// ie. v.append(v) will fail if iterator format is used.
-		for(size_t i = start; i < end; ++i) {
-			Var *e = src->at(i);
-			vm.incVarRef(e);
-			dest->push(e);
-		}
-	} else {
-		for(size_t i = start; i < end; ++i) {
-			Var *e = src->at(i);
-			dest->push(vm.copyVar(loc, e));
-		}
-	}
-	return dest;
+    if(!args[1]->is<VarVec>()) {
+        vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc, "expected start index to be of type int for vec.append(), found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    if(!args[3]->is<VarInt>()) {
+        vm.fail(loc, "expected end index to be of type int for vec.append(), found: ",
+                vm.getTypeName(args[3]));
+        return nullptr;
+    }
+    VarVec *dest = as<VarVec>(args[0]);
+    VarVec *src  = as<VarVec>(args[1]);
+    size_t start = as<VarInt>(args[2])->getVal();
+    size_t end   = as<VarInt>(args[3])->getVal();
+    if(end == -1 || end > src->size()) end = src->size();
+    if(dest->isRefVec()) {
+        // for the loop, we are not using iterator format because self append will fail in
+        // that case
+        // ie. v.append(v) will fail if iterator format is used.
+        for(size_t i = start; i < end; ++i) {
+            Var *e = src->at(i);
+            vm.incVarRef(e);
+            dest->push(e);
+        }
+    } else {
+        for(size_t i = start; i < end; ++i) {
+            Var *e = src->at(i);
+            dest->push(vm.copyVar(loc, e));
+        }
+    }
+    return dest;
 }
 
 Var *vecSwap(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	as<VarVec>(args[0])->swap(as<VarInt>(args[1])->getVal(), as<VarInt>(args[2])->getVal());
-	return args[0];
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    as<VarVec>(args[0])->swap(as<VarInt>(args[1])->getVal(), as<VarInt>(args[2])->getVal());
+    return args[0];
 }
 
 Var *vecReverse(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assn_args)
 {
-	VarVec *res = as<VarVec>(args[0]);
-	std::reverse(res->begin(), res->end());
-	return args[0];
+    VarVec *res = as<VarVec>(args[0]);
+    std::reverse(res->begin(), res->end());
+    return args[0];
 }
 
 Var *vecAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	   const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	VarVec *res = as<VarVec>(args[0]);
-	size_t pos  = as<VarInt>(args[1])->getVal();
-	if(pos >= res->size()) return vm.getNil();
-	return res->at(pos);
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    VarVec *res = as<VarVec>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) return vm.getNil();
+    return res->at(pos);
 }
 
 Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected starting index to be of"
-			" type integer for vec.sub(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected ending index to be of"
-			" type integer for vec.sub(), found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected starting index to be of"
+                " type integer for vec.sub(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected ending index to be of"
+                " type integer for vec.sub(), found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
 
-	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = as<VarInt>(args[1])->getVal();
-	size_t end = as<VarInt>(args[2])->getVal();
+    VarVec *v  = as<VarVec>(args[0]);
+    size_t beg = as<VarInt>(args[1])->getVal();
+    size_t end = as<VarInt>(args[2])->getVal();
 
-	if(beg >= v->size()) {
-		vm.fail(loc, "starting index is greater than vector size");
-		return nullptr;
-	}
-	if(end > v->size()) {
-		vm.fail(loc, "ending index is greater than vector size");
-		return nullptr;
-	}
-	VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
-	if(end <= beg) return res;
-	for(size_t i = beg; i < end; ++i) {
-		res->push(vm.copyVar(loc, v->at(i)));
-	}
-	return res;
+    if(beg >= v->size()) {
+        vm.fail(loc, "starting index is greater than vector size");
+        return nullptr;
+    }
+    if(end > v->size()) {
+        vm.fail(loc, "ending index is greater than vector size");
+        return nullptr;
+    }
+    VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
+    if(end <= beg) return res;
+    for(size_t i = beg; i < end; ++i) {
+        res->push(vm.copyVar(loc, v->at(i)));
+    }
+    return res;
 }
 
 Var *vecSlice(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected starting index to be of type integer for vec.slice(), found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, "expected ending index to be of type integer for vec.slice(), found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected starting index to be of type integer for vec.slice(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc, "expected ending index to be of type integer for vec.slice(), found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
 
-	VarVec *v  = as<VarVec>(args[0]);
-	size_t beg = as<VarInt>(args[1])->getVal();
-	size_t end = as<VarInt>(args[2])->getVal();
+    VarVec *v  = as<VarVec>(args[0]);
+    size_t beg = as<VarInt>(args[1])->getVal();
+    size_t end = as<VarInt>(args[2])->getVal();
 
-	if(beg >= v->size()) {
-		vm.fail(loc, "starting index is greater than vector size");
-		return nullptr;
-	}
-	if(end > v->size()) {
-		vm.fail(loc, "ending index is greater than vector size");
-		return nullptr;
-	}
-	VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, true);
-	if(end <= beg) return res;
-	for(size_t i = beg; i < end; ++i) {
-		Var *e = v->at(i);
-		vm.incVarRef(e);
-		res->push(e);
-	}
-	return res;
+    if(beg >= v->size()) {
+        vm.fail(loc, "starting index is greater than vector size");
+        return nullptr;
+    }
+    if(end > v->size()) {
+        vm.fail(loc, "ending index is greater than vector size");
+        return nullptr;
+    }
+    VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, true);
+    if(end <= beg) return res;
+    for(size_t i = beg; i < end; ++i) {
+        Var *e = v->at(i);
+        vm.incVarRef(e);
+        res->push(e);
+    }
+    return res;
 }
 
 Var *vecEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
+    return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
 Var *vecIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assn_args)
 {
-	VarVecIterator *it = as<VarVecIterator>(args[0]);
-	Var *res	   = nullptr;
-	if(!it->next(res)) return vm.getNil();
-	res->setLoadAsRef();
-	return res;
+    VarVecIterator *it = as<VarVecIterator>(args[0]);
+    Var *res           = nullptr;
+    if(!it->next(res)) return vm.getNil();
+    res->setLoadAsRef();
+    return res;
 }

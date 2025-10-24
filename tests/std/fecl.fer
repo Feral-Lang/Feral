@@ -4,32 +4,32 @@ let fecl = import('std/fecl');
 
 let singleline = `array = ['data1', 'data2']; arrayarray = [['data1', 'data2'], ['data3', 'data4']]; map = {data1 = 1; data2 = 2; data3 = 1.27; data4 = -1.27;}; mapmap = {one = {data1 = 'data2';}; two = {data3 = 'data4';};};`;
 let multiline = `array = [
-	'data1',
-	'data2'
+    'data1',
+    'data2'
 ];
 arrayarray = [
-	[
-		'data1',
-		'data2'
-	],
-	[
-		'data3',
-		'data4'
-	]
+    [
+        'data1',
+        'data2'
+    ],
+    [
+        'data3',
+        'data4'
+    ]
 ];
 map = {
-	data1 = 1;
-	data2 = 2;
-	data3 = 1.27;
-	data4 = -1.27;
+    data1 = 1;
+    data2 = 2;
+    data3 = 1.27;
+    data4 = -1.27;
 };
 mapmap = {
-	one = {
-		data1 = 'data2';
-	};
-	two = {
-		data3 = 'data4';
-	};
+    one = {
+        data1 = 'data2';
+    };
+    two = {
+        data3 = 'data4';
+    };
 };`;
 
 let onelineobj = fecl.loads(singleline);

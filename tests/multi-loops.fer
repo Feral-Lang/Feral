@@ -1,17 +1,17 @@
 let assert = import('std/assert');
 
 for let i = 0; i < 10; ++i {
-	if i == 1 { continue; }
-	if i == 5 { break; }
+    if i == 1 { continue; }
+    if i == 5 { break; }
 
-	for let j = 0; j < 10; ++j {
-		if j == 1 { continue; }
-		if j == 5 { break; }
-		assert.eq(feral.varExists('i'), true);
-		assert.eq(feral.varExists('j'), true);
-	}
-	assert.eq(feral.varExists('i'), true);
-	assert.eq(!feral.varExists('j'), true);
+    for let j = 0; j < 10; ++j {
+        if j == 1 { continue; }
+        if j == 5 { break; }
+        assert.eq(feral.varExists('i'), true);
+        assert.eq(feral.varExists('j'), true);
+    }
+    assert.eq(feral.varExists('i'), true);
+    assert.eq(!feral.varExists('j'), true);
 }
 assert.eq(!feral.varExists('i'), true);
 assert.eq(!feral.varExists('j'), true);

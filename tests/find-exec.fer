@@ -5,7 +5,7 @@ let os = import('std/os');
 
 let loc = os.findExec('valgrind');
 if loc != nil {
-	io.println('valgrind available at: \'', loc, '\'!');
+    io.println('valgrind available at: \'', loc, '\'!');
 } else {
-	io.println('valgrind not found!');
+    io.println('valgrind not found!');
 }

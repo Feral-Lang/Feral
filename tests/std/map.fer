@@ -16,7 +16,7 @@ assert.eq(m.keys().find('3'), true); # all keys are strings internally
 
 let m2 = map.new();
 for e in m.each() {
-	m2.insert(e.0, e.1);
+    m2.insert(e.0, e.1);
 }
 assert.eq(m, m2);
 m.str();

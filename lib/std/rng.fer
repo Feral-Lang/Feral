@@ -6,7 +6,7 @@ seed(time.now().int());
 
 # [from, to]
 let get = fn(from, to) {
-	if from > to { raise('LHS should be less or equal to RHS for random number generation'); }
-	let res = getNative(to - from); # [0, to - from]
-	return res + from;
+    if from > to { raise('LHS should be less or equal to RHS for random number generation'); }
+    let res = getNative(to - from); # [0, to - from]
+    return res + from;
 };

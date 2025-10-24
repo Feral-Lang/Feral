@@ -4,33 +4,33 @@
 let assert = import('std/assert');
 
 if 1 == 2 {
-	assert.eq(false, true);
+    assert.eq(false, true);
 } elif 2 == 2 {
-	assert.eq(true, true);
+    assert.eq(true, true);
 } else {
-	assert.eq(false, true);
+    assert.eq(false, true);
 }
 
 if (1 == 1 && 2 == 2) || (assert.eq(false, true) && (assert.eq(false, true))) {
-	assert.eq(true, true);
+    assert.eq(true, true);
 } else {
-	assert.eq(false, true);
+    assert.eq(false, true);
 }
 
 if (1 == 2 || 2 == 1) && (assert.eq(false, true) || (assert.eq(false, true))) {
-	assert.eq(false, true);
+    assert.eq(false, true);
 } else {
-	assert.eq(true, true);
+    assert.eq(true, true);
 }
 
 if 1 == 1 || assert.eq(false, true) {
-	assert.eq(true, true);
+    assert.eq(true, true);
 } else {
-	assert.eq(false, true);
+    assert.eq(false, true);
 }
 
 if 1 == 2 && assert.eq(false, true) {
-	assert.eq(false, true);
+    assert.eq(false, true);
 } else {
-	assert.eq(true, true);
+    assert.eq(true, true);
 }

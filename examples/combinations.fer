@@ -14,25 +14,25 @@ let answers = vec.new();
 let rhs = 8;
 
 let recurse = fn(v, total, currvec) {
-	let item = v.front();
-	for let i = 0; i <= rhs; ++i {
-		let res = i * item + total;
-		if res > rhs { return; }
-		if v.len() == 1 {
-			if res == rhs {
-				currvec.push(i);
-				answers.push(currvec);
-				currvec.pop();
-				continue;
-			}
-			if res < rhs { continue; }
-		}
-		let newv = v;
-		newv.erase(0);
-		currvec.push(i);
-		recurse(newv, res, currvec);
-		currvec.pop();
-	}
+    let item = v.front();
+    for let i = 0; i <= rhs; ++i {
+        let res = i * item + total;
+        if res > rhs { return; }
+        if v.len() == 1 {
+            if res == rhs {
+                currvec.push(i);
+                answers.push(currvec);
+                currvec.pop();
+                continue;
+            }
+            if res < rhs { continue; }
+        }
+        let newv = v;
+        newv.erase(0);
+        currvec.push(i);
+        recurse(newv, res, currvec);
+        currvec.pop();
+    }
 };
 
 recurse(v, 0, vec.new());

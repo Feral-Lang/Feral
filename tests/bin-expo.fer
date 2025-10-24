@@ -1,16 +1,16 @@
 let assert = import('std/assert');
 
 let binexpo = fn(base, exp) {
-	let res = 1;
-	let a = base, b = exp;
-	while b > 0 {
-		if b % 2 != 0 {
-			res *= a;
-		}
-		a *= a;
-		b >>= 1;
-	}
-	return res;
+    let res = 1;
+    let a = base, b = exp;
+    while b > 0 {
+        if b % 2 != 0 {
+            res *= a;
+        }
+        a *= a;
+        b >>= 1;
+    }
+    return res;
 };
 
 

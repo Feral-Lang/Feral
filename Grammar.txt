@@ -1,14 +1,14 @@
 BLOCK = '{' [STATEMENT]* '}'
 
 STATEMENT = VAR_DECL
-	| FUNC_DEF
-	| CONDITIONAL
-	| FOR
-	| WHILE
-	| RETURN
-	| CONTINUE
-	| BREAK
-	| EXPR_COLS
+    | FUNC_DEF
+    | CONDITIONAL
+    | FOR
+    | WHILE
+    | RETURN
+    | CONTINUE
+    | BREAK
+    | EXPR_COLS
 
 EXPR_COLS = EXPR ';'
 EXPR_COLS_OR_RBRACE = EXPR [';' '}']
@@ -17,8 +17,8 @@ EXPR = L16
 L16 = L15 [',' L15]*
 L15 = L14 ['=' L14]*
 L14 = L13 [['+=' '-=' '*='
-	    '/=' '%=' '<<=' '>>='
-	    '&=' '|=' '^='] L13]* ['or' BLOCK]*
+        '/=' '%=' '<<=' '>>='
+        '&=' '|=' '^='] L13]* ['or' BLOCK]*
 L13 = L12 ['||' L12]*
 L12 = L11 ['&&' L11]*
 L11 = L10 ['|' L10]*
@@ -32,7 +32,7 @@ L04 = L03 ['/' '*' '%' '**' L03]*
 L03 = ['++x' '--x' 'u+' 'u-' '!' '~']* L02
 L02 = L01 ['x++' 'x--']{0,1}
 L01 = '(' EXPR ')'
-	| TERM ['(' EXPR ')' | '[' EXPR ']' | '.' TERM]*
+    | TERM ['(' EXPR ')' | '[' EXPR ']' | '.' TERM]*
 
 TERM = iden | str | int | flt | atom
 
@@ -47,12 +47,12 @@ FUNC_DECL_ARGS = SIMPLE_DECL_ARGS [',' KW_ARGS]{0,1} [',' SIMPLE_DECL_ARGS]* [',
 FUNC_CALL_ARGS = [KW_ARGS_CALL | L15]*
 
 FUNC_DEF = 'fn' '(' FUNC_DECL_ARGS ')'
-	BLOCK
+    BLOCK
 
 CONDITIONAL = 'if' L15 BLOCK ['elif' L15 BLOCK]* ['else' BLOCK]{0,1}
 
 FOR = 'for' iden 'in' L01 BLOCK
-	| 'for' [VAR_DECL | EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
+    | 'for' [VAR_DECL | EXPR]{0,1} ';' [EXPR]{0,1} ';' [EXPR]{0,1} BLOCK
 
 WHILE = 'while' L15 BLOCK
 

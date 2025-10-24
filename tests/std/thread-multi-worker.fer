@@ -10,27 +10,27 @@ let shouldStop = atomic.newBool(false);
 let taskList = vec.new(refs = true);
 
 let Task = struct(
-	func = nil,
-	args = vec.new(refs = true)
+    func = nil,
+    args = vec.new(refs = true)
 );
 
 Task.setTypeName('Task');
 
 let addTask = fn(func, args...) {
-	let _ = mutex.newGuard(mtx);
-	taskList.push(Task(func, args));
+    let _ = mutex.newGuard(mtx);
+    taskList.push(Task(func, args));
 };
 
 let workerFn = fn() {
-	io.println('Started worker: ', thread.getCurrentName());
-	while !shouldStop.get() {
-		mtx.lock();
-		if taskList.empty() { mtx.unlock(); thread.yield(); continue; }
-		let t = ref(taskList.front());
-		taskList.erase(0);
-		mtx.unlock();
-		t.func(thread.getCurrentName(), t.args...);
-	}
+    io.println('Started worker: ', thread.getCurrentName());
+    while !shouldStop.get() {
+        mtx.lock();
+        if taskList.empty() { mtx.unlock(); thread.yield(); continue; }
+        let t = ref(taskList.front());
+        taskList.erase(0);
+        mtx.unlock();
+        t.func(thread.getCurrentName(), t.args...);
+    }
 };
 
 let workers = vec.new(refs = true);
@@ -38,22 +38,22 @@ workers.push(thread.new(workerFn, name = 'worker-1'));
 workers.push(thread.new(workerFn, name = 'worker-2'));
 
 let f = fn(t, a1, a2) {
-	let res = a1 * a2;
-	if t == 'worker-1' { thread.yield(); }
-	else { thread.yield(); }
-	io.println('In worker: ', t, '; ', a1, ' x ', a2, ' = ', res);
+    let res = a1 * a2;
+    if t == 'worker-1' { thread.yield(); }
+    else { thread.yield(); }
+    io.println('In worker: ', t, '; ', a1, ' x ', a2, ' = ', res);
 };
 
 for let i = 1; i <= 10; ++i {
-	addTask(f, i, 25);
+    addTask(f, i, 25);
 }
 while true {
-	mtx.lock();
-	if taskList.empty() { mtx.unlock(); break; }
-	mtx.unlock();
-	thread.yield();
+    mtx.lock();
+    if taskList.empty() { mtx.unlock(); break; }
+    mtx.unlock();
+    thread.yield();
 }
 shouldStop.set(true);
 for w in workers.each() {
-	w.join();
+    w.join();
 }

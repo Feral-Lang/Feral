@@ -7,26 +7,26 @@ let Node = struct(d = 0, next = nil);
 let List = struct(head = nil);
 
 let add in List = fn(data) {
-	if self.head == nil {
-		let head in self = Node(d = data);
-		return;
-	}
-	let iter = ptr.new(self.head);
-	while iter.get().next != nil {
-		iter.set(iter.get().next);
-	}
-	let next in iter.get() = Node(d = data);
+    if self.head == nil {
+        let head in self = Node(d = data);
+        return;
+    }
+    let iter = ptr.new(self.head);
+    while iter.get().next != nil {
+        iter.set(iter.get().next);
+    }
+    let next in iter.get() = Node(d = data);
 };
 
 let toVec in List = fn() {
-	let v = vec.new();
-	if self.head == nil { return v; }
-	let iter = ptr.new(self.head);
-	while iter.get() != nil {
-		v.push(iter.get().d);
-		iter.set(iter.get().next);
-	}
-	return v;
+    let v = vec.new();
+    if self.head == nil { return v; }
+    let iter = ptr.new(self.head);
+    while iter.get() != nil {
+        v.push(iter.get().d);
+        iter.set(iter.get().next);
+    }
+    return v;
 };
 
 let l = List();

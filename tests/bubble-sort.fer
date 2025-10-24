@@ -5,13 +5,13 @@ let vec = import('std/vec');
 let v = vec.new(4, 2, 5, 3, 1);
 
 for i in irange(0, v.len()) {
-	for j in irange(1, v.len() - i) {
-		if v[j] < v[j - 1] {
-			let tmp = v[j];
-			v[j] = v[j - 1];
-			v[j - 1] = tmp;
-		}
-	}
+    for j in irange(1, v.len() - i) {
+        if v[j] < v[j - 1] {
+            let tmp = v[j];
+            v[j] = v[j - 1];
+            v[j - 1] = tmp;
+        }
+    }
 }
 
 #io.println(v);

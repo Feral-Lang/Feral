@@ -1,7 +1,7 @@
 let io = import('std/io');
 
 let f = fn(m) {
-	m.println();
+    m.println();
 };
 
 io.println();

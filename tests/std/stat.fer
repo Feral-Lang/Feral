@@ -9,21 +9,21 @@ assert.eq(st1.isReg(), true);
 assert.eq(!st1.isDir(), true);
 assert.eq(!st1.isChr(), true);
 if os.name != 'windows' {
-	# windows does not contain these functions
-	assert.eq(!st1.isBlk(), true);
-	assert.eq(!st1.isFifo(), true);
-	assert.eq(!st1.isLnk(), true);
-	assert.eq(!st1.isSock(), true);
+    # windows does not contain these functions
+    assert.eq(!st1.isBlk(), true);
+    assert.eq(!st1.isFifo(), true);
+    assert.eq(!st1.isLnk(), true);
+    assert.eq(!st1.isSock(), true);
 }
 
 if os.name != 'windows' {
-	# no /dev/zero for windows
-	let st2 = stat.stat('/dev/zero');
-	assert.eq(!st2.isReg(), true);
-	assert.eq(!st2.isDir(), true);
-	assert.eq(st2.isChr(), true);
-	assert.eq(!st2.isBlk(), true);
-	assert.eq(!st2.isFifo(), true);
-	assert.eq(!st2.isLnk(), true);
-	assert.eq(!st2.isSock(), true);
+    # no /dev/zero for windows
+    let st2 = stat.stat('/dev/zero');
+    assert.eq(!st2.isReg(), true);
+    assert.eq(!st2.isDir(), true);
+    assert.eq(st2.isChr(), true);
+    assert.eq(!st2.isBlk(), true);
+    assert.eq(!st2.isFifo(), true);
+    assert.eq(!st2.isLnk(), true);
+    assert.eq(!st2.isSock(), true);
 }

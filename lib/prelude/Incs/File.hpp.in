@@ -1,35 +1,35 @@
 enum WalkEntry
 {
-	FILES	= 1 << 0,
-	DIRS	= 1 << 1,
-	RECURSE = 1 << 2,
+    FILES   = 1 << 0,
+    DIRS    = 1 << 1,
+    RECURSE = 1 << 2,
 };
 
 void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr, VarVec *v,
-			Regex regex, size_t flags)
+                        Regex regex, size_t flags)
 {
-	String entry;
-	for(const auto &ent : std::filesystem::directory_iterator(dirstr)) {
-		if(ent.path() == "." || ent.path() == "..") continue;
-		entry.clear();
-		entry += ent.path().generic_string();
-		if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
-		   !std::regex_match(entry, regex))
-		{
-			continue;
-		}
-		if(ent.is_directory()) {
-			if(flags & WalkEntry::RECURSE) {
-				getEntriesInternal(vm, loc, entry, v, regex, flags);
-			} else if(flags & WalkEntry::DIRS) {
-				v->push(vm.makeVarWithRef<VarStr>(loc, entry));
-			}
-			continue;
-		}
-		if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
-			v->push(vm.makeVarWithRef<VarStr>(loc, entry));
-		}
-	}
+    String entry;
+    for(const auto &ent : std::filesystem::directory_iterator(dirstr)) {
+        if(ent.path() == "." || ent.path() == "..") continue;
+        entry.clear();
+        entry += ent.path().generic_string();
+        if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
+           !std::regex_match(entry, regex))
+        {
+            continue;
+        }
+        if(ent.is_directory()) {
+            if(flags & WalkEntry::RECURSE) {
+                getEntriesInternal(vm, loc, entry, v, regex, flags);
+            } else if(flags & WalkEntry::DIRS) {
+                v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+            }
+            continue;
+        }
+        if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
+            v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+        }
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,253 +37,250 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for file open mode, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	if(!args[3]->is<VarBool>()) {
-		vm.fail(loc, "expected bool argument for file should be closed, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &filename = as<VarStr>(args[1])->getVal();
-	const String &mode     = as<VarStr>(args[2])->getVal();
-	bool mustClose	       = as<VarBool>(args[3])->getVal();
-	FILE *file	       = fopen(filename.c_str(), mode.c_str());
-	if(!file) {
-		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
-		return nullptr;
-	}
-	return vm.makeVar<VarFile>(loc, file, mode, mustClose);
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarStr>()) {
+        vm.fail(loc,
+                "expected string argument for file open mode, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    if(!args[3]->is<VarBool>()) {
+        vm.fail(loc, "expected bool argument for file should be closed, found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &filename = as<VarStr>(args[1])->getVal();
+    const String &mode     = as<VarStr>(args[2])->getVal();
+    bool mustClose         = as<VarBool>(args[3])->getVal();
+    FILE *file             = fopen(filename.c_str(), mode.c_str());
+    if(!file) {
+        vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
+        return nullptr;
+    }
+    return vm.makeVar<VarFile>(loc, file, mode, mustClose);
 }
 
 Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for directory name, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected int argument "
-			"for walk mode, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	if(!args[3]->is<VarStr>()) {
-		vm.fail(
-		loc, "expected string argument for file regex, found: ", vm.getTypeName(args[3]));
-		return nullptr;
-	}
-	String dirstr = as<VarStr>(args[1])->getVal();
-	size_t flags  = as<VarInt>(args[2])->getVal();
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc,
+                "expected string argument for directory name, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected int argument "
+                "for walk mode, found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    if(!args[3]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for file regex, found: ", vm.getTypeName(args[3]));
+        return nullptr;
+    }
+    String dirstr = as<VarStr>(args[1])->getVal();
+    size_t flags  = as<VarInt>(args[2])->getVal();
 
-	if(dirstr.empty()) {
-		vm.fail(loc, "empty directory path provided");
-		return nullptr;
-	}
+    if(dirstr.empty()) {
+        vm.fail(loc, "empty directory path provided");
+        return nullptr;
+    }
 
-	const String &regexstr = as<VarStr>(args[3])->getVal();
-	Regex regex(regexstr);
+    const String &regexstr = as<VarStr>(args[3])->getVal();
+    Regex regex(regexstr);
 
-	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-	getEntriesInternal(vm, loc, dirstr, res, regex, flags);
-	return res;
+    VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
+    getEntriesInternal(vm, loc, dirstr, res, regex, flags);
+    return res;
 }
 
 Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	const String &path = as<VarStr>(args[1])->getVal();
-	return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    const String &path = as<VarStr>(args[1])->getVal();
+    return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
 }
 
 Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assn_args)
 {
-	VarFile *filev = as<VarFile>(args[0]);
-	if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
+    VarFile *filev = as<VarFile>(args[0]);
+    if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
 
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for file open mode, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &filename = as<VarStr>(args[1])->getVal();
-	const String &mode     = as<VarStr>(args[2])->getVal();
-	filev->getFile()       = fopen(filename.c_str(), mode.c_str());
-	if(!filev->getFile()) {
-		vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
-		filev->setMode("");
-		filev->setOwner(true);
-		return nullptr;
-	}
-	return args[0];
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarStr>()) {
+        vm.fail(loc,
+                "expected string argument for file open mode, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &filename = as<VarStr>(args[1])->getVal();
+    const String &mode     = as<VarStr>(args[2])->getVal();
+    filev->getFile()       = fopen(filename.c_str(), mode.c_str());
+    if(!filev->getFile()) {
+        vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
+        filev->setMode("");
+        filev->setOwner(true);
+        return nullptr;
+    }
+    return args[0];
 }
 
 Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	FILE *const file = as<VarFile>(args[0])->getFile();
-	char *lineptr	 = NULL;
-	size_t len	 = 0;
-	ssize_t read	 = 0;
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    char *lineptr    = NULL;
+    size_t len       = 0;
+    ssize_t read     = 0;
 
-	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-	while((read = getline(&lineptr, &len, file)) != -1) {
-		VarStr *s = vm.makeVarWithRef<VarStr>(loc, lineptr);
-		while(!s->getVal().empty() &&
-		      (s->getVal().back() == '\n' || s->getVal().back() == '\r'))
-		{
-			s->getVal().pop_back();
-		}
-		res->push(s);
-		free(lineptr);
-		lineptr = NULL;
-	}
-	if(lineptr) free(lineptr);
-	fseek(file, 0, SEEK_SET);
-	return res;
+    VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
+    while((read = getline(&lineptr, &len, file)) != -1) {
+        VarStr *s = vm.makeVarWithRef<VarStr>(loc, lineptr);
+        while(!s->getVal().empty() && (s->getVal().back() == '\n' || s->getVal().back() == '\r')) {
+            s->getVal().pop_back();
+        }
+        res->push(s);
+        free(lineptr);
+        lineptr = NULL;
+    }
+    if(lineptr) free(lineptr);
+    fseek(file, 0, SEEK_SET);
+    return res;
 }
 
 Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	FILE *const file = as<VarFile>(args[0])->getFile();
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected int argument for file seek position, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, "expected int argument for file seek origin, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	long pos   = as<VarInt>(args[1])->getVal();
-	int origin = as<VarInt>(args[2])->getVal();
-	return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected int argument for file seek position, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected int argument for file seek origin, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    long pos   = as<VarInt>(args[1])->getVal();
+    int origin = as<VarInt>(args[2])->getVal();
+    return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
 }
 
 Var *fileEachLine(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
+    return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
 }
 
 Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		      const StringMap<AssnArgData> &assn_args)
+                      const StringMap<AssnArgData> &assn_args)
 {
-	VarFileIterator *it = as<VarFileIterator>(args[0]);
-	VarStr *res	    = vm.makeVar<VarStr>(loc, "");
-	if(!it->next(res)) {
-		vm.unmakeVar(res);
-		return vm.getNil();
-	}
-	return res;
+    VarFileIterator *it = as<VarFileIterator>(args[0]);
+    VarStr *res         = vm.makeVar<VarStr>(loc, "");
+    if(!it->next(res)) {
+        vm.unmakeVar(res);
+        return vm.getNil();
+    }
+    return res;
 }
 
 Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assn_args)
 {
-	FILE *const file = as<VarFile>(args[0])->getFile();
-	char *lineptr	 = NULL;
-	size_t len	 = 0;
-	ssize_t read	 = 0;
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    char *lineptr    = NULL;
+    size_t len       = 0;
+    ssize_t read     = 0;
 
-	VarStr *res = vm.makeVar<VarStr>(loc, "");
-	while((read = getline(&lineptr, &len, file)) != -1) {
-		String tmp = lineptr;
-		res->getVal() += tmp;
-		free(lineptr);
-		lineptr = NULL;
-	}
-	if(lineptr) free(lineptr);
-	fseek(file, 0, SEEK_SET);
-	return res;
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    while((read = getline(&lineptr, &len, file)) != -1) {
+        String tmp = lineptr;
+        res->getVal() += tmp;
+        free(lineptr);
+        lineptr = NULL;
+    }
+    if(lineptr) free(lineptr);
+    fseek(file, 0, SEEK_SET);
+    return res;
 }
 
 Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assn_args)
 {
-	FILE *const file = as<VarFile>(args[0])->getFile();
+    FILE *const file = as<VarFile>(args[0])->getFile();
 
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for block begin location, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for block end location, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for block begin location, found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for block end location, found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
 
-	const String &beg = as<VarStr>(args[1])->getVal();
-	const String &end = as<VarStr>(args[2])->getVal();
+    const String &beg = as<VarStr>(args[1])->getVal();
+    const String &end = as<VarStr>(args[2])->getVal();
 
-	bool inside_block = false;
-	char *lineptr	  = NULL;
-	size_t len	  = 0;
-	ssize_t read	  = 0;
+    bool inside_block = false;
+    char *lineptr     = NULL;
+    size_t len        = 0;
+    ssize_t read      = 0;
 
-	StringRef line;
-	String block_content;
-	VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-	while((read = getline(&lineptr, &len, file)) != -1) {
-		line = lineptr;
-	begin_fetch:
-		if(line.empty()) continue;
-		if(!inside_block) {
-			size_t pos = line.find(beg);
-			if(pos == String::npos) continue;
-			inside_block = true;
-			if(pos + beg.size() > line.size()) continue;
-			else line = line.substr(pos + beg.size());
-			goto begin_fetch;
-		}
-		size_t pos = line.find(end);
-		if(pos == String::npos) {
-			block_content += line;
-			continue;
-		}
-		block_content += line.substr(0, pos);
-		if(pos + end.size() <= line.size()) line = line.substr(pos + end.size());
-		else line = "";
-		inside_block = false;
-		res->push(vm.makeVarWithRef<VarStr>(loc, block_content));
-		block_content.clear();
-		goto begin_fetch;
-	}
+    StringRef line;
+    String block_content;
+    VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
+    while((read = getline(&lineptr, &len, file)) != -1) {
+        line = lineptr;
+    begin_fetch:
+        if(line.empty()) continue;
+        if(!inside_block) {
+            size_t pos = line.find(beg);
+            if(pos == String::npos) continue;
+            inside_block = true;
+            if(pos + beg.size() > line.size()) continue;
+            else line = line.substr(pos + beg.size());
+            goto begin_fetch;
+        }
+        size_t pos = line.find(end);
+        if(pos == String::npos) {
+            block_content += line;
+            continue;
+        }
+        block_content += line.substr(0, pos);
+        if(pos + end.size() <= line.size()) line = line.substr(pos + end.size());
+        else line = "";
+        inside_block = false;
+        res->push(vm.makeVarWithRef<VarStr>(loc, block_content));
+        block_content.clear();
+        goto begin_fetch;
+    }
 
-	if(lineptr) free(lineptr);
-	fseek(file, 0, SEEK_SET);
+    if(lineptr) free(lineptr);
+    fseek(file, 0, SEEK_SET);
 
-	// this should actually never occur since block_content
-	// is always pushed back when end point is found
-	// if( !block_content.empty() ) {
-	// 	res->push(vm.makeVar<VarStr>(loc, block_content));
-	// }
-	assert(block_content.empty());
+    // this should actually never occur since block_content
+    // is always pushed back when end point is found
+    // if( !block_content.empty() ) {
+    //     res->push(vm.makeVar<VarStr>(loc, block_content));
+    // }
+    assert(block_content.empty());
 
-	return res;
+    return res;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,282 +291,273 @@ Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // equivalent to open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)
 Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc, "expected int argument for mode, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &path = as<VarStr>(args[1])->getVal();
-	int res		   = creat(path.c_str(), as<VarInt>(args[2])->getVal());
-	if(res < 0) {
-		vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
-		return nullptr;
-	}
-	return vm.makeVar<VarInt>(loc, res);
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc, "expected int argument for mode, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &path = as<VarStr>(args[1])->getVal();
+    int res            = creat(path.c_str(), as<VarInt>(args[2])->getVal());
+    if(res < 0) {
+        vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarInt>()) {
-		vm.fail(loc,
-			"expected int argument for open flags, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &path = as<VarStr>(args[1])->getVal();
-	int res		   = open(path.c_str(), as<VarInt>(args[2])->getVal());
-	if(res < 0) {
-		vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));
-		return nullptr;
-	}
-	return vm.makeVar<VarInt>(loc, res);
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarInt>()) {
+        vm.fail(loc, "expected int argument for open flags, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &path = as<VarStr>(args[1])->getVal();
+    int res            = open(path.c_str(), as<VarInt>(args[2])->getVal());
+    if(res < 0) {
+        vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(
-		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarBytebuffer>()) {
-		vm.fail(loc, "expected bytebuffer containing data to write, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
-	errno		  = 0;
-	ssize_t res	  = read(as<VarInt>(args[1])->getVal(), bb->getBuf(), bb->capacity());
-	if(res < 0 || errno != 0) {
-		vm.fail(loc, "failed to read from the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->getVal()),
-			"', error: ", strerror(errno));
-		return nullptr;
-	}
-	bb->setLen(res);
-	return vm.makeVar<VarInt>(loc, res);
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarBytebuffer>()) {
+        vm.fail(loc,
+                "expected bytebuffer containing data to write, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
+    errno             = 0;
+    ssize_t res       = read(as<VarInt>(args[1])->getVal(), bb->getBuf(), bb->capacity());
+    if(res < 0 || errno != 0) {
+        vm.fail(loc, "failed to read from the file descriptor: '",
+                std::to_string(as<VarInt>(args[1])->getVal()), "', error: ", strerror(errno));
+        return nullptr;
+    }
+    bb->setLen(res);
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(
-		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarBytebuffer>() && !args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected bytebuffer/string containing data to write, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const void *data = nullptr;
-	size_t count	 = 0;
-	errno		 = 0;
-	if(args[2]->is<VarBytebuffer>()) {
-		VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
-		data		  = bb->getBuf();
-		count		  = bb->getLen();
-	} else if(args[2]->is<VarStr>()) {
-		VarStr *s = as<VarStr>(args[2]);
-		data	  = s->getVal().data();
-		count	  = s->getVal().size();
-	}
-	ssize_t res = write(as<VarInt>(args[1])->getVal(), data, count);
-	if(res < 0 || errno != 0) {
-		vm.fail(loc, "failed to write to the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->getVal()),
-			"', error: ", strerror(errno));
-		return nullptr;
-	}
-	return vm.makeVar<VarInt>(loc, res);
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarBytebuffer>() && !args[2]->is<VarStr>()) {
+        vm.fail(loc, "expected bytebuffer/string containing data to write, found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const void *data = nullptr;
+    size_t count     = 0;
+    errno            = 0;
+    if(args[2]->is<VarBytebuffer>()) {
+        VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
+        data              = bb->getBuf();
+        count             = bb->getLen();
+    } else if(args[2]->is<VarStr>()) {
+        VarStr *s = as<VarStr>(args[2]);
+        data      = s->getVal().data();
+        count     = s->getVal().size();
+    }
+    ssize_t res = write(as<VarInt>(args[1])->getVal(), data, count);
+    if(res < 0 || errno != 0) {
+        vm.fail(loc, "failed to write to the file descriptor: '",
+                std::to_string(as<VarInt>(args[1])->getVal()), "', error: ", strerror(errno));
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(
-		loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	int res = close(as<VarInt>(args[1])->getVal());
-	if(res < 0) {
-		vm.fail(loc, "failed to close the file descriptor: '",
-			std::to_string(as<VarInt>(args[1])->getVal()),
-			"', error: ", strerror(errno));
-		return nullptr;
-	}
-	return vm.makeVar<VarInt>(loc, res);
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    int res = close(as<VarInt>(args[1])->getVal());
+    if(res < 0) {
+        vm.fail(loc, "failed to close the file descriptor: '",
+                std::to_string(as<VarInt>(args[1])->getVal()), "', error: ", strerror(errno));
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
 }
 
 Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc,
-			"expected string argument for source, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(
-		loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &src  = as<VarStr>(args[1])->getVal();
-	const String &dest = as<VarStr>(args[2])->getVal();
-	if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for source, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &src  = as<VarStr>(args[1])->getVal();
+    const String &dest = as<VarStr>(args[2])->getVal();
+    if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
 
-	StringRef parent = fs::parentDir(dest);
+    StringRef parent = fs::parentDir(dest);
 
-	if(!parent.empty()) {
-		std::error_code ec;
-		if(fs::mkdir(parent, ec)) {
-			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	std::error_code ec;
-	if(fs::copy(src, dest, ec)) {
-		vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
-		return nullptr;
-	}
-	return vm.getNil();
+    if(!parent.empty()) {
+        std::error_code ec;
+        if(fs::mkdir(parent, ec)) {
+            vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+            return nullptr;
+        }
+    }
+    std::error_code ec;
+    if(fs::copy(src, dest, ec)) {
+        vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+        return nullptr;
+    }
+    return vm.getNil();
 }
 
 Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	for(size_t i = 1; i < args.size(); ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for directory creation, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &path = as<VarStr>(args[i])->getVal();
-		if(path.empty()) continue;
-		std::error_code ec;
-		if(fs::mkdir(path, ec)) {
-			vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
+    for(size_t i = 1; i < args.size(); ++i) {
+        if(!args[i]->is<VarStr>()) {
+            vm.fail(loc, "expected string argument for directory creation, found: ",
+                    vm.getTypeName(args[i]));
+            return nullptr;
+        }
+        const String &path = as<VarStr>(args[i])->getVal();
+        if(path.empty()) continue;
+        std::error_code ec;
+        if(fs::mkdir(path, ec)) {
+            vm.fail(loc, "mkdir failed (", ec.value(), "): ", ec.message());
+            return nullptr;
+        }
+    }
+    return vm.getNil();
 }
 
 Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for mklink source, found: ",
-			vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for copy destination argument, found: ",
-			vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	StringRef src  = as<VarStr>(args[1])->getVal();
-	StringRef dest = as<VarStr>(args[2])->getVal();
-	std::error_code ec;
-	if(fs::mklink(src, dest, ec)) {
-		vm.fail(loc, "mklink failed (", ec.value(), "): ", ec.message());
-		return nullptr;
-	}
-	return vm.getNil();
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc,
+                "expected string argument for mklink source, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for copy destination argument, found: ",
+                vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    StringRef src  = as<VarStr>(args[1])->getVal();
+    StringRef dest = as<VarStr>(args[2])->getVal();
+    std::error_code ec;
+    if(fs::mklink(src, dest, ec)) {
+        vm.fail(loc, "mklink failed (", ec.value(), "): ", ec.message());
+        return nullptr;
+    }
+    return vm.getNil();
 }
 
 Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	for(size_t i = 1; i < args.size(); ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for path to delete, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &path = as<VarStr>(args[i])->getVal();
-		if(path.empty()) continue;
-		std::error_code ec;
-		if(fs::remove(path, ec)) {
-			vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
+    for(size_t i = 1; i < args.size(); ++i) {
+        if(!args[i]->is<VarStr>()) {
+            vm.fail(loc, "expected string argument for path to delete, found: ",
+                    vm.getTypeName(args[i]));
+            return nullptr;
+        }
+        const String &path = as<VarStr>(args[i])->getVal();
+        if(path.empty()) continue;
+        std::error_code ec;
+        if(fs::remove(path, ec)) {
+            vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
+            return nullptr;
+        }
+    }
+    return vm.getNil();
 }
 
 Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	// args must have: nullptr, [src]+, dest
-	if(args.size() < 3) {
-		vm.fail(loc, "Expected at least 2 arguments - source and destination, found: ",
-			args.size());
-		return nullptr;
-	}
-	Var *destArg = args[args.size() - 1];
-	if(!destArg->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for copy destination argument, found: ",
-			vm.getTypeName(destArg));
-		return nullptr;
-	}
-	const String &dest = as<VarStr>(destArg)->getVal();
-	for(size_t i = 1; i < args.size() - 1; ++i) {
-		if(!args[i]->is<VarStr>()) {
-			vm.fail(loc, "expected string argument for copy argument, found: ",
-				vm.getTypeName(args[i]));
-			return nullptr;
-		}
-		const String &src = as<VarStr>(args[i])->getVal();
-		if(src.empty()) continue;
-		std::error_code ec;
-		if(fs::copy(src, dest, ec)) {
-			vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
-			return nullptr;
-		}
-	}
-	return vm.getNil();
+    // args must have: nullptr, [src]+, dest
+    if(args.size() < 3) {
+        vm.fail(loc,
+                "Expected at least 2 arguments - source and destination, found: ", args.size());
+        return nullptr;
+    }
+    Var *destArg = args[args.size() - 1];
+    if(!destArg->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for copy destination argument, found: ",
+                vm.getTypeName(destArg));
+        return nullptr;
+    }
+    const String &dest = as<VarStr>(destArg)->getVal();
+    for(size_t i = 1; i < args.size() - 1; ++i) {
+        if(!args[i]->is<VarStr>()) {
+            vm.fail(loc,
+                    "expected string argument for copy argument, found: ", vm.getTypeName(args[i]));
+            return nullptr;
+        }
+        const String &src = as<VarStr>(args[i])->getVal();
+        if(src.empty()) continue;
+        std::error_code ec;
+        if(fs::copy(src, dest, ec)) {
+            vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
+            return nullptr;
+        }
+    }
+    return vm.getNil();
 }
 
 Var *fsMove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	if(!args[2]->is<VarStr>()) {
-		vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
-		return nullptr;
-	}
-	const String &from = as<VarStr>(args[1])->getVal().c_str();
-	const String &to   = as<VarStr>(args[2])->getVal().c_str();
-	std::error_code ec;
-	if(fs::rename(from, to, ec)) {
-		vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());
-		return nullptr;
-	}
-	return vm.getNil();
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    if(!args[2]->is<VarStr>()) {
+        vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
+        return nullptr;
+    }
+    const String &from = as<VarStr>(args[1])->getVal().c_str();
+    const String &to   = as<VarStr>(args[2])->getVal().c_str();
+    std::error_code ec;
+    if(fs::rename(from, to, ec)) {
+        vm.fail(loc, "rename failed (", ec.value(), "): ", ec.message());
+        return nullptr;
+    }
+    return vm.getNil();
 }

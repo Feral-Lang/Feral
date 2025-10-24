@@ -17,9 +17,9 @@ io.println('Writing full logs to: ', logFileName);
 
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) && !feral.args.find('--force') {
-	logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
-	io.println('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
-	feral.exit(0);
+    logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
+    io.println('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
+    feral.exit(0);
 }
 
 io.println('Bootstrapping Feral package manager ...');
@@ -32,8 +32,8 @@ let gitCmd = os.findExec('git.exe');
 let gitCmd = os.findExec('git');
 }
 if gitCmd == nil {
-	logging.fatal('Failed to find git.');
-	raise('Failed to find git. Please make sure it is installed and available in one of the PATHs');
+    logging.fatal('Failed to find git.');
+    raise('Failed to find git. Please make sure it is installed and available in one of the PATHs');
 }
 
 # Download and Install Feral's Pkg
@@ -41,7 +41,7 @@ if gitCmd == nil {
 # Download Pkg
 let pkgRepoPath = fs.pathFrom(feral.tempPath, 'Pkg');
 if fs.dirExists(pkgRepoPath) {
-	fs.remove(pkgRepoPath);
+    fs.remove(pkgRepoPath);
 }
 cmd.push(gitCmd, 'clone', '--depth=1', pkgRepo, '--branch', pkgVersion, pkgRepoPath, '^2>&1');
 logging.info('Fetching git repository for Pkg: ', cmd);
@@ -49,10 +49,10 @@ io.println('Downloading Pkg ...');
 cmdOutLines.clear();
 let ec = os.exec(cmd, out = cmdOutLines);
 for line in cmdOutLines.each() {
-	logging.trace('-- ', line);
+    logging.trace('-- ', line);
 }
 if ec != 0 || cmdOutLines.empty() {
-	raise('Failed to fetch Pkg git repository');
+    raise('Failed to fetch Pkg git repository');
 }
 logging.info('Git repository successfully retrieved');
 

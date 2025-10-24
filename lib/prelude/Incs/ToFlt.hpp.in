@@ -1,29 +1,29 @@
 Var *nilToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarFlt>(loc, 0.0);
+    return vm.makeVar<VarFlt>(loc, 0.0);
 }
 
 Var *boolToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->getVal() ? 1.0 : 0.0);
+    return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->getVal() ? 1.0 : 0.0);
 }
 
 Var *intToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getVal());
+    return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getVal());
 }
 
 Var *fltToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return args[0];
+    return args[0];
 }
 
 Var *strToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarFlt>(loc, std::stod(as<VarStr>(args[0])->getVal()));
+    return vm.makeVar<VarFlt>(loc, std::stod(as<VarStr>(args[0])->getVal()));
 }

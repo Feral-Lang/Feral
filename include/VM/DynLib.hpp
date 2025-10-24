@@ -9,20 +9,20 @@ namespace fer
 
 class DynLib
 {
-	StringMap<void *> handles;
+    StringMap<void *> handles;
 
-	DynLib();
-	~DynLib();
+    DynLib();
+    ~DynLib();
 
 public:
-	static DynLib &getInstance();
+    static DynLib &getInstance();
 
-	// ensure the source of filepath StringRef does NOT get deleted before DynLib instance
-	void *load(const char *filepath);
-	void unload(StringRef filepath);
-	void *get(StringRef filepath, const char *sym);
+    // ensure the source of filepath StringRef does NOT get deleted before DynLib instance
+    void *load(const char *filepath);
+    void unload(StringRef filepath);
+    void *get(StringRef filepath, const char *sym);
 
-	inline bool exists(StringRef filepath) { return handles.find(filepath) != handles.end(); }
+    inline bool exists(StringRef filepath) { return handles.find(filepath) != handles.end(); }
 };
 
 } // namespace fer

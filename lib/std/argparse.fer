@@ -3,13 +3,13 @@ let map = import('std/map');
 let vec = import('std/vec');
 
 let Arg = struct(
-	name = '',
-	help = '',
-	opts = vec.new(),
-	val = '',
-	reqd = false,
-	valReqd = false,
-	found = false
+    name = '',
+    help = '',
+    opts = vec.new(),
+    val = '',
+    reqd = false,
+    valReqd = false,
+    found = false
 );
 Arg.setTypeName('Arg');
 
@@ -20,10 +20,10 @@ let setReqd in Arg = fn(reqd) { self.reqd = reqd; return ref(self); };
 let setValReqd in Arg = fn(valReqd) { self.valReqd = valReqd; return ref(self); };
 let setFound in Arg = fn(found) { self.found = found; return ref(self); };
 let addOpts in Arg = fn(opts...) {
-	for o in opts.each() {
-		self.opts.push(o);
-	}
-	return ref(self);
+    for o in opts.each() {
+        self.opts.push(o);
+    }
+    return ref(self);
 };
 
 let getName in Arg = fn() { return self.name; };
@@ -42,148 +42,148 @@ let hasOpt in Arg = fn(opt) { return self.opts.find(opt); };
 # ArgParser type
 ###############################################################################################
 let ArgParser = struct(
-	argv = vec.new(refs = true),
-	argDefs = vec.new(refs = true),
-	lastParsedArg = '',
-	passThroughFrom = -1
+    argv = vec.new(refs = true),
+    argDefs = vec.new(refs = true),
+    lastParsedArg = '',
+    passThroughFrom = -1
 );
 ArgParser.setTypeName('ArgParser');
 
 let new = fn(args) {
-	let parser = ArgParser();
-	for a in args.each() {
-		parser.argv.push(a);
-	}
-	parser.addArg('help').addOpts('--help', '-h').setHelp('prints help information for program');
-	return ref(parser);
+    let parser = ArgParser();
+    for a in args.each() {
+        parser.argv.push(a);
+    }
+    parser.addArg('help').addOpts('--help', '-h').setHelp('prints help information for program');
+    return ref(parser);
 };
 
 let setLastArg in ArgParser = fn(name) { self.lastParsedArg = name; };
 
 let addArg in ArgParser = fn(name) {
-	let a = Arg(name = name);
-	self.argDefs.push(a);
-	return ref(a);
+    let a = Arg(name = name);
+    self.argDefs.push(a);
+    return ref(a);
 };
 
 let getArg in ArgParser = fn(name) {
-	for a in self.argDefs.each() {
-		if a.getName() == name { return ref(a); }
-	}
-	return nil;
+    for a in self.argDefs.each() {
+        if a.getName() == name { return ref(a); }
+    }
+    return nil;
 };
 
 let has in ArgParser = fn(name) {
-	for a in self.argDefs.each() {
-		if a.getName() != name { continue; }
-		return a.isFound();
-	}
-	return false;
+    for a in self.argDefs.each() {
+        if a.getName() != name { continue; }
+        return a.isFound();
+    }
+    return false;
 };
 
 let getValue in ArgParser = fn(name) {
-	for a in self.argDefs.each() {
-		if a.getName() != name { continue; }
-		return a.getVal();
-	}
-	return "";
+    for a in self.argDefs.each() {
+        if a.getName() != name { continue; }
+        return a.getVal();
+    }
+    return "";
 };
 
 let getPassthrough in ArgParser = fn() {
-	let res = vec.new(refs = true);
-	if self.passThroughFrom == -1 || self.passThroughFrom >= self.argv.len() { return res; }
-	for let i = self.passThroughFrom; i < self.argv.len(); ++i {
-		res.push(self.argv[i]);
-	}
-	return res;
+    let res = vec.new(refs = true);
+    if self.passThroughFrom == -1 || self.passThroughFrom >= self.argv.len() { return res; }
+    for let i = self.passThroughFrom; i < self.argv.len(); ++i {
+        res.push(self.argv[i]);
+    }
+    return res;
 };
 
 let parse in ArgParser = fn(from = 0) {
-	let expectKey = '';
-	let expectingValIdx = -1;
-	let stopParsing = false;
-	for let i = from; i < self.argv.len(); ++i {
-		let arg = ref(self.argv[i]);
-		let isOpt = !arg.empty() && arg[0] == '-';
-		if expectingValIdx != -1 {
-			if isOpt {
-				raise('expected value for arg: ', self.argDefs[expectingValIdx].getName(),
-				      ', but found option: ', arg);
-			}
-			self.argDefs[expectingValIdx].setVal(arg);
-			self.argDefs[expectingValIdx].setFound(true);
-			expectingValIdx = -1;
-			if stopParsing {
-				self.passThroughFrom = i + 1;
-				break;
-			}
-			continue;
-		}
-		if arg == '--' {
-			self.passThroughFrom = i + 1;
-			break;
-		}
-		let matched = -1;
-		for let j = 0; j < self.argDefs.len(); ++j {
-			let a = ref(self.argDefs[j]);
-			if isOpt && a.isPositional() { continue; }
-			if isOpt {
-				if !a.hasOpt(arg) { continue; }
-				if a.isFound() {
-					raise('found a repeated option: ', arg);
-				}
-				matched = j;
-				if a.requiresValue() { expectingValIdx = j; }
-				a.setFound(!a.requiresValue());
-				break;
-			}
-			if !a.isPositional() || a.isFound() { continue; }
-			if !a.isFound() {
-				a.setVal(arg);
-				a.setFound(true);
-				matched = j;
-				break;
-			}
-			raise('found a repeated argument: ', arg);
-		}
-		if matched == -1 {
-			raise('invalid argument: ', arg, ', use --help');
-		}
-		stopParsing = self.argDefs[matched].getName() == self.lastParsedArg;
-		if stopParsing && expectingValIdx == -1 {
-			self.passThroughFrom = i + 1;
-			break;
-		}
-	}
-	if expectingValIdx != -1 {
-		raise('expected value for argument: ', self.argDefs[expectingValIdx].getName(),
-		      ', but there are no more args to parse');
-	}
-	for a in self.argDefs.each() {
-		if !a.isFound() && a.isRequired() {
-			raise('required argument: ', a.getName(), ' was not found');
-		}
-	}
+    let expectKey = '';
+    let expectingValIdx = -1;
+    let stopParsing = false;
+    for let i = from; i < self.argv.len(); ++i {
+        let arg = ref(self.argv[i]);
+        let isOpt = !arg.empty() && arg[0] == '-';
+        if expectingValIdx != -1 {
+            if isOpt {
+                raise('expected value for arg: ', self.argDefs[expectingValIdx].getName(),
+                      ', but found option: ', arg);
+            }
+            self.argDefs[expectingValIdx].setVal(arg);
+            self.argDefs[expectingValIdx].setFound(true);
+            expectingValIdx = -1;
+            if stopParsing {
+                self.passThroughFrom = i + 1;
+                break;
+            }
+            continue;
+        }
+        if arg == '--' {
+            self.passThroughFrom = i + 1;
+            break;
+        }
+        let matched = -1;
+        for let j = 0; j < self.argDefs.len(); ++j {
+            let a = ref(self.argDefs[j]);
+            if isOpt && a.isPositional() { continue; }
+            if isOpt {
+                if !a.hasOpt(arg) { continue; }
+                if a.isFound() {
+                    raise('found a repeated option: ', arg);
+                }
+                matched = j;
+                if a.requiresValue() { expectingValIdx = j; }
+                a.setFound(!a.requiresValue());
+                break;
+            }
+            if !a.isPositional() || a.isFound() { continue; }
+            if !a.isFound() {
+                a.setVal(arg);
+                a.setFound(true);
+                matched = j;
+                break;
+            }
+            raise('found a repeated argument: ', arg);
+        }
+        if matched == -1 {
+            raise('invalid argument: ', arg, ', use --help');
+        }
+        stopParsing = self.argDefs[matched].getName() == self.lastParsedArg;
+        if stopParsing && expectingValIdx == -1 {
+            self.passThroughFrom = i + 1;
+            break;
+        }
+    }
+    if expectingValIdx != -1 {
+        raise('expected value for argument: ', self.argDefs[expectingValIdx].getName(),
+              ', but there are no more args to parse');
+    }
+    for a in self.argDefs.each() {
+        if !a.isFound() && a.isRequired() {
+            raise('required argument: ', a.getName(), ' was not found');
+        }
+    }
 };
 
 # file:  like io.stdout
 let printHelp in ArgParser = fn(file) {
-	io.fprint(file, 'Usage: <script>');
-	for a in self.argDefs.each() {
-		if !a.isPositional() { continue; }
-		io.fprint(file, ' ', a.getName());
-	}
-	io.fprint(file, ' <option args>\n\n');
-	for a in self.argDefs.each() {
-		let opts = ref(a.getOpts());
-		for let i = 0; i < opts.len(); ++i {
-			io.fprint(file, opts[i]);
-			if i != opts.len() - 1 { io.fprint(file, '/'); }
-		}
-		if opts.empty() { io.fprint(file, a.getName(), ' (positional)'); }
-		if a.isRequired() { io.fprint(file, ' (required)'); }
-		else { io.fprint(file, ' (optional)'); }
-		if a.requiresValue() { io.fprint(file, ' (requires value)'); }
-		io.fprint(file, '\t\t', a.getHelp(), '\n');
-	}
+    io.fprint(file, 'Usage: <script>');
+    for a in self.argDefs.each() {
+        if !a.isPositional() { continue; }
+        io.fprint(file, ' ', a.getName());
+    }
+    io.fprint(file, ' <option args>\n\n');
+    for a in self.argDefs.each() {
+        let opts = ref(a.getOpts());
+        for let i = 0; i < opts.len(); ++i {
+            io.fprint(file, opts[i]);
+            if i != opts.len() - 1 { io.fprint(file, '/'); }
+        }
+        if opts.empty() { io.fprint(file, a.getName(), ' (positional)'); }
+        if a.isRequired() { io.fprint(file, ' (required)'); }
+        else { io.fprint(file, ' (optional)'); }
+        if a.requiresValue() { io.fprint(file, ' (requires value)'); }
+        io.fprint(file, '\t\t', a.getHelp(), '\n');
+    }
 };

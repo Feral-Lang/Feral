@@ -8,9 +8,9 @@ let shouldStop = mproc.newAtomicBool(false);
 let q = vec.new();
 
 let test = fn() {
-	let i = 0;
-	while !shouldStop.get() { os.sleep(1); }
-	raise('Failed');
+    let i = 0;
+    while !shouldStop.get() { os.sleep(1); }
+    raise('Failed');
 };
 
 let t = mproc.newThread(name = 'test', test);

@@ -5,208 +5,208 @@
 let vec = import('std/vec');
 
 let buildTypes = enum(
-	.Alpha,
-	.Beta,
-	.Regular
+    .Alpha,
+    .Beta,
+    .Regular
 );
 
 let buildTypesToStr = fn(buildType) {
-	if buildType == buildTypes.Alpha { return 'alpha'; }
-	if buildType == buildTypes.Beta { return 'beta'; }
-	return ''; # empty string for regular.
+    if buildType == buildTypes.Alpha { return 'alpha'; }
+    if buildType == buildTypes.Beta { return 'beta'; }
+    return ''; # empty string for regular.
 };
 let buildTypeFromStr = fn(str) {
-	if str == 'alpha' { return buildTypes.Alpha; }
-	if str == 'beta' { return buildTypes.Beta; }
-	return buildTypes.Regular;
+    if str == 'alpha' { return buildTypes.Alpha; }
+    if str == 'beta' { return buildTypes.Beta; }
+    return buildTypes.Regular;
 };
 
 let SemVer = struct(
-	major = 0,
-	minor = 0,
-	patch = 0,
-	build = 0,
-	metadata = vec.new() # dot delimited strings
+    major = 0,
+    minor = 0,
+    patch = 0,
+    build = 0,
+    metadata = vec.new() # dot delimited strings
 );
 SemVer.setTypeName('SemVer');
 
 let new = fn(major = 0, minor = 0, patch = 0, build = buildTypes.Regular, metadata = '') {
-	if major == 0 && minor == 0 && patch == 0 {
-		raise('Invalid semver encountered with major, minor, and patch numbers being zero');
-	}
-	if metadata._type_() != VecTy {
-		return SemVer(major, minor, patch, build, metadata.str().split('.'));
-	}
-	return SemVer(major, minor, patch, build, metadata);
+    if major == 0 && minor == 0 && patch == 0 {
+        raise('Invalid semver encountered with major, minor, and patch numbers being zero');
+    }
+    if metadata._type_() != VecTy {
+        return SemVer(major, minor, patch, build, metadata.str().split('.'));
+    }
+    return SemVer(major, minor, patch, build, metadata);
 };
 
 let parse = fn(versionStr) {
-	let vers = SemVer();
-	let chars = versionStr.len();
-	let tmp = '';
-	let part = 0; # 0 => major, 1 => minor, 2 => patch, 3 => build, 4 => metadata
-	for let i = 0; i < chars; ++i {
-		if versionStr.isChAt(i, '.') && part < 2 {
-			if tmp.empty() {
-				raise('Invalid semver string: ', versionStr);
-			}
-			if part == 0 { vers.major = tmp.int(); }
-			elif part == 1 { vers.minor = tmp.int(); }
-			# part == 2 cannot be reached here since there is no dot after patch number
-			++part;
-			tmp.clear();
-			continue;
-		}
-		if versionStr.isChAt(i, '-') && part == 2 {
-			if tmp.empty() {
-				raise('Invalid semver string: ', versionStr);
-			}
-			vers.patch = tmp.int();
-			++part;
-			tmp.clear();
-			continue;
-		}
-		if versionStr.isChAt(i, '+') && (part == 2 || part == 3) {
-			if tmp.empty() {
-				raise('Invalid semver string: ', versionStr);
-			}
-			if part == 2 { vers.patch = tmp.int(); }
-			elif part == 3 { vers.build = buildTypeFromStr(tmp); }
-			part = 4;
-			tmp.clear();
-			continue;
-		}
-		tmp += versionStr[i];
-	}
-	if tmp.empty() {
-		raise('Invalid semver string: ', versionStr);
-	}
-	if part == 2 { vers.patch = tmp.int(); }
-	elif part == 3 { vers.build = buildTypeFromStr(tmp); }
-	elif part == 4 { vers.metadata = tmp.split('.'); }
-	if vers.major == 0 && vers.minor == 0 && vers.patch == 0 {
-		raise('Invalid semver: ', versionStr, ' with major, minor, and patch numbers being zero');
-	}
-	return vers;
+    let vers = SemVer();
+    let chars = versionStr.len();
+    let tmp = '';
+    let part = 0; # 0 => major, 1 => minor, 2 => patch, 3 => build, 4 => metadata
+    for let i = 0; i < chars; ++i {
+        if versionStr.isChAt(i, '.') && part < 2 {
+            if tmp.empty() {
+                raise('Invalid semver string: ', versionStr);
+            }
+            if part == 0 { vers.major = tmp.int(); }
+            elif part == 1 { vers.minor = tmp.int(); }
+            # part == 2 cannot be reached here since there is no dot after patch number
+            ++part;
+            tmp.clear();
+            continue;
+        }
+        if versionStr.isChAt(i, '-') && part == 2 {
+            if tmp.empty() {
+                raise('Invalid semver string: ', versionStr);
+            }
+            vers.patch = tmp.int();
+            ++part;
+            tmp.clear();
+            continue;
+        }
+        if versionStr.isChAt(i, '+') && (part == 2 || part == 3) {
+            if tmp.empty() {
+                raise('Invalid semver string: ', versionStr);
+            }
+            if part == 2 { vers.patch = tmp.int(); }
+            elif part == 3 { vers.build = buildTypeFromStr(tmp); }
+            part = 4;
+            tmp.clear();
+            continue;
+        }
+        tmp += versionStr[i];
+    }
+    if tmp.empty() {
+        raise('Invalid semver string: ', versionStr);
+    }
+    if part == 2 { vers.patch = tmp.int(); }
+    elif part == 3 { vers.build = buildTypeFromStr(tmp); }
+    elif part == 4 { vers.metadata = tmp.split('.'); }
+    if vers.major == 0 && vers.minor == 0 && vers.patch == 0 {
+        raise('Invalid semver: ', versionStr, ' with major, minor, and patch numbers being zero');
+    }
+    return vers;
 };
 
 let '==' in SemVer = fn(other) {
-	if other._typestr_() != 'SemVer' {
-		raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
-	}
-	if self.major != other.major || self.minor != other.minor || self.patch != other.patch || self.build != other.build {
-		return false;
-	}
-	return self.metadata == other.metadata;
+    if other._typestr_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
+    }
+    if self.major != other.major || self.minor != other.minor || self.patch != other.patch || self.build != other.build {
+        return false;
+    }
+    return self.metadata == other.metadata;
 };
 let '!=' in SemVer = fn(other) { return !(self == other); };
 
 let '>' in SemVer = fn(other) {
-	if other._typestr_() != 'SemVer' {
-		raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
-	}
-	if self.major > other.major { return true; }
-	if self.major < other.major { return false; }
-	# oooh, self.major == other.major
-	if self.minor > other.minor { return true; }
-	if self.minor < other.minor { return false; }
-	# okay, self.minor == other.minor
-	if self.patch > other.patch { return true; }
-	if self.patch < other.patch { return false; }
-	# interesting, version numbers are same, time to check the build
-	if self.build > other.build { return true; }
-	if self.build < other.build { return false; } # technically this line isn't needed, but... well, looks easier to understand.
-	# alright, time for metadata magic!
-	for let i = 0; i < self.metadata.len() && i < other.metadata.len(); ++i {
-		let lmeta = ref(self.metadata[i]);
-		let rmeta = ref(other.metadata[i]);
-		if isNum(lmeta) && isNum(rmeta) {
-			let lint = lmeta.int();
-			let rint = rmeta.int();
-			if lint > rint { return true; }
-			if lint < rint { return false; }
-			continue;
-		}
-		if lmeta > rmeta { return true; }
-		if lmeta < rmeta { return false; }
+    if other._typestr_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
+    }
+    if self.major > other.major { return true; }
+    if self.major < other.major { return false; }
+    # oooh, self.major == other.major
+    if self.minor > other.minor { return true; }
+    if self.minor < other.minor { return false; }
+    # okay, self.minor == other.minor
+    if self.patch > other.patch { return true; }
+    if self.patch < other.patch { return false; }
+    # interesting, version numbers are same, time to check the build
+    if self.build > other.build { return true; }
+    if self.build < other.build { return false; } # technically this line isn't needed, but... well, looks easier to understand.
+    # alright, time for metadata magic!
+    for let i = 0; i < self.metadata.len() && i < other.metadata.len(); ++i {
+        let lmeta = ref(self.metadata[i]);
+        let rmeta = ref(other.metadata[i]);
+        if isNum(lmeta) && isNum(rmeta) {
+            let lint = lmeta.int();
+            let rint = rmeta.int();
+            if lint > rint { return true; }
+            if lint < rint { return false; }
+            continue;
+        }
+        if lmeta > rmeta { return true; }
+        if lmeta < rmeta { return false; }
 
-	}
-	return self.metadata.len() > other.metadata.len();
+    }
+    return self.metadata.len() > other.metadata.len();
 };
 let '>=' in SemVer = fn(other) { return self > other || self == other; };
 
 let '<' in SemVer = fn(other) {
-	if other._typestr_() != 'SemVer' {
-		raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
-	}
-	if self.major > other.major { return false; }
-	if self.major < other.major { return true; }
-	# oooh, self.major == other.major
-	if self.minor > other.minor { return false; }
-	if self.minor < other.minor { return true; }
-	# okay, self.minor == other.minor
-	if self.patch > other.patch { return false; }
-	if self.patch < other.patch { return true; }
-	# interesting, version numbers are same, time to check the build
-	if self.build > other.build { return false; }
-	if self.build < other.build { return true; }
-	# alright, time for metadata magic!
-	for let i = 0; i < self.metadata.len() && i < other.metadata.len(); ++i {
-		let lmeta = ref(self.metadata[i]);
-		let rmeta = ref(other.metadata[i]);
-		if isNum(lmeta) && isNum(rmeta) {
-			let lint = lmeta.int();
-			let rint = rmeta.int();
-			if lint > rint { return false; }
-			if lint < rint { return true; }
-			continue;
-		}
-		if lmeta > rmeta { return false; }
-		if lmeta < rmeta { return true; }
+    if other._typestr_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typestr_());
+    }
+    if self.major > other.major { return false; }
+    if self.major < other.major { return true; }
+    # oooh, self.major == other.major
+    if self.minor > other.minor { return false; }
+    if self.minor < other.minor { return true; }
+    # okay, self.minor == other.minor
+    if self.patch > other.patch { return false; }
+    if self.patch < other.patch { return true; }
+    # interesting, version numbers are same, time to check the build
+    if self.build > other.build { return false; }
+    if self.build < other.build { return true; }
+    # alright, time for metadata magic!
+    for let i = 0; i < self.metadata.len() && i < other.metadata.len(); ++i {
+        let lmeta = ref(self.metadata[i]);
+        let rmeta = ref(other.metadata[i]);
+        if isNum(lmeta) && isNum(rmeta) {
+            let lint = lmeta.int();
+            let rint = rmeta.int();
+            if lint > rint { return false; }
+            if lint < rint { return true; }
+            continue;
+        }
+        if lmeta > rmeta { return false; }
+        if lmeta < rmeta { return true; }
 
-	}
-	return self.metadata.len() < other.metadata.len();
+    }
+    return self.metadata.len() < other.metadata.len();
 };
 let '<=' in SemVer = fn(other) { return self < other || self == other; };
 
 let str in SemVer = fn(colReset = '', colMajor = '', colMinor = '', colPatch = '', colBuild = '', colMeta = '') {
-	let res = colMajor;
-	res += self.major.str();
-	res += colReset;
-	res += '.';
-	res += colMinor;
-	res += self.minor.str();
-	res += colReset;
-	res += '.';
-	res += colPatch;
-	res += self.patch.str();
-	res += colReset;
-	if self.build != buildTypes.Regular {
-		res += '-';
-		res += colBuild;
-		res += buildTypesToStr(self.build);
-		res += colReset;
-	}
-	if !self.metadata.empty() {
-		res += '+';
-		for m in self.metadata.each() {
-			res += colMeta;
-			res += m;
-			res += colReset;
-			res += '.';
-		}
-		res.pop();
-	}
-	return res;
+    let res = colMajor;
+    res += self.major.str();
+    res += colReset;
+    res += '.';
+    res += colMinor;
+    res += self.minor.str();
+    res += colReset;
+    res += '.';
+    res += colPatch;
+    res += self.patch.str();
+    res += colReset;
+    if self.build != buildTypes.Regular {
+        res += '-';
+        res += colBuild;
+        res += buildTypesToStr(self.build);
+        res += colReset;
+    }
+    if !self.metadata.empty() {
+        res += '+';
+        for m in self.metadata.each() {
+            res += colMeta;
+            res += m;
+            res += colReset;
+            res += '.';
+        }
+        res.pop();
+    }
+    return res;
 };
 
 let isNum = fn(str) {
-	let len = str.len();
-	let zeroByt = '0'.byt();
-	let nineByt = '9'.byt();
-	for let i = 0; i < len; ++i {
-		let byt = str[i].byt();
-		if byt < zeroByt || byt > nineByt { return false; }
-	}
-	return true;
+    let len = str.len();
+    let zeroByt = '0'.byt();
+    let nineByt = '9'.byt();
+    for let i = 0; i < len; ++i {
+        let byt = str[i].byt();
+        if byt < zeroByt || byt > nineByt { return false; }
+    }
+    return true;
 };

@@ -3,11 +3,11 @@ let assert = import('std/assert');
 #let io = import('std/io');
 
 let facto = fn(num) {
-	let fact = 1;
-	for i in irange(num, 1, -1) {
-		fact *= i;
-	}
-	return fact;
+    let fact = 1;
+    for i in irange(num, 1, -1) {
+        fact *= i;
+    }
+    return fact;
 };
 
 #io.println('factorial of 5 is: ', facto(5));

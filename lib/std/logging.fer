@@ -4,37 +4,37 @@ let vec = import('std/vec');
 let time = import('std/time');
 
 let Levels = enum(
-	.FATAL,
-	.WARN,
-	.INFO,
-	.DEBUG,
-	.TRACE
+    .FATAL,
+    .WARN,
+    .INFO,
+    .DEBUG,
+    .TRACE
 );
 
 # red, yellow, magenta, cyan, green
 # param type: Level (int)
 let lvlColToStr = fn(lvl) {
-	if lvl == Levels.FATAL { return '{r}'; }
-	if lvl == Levels.WARN { return '{y}'; }
-	if lvl == Levels.INFO { return '{g}'; }
-	if lvl == Levels.DEBUG { return '{c}'; }
-	if lvl == Levels.TRACE { return '{m}'; }
-	return '';
+    if lvl == Levels.FATAL { return '{r}'; }
+    if lvl == Levels.WARN { return '{y}'; }
+    if lvl == Levels.INFO { return '{g}'; }
+    if lvl == Levels.DEBUG { return '{c}'; }
+    if lvl == Levels.TRACE { return '{m}'; }
+    return '';
 };
 
 let lvlToStr = fn(lvl) {
-	if lvl == Levels.FATAL { return 'FATAL'; }
-	if lvl == Levels.WARN { return 'WARN'; }
-	if lvl == Levels.INFO { return 'INFO'; }
-	if lvl == Levels.DEBUG { return 'DEBUG'; }
-	if lvl == Levels.TRACE { return 'TRACE'; }
-	return 'INVALID';
+    if lvl == Levels.FATAL { return 'FATAL'; }
+    if lvl == Levels.WARN { return 'WARN'; }
+    if lvl == Levels.INFO { return 'INFO'; }
+    if lvl == Levels.DEBUG { return 'DEBUG'; }
+    if lvl == Levels.TRACE { return 'TRACE'; }
+    return 'INVALID';
 };
 
 let FileInfo = struct(
-	f = nil,
-	level = Levels.WARN,
-	withCol = true
+    f = nil,
+    level = Levels.WARN,
+    withCol = true
 );
 FileInfo.setTypeName('FileInfo');
 
@@ -42,28 +42,28 @@ FileInfo.setTypeName('FileInfo');
 let targets = vec.new(refs = true);
 
 let addTarget = fn(target, level = Levels.WARN, withCol = true) {
-	targets.push(FileInfo(target, level, withCol));
+    targets.push(FileInfo(target, level, withCol));
 };
 
 let addTargetByName = fn(name, level = Levels.WARN, withCol = true, mustClose = true) {
-	let file = fs.fopen(name, 'w+', mustClose);
-	targets.push(FileInfo(ref(file), level, withCol));
+    let file = fs.fopen(name, 'w+', mustClose);
+    targets.push(FileInfo(ref(file), level, withCol));
 };
 
 let log = fn(lvl, data...) {
-	let lvlCol = lvlColToStr(lvl);
-	let lvlStr = lvlToStr(lvl);
-	let timeStr = time.format(time.now());
-	let prefix = ''.append('[', timeStr, '][', lvlStr, ']: ');
-	let prefixCol = ''.append('{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ');
-	for t in targets.each() {
-		if t.level < lvl { continue; }
-		if t.withCol {
-			io.fcprintln(t.f, prefixCol, data...);
-		} else {
-			io.fprintln(t.f, prefix, data...);
-		}
-	}
+    let lvlCol = lvlColToStr(lvl);
+    let lvlStr = lvlToStr(lvl);
+    let timeStr = time.format(time.now());
+    let prefix = ''.append('[', timeStr, '][', lvlStr, ']: ');
+    let prefixCol = ''.append('{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ');
+    for t in targets.each() {
+        if t.level < lvl { continue; }
+        if t.withCol {
+            io.fcprintln(t.f, prefixCol, data...);
+        } else {
+            io.fprintln(t.f, prefix, data...);
+        }
+    }
 };
 
 let fatal = fn(data...) { log(Levels.FATAL, data...); };

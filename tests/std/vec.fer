@@ -24,7 +24,7 @@ assert.eq(v, vec.new(2, 3, 4, 5));
 let v2 = vec.new();
 
 for e in v.each() {
-	v2.push(e);
+    v2.push(e);
 }
 assert.eq(v, v2);
 
@@ -34,7 +34,7 @@ assert.eq(slice, vec.new(3, 4));
 let v3 = vec.new();
 v.push('string');
 for e in v.each() {
-	v3.push(e);
+    v3.push(e);
 }
 v.str();
 

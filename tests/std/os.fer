@@ -21,9 +21,9 @@ os.name;
 
 let cwd = os.getCWD();
 if os.name == 'windows' {
-	os.setCWD('C:\\');
+    os.setCWD('C:\\');
 } else {
-	os.setCWD('/');
+    os.setCWD('/');
 }
 assert.ne(os.getCWD(), cwd);
 os.setCWD(cwd);
@@ -31,9 +31,9 @@ assert.eq(os.getCWD(), cwd);
 
 # len, 0 => not found
 if os.name == 'windows' {
-	assert.gt(os.findExec('ipconfig.exe').len(), 0);
+    assert.gt(os.findExec('ipconfig.exe').len(), 0);
 } else {
-	assert.gt(os.findExec('ls').len(), 0);
+    assert.gt(os.findExec('ls').len(), 0);
 }
 assert.eq(os.findExec('randomword'), nil);
 

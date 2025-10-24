@@ -8,42 +8,42 @@ let len = prog.data.len();
 
 # remove irrelevant characters from data
 for let i = 0; i < len; ++i {
-	if !prog.data.isChAt(i, '><+-.,[]') {
-		prog.data.erase(i);
-		--i;
-		--len;
-	}
+    if !prog.data.isChAt(i, '><+-.,[]') {
+        prog.data.erase(i);
+        --i;
+        --len;
+    }
 }
 
 # optimize the jumps
 let jmp_map = map.new();
 for let i = 0; i < len; ++i {
-	if jmp_map.find(i) { continue; }
-	if prog.data[i] == '[' {
-		let j = i;
-		let depth = 0;
-		while j < len {
-			if prog.data[j] == '[' { ++depth; }
-			elif prog.data[j] == ']' { --depth; }
-			if depth == 0 { break; }
-			++j;
-		}
-		if j == len { raise('no forward jump position for [ at index: ' + i.str()); }
-		jmp_map.insert(i, j);
-		jmp_map.insert(j, i);
-	} elif prog.data[i] == ']' {
-		let j = i;
-		let depth = 0;
-		while j >= 0 {
-			if prog.data[j] == ']' { --depth; }
-			if prog.data[j] == '[' { ++depth; }
-			if depth == 0 { break; }
-			--j;
-		}
-		if j < 0 { raise('no backward jump position for ] at index: ' + i.str()); }
-		jmp_map.insert(i, j);
-		jmp_map.insert(j, i);
-	}
+    if jmp_map.find(i) { continue; }
+    if prog.data[i] == '[' {
+        let j = i;
+        let depth = 0;
+        while j < len {
+            if prog.data[j] == '[' { ++depth; }
+            elif prog.data[j] == ']' { --depth; }
+            if depth == 0 { break; }
+            ++j;
+        }
+        if j == len { raise('no forward jump position for [ at index: ' + i.str()); }
+        jmp_map.insert(i, j);
+        jmp_map.insert(j, i);
+    } elif prog.data[i] == ']' {
+        let j = i;
+        let depth = 0;
+        while j >= 0 {
+            if prog.data[j] == ']' { --depth; }
+            if prog.data[j] == '[' { ++depth; }
+            if depth == 0 { break; }
+            --j;
+        }
+        if j < 0 { raise('no backward jump position for ] at index: ' + i.str()); }
+        jmp_map.insert(i, j);
+        jmp_map.insert(j, i);
+    }
 }
 
 # initialize data array to single element
@@ -53,41 +53,41 @@ let data = vec.new(0);
 let data_ptr = 0;
 
 for let i = 0; i < len; ++i {
-	#io.println(i, '\t', prog.data[i], '\t', data);
-	if prog.data[i] == '>' {
-		if data_ptr >= DATA_UPPER_LIMIT {
-			io.println('went above upper limit of data pointer (',
-				   data.len(), ') at character position: ', i);
-			feral.exit(1);
-		}
-		++data_ptr;
-		if data_ptr >= data.len() {
-			data.push(0);
-		}
-	} elif prog.data[i] == '<' {
-		if data_ptr <= 0 {
-			io.println('went below lower limit of data pointer (',
-				   0, ') at character position: ', i);
-			feral.exit(1);
-		}
-		--data_ptr;
-	} elif prog.data[i] == '+' {
-		++data[data_ptr];
-	} elif prog.data[i] == '-' {
-		--data[data_ptr];
-	} elif prog.data[i] == '.' {
-		if data[data_ptr] == 0 {
-			io.print('(nil)');
-		} else {
-			io.print(data[data_ptr].chr());
-		}
-	} elif prog.data[i] == ',' {
-		data[data_ptr] = io.scan().byt();
-	} elif prog.data[i] == '[' {
-		if data[data_ptr] != 0 { continue; }
-		i = jmp_map[i];
-	} elif prog.data[i] == ']' {
-		if data[data_ptr] == 0 { continue; }
-		i = jmp_map[i];
-	}
+    #io.println(i, '\t', prog.data[i], '\t', data);
+    if prog.data[i] == '>' {
+        if data_ptr >= DATA_UPPER_LIMIT {
+            io.println('went above upper limit of data pointer (',
+                   data.len(), ') at character position: ', i);
+            feral.exit(1);
+        }
+        ++data_ptr;
+        if data_ptr >= data.len() {
+            data.push(0);
+        }
+    } elif prog.data[i] == '<' {
+        if data_ptr <= 0 {
+            io.println('went below lower limit of data pointer (',
+                   0, ') at character position: ', i);
+            feral.exit(1);
+        }
+        --data_ptr;
+    } elif prog.data[i] == '+' {
+        ++data[data_ptr];
+    } elif prog.data[i] == '-' {
+        --data[data_ptr];
+    } elif prog.data[i] == '.' {
+        if data[data_ptr] == 0 {
+            io.print('(nil)');
+        } else {
+            io.print(data[data_ptr].chr());
+        }
+    } elif prog.data[i] == ',' {
+        data[data_ptr] = io.scan().byt();
+    } elif prog.data[i] == '[' {
+        if data[data_ptr] != 0 { continue; }
+        i = jmp_map[i];
+    } elif prog.data[i] == ']' {
+        if data[data_ptr] == 0 { continue; }
+        i = jmp_map[i];
+    }
 }

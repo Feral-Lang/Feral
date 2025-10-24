@@ -6,24 +6,24 @@ let node_t = struct(d = 0, next = nil);
 let list_t = struct(head = nil);
 
 let add in list_t = fn(data) {
-	if self.head == nil {
-		let head in self = node_t(d = data);
-		return;
-	}
-	let iter = ptr.new(self.head);
-	while iter.get().next != nil {
-		iter.set(iter.get().next);
-	}
-	let next in iter.get() = node_t(d = data);
+    if self.head == nil {
+        let head in self = node_t(d = data);
+        return;
+    }
+    let iter = ptr.new(self.head);
+    while iter.get().next != nil {
+        iter.set(iter.get().next);
+    }
+    let next in iter.get() = node_t(d = data);
 };
 
 let disp in list_t = fn() {
-	if self.head == nil { return; }
-	let iter = ptr.new(self.head);
-	while iter.get() != nil {
-		io.println(iter.get().d);
-		iter.set(iter.get().next);
-	}
+    if self.head == nil { return; }
+    let iter = ptr.new(self.head);
+    while iter.get() != nil {
+        io.println(iter.get().d);
+        iter.set(iter.get().next);
+    }
 };
 
 let l = list_t();

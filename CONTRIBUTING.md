@@ -21,7 +21,7 @@ void func( const char c, std::map< std::string, std::string > & res, int a, cons
 It's better to write it as:
 ```cpp
 void func( const char c, std::map< std::string, std::string > & res,
-	   int a, const std::vector< int > & b )
+       int a, const std::vector< int > & b )
 { ... }
 ```
 
@@ -50,25 +50,25 @@ For example,
 ```cpp
 class A
 {
-	int a;
+    int a;
 public:
-	int get_a() const;
+    int get_a() const;
 }
 ```
 4. Same applies for switch cases and goto labels - the cases and labels are at the indentation level of the switch statement and parent block of the goto label respectively. For example,
 ```cpp
 int func()
 {
-	goto label;
+    goto label;
 label:
-	some_code();
+    some_code();
 }
 
 switch( x ) {
 case 'a':
-	func_a();
+    func_a();
 case 'b':
-	func_b();
+    func_b();
 }
 ```
 
@@ -80,7 +80,7 @@ For example,
 ```py
 let io = import('std/io');
 let func = fn(a) {
-	println(a);
+    println(a);
 }
 ```
 2. All the Feral test scripts (in `tests/` directory) should have a comment at the top describing their intent.

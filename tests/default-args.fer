@@ -1,9 +1,9 @@
 let assert = import('std/assert');
 
 let x = fn(a, x = 10, y = 20) {
-	assert.eq(a, 100);
-	assert.eq(x, 200);
-	assert.eq(y, 20);
+    assert.eq(a, 100);
+    assert.eq(x, 200);
+    assert.eq(y, 20);
 };
 
 x(100, 200);

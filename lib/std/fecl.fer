@@ -7,17 +7,17 @@ let vec = import('std/vec');
 ###################################################################################################
 
 let loads = fn(data) {
-	let toks = Tokenize(data);
-	return Parse(toks, toks.len());
+    let toks = Tokenize(data);
+    return Parse(toks, toks.len());
 };
 
 let dumps = fn(obj, indentLevel = -1, indentWith = ' ') {
-	let res = obj.feclString(indentLevel, indentWith, true);
-	if res.empty() {
-		raise('type ' + obj._typestr_() + ' does not implement FeCL serialization');
-	}
-	res.trim();
-	return res;
+    let res = obj.feclString(indentLevel, indentWith, true);
+    if res.empty() {
+        raise('type ' + obj._typestr_() + ' does not implement FeCL serialization');
+    }
+    res.trim();
+    return res;
 };
 
 ###################################################################################################
@@ -25,39 +25,39 @@ let dumps = fn(obj, indentLevel = -1, indentWith = ' ') {
 ###################################################################################################
 
 let TokType = enum(
-	.INVALID,
+    .INVALID,
 
-	.INT,
-	.FLT,
-	.STR,
-	.IDEN,
+    .INT,
+    .FLT,
+    .STR,
+    .IDEN,
 
-	.ASSN,
-	.COLS, # semicolon
-	.COMMA,
+    .ASSN,
+    .COLS, # semicolon
+    .COMMA,
 
-	.LBRACE,
-	.RBRACE,
-	.LBRACK,
-	.RBRACK
+    .LBRACE,
+    .RBRACE,
+    .LBRACK,
+    .RBRACK
 );
 
 let TokStr = vec.new(
-	'invalid',
+    'invalid',
 
-	'int',
-	'float',
-	'string',
-	'identifier',
+    'int',
+    'float',
+    'string',
+    'identifier',
 
-	'=',
-	';',
-	',',
+    '=',
+    ';',
+    ',',
 
-	'{',
-	'}',
-	'[',
-	']'
+    '{',
+    '}',
+    '[',
+    ']'
 );
 
 ###################################################################################################
@@ -65,55 +65,55 @@ let TokStr = vec.new(
 ###################################################################################################
 
 let Tok = struct(
-	type = 0, # one of TokType
-	data = ''
+    type = 0, # one of TokType
+    data = ''
 );
 Tok.setTypeName('Tok');
 
 let setType in Tok = fn(type) {
-	self.type = type;
+    self.type = type;
 };
 
 let setData in Tok = fn(data) {
-	self.data = data;
+    self.data = data;
 };
 
 let isType in Tok = fn(type) { return self.type == type; };
 
 let str in Tok = fn() {
-	let res = '<';
-	res += TokStr[self.type];
-	res += ': ';
-	res += self.data;
-	res += '>';
-	return res;
+    let res = '<';
+    res += TokStr[self.type];
+    res += ': ';
+    res += self.data;
+    res += '>';
+    return res;
 };
 
 let Toks = struct(
-	toks = vec.new(),
-	invalid = Tok(TokType.INVALID)
+    toks = vec.new(),
+    invalid = Tok(TokType.INVALID)
 );
 Toks.setTypeName('Toks');
 
 let push in Toks = fn(data) {
-	self.toks.push(data);
+    self.toks.push(data);
 };
 
 let len in Toks = fn() { return self.toks.len(); };
 
 let getData in Toks = fn(idx) {
-	if idx >= self.toks.len() { return self.invalid.data; }
-	return self.toks[idx].data;
+    if idx >= self.toks.len() { return self.invalid.data; }
+    return self.toks[idx].data;
 };
 
 let getType in Toks = fn(idx) {
-	if idx >= self.toks.len() { return TokType.INVALID; }
-	return self.toks[idx].type;
+    if idx >= self.toks.len() { return TokType.INVALID; }
+    return self.toks[idx].type;
 };
 
 let get in Toks = fn(idx) {
-	if idx >= self.toks.len() { return self.invalid; }
-	return self.toks[idx];
+    if idx >= self.toks.len() { return self.invalid; }
+    return self.toks[idx];
 };
 
 ###################################################################################################
@@ -121,100 +121,100 @@ let get in Toks = fn(idx) {
 ###################################################################################################
 
 let Tokenize = fn(data) {
-	let toks = Toks();
-	let len = data.len();
-	let comment = false;
-	for let i = 0; i < len; ++i {
-		if comment {
-			if data[i] == '\n' { comment = false; }
-			continue;
-		}
-		if data[i] == '\'' || data[i] == '"' {
-			let s = GetConstStr(data, i, len);
-			toks.push(Tok(TokType.STR, s));
-			continue;
-		}
-		if data.isChAt(i, '\n\t ') { continue; }
-		if data[i] == '=' { toks.push(Tok(TokType.ASSN)); continue; }
-		if data[i] == ';' { toks.push(Tok(TokType.COLS)); continue; }
-		if data[i] == ',' { toks.push(Tok(TokType.COMMA)); continue; }
-		if data[i] == '[' { toks.push(Tok(TokType.LBRACK)); continue; }
-		if data[i] == ']' { toks.push(Tok(TokType.RBRACK)); continue; }
-		if data[i] == '{' { toks.push(Tok(TokType.LBRACE)); continue; }
-		if data[i] == '}' { toks.push(Tok(TokType.RBRACE)); continue; }
-		if data[i] == '-' || data[i].isDigit() {
-			let intflt = false; # false => int
-			let num = '';
-			if data[i] == '-' { num += data[i]; ++i; }
-			num += GetNum(data, intflt, i, len);
-			if intflt { toks.push(Tok(TokType.FLT, num)); }
-			else { toks.push(Tok(TokType.INT, num)); }
-			continue;
-		}
-		if data[i].isAlpha() || data[i] == '_' {
-			let iden = GetIden(data, i, len);
-			toks.push(Tok(TokType.IDEN, iden));
-			continue;
-		}
-		if data[i] == '#' {
-			comment = true;
-			continue;
-		}
-		raise('invalid character encountered: ' + data[i]);
-	}
-	return toks;
+    let toks = Toks();
+    let len = data.len();
+    let comment = false;
+    for let i = 0; i < len; ++i {
+        if comment {
+            if data[i] == '\n' { comment = false; }
+            continue;
+        }
+        if data[i] == '\'' || data[i] == '"' {
+            let s = GetConstStr(data, i, len);
+            toks.push(Tok(TokType.STR, s));
+            continue;
+        }
+        if data.isChAt(i, '\n\t ') { continue; }
+        if data[i] == '=' { toks.push(Tok(TokType.ASSN)); continue; }
+        if data[i] == ';' { toks.push(Tok(TokType.COLS)); continue; }
+        if data[i] == ',' { toks.push(Tok(TokType.COMMA)); continue; }
+        if data[i] == '[' { toks.push(Tok(TokType.LBRACK)); continue; }
+        if data[i] == ']' { toks.push(Tok(TokType.RBRACK)); continue; }
+        if data[i] == '{' { toks.push(Tok(TokType.LBRACE)); continue; }
+        if data[i] == '}' { toks.push(Tok(TokType.RBRACE)); continue; }
+        if data[i] == '-' || data[i].isDigit() {
+            let intflt = false; # false => int
+            let num = '';
+            if data[i] == '-' { num += data[i]; ++i; }
+            num += GetNum(data, intflt, i, len);
+            if intflt { toks.push(Tok(TokType.FLT, num)); }
+            else { toks.push(Tok(TokType.INT, num)); }
+            continue;
+        }
+        if data[i].isAlpha() || data[i] == '_' {
+            let iden = GetIden(data, i, len);
+            toks.push(Tok(TokType.IDEN, iden));
+            continue;
+        }
+        if data[i] == '#' {
+            comment = true;
+            continue;
+        }
+        raise('invalid character encountered: ' + data[i]);
+    }
+    return toks;
 };
 
 let GetConstStr = fn(data, i, end) {
-	let start = data[i++];
-	let res = '';
-	let found = false;
-	let cont_backslash = 0;
-	while i < end {
-		if data[i] == '\\' {
-			++cont_backslash;
-			res += data[i++];
-			continue;
-		}
-		if data[i] == start && cont_backslash % 2 == 0 {
-			found = true;
-			break;
-		}
-		res += data[i++];
-		cont_backslash = 0;
-	}
-	if !found {
-		raise('invalid FeCL: no end quotes for data near: ' + res);
-	}
-	# i is now at end quote
-	return res;
+    let start = data[i++];
+    let res = '';
+    let found = false;
+    let cont_backslash = 0;
+    while i < end {
+        if data[i] == '\\' {
+            ++cont_backslash;
+            res += data[i++];
+            continue;
+        }
+        if data[i] == start && cont_backslash % 2 == 0 {
+            found = true;
+            break;
+        }
+        res += data[i++];
+        cont_backslash = 0;
+    }
+    if !found {
+        raise('invalid FeCL: no end quotes for data near: ' + res);
+    }
+    # i is now at end quote
+    return res;
 };
 
 let GetNum = fn(data, intflt, i, end) {
-	let res = '';
-	while i < end {
-		let ch = data[i];
-		if (ch < '0' || ch > '9') && ch != '.' { break; }
-		if ch == '.' {
-			if intflt {
-				raise('invalid FeCL: multiple dots in a number is not possible, near: ' + res);
-			}
-			intflt = true;
-		}
-		res += ch; ++i;
-	}
-	--i;
-	return res;
+    let res = '';
+    while i < end {
+        let ch = data[i];
+        if (ch < '0' || ch > '9') && ch != '.' { break; }
+        if ch == '.' {
+            if intflt {
+                raise('invalid FeCL: multiple dots in a number is not possible, near: ' + res);
+            }
+            intflt = true;
+        }
+        res += ch; ++i;
+    }
+    --i;
+    return res;
 };
 
 let GetIden = fn(data, i, end) {
-	let res = '';
-	while i < end {
-		let ch = data[i];
-		if !ch.isAlpha() && !ch.isDigit() && ch != '_' && ch != '-' { break; }
-		res += ch; ++i;
-	}
-	return res;
+    let res = '';
+    while i < end {
+        let ch = data[i];
+        if !ch.isAlpha() && !ch.isDigit() && ch != '_' && ch != '-' { break; }
+        res += ch; ++i;
+    }
+    return res;
 };
 
 ###################################################################################################
@@ -222,100 +222,100 @@ let GetIden = fn(data, i, end) {
 ###################################################################################################
 
 let Parse = fn(toks, sz, i = 0) {
-	let m = map.new();
-	while i < sz {
-		expect2(toks, sz, i, TokType.IDEN, TokType.STR);
-		let var = toks.getData(i);
-		++i;
-		expect(toks, sz, i, TokType.ASSN);
-		++i;
-		let val = ParseInternal(toks, sz, i);
-		++i;
-		expect(toks, sz, i, TokType.COLS);
-		++i;
-		m.insert(var, val);
-	}
-	return m;
+    let m = map.new();
+    while i < sz {
+        expect2(toks, sz, i, TokType.IDEN, TokType.STR);
+        let var = toks.getData(i);
+        ++i;
+        expect(toks, sz, i, TokType.ASSN);
+        ++i;
+        let val = ParseInternal(toks, sz, i);
+        ++i;
+        expect(toks, sz, i, TokType.COLS);
+        ++i;
+        m.insert(var, val);
+    }
+    return m;
 };
 
 let ParseInternal = fn(toks, sz, i) {
-	if toks.getType(i) == TokType.LBRACE {
-		++i;
-		let m = map.new();
-		if toks.getType(i) == TokType.RBRACE {
-			return m;
-		}
-		expect2(toks, sz, i, TokType.IDEN, TokType.STR);
-		while toks.getType(i) == TokType.IDEN || toks.getType(i) == TokType.STR {
-			let var = toks.getData(i);
-			++i;
-			expect(toks, sz, i, TokType.ASSN);
-			++i;
-			let val = ParseInternal(toks, sz, i);
-			++i;
-			expect(toks, sz, i, TokType.COLS);
-			++i;
-			m.insert(var, val);
-		}
-		expect(toks, sz, i, TokType.RBRACE);
-		return m;
-	}
-	if toks.getType(i) == TokType.LBRACK {
-		++i;
-		let v = vec.new();
-		if toks.getType(i) == TokType.RBRACK {
-			return v;
-		}
-		while true {
-			let val = ParseInternal(toks, sz, i);
-			++i;
-			v.push(val);
-			if toks.getType(i) == TokType.COMMA {
-				++i;
-				continue;
-			}
-			expect(toks, sz, i, TokType.RBRACK);
-			break;
-		}
-		return v;
-	}
-	if toks.getType(i) == TokType.STR { return toks.getData(i); }
-	if toks.getType(i) == TokType.INT { return toks.getData(i).int(); }
-	if toks.getType(i) == TokType.FLT { return toks.getData(i).flt(); }
+    if toks.getType(i) == TokType.LBRACE {
+        ++i;
+        let m = map.new();
+        if toks.getType(i) == TokType.RBRACE {
+            return m;
+        }
+        expect2(toks, sz, i, TokType.IDEN, TokType.STR);
+        while toks.getType(i) == TokType.IDEN || toks.getType(i) == TokType.STR {
+            let var = toks.getData(i);
+            ++i;
+            expect(toks, sz, i, TokType.ASSN);
+            ++i;
+            let val = ParseInternal(toks, sz, i);
+            ++i;
+            expect(toks, sz, i, TokType.COLS);
+            ++i;
+            m.insert(var, val);
+        }
+        expect(toks, sz, i, TokType.RBRACE);
+        return m;
+    }
+    if toks.getType(i) == TokType.LBRACK {
+        ++i;
+        let v = vec.new();
+        if toks.getType(i) == TokType.RBRACK {
+            return v;
+        }
+        while true {
+            let val = ParseInternal(toks, sz, i);
+            ++i;
+            v.push(val);
+            if toks.getType(i) == TokType.COMMA {
+                ++i;
+                continue;
+            }
+            expect(toks, sz, i, TokType.RBRACK);
+            break;
+        }
+        return v;
+    }
+    if toks.getType(i) == TokType.STR { return toks.getData(i); }
+    if toks.getType(i) == TokType.INT { return toks.getData(i).int(); }
+    if toks.getType(i) == TokType.FLT { return toks.getData(i).flt(); }
 
-	if i > 0 {
-		raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i, ' encountered after: ', TokStr[toks.getType(i - 1)]);
-	} else {
-		raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i);
-	}
+    if i > 0 {
+        raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i, ' encountered after: ', TokStr[toks.getType(i - 1)]);
+    } else {
+        raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i);
+    }
 };
 
 let expect = fn(toks, end, i, type) {
-	if i >= end { raise('expected: ', TokStr[type], ', found: EOF'); }
-	if toks.getType(i) != type {
-		let err = 'expected token at index ' + i.str() + ' to be of type: ';
-		err += TokStr[type] + ', found: ' + TokStr[toks.getType(i)];
-		err += ' (' + toks.getData(i) + ')';
-		if i > 0 {
-			err += '; previous: ' + TokStr[toks.getType(i - 1)];
-			err += ' (' + toks.getData(i - 1) + ')';
-		}
-		raise(err);
-	}
+    if i >= end { raise('expected: ', TokStr[type], ', found: EOF'); }
+    if toks.getType(i) != type {
+        let err = 'expected token at index ' + i.str() + ' to be of type: ';
+        err += TokStr[type] + ', found: ' + TokStr[toks.getType(i)];
+        err += ' (' + toks.getData(i) + ')';
+        if i > 0 {
+            err += '; previous: ' + TokStr[toks.getType(i - 1)];
+            err += ' (' + toks.getData(i - 1) + ')';
+        }
+        raise(err);
+    }
 };
 
 let expect2 = fn(toks, end, i, type1, type2) {
-	if i >= end { raise('expected: ', TokStr[type1], ' or ', TokStr[type2], ', found: EOF'); }
-	if toks.getType(i) != type1 && toks.getType(i) != type2 {
-		let err = 'expected token at index ' + i.str() + ' to be of type: ';
-		err += TokStr[type1] + ' or ' + TokStr[type2] + ', found: ' + TokStr[toks.getType(i)];
-		err += ' (' + toks.getData(i) + ')';
-		if i > 0 {
-			err += '; previous: ' + TokStr[toks.getType(i - 1)];
-			err += ' (' + toks.getData(i - 1) + ')';
-		}
-		raise(err);
-	}
+    if i >= end { raise('expected: ', TokStr[type1], ' or ', TokStr[type2], ', found: EOF'); }
+    if toks.getType(i) != type1 && toks.getType(i) != type2 {
+        let err = 'expected token at index ' + i.str() + ' to be of type: ';
+        err += TokStr[type1] + ' or ' + TokStr[type2] + ', found: ' + TokStr[toks.getType(i)];
+        err += ' (' + toks.getData(i) + ')';
+        if i > 0 {
+            err += '; previous: ' + TokStr[toks.getType(i - 1)];
+            err += ' (' + toks.getData(i - 1) + ')';
+        }
+        raise(err);
+    }
 };
 
 ###########################################################################################
@@ -323,89 +323,89 @@ let expect2 = fn(toks, end, i, type1, type2) {
 ###########################################################################################
 
 let feclString in AllTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return '';
+    return '';
 };
 
 let feclString in NilTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return 'nil';
+    return 'nil';
 };
 
 let feclString in BoolTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return self.str();
+    return self.str();
 };
 
 let feclString in FltTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return self.str();
+    return self.str();
 };
 
 let feclString in IntTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return self.str();
+    return self.str();
 };
 
 let feclString in StrTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	return '"' + self + '"';
+    return '"' + self + '"';
 };
 
 let feclString in VecTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	let res = '[';
-	if indentLevel > -1 {
-		++indentLevel;
-	}
-	for e in self.each() {
-		if indentLevel > -1 { res += '\n' + indentWith * indentLevel; }
-		res += e.feclString(indentLevel, indentWith) + ',';
-		if indentLevel < 0 { res += ' '; }
-	}
-	if self.len() > 0 {
-		res.pop();
-		if indentLevel > -1 {
-			res += '\n';
-		} else {
-			res.pop();
-		}
-	}
-	if indentLevel > -1 {
-		--indentLevel;
-		res += indentWith * indentLevel;
-	}
-	res += ']';
-	return res;
+    let res = '[';
+    if indentLevel > -1 {
+        ++indentLevel;
+    }
+    for e in self.each() {
+        if indentLevel > -1 { res += '\n' + indentWith * indentLevel; }
+        res += e.feclString(indentLevel, indentWith) + ',';
+        if indentLevel < 0 { res += ' '; }
+    }
+    if self.len() > 0 {
+        res.pop();
+        if indentLevel > -1 {
+            res += '\n';
+        } else {
+            res.pop();
+        }
+    }
+    if indentLevel > -1 {
+        --indentLevel;
+        res += indentWith * indentLevel;
+    }
+    res += ']';
+    return res;
 };
 
 let feclString in MapTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
-	let res = '';
-	if !top {
-		res += '{\n';
-	}
-	if indentLevel > -1 {
-		++indentLevel;
-	}
-	let len = self.len();
-	for e in self.each() {
-		if indentLevel > -1 { res += indentWith * indentLevel; }
-		res += stringifyIfNeeded(e.0) + ' = ' + e.1.feclString(indentLevel, indentWith) + ';';
-		if indentLevel > -1 { res += '\n'; } else { res += ' '; }
-	}
-	if indentLevel > -1 {
-		--indentLevel;
-	}
-	if !top {
-		if indentLevel > -1 { res += indentWith * indentLevel; }
-		res += '}';
-	}
-	return res;
+    let res = '';
+    if !top {
+        res += '{\n';
+    }
+    if indentLevel > -1 {
+        ++indentLevel;
+    }
+    let len = self.len();
+    for e in self.each() {
+        if indentLevel > -1 { res += indentWith * indentLevel; }
+        res += stringifyIfNeeded(e.0) + ' = ' + e.1.feclString(indentLevel, indentWith) + ';';
+        if indentLevel > -1 { res += '\n'; } else { res += ' '; }
+    }
+    if indentLevel > -1 {
+        --indentLevel;
+    }
+    if !top {
+        if indentLevel > -1 { res += indentWith * indentLevel; }
+        res += '}';
+    }
+    return res;
 };
 
 let stringifyIfNeeded = fn(data) {
-	let len = data.len();
-	let stringify = false;
-	for let i = 0; i < len; ++i {
-		let ch = data[i];
-		if !ch.isAlpha() && ((!ch.isDigit() && ch != '_' && ch != '-') || i == 0) {
-			stringify = true;
-			break;
-		}
-	}
-	if stringify { return '"' + data + '"'; } # Use double quotes because single quotes can be used as apostrophes too
-	return data;
+    let len = data.len();
+    let stringify = false;
+    for let i = 0; i < len; ++i {
+        let ch = data[i];
+        if !ch.isAlpha() && ((!ch.isDigit() && ch != '_' && ch != '-') || i == 0) {
+            stringify = true;
+            break;
+        }
+    }
+    if stringify { return '"' + data + '"'; } # Use double quotes because single quotes can be used as apostrophes too
+    return data;
 };

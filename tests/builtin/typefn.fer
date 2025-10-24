@@ -6,7 +6,7 @@ let i = 5;
 assert.eq(i, 5);
 
 let func in IntTy = fn() {
-	return ref(self);
+    return ref(self);
 };
 
 let p = i.func();

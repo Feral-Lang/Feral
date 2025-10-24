@@ -1,19 +1,19 @@
 Var *typeIDEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarTypeID>()) {
-		return vm.getFalse();
-	}
-	return as<VarTypeID>(args[0])->getVal() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
-										    : vm.getFalse();
+    if(!args[1]->is<VarTypeID>()) {
+        return vm.getFalse();
+    }
+    return as<VarTypeID>(args[0])->getVal() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
+                                                                                : vm.getFalse();
 }
 
 Var *typeIDNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarTypeID>()) {
-		return vm.getTrue();
-	}
-	return as<VarTypeID>(args[0])->getVal() != as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
-										    : vm.getFalse();
+    if(!args[1]->is<VarTypeID>()) {
+        return vm.getTrue();
+    }
+    return as<VarTypeID>(args[0])->getVal() != as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
+                                                                                : vm.getFalse();
 }

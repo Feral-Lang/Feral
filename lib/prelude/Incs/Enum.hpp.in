@@ -1,32 +1,30 @@
 Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assn_args)
 {
-	MemoryManager &mem = vm.getMemoryManager();
-	VarStruct *res = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assn_args.size() - 1);
+    MemoryManager &mem = vm.getMemoryManager();
+    VarStruct *res     = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assn_args.size() - 1);
 
-	for(size_t i = 1; i < args.size(); ++i) {
-		auto &a = args[i];
-		if(!a->is<VarStr>()) {
-			vm.fail(a->getLoc(),
-				"expected strings for enums (use strings or atoms), found: ",
-				vm.getTypeName(a));
-			vm.unmakeVar(res);
-			return nullptr;
-		}
-		res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1),
-			     false);
-	}
+    for(size_t i = 1; i < args.size(); ++i) {
+        auto &a = args[i];
+        if(!a->is<VarStr>()) {
+            vm.fail(a->getLoc(), "expected strings for enums (use strings or atoms), found: ",
+                    vm.getTypeName(a));
+            vm.unmakeVar(res);
+            return nullptr;
+        }
+        res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
+    }
 
-	for(auto &a : assn_args) {
-		if(!a.second.val->is<VarInt>()) {
-			vm.fail(a.second.val->getLoc(),
-				"expected argument value to be of type integer for enums, found: ",
-				vm.getTypeName(a.second.val));
-			vm.unmakeVar(res);
-			return nullptr;
-		}
-		res->setAttr(mem, a.first, vm.copyVar(loc, a.second.val), false);
-	}
+    for(auto &a : assn_args) {
+        if(!a.second.val->is<VarInt>()) {
+            vm.fail(a.second.val->getLoc(),
+                    "expected argument value to be of type integer for enums, found: ",
+                    vm.getTypeName(a.second.val));
+            vm.unmakeVar(res);
+            return nullptr;
+        }
+        res->setAttr(mem, a.first, vm.copyVar(loc, a.second.val), false);
+    }
 
-	return res;
+    return res;
 }

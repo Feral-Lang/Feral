@@ -31,36 +31,36 @@ args.addArg('path').setValReqd(true).setHelp('The directory where the tests are 
 args.parse();
 
 let fmtWithPath = fn(path, fmtStrs) {
-	if fmtStrs.empty() { return nil; }
-	let v = vec.new(refs = true);
-	for fmtStr in fmtStrs.each() {
-		v.push(fs.fmtWithPath(fmtStr, path));
-	}
-	return v;
+    if fmtStrs.empty() { return nil; }
+    let v = vec.new(refs = true);
+    for fmtStr in fmtStrs.each() {
+        v.push(fs.fmtWithPath(fmtStr, path));
+    }
+    return v;
 };
 
 let testsDir = args.getValue('path');
 
 let st = stat.stat(testsDir) or err {
-	io.println('error: stat failed on directory: ', err);
-	feral.exit(1);
-	return nil; # unreachable
+    io.println('error: stat failed on directory: ', err);
+    feral.exit(1);
+    return nil; # unreachable
 };
 
 if !st.isDir() {
-	io.println('error: entered path is not a directory');
-	feral.exit(1);
+    io.println('error: entered path is not a directory');
+    feral.exit(1);
 }
 
 let cfgname = fs.pathFrom(testsDir, 'config.fecl');
 if !fs.exists(cfgname) {
-	io.println('error: test config: \'' + cfgname + '\' not found');
-	feral.exit(1);
+    io.println('error: test config: \'' + cfgname + '\' not found');
+    feral.exit(1);
 }
 let cfgfile = fs.fopen(cfgname);
 let cfgstr = '';
 for line in cfgfile.eachLine() {
-	cfgstr += line + '\n';
+    cfgstr += line + '\n';
 }
 let cfg = fecl.loads(cfgstr);
 let filePattern = cfg['FilePattern'];
@@ -79,45 +79,45 @@ let maxProcs = thread.getConcurrency();
 }
 
 let waitProcs = fn(maxProcs, withValgrind, counter = true) {
-	while tpool.len() >= maxProcs {
-		for let i = 0; i < tpool.len(); ++i {
-			if !tpool[i].isDone() { continue; }
-			let t = ref(tpool[i]);
-			if t.getResult() != 0 {
-				if counter { ++failed; }
-				if withValgrind {
-					io.cprintln('{r}failed {y}', t.getName(), '{c} with valgrind{0}, {y}code{0}: {r}', t.getResult(),'{0}');
-				} else {
-					io.cprintln('{r}failed {y}', t.getName(), '{0}, {y}code{0}: {r}', t.getResult(),'{0}');
-				}
-				io.fflush(io.stdout);
-			} else {
-				if counter { ++passed; }
-			}
-			tpool.erase(i--);
-		}
-		if tpool.len() >= maxProcs { os.sleep(1); } # 1 ms sleep; not using thread.yield() as it's slower than sleep()
-	}
+    while tpool.len() >= maxProcs {
+        for let i = 0; i < tpool.len(); ++i {
+            if !tpool[i].isDone() { continue; }
+            let t = ref(tpool[i]);
+            if t.getResult() != 0 {
+                if counter { ++failed; }
+                if withValgrind {
+                    io.cprintln('{r}failed {y}', t.getName(), '{c} with valgrind{0}, {y}code{0}: {r}', t.getResult(),'{0}');
+                } else {
+                    io.cprintln('{r}failed {y}', t.getName(), '{0}, {y}code{0}: {r}', t.getResult(),'{0}');
+                }
+                io.fflush(io.stdout);
+            } else {
+                if counter { ++passed; }
+            }
+            tpool.erase(i--);
+        }
+        if tpool.len() >= maxProcs { os.sleep(1); } # 1 ms sleep; not using thread.yield() as it's slower than sleep()
+    }
 };
 
 let valgrindCmd = vec.new(refs = true);
 if args.has('valgrind') {
-	let valgrindExec = os.findExec('valgrind');
-	if valgrindExec == nil {
-		io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
-		feral.exit(1);
-	}
-	# --log-fd=1 to pour the valgrind output on stdout so that we
-	# don't have to redirect entire stderr to io.null
-	valgrindCmd.push(valgrindExec);
-	valgrindCmd.push('--fair-sched=yes');
-	valgrindCmd.push('--log-fd=1');
-	valgrindCmd.push('--leak-check=full');
-	valgrindCmd.push('--show-leak-kinds=all');
+    let valgrindExec = os.findExec('valgrind');
+    if valgrindExec == nil {
+        io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
+        feral.exit(1);
+    }
+    # --log-fd=1 to pour the valgrind output on stdout so that we
+    # don't have to redirect entire stderr to io.null
+    valgrindCmd.push(valgrindExec);
+    valgrindCmd.push('--fair-sched=yes');
+    valgrindCmd.push('--log-fd=1');
+    valgrindCmd.push('--leak-check=full');
+    valgrindCmd.push('--show-leak-kinds=all');
 }
 let runCount = 1;
 if args.has('runs') {
-	runCount = args.getValue('runs').int();
+    runCount = args.getValue('runs').int();
 }
 
 let timeBegin = time.now();
@@ -125,39 +125,39 @@ let timeBegin = time.now();
 let totalTests = runCount * files.len();
 let counter = 0;
 for let i = 0; i < runCount; ++i {
-	for file in files.each() {
-		waitProcs(maxProcs, !valgrindCmd.empty());
-		let cmd = valgrindCmd;
-		cmd.append(fmtWithPath(file, execCmd));
-		cmd.push('^>' + io.null);
-		if !valgrindCmd.empty() {
-			io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}) ({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
-		} else {
-			io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
-		}
-		io.fflush(io.stdout);
-		tpool.push(thread.run(cmd, name = file));
-	}
+    for file in files.each() {
+        waitProcs(maxProcs, !valgrindCmd.empty());
+        let cmd = valgrindCmd;
+        cmd.append(fmtWithPath(file, execCmd));
+        cmd.push('^>' + io.null);
+        if !valgrindCmd.empty() {
+            io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}) ({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
+        } else {
+            io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
+        }
+        io.fflush(io.stdout);
+        tpool.push(thread.run(cmd, name = file));
+    }
 }
 waitProcs(1, !valgrindCmd.empty());
 
 let totalTime = time.now() - timeBegin;
 
 if !cleanCmd.empty() {
-	for file in files.each() {
-		waitProcs(maxProcs, false, false);
-		let cmd = fmtWithPath(file, cleanCmd);
-		cmd.push('^>' + io.null);
-		io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
-		io.fflush(io.stdout);
-		tpool.push(thread.run(cmd));
-	}
-	waitProcs(1, false, false);
+    for file in files.each() {
+        waitProcs(maxProcs, false, false);
+        let cmd = fmtWithPath(file, cleanCmd);
+        cmd.push('^>' + io.null);
+        io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
+        io.fflush(io.stdout);
+        tpool.push(thread.run(cmd));
+    }
+    waitProcs(1, false, false);
 }
 
 io.cprintln('total: {y}', totalTests,
-	    '{0}, passed: {g}', passed,
-	    '{0}, failed: {r}', failed,
-	    '{0}, time: {b}', time.resolve(totalTime, time.milli).round(),
-	    '{0} ms');
+        '{0}, passed: {g}', passed,
+        '{0}, failed: {r}', failed,
+        '{0}, time: {b}', time.resolve(totalTime, time.milli).round(),
+        '{0} ms');
 feral.exit(failed);

@@ -35,7 +35,7 @@ io.println('Hello World');
 let io = import('std/io');
 
 let helloFn = fn(name) {
-	io.println('Hello ', name);
+    io.println('Hello ', name);
 };
 
 helloFn('Electrux'); # prints 'Hello Electrux`
@@ -46,11 +46,11 @@ helloFn('Electrux'); # prints 'Hello Electrux`
 let io = import('std/io');
 
 let facto = fn(num) {
-	let fact = 1;
-	for i in range(num, 1, -1) {
-		fact *= i;
-	}
-	return fact;
+    let fact = 1;
+    for i in range(num, 1, -1) {
+        fact *= i;
+    }
+    return fact;
 };
 
 io.println('factorial of 5 is: ', facto(5));

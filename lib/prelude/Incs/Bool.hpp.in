@@ -1,16 +1,15 @@
-#define BoolComparison(name, op, opname)                                                \
-	Var *bool##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,            \
-			const StringMap<AssnArgData> &assn_args)                        \
-	{                                                                               \
-		if(!args[1]->is<VarBool>()) {                                           \
-			vm.fail(loc, "expected boolean argument for logical '", opname, \
-				"', found: ", vm.getTypeName(args[1]));                 \
-			return nullptr;                                                 \
-		}                                                                       \
-		return as<VarBool>(args[0])->getVal() op as<VarBool>(args[1])->getVal() \
-		       ? vm.getTrue()                                                   \
-		       : vm.getFalse();                                                 \
-	}
+#define BoolComparison(name, op, opname)                                                         \
+    Var *bool##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                         \
+                    const StringMap<AssnArgData> &assn_args)                                     \
+    {                                                                                            \
+        if(!args[1]->is<VarBool>()) {                                                            \
+            vm.fail(loc, "expected boolean argument for logical '", opname,                      \
+                    "', found: ", vm.getTypeName(args[1]));                                      \
+            return nullptr;                                                                      \
+        }                                                                                        \
+        return as<VarBool>(args[0])->getVal() op as<VarBool>(args[1])->getVal() ? vm.getTrue()   \
+                                                                                : vm.getFalse(); \
+    }
 
 // logical functions
 BoolComparison(LT, <, "<");
@@ -19,23 +18,23 @@ BoolComparison(LE, <=, "<=");
 BoolComparison(GE, >=, ">=");
 
 Var *boolEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarBool>()) return vm.getFalse();
-	return as<VarBool>(args[0])->getVal() == as<VarBool>(args[1])->getVal() ? vm.getTrue()
-										: vm.getFalse();
+    if(!args[1]->is<VarBool>()) return vm.getFalse();
+    return as<VarBool>(args[0])->getVal() == as<VarBool>(args[1])->getVal() ? vm.getTrue()
+                                                                            : vm.getFalse();
 }
 
 Var *boolNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	    const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assn_args)
 {
-	if(!args[1]->is<VarBool>()) return vm.getTrue();
-	return as<VarBool>(args[0])->getVal() != as<VarBool>(args[1])->getVal() ? vm.getTrue()
-										: vm.getFalse();
+    if(!args[1]->is<VarBool>()) return vm.getTrue();
+    return as<VarBool>(args[0])->getVal() != as<VarBool>(args[1])->getVal() ? vm.getTrue()
+                                                                            : vm.getFalse();
 }
 
 Var *boolNot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	     const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assn_args)
 {
-	return as<VarBool>(args[0])->getVal() ? vm.getFalse() : vm.getTrue();
+    return as<VarBool>(args[0])->getVal() ? vm.getFalse() : vm.getTrue();
 }

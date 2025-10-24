@@ -4,10 +4,10 @@ let assert = import('std/assert');
 let fs = import('std/fs');
 
 let customModuleFinder = fn(module, isimport) {
-	if !isimport { return nil; }
-	let testPath = fs.pathFrom(__SRC_DIR__, module + '.fer');
-	if fs.exists(testPath) { return testPath; }
-	return nil;
+    if !isimport { return nil; }
+    let testPath = fs.pathFrom(__SRC_DIR__, module + '.fer');
+    if fs.exists(testPath) { return testPath; }
+    return nil;
 };
 
 feral.moduleFinders.push(customModuleFinder);

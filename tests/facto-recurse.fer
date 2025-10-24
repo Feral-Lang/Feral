@@ -3,8 +3,8 @@ let assert = import('std/assert');
 #let io = import('std/io');
 
 let facto = fn(num) {
-	if num < 2 { return 1; }
-	return num * facto(num - 1);
+    if num < 2 { return 1; }
+    return num * facto(num - 1);
 };
 
 #io.println('factorial of 5 is: ', facto(5));

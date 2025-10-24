@@ -1,48 +1,48 @@
 Var *nilToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, 0);
+    return vm.makeVar<VarInt>(loc, 0);
 }
 
 Var *boolToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
+    return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
 }
 
 Var *typeIDToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
+    return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
 }
 
 Var *intToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return args[0];
+    return args[0];
 }
 
 Var *fltToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
+    return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
 }
 
 Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	      const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assn_args)
 {
-	StringRef num = as<VarStr>(args[0])->getVal();
-	for(auto c : num) {
-		if(c == '-' || (c >= '0' && c <= '9')) continue;
-		vm.fail(loc, "string '", num, "' is not a number");
-		return nullptr;
-	}
-	if(!args[1]->is<VarInt>()) {
-		vm.fail(loc, "expected base to be an integer, found: ", vm.getTypeName(args[1]));
-		return nullptr;
-	}
-	int64_t base = as<VarInt>(args[1])->getVal();
-	int64_t val;
-	std::from_chars(num.data(), num.data() + num.size(), val, base);
-	return vm.makeVar<VarInt>(loc, val);
+    StringRef num = as<VarStr>(args[0])->getVal();
+    for(auto c : num) {
+        if(c == '-' || (c >= '0' && c <= '9')) continue;
+        vm.fail(loc, "string '", num, "' is not a number");
+        return nullptr;
+    }
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc, "expected base to be an integer, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    int64_t base = as<VarInt>(args[1])->getVal();
+    int64_t val;
+    std::from_chars(num.data(), num.data() + num.size(), val, base);
+    return vm.makeVar<VarInt>(loc, val);
 }

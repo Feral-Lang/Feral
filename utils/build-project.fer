@@ -9,13 +9,13 @@ let thread = import('std/thread');
 let PROJ_DIR = os.getEnv('PROJ_DIR');
 
 if PROJ_DIR == nil {
-	io.println('PROJ_DIR env variable does not exist');
-	feral.exit(1);
+    io.println('PROJ_DIR env variable does not exist');
+    feral.exit(1);
 }
 
 if !fs.exists(PROJ_DIR) {
-	io.println('directory ', PROJ_DIR, ' does not exist');
-	feral.exit(1);
+    io.println('directory ', PROJ_DIR, ' does not exist');
+    feral.exit(1);
 }
 
 let projectBuildDir = fs.pathFrom(PROJ_DIR, 'build');
@@ -27,119 +27,119 @@ let testing = false;
 let codeCov = false;
 
 if feral.args.find('r') {
-	buildType = 'Release';
+    buildType = 'Release';
 } elif feral.args.find('d') {
-	buildType = 'Debug';
+    buildType = 'Debug';
 } elif feral.args.find('rd') {
-	buildType = 'RelWithDebInfo';
+    buildType = 'RelWithDebInfo';
 }
 if feral.args.find('t') { testing = true; }
 if feral.args.find('c') { codeCov = true; }
 
 if codeCov && os.name != 'linux' {
-	io.println('Code coverage is only usable on Linux');
-	feral.exit(1);
+    io.println('Code coverage is only usable on Linux');
+    feral.exit(1);
 }
 
 let execCmake = false;
 
 let cmakeCachePath = fs.pathFrom(projectBuildDir, 'CMakeCache.txt');
 if !fs.exists(cmakeCachePath) {
-	if buildType.empty() {
-		io.println('Invalid build type, must be either Release (r), Debug (d), or RelWithDebInfo (rd)');
-		feral.exit(1);
-	}
-	execCmake = true;
+    if buildType.empty() {
+        io.println('Invalid build type, must be either Release (r), Debug (d), or RelWithDebInfo (rd)');
+        feral.exit(1);
+    }
+    execCmake = true;
 } else {
-	let f = fs.fopen(cmakeCachePath, 'r');
-	let existingBuildType = '';
-	let existingCodeCov = false;
-	for line in f.eachLine() {
-		if line.startsWith('WITH_COVERAGE') {
-			existingCodeCov = true;
-			continue;
-		}
-		if line.startsWith('CMAKE_BUILD_TYPE') {
-			let eqPos = line.find('=');
-			if eqPos < 0 { continue; }
-			let type = line.sub(eqPos + 1);
-			if type == 'Release' { existingBuildType = 'Release'; }
-			elif type == 'Debug' { existingBuildType = 'Debug'; }
-			elif type == 'RelWithDebInfo' { existingBuildType = 'RelWithDebInfo'; }
-			continue;
-		}
-	}
+    let f = fs.fopen(cmakeCachePath, 'r');
+    let existingBuildType = '';
+    let existingCodeCov = false;
+    for line in f.eachLine() {
+        if line.startsWith('WITH_COVERAGE') {
+            existingCodeCov = true;
+            continue;
+        }
+        if line.startsWith('CMAKE_BUILD_TYPE') {
+            let eqPos = line.find('=');
+            if eqPos < 0 { continue; }
+            let type = line.sub(eqPos + 1);
+            if type == 'Release' { existingBuildType = 'Release'; }
+            elif type == 'Debug' { existingBuildType = 'Debug'; }
+            elif type == 'RelWithDebInfo' { existingBuildType = 'RelWithDebInfo'; }
+            continue;
+        }
+    }
 
-	# If build type is not provided explicitly, don't bother calling cmake again.
-	if buildType.empty() { buildType = existingBuildType; }
-	execCmake = buildType != existingBuildType || codeCov != existingCodeCov;
+    # If build type is not provided explicitly, don't bother calling cmake again.
+    if buildType.empty() { buildType = existingBuildType; }
+    execCmake = buildType != existingBuildType || codeCov != existingCodeCov;
 }
 
 # Check if a .build.fecl file exists in the project directory, and use it if it does.
 let buildConfFile = fs.pathFrom(PROJ_DIR, '.build.fecl');
 let cmakeArgs = '', makeArgs = '', testCmd = '';
 if fs.exists(buildConfFile) {
-	let buildConf = fecl.loads(fs.fopen(buildConfFile, 'r').readAll());
-	if buildConf['cmakeArgs'] != nil {
-		cmakeArgs += ' ';
-		cmakeArgs += buildConf['cmakeArgs'];
-	}
-	if buildConf['makeArgs'] != nil {
-		makeArgs += ' ';
-		makeArgs += buildConf['makeArgs'];
-	}
-	if buildConf['testCmd'] != nil {
-		testCmd = buildConf['testCmd'];
-	}
+    let buildConf = fecl.loads(fs.fopen(buildConfFile, 'r').readAll());
+    if buildConf['cmakeArgs'] != nil {
+        cmakeArgs += ' ';
+        cmakeArgs += buildConf['cmakeArgs'];
+    }
+    if buildConf['makeArgs'] != nil {
+        makeArgs += ' ';
+        makeArgs += buildConf['makeArgs'];
+    }
+    if buildConf['testCmd'] != nil {
+        testCmd = buildConf['testCmd'];
+    }
 }
 
 # Run CMake gen.
 if execCmake {
-	let cmakeCmd = 'cmake -S ';
-	cmakeCmd += PROJ_DIR;
-	cmakeCmd += ' -B ';
-	cmakeCmd += projectBuildDir;
-	cmakeCmd += ' -DDISABLE_INSTALL_MSG=true -DCMAKE_BUILD_TYPE=';
-	cmakeCmd += buildType;
+    let cmakeCmd = 'cmake -S ';
+    cmakeCmd += PROJ_DIR;
+    cmakeCmd += ' -B ';
+    cmakeCmd += projectBuildDir;
+    cmakeCmd += ' -DDISABLE_INSTALL_MSG=true -DCMAKE_BUILD_TYPE=';
+    cmakeCmd += buildType;
 
-	if codeCov {
-		let gcc = os.findExec('gcc');
-		let gxx = os.findExec('g++');
-		if gcc == nil || gxx == nil {
-			io.println('Could not find gcc/g++ in PATH, required for code coverage');
-			feral.exit(1);
-		}
-		cmakeCmd += ' -DWITH_COVERAGE=true';
-		cmakeCmd += ' -DCMAKE_C_COMPILER=';
-		cmakeCmd += gcc;
-		cmakeCmd += ' -DCMAKE_CXX_COMPILER=';
-		cmakeCmd += gxx;
-	}
+    if codeCov {
+        let gcc = os.findExec('gcc');
+        let gxx = os.findExec('g++');
+        if gcc == nil || gxx == nil {
+            io.println('Could not find gcc/g++ in PATH, required for code coverage');
+            feral.exit(1);
+        }
+        cmakeCmd += ' -DWITH_COVERAGE=true';
+        cmakeCmd += ' -DCMAKE_C_COMPILER=';
+        cmakeCmd += gcc;
+        cmakeCmd += ' -DCMAKE_CXX_COMPILER=';
+        cmakeCmd += gxx;
+    }
 
-	# Set cache program
-	let cacher = 'ccache';
-	if os.name == 'windows' {
-		cmakeCmd += ' -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true';
-		cacher = 'sccache';
-	}
-	let cacherPath = os.findExec(cacher);
-	if cacherPath != nil {
-		cmakeCmd += ' -DCCACHE_PROGRAM=';
-		cmakeCmd += cacherPath;
-	}
+    # Set cache program
+    let cacher = 'ccache';
+    if os.name == 'windows' {
+        cmakeCmd += ' -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true';
+        cacher = 'sccache';
+    }
+    let cacherPath = os.findExec(cacher);
+    if cacherPath != nil {
+        cmakeCmd += ' -DCCACHE_PROGRAM=';
+        cmakeCmd += cacherPath;
+    }
 
-	# Export compile commands.
-	cmakeCmd += ' -DCMAKE_EXPORT_COMPILE_COMMANDS=1';
+    # Export compile commands.
+    cmakeCmd += ' -DCMAKE_EXPORT_COMPILE_COMMANDS=1';
 
-	# Any extra stuff in buildConf.
-	cmakeCmd += cmakeArgs;
+    # Any extra stuff in buildConf.
+    cmakeCmd += cmakeArgs;
 
-	fs.remove(projectBuildDir);
-	fs.mkdir(projectBuildDir);
-	let res = os.system(cmakeCmd);
-	if res != 0 { feral.exit(res); }
-	let compCommandsPath = fs.pathFrom(projectBuildDir, 'compile_commands.json');
-	if fs.exists(compCommandsPath) { fs.copy(compCommandsPath, PROJ_DIR); }
+    fs.remove(projectBuildDir);
+    fs.mkdir(projectBuildDir);
+    let res = os.system(cmakeCmd);
+    if res != 0 { feral.exit(res); }
+    let compCommandsPath = fs.pathFrom(projectBuildDir, 'compile_commands.json');
+    if fs.exists(compCommandsPath) { fs.copy(compCommandsPath, PROJ_DIR); }
 }
 
 # Run CMake build.
@@ -148,8 +148,8 @@ makeCmd += projectBuildDir;
 makeCmd += ' --target=install --parallel=';
 makeCmd += thread.getConcurrency().str();
 if os.name == 'windows' {
-	makeCmd += ' --config=';
-	makeCmd += buildType;
+    makeCmd += ' --config=';
+    makeCmd += buildType;
 }
 # Any extra stuff in buildConf.
 makeCmd += makeArgs;
@@ -158,16 +158,16 @@ if res != 0 { feral.exit(res); }
 
 # Test the code, please!
 if testing {
-	if testCmd.empty() {
-		io.println('No test command found for this project.');
-		io.println('Make sure a file `.build.fecl` exists in the project directory.');
-		io.println('It must contain the test command as `test = "<test command>";`');
-		io.println('Note that the test command is executed from within the project directory, so the paths are relative to that.');
-		feral.exit(1);
-	}
-	let cwd = os.getCWD();
-	os.setCWD(PROJ_DIR);
-	let res = os.system(testCmd);
-	os.setCWD(cwd);
-	if res != 0 { feral.exit(res); }
+    if testCmd.empty() {
+        io.println('No test command found for this project.');
+        io.println('Make sure a file `.build.fecl` exists in the project directory.');
+        io.println('It must contain the test command as `test = "<test command>";`');
+        io.println('Note that the test command is executed from within the project directory, so the paths are relative to that.');
+        feral.exit(1);
+    }
+    let cwd = os.getCWD();
+    os.setCWD(PROJ_DIR);
+    let res = os.system(testCmd);
+    os.setCWD(cwd);
+    if res != 0 { feral.exit(res); }
 }

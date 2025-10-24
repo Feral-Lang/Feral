@@ -3,30 +3,30 @@ let assert = import('std/assert');
 let SomeTy = struct(a = 10, b = 20);
 
 let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
-	assert.eq(self.a, 100);
-	assert.eq(self.b, 200);
-	assert.eq(x, 1);
-	assert.eq(y, 2);
-	assert.eq(kw['a'], 10);
-	assert.eq(kw['b'], 20);
-	assert.eq(kw['c'], 30);
-	assert.eq(va, feral.vecNew(3, 4));
+    assert.eq(self.a, 100);
+    assert.eq(self.b, 200);
+    assert.eq(x, 1);
+    assert.eq(y, 2);
+    assert.eq(kw['a'], 10);
+    assert.eq(kw['b'], 20);
+    assert.eq(kw['c'], 30);
+    assert.eq(va, feral.vecNew(3, 4));
 };
 
 let func2 in SomeTy = fn(x, y = 10, .kw, va...) {
-	assert.eq(self.a, 100);
-	assert.eq(self.b, 200);
-	assert.eq(x, 1);
-	assert.eq(y, 10);
-	assert.eq(kw['d'], 10);
-	assert.eq(kw['e'], 20);
-	assert.eq(va.empty(), true);
+    assert.eq(self.a, 100);
+    assert.eq(self.b, 200);
+    assert.eq(x, 1);
+    assert.eq(y, 10);
+    assert.eq(kw['d'], 10);
+    assert.eq(kw['e'], 20);
+    assert.eq(va.empty(), true);
 };
 
 # pass the kw arg along
 let func3 in SomeTy = fn(.kw) {
-	self.func1(1, 2, 3, 4, kw...);
-	self.func2(1, kw...);
+    self.func1(1, 2, 3, 4, kw...);
+    self.func2(1, kw...);
 };
 
 let test = SomeTy(a = 100, b = 200);
@@ -41,12 +41,12 @@ test.func3(a = 10, b = 20, c = 30, d = 10, e = 15, e = 20);
 ###############################################################################################################
 
 let ExitCode = enum(
-	.OK,
-	.FAIL,
-	.IO_ERR,
-	.LEX_FAIL,
-	.PARSE_FAIL,
-	.SOME_ERR = 20
+    .OK,
+    .FAIL,
+    .IO_ERR,
+    .LEX_FAIL,
+    .PARSE_FAIL,
+    .SOME_ERR = 20
 );
 
 assert.eq(ExitCode.PARSE_FAIL, 4);
