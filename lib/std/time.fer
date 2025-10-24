@@ -41,8 +41,8 @@ let seconds = fn(num) {
     return num.flt() / second;
 };
 
-let setFormat = fn(new_format) {
-    timeFormat = new_format;
+let setFormat = fn(newFormat) {
+    timeFormat = newFormat;
 };
 
 let format = fn(time, fmt = timeFormat) {

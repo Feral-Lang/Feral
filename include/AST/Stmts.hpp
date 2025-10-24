@@ -34,10 +34,10 @@ protected:
     Stmts stype;
 
 public:
-    Stmt(Stmts stmt_type, ModuleLoc loc);
+    Stmt(Stmts stmtType, ModuleLoc loc);
     virtual ~Stmt();
 
-    virtual void disp(bool has_next) = 0;
+    virtual void disp(bool hasNext) = 0;
 
     const char *getStmtTypeCString() const;
     inline const Stmts &getStmtType() const { return stype; }
@@ -71,24 +71,24 @@ template<typename T> Stmt **asStmt(T **data) { return (Stmt **)(data); }
 class StmtBlock : public Stmt
 {
     Vector<Stmt *> stmts;
-    bool is_top;
+    bool istop;
     // false = Disable unload after each expr/simple stmt in codegen.
     // Used for conditionals created using ternary (... ? ... : ...) operator.
-    bool should_unload;
+    bool shouldunload;
 
 public:
-    StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool is_top);
+    StmtBlock(ModuleLoc loc, const Vector<Stmt *> &stmts, bool istop);
     ~StmtBlock();
     static StmtBlock *create(ManagedAllocator &allocator, ModuleLoc loc,
-                             const Vector<Stmt *> &stmts, bool is_top);
+                             const Vector<Stmt *> &stmts, bool istop);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
-    inline void setTop(bool istop) { is_top = istop; }
-    inline void setUnload(bool shouldunload) { should_unload = shouldunload; }
+    inline void setTop(bool _istop) { istop = _istop; }
+    inline void setUnload(bool _shouldunload) { shouldunload = _shouldunload; }
     inline Vector<Stmt *> &getStmts() { return stmts; }
-    inline bool isTop() const { return is_top; }
-    inline bool shouldUnload() const { return should_unload; }
+    inline bool isTop() const { return istop; }
+    inline bool shouldUnload() const { return shouldunload; }
 };
 
 class StmtSimple : public Stmt
@@ -100,7 +100,7 @@ public:
     ~StmtSimple();
     static StmtSimple *create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &val);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline void updateLexDataStr(StringRef newdata) { val.setDataStr(newdata); }
     inline lex::Lexeme &getLexValue() { return val; }
@@ -113,20 +113,20 @@ public:
 class StmtFnArgs : public Stmt
 {
     Vector<Stmt *> args;
-    Vector<bool> unpack_vector; // works for variadic as well since variadic is a vector
+    Vector<bool> unpackVector; // works for variadic as well since variadic is a vector
 
 public:
-    StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpack_vector);
+    StmtFnArgs(ModuleLoc loc, Vector<Stmt *> &&args, Vector<bool> &&unpackVector);
     ~StmtFnArgs();
     static StmtFnArgs *create(ManagedAllocator &allocator, ModuleLoc loc, Vector<Stmt *> &&args,
-                              Vector<bool> &&unpack_vector);
+                              Vector<bool> &&unpackVector);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline void setArg(size_t idx, Stmt *a) { args[idx] = a; }
     inline Vector<Stmt *> &getArgs() { return args; }
     inline Stmt *&getArg(size_t idx) { return args[idx]; }
-    inline bool unpackArg(size_t idx) { return unpack_vector[idx]; }
+    inline bool unpackArg(size_t idx) { return unpackVector[idx]; }
 };
 
 class StmtExpr : public Stmt
@@ -138,11 +138,11 @@ class StmtExpr : public Stmt
 public:
     StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs);
     ~StmtExpr();
-    // or_blk and or_blk_var can be set separately - nullptr/INVALID by default
+
     static StmtExpr *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *lhs,
                             const lex::Lexeme &oper, Stmt *rhs);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Stmt *&getLHS() { return lhs; }
     inline Stmt *&getRHS() { return rhs; }
@@ -154,24 +154,24 @@ class StmtVar : public Stmt
 {
     lex::Lexeme name; // can be STR in case of assn args
     Stmt *in;
-    Stmt *val;   // expr or simple
-    bool is_arg; // fndef param / fncall arg or not
+    Stmt *val;  // expr or simple
+    bool isarg; // fndef param / fncall arg or not
 
 public:
-    StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool is_arg);
+    StmtVar(ModuleLoc loc, const lex::Lexeme &name, Stmt *in, Stmt *val, bool isarg);
     ~StmtVar();
     // at least one of type or val must be present
     static StmtVar *create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &name,
-                           Stmt *in, Stmt *val, bool is_arg);
+                           Stmt *in, Stmt *val, bool isarg);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline void setVal(Stmt *newval) { val = newval; }
 
     inline lex::Lexeme &getName() { return name; }
     inline Stmt *&getVal() { return val; }
     inline Stmt *&getIn() { return in; }
-    inline bool isArg() { return is_arg; }
+    inline bool isArg() { return isarg; }
 };
 
 class StmtFnSig : public Stmt
@@ -186,7 +186,7 @@ public:
     static StmtFnSig *create(ManagedAllocator &allocator, ModuleLoc loc,
                              const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline void insertArg(StmtVar *arg) { args.push_back(arg); }
     inline void insertArg(size_t pos, StmtVar *arg) { args.insert(args.begin() + pos, arg); }
@@ -208,7 +208,7 @@ public:
     static StmtFnDef *create(ManagedAllocator &allocator, ModuleLoc loc, StmtFnSig *sig,
                              StmtBlock *blk);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline void setBlk(StmtBlock *_blk) { blk = _blk; }
 
@@ -232,7 +232,7 @@ public:
     static StmtVarDecl *create(ManagedAllocator &allocator, ModuleLoc loc,
                                const Vector<StmtVar *> &decls);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Vector<StmtVar *> &getDecls() { return decls; }
 };
@@ -268,7 +268,7 @@ public:
     static StmtCond *create(ManagedAllocator &allocator, ModuleLoc loc,
                             const Vector<Conditional> &conds);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Vector<Conditional> &getConditionals() { return conds; }
     inline Stmt *&getCond(size_t idx) { return conds[idx].getCond(); }
@@ -289,7 +289,7 @@ public:
     static StmtFor *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *init, Stmt *cond,
                            Stmt *incr, StmtBlock *blk);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Stmt *&getInit() { return init; }
     inline Stmt *&getCond() { return cond; }
@@ -310,7 +310,7 @@ public:
     static StmtForIn *create(ManagedAllocator &allocator, ModuleLoc loc, const lex::Lexeme &iter,
                              Stmt *in, StmtBlock *blk);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline lex::Lexeme &getIter() { return iter; }
     inline Stmt *&getIn() { return in; }
@@ -326,7 +326,7 @@ public:
     ~StmtRet();
     static StmtRet *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Stmt *&getRetVal() { return val; }
 };
@@ -337,7 +337,7 @@ public:
     StmtContinue(ModuleLoc loc);
     static StmtContinue *create(ManagedAllocator &allocator, ModuleLoc loc);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 };
 
 class StmtBreak : public Stmt
@@ -346,7 +346,7 @@ public:
     StmtBreak(ModuleLoc loc);
     static StmtBreak *create(ManagedAllocator &allocator, ModuleLoc loc);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 };
 
 class StmtDefer : public Stmt
@@ -358,7 +358,7 @@ public:
     ~StmtDefer();
     static StmtDefer *create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *val);
 
-    void disp(bool has_next);
+    void disp(bool hasNext);
 
     inline Stmt *&getDeferVal() { return val; }
 };

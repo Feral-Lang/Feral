@@ -1,8 +1,8 @@
 Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     MemoryManager &mem = vm.getMemoryManager();
-    VarStruct *res     = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assn_args.size() - 1);
+    VarStruct *res     = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assnArgs.size() - 1);
 
     for(size_t i = 1; i < args.size(); ++i) {
         auto &a = args[i];
@@ -15,7 +15,7 @@ Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
     }
 
-    for(auto &a : assn_args) {
+    for(auto &a : assnArgs) {
         if(!a.second.val->is<VarInt>()) {
             vm.fail(a.second.val->getLoc(),
                     "expected argument value to be of type integer for enums, found: ",

@@ -18,9 +18,9 @@ public:
     Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks);
 
     // On successful parse, returns true, and tree is allocated
-    // If with_brace is true, it will attempt to find the beginning and ending brace for each
+    // If withBrace is true, it will attempt to find the beginning and ending brace for each
     // block
-    bool parseBlock(StmtBlock *&tree, bool with_brace = true);
+    bool parseBlock(StmtBlock *&tree, bool withBrace = true);
 
     bool parseSimple(Stmt *&data);
 
@@ -45,8 +45,8 @@ public:
     bool parseExpr02(Stmt *&expr);
     bool parseExpr01(Stmt *&expr);
 
-    // is_fn_arg is for function signature args (to make value optional)
-    bool parseVar(StmtVar *&var, bool is_fn_arg);
+    // isFnArg is for function signature args (to make value optional)
+    bool parseVar(StmtVar *&var, bool isFnArg);
 
     bool parseFnSig(Stmt *&fsig);
     bool parseFnDef(Stmt *&fndef);

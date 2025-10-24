@@ -7,7 +7,7 @@ namespace fer::tio
 
 void taba(bool show);
 void tabr(size_t num = 1);
-void print(bool has_next, InitList<StringRef> data);
+void print(bool hasNext, InitList<StringRef> data);
 void printf(InitList<StringRef> data);
 
 } // namespace fer::tio

@@ -169,19 +169,19 @@ let GetConstStr = fn(data, i, end) {
     let start = data[i++];
     let res = '';
     let found = false;
-    let cont_backslash = 0;
+    let contBackslash = 0;
     while i < end {
         if data[i] == '\\' {
-            ++cont_backslash;
+            ++contBackslash;
             res += data[i++];
             continue;
         }
-        if data[i] == start && cont_backslash % 2 == 0 {
+        if data[i] == start && contBackslash % 2 == 0 {
             found = true;
             break;
         }
         res += data[i++];
-        cont_backslash = 0;
+        contBackslash = 0;
     }
     if !found {
         raise('invalid FeCL: no end quotes for data near: ' + res);

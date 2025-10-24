@@ -53,32 +53,32 @@ void VarLockGuard::onDestroy(MemoryManager &mem)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *mutexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarMutex>(loc);
 }
 
 Var *recursiveMutexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assn_args)
+                       const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarRecursiveMutex>(loc);
 }
 
 Var *mutexLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     as<VarMutexBase>(args[0])->lock();
     return vm.getNil();
 }
 
 Var *mutexTryLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarMutexBase>(args[0])->tryLock() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mutexUnlock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     as<VarMutexBase>(args[0])->unlock();
     return vm.getNil();
@@ -89,7 +89,7 @@ Var *mutexUnlock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *lockGuardNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->isDerivedFrom<VarMutexBase>()) {
         vm.fail(loc, "expected a mutex argument for creating a lockguard, found: ",

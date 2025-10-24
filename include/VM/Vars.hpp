@@ -35,7 +35,7 @@ class VarStack
 {
     MemoryManager &mem;
     RecursiveMutex mtx;
-    Vector<size_t> loops_from;
+    Vector<size_t> loopsFrom;
     // each VarFrame is a stack frame
     // Vector is not used here as VarFrame has to be stored as a pointer.
     // This is so because otherwise, on vector resize, it will cause the VarFrame object to

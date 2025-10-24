@@ -18,26 +18,26 @@ bool DeferStack::popLoop(ModuleLoc loc)
 void DeferStack::applyDefers(Vector<Stmt *> &stmts)
 {
     // get defer statements' insert location
-    size_t loc         = 0;
-    bool is_ret        = false;
-    bool is_break_cont = false;
+    size_t loc       = 0;
+    bool isRet       = false;
+    bool isBreakCont = false;
     if(!stmts.empty()) {
-        loc           = stmts.size();
-        is_ret        = stmts[loc - 1]->isReturn();
-        is_break_cont = stmts[loc - 1]->isBreak() || stmts[loc - 1]->isContinue();
-        if(is_break_cont || is_ret) --loc;
+        loc         = stmts.size();
+        isRet       = stmts[loc - 1]->isReturn();
+        isBreakCont = stmts[loc - 1]->isBreak() || stmts[loc - 1]->isContinue();
+        if(isBreakCont || isRet) --loc;
     }
     for(auto stackit = deferstack.rbegin(); stackit != deferstack.rend(); ++stackit) {
         auto &layer = *stackit;
         // loop's layer is represented by layer[0] = nullptr
         // therefore, if we're at the loop layer and if it's a continue/break statement,
         // then stop applying defers
-        if(is_break_cont && (layer.empty() || layer[0] == nullptr)) break;
+        if(isBreakCont && (layer.empty() || layer[0] == nullptr)) break;
         for(auto defit = layer.rbegin(); defit != layer.rend(); ++defit) {
             if(*defit != nullptr) stmts.insert(stmts.begin() + loc, *defit);
             ++loc;
         }
-        if(!is_ret && !is_break_cont) break;
+        if(!isRet && !isBreakCont) break;
     }
 }
 

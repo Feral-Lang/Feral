@@ -29,7 +29,7 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *statNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStruct>()) {
         vm.fail(args[1]->getLoc(), "expected a struct (of type Stat) as first argument, found: ",
@@ -107,7 +107,7 @@ Var *statNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsReg(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -115,7 +115,7 @@ Var *statIsReg(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -123,7 +123,7 @@ Var *statIsDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsChr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -132,7 +132,7 @@ Var *statIsChr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 #if !defined(CORE_OS_WINDOWS)
 Var *statIsBlk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -140,7 +140,7 @@ Var *statIsBlk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsFifo(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -148,7 +148,7 @@ Var *statIsFifo(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsLnk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -156,7 +156,7 @@ Var *statIsLnk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *statIsSock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();

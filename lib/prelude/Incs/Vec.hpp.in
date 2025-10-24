@@ -1,11 +1,11 @@
 Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
-    auto refloc    = assn_args.find("refs");
-    auto caploc    = assn_args.find("cap");
+    auto refloc    = assnArgs.find("refs");
+    auto caploc    = assnArgs.find("cap");
     size_t resvcap = args.size() - 1;
     bool refs      = false;
-    if(refloc != assn_args.end()) {
+    if(refloc != assnArgs.end()) {
         Var *refsv = refloc->second.val;
         if(!refsv->is<VarBool>()) {
             vm.fail(loc,
@@ -16,7 +16,7 @@ Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         }
         refs = as<VarBool>(refsv)->getVal();
     }
-    if(caploc != assn_args.end()) {
+    if(caploc != assnArgs.end()) {
         Var *capv = caploc->second.val;
         if(!capv->is<VarInt>()) {
             vm.fail(loc,
@@ -42,43 +42,43 @@ Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
 Var *vecCapacity(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
 Var *vecIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *vecFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
 Var *vecBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
 Var *vecPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     VarVec *res = as<VarVec>(args[0]);
     for(size_t i = 1; i < args.size(); ++i) {
@@ -93,7 +93,7 @@ Var *vecPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     VarVec *res = as<VarVec>(args[0]);
     if(res->isEmpty()) {
@@ -106,7 +106,7 @@ Var *vecPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     VarVec *v = as<VarVec>(args[0]);
     for(auto &e : v->getVal()) {
@@ -117,7 +117,7 @@ Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -144,7 +144,7 @@ Var *vecSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
@@ -164,7 +164,7 @@ Var *vecErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -190,7 +190,7 @@ Var *vecInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecAppend(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarVec>()) {
         vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
@@ -231,7 +231,7 @@ Var *vecAppend(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecSwap(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
@@ -248,7 +248,7 @@ Var *vecSwap(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecReverse(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarVec *res = as<VarVec>(args[0]);
     std::reverse(res->begin(), res->end());
@@ -256,7 +256,7 @@ Var *vecReverse(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
@@ -270,7 +270,7 @@ Var *vecAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -308,7 +308,7 @@ Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecSlice(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected starting index to be of type integer for vec.slice(), found: ",
@@ -344,13 +344,13 @@ Var *vecSlice(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *vecEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
 Var *vecIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assnArgs)
 {
     VarVecIterator *it = as<VarVecIterator>(args[0]);
     Var *res           = nullptr;

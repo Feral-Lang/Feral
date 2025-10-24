@@ -1,5 +1,5 @@
 Var *typeIDEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarTypeID>()) {
         return vm.getFalse();
@@ -9,7 +9,7 @@ Var *typeIDEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *typeIDNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarTypeID>()) {
         return vm.getTrue();

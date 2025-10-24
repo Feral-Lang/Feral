@@ -42,7 +42,7 @@ void VarAtomicInt::onSet(MemoryManager &mem, Var *from) { val = as<VarAtomicInt>
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *atomicBoolNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarBool>()) {
         vm.fail(loc, "expected bool argument for creating an atomic bool, found: ",
@@ -53,7 +53,7 @@ Var *atomicBoolNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *atomicBoolSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarBool>()) {
         vm.fail(loc, "expected int argument for setting an atomic int, found: ",
@@ -65,7 +65,7 @@ Var *atomicBoolSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *atomicBoolGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarAtomicBool>(args[0])->getVal() ? vm.getTrue() : vm.getFalse();
 }
@@ -75,7 +75,7 @@ Var *atomicBoolGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *atomicIntNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for creating an atomic int, found: ",
@@ -86,7 +86,7 @@ Var *atomicIntNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *atomicIntSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for setting an atomic int, found: ",
@@ -98,7 +98,7 @@ Var *atomicIntSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *atomicIntGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarAtomicInt>(args[0])->getVal());
 }

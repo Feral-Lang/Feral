@@ -31,7 +31,7 @@ int execInternal(const String &file);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *sleepCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for sleep time, found: ", vm.getTypeName(args[1]));
@@ -43,7 +43,7 @@ Var *sleepCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *getEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -57,7 +57,7 @@ Var *getEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *setEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -85,7 +85,7 @@ Var *setEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     Span<Var *> argsToUse = args;
     size_t startFrom      = 1;
@@ -122,12 +122,12 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 #endif
 
     Var *outVar    = nullptr;
-    auto outVarLoc = assn_args.find("out");
-    if(outVarLoc != assn_args.end()) outVar = outVarLoc->second.val;
+    auto outVarLoc = assnArgs.find("out");
+    if(outVarLoc != assnArgs.end()) outVar = outVarLoc->second.val;
 
     Var *envVar    = nullptr;
-    auto envVarLoc = assn_args.find("env");
-    if(envVarLoc != assn_args.end()) envVar = envVarLoc->second.val;
+    auto envVarLoc = assnArgs.find("env");
+    if(envVarLoc != assnArgs.end()) envVar = envVarLoc->second.val;
 
     if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>())) {
         vm.fail(loc, "expected out variable to be a string/vector, or not used, found: ",
@@ -207,7 +207,7 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for command, found: ", vm.getTypeName(args[1]));
@@ -223,7 +223,7 @@ Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *osGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
 #if defined(CORE_OS_WINDOWS)
     return vm.makeVar<VarStr>(loc, "windows");
@@ -241,7 +241,7 @@ Var *osGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *osStrErr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for destination directory, found: ",
@@ -256,7 +256,7 @@ Var *osStrErr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *osGetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
     if(res->getVal().empty()) {
@@ -268,7 +268,7 @@ Var *osGetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for destination directory, found: ",
@@ -281,7 +281,7 @@ Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 #if !defined(CORE_OS_WINDOWS)
 Var *osChmod(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,

@@ -16,7 +16,7 @@ namespace fer
 {
 
 Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args);
+                const StringMap<AssnArgData> &assnArgs);
 
 #if defined(CORE_OS_WINDOWS)
 static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
@@ -60,8 +60,8 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     moduleDirs->insert(moduleDirs->begin(), moduleLoc);
 
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
-    String feral_paths = env::get("FERAL_PATHS");
-    for(auto &_path : utils::stringDelim(feral_paths, ";")) {
+    String feralPaths = env::get("FERAL_PATHS");
+    for(auto &_path : utils::stringDelim(feralPaths, ";")) {
         VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
         moduleDirs->insert(moduleDirs->begin(), moduleLoc);
     }
@@ -145,10 +145,10 @@ int Interpreter::runFile(ModuleLoc loc, const char *file, StringRef threadName)
     return res;
 }
 Var *Interpreter::runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                              const StringMap<AssnArgData> &assn_args)
+                              const StringMap<AssnArgData> &assnArgs)
 {
     VirtualMachine *vm = createVM(name);
-    Var *res           = vm->callVar(loc, name, callable, args, assn_args);
+    Var *res           = vm->callVar(loc, name, callable, args, assnArgs);
     destroyVM(vm);
     return res;
 }
@@ -238,14 +238,14 @@ void Interpreter::addGlobal(StringRef name, Var *val, bool iref)
 }
 Var *Interpreter::getGlobal(StringRef name) { return globals->get(name); }
 
-void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa)
 {
-    addGlobal(name, genNativeFn(loc, name, fn, args, is_va), false);
+    addGlobal(name, genNativeFn(loc, name, fn, args, isVa), false);
 }
-VarFn *Interpreter::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va)
+VarFn *Interpreter::genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa)
 {
     VarFn *f =
-        makeVarWithRef<VarFn>(loc, -1, "", is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
+        makeVarWithRef<VarFn>(loc, -1, "", isVa ? "." : "", args, 0, FnBody{.native = fn}, true);
     for(size_t i = 0; i < args; ++i) f->pushParam("");
     return f;
 }
@@ -551,7 +551,7 @@ bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, Stri
 }
 
 Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
-                             const StringMap<AssnArgData> &assn_args)
+                             const StringMap<AssnArgData> &assnArgs)
 {
     assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
     bool memcall = args[0] != nullptr;
@@ -575,14 +575,14 @@ Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
         fail(loc, "Variable '", name, "' of type '", getTypeName(fn), "' is not callable");
         return nullptr;
     }
-    return callVar(loc, name, fn, args, assn_args);
+    return callVar(loc, name, fn, args, assnArgs);
 }
 
 Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                             const StringMap<AssnArgData> &assn_args)
+                             const StringMap<AssnArgData> &assnArgs)
 {
     bool memcall = args[0] != nullptr;
-    Var *retdata = callable->call(*this, loc, args, assn_args);
+    Var *retdata = callable->call(*this, loc, args, assnArgs);
     if(!retdata) {
         if(memcall) {
             fail(loc, "call to '", name, "' failed for type: ", getTypeName(args[0]));

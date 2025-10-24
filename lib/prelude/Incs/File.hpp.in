@@ -37,7 +37,7 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -65,7 +65,7 @@ Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -100,7 +100,7 @@ Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -111,7 +111,7 @@ Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarFile *filev = as<VarFile>(args[0]);
     if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
@@ -138,7 +138,7 @@ Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     char *lineptr    = NULL;
@@ -161,7 +161,7 @@ Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     if(!args[1]->is<VarInt>()) {
@@ -180,13 +180,13 @@ Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileEachLine(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
 }
 
 Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assn_args)
+                      const StringMap<AssnArgData> &assnArgs)
 {
     VarFileIterator *it = as<VarFileIterator>(args[0]);
     VarStr *res         = vm.makeVar<VarStr>(loc, "");
@@ -198,7 +198,7 @@ Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     char *lineptr    = NULL;
@@ -218,7 +218,7 @@ Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assnArgs)
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
 
@@ -236,49 +236,49 @@ Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     const String &beg = as<VarStr>(args[1])->getVal();
     const String &end = as<VarStr>(args[2])->getVal();
 
-    bool inside_block = false;
-    char *lineptr     = NULL;
-    size_t len        = 0;
-    ssize_t read      = 0;
+    bool insideBlock = false;
+    char *lineptr    = NULL;
+    size_t len       = 0;
+    ssize_t read     = 0;
 
     StringRef line;
-    String block_content;
+    String blockContent;
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
     while((read = getline(&lineptr, &len, file)) != -1) {
         line = lineptr;
-    begin_fetch:
+    beginFetch:
         if(line.empty()) continue;
-        if(!inside_block) {
+        if(!insideBlock) {
             size_t pos = line.find(beg);
             if(pos == String::npos) continue;
-            inside_block = true;
+            insideBlock = true;
             if(pos + beg.size() > line.size()) continue;
             else line = line.substr(pos + beg.size());
-            goto begin_fetch;
+            goto beginFetch;
         }
         size_t pos = line.find(end);
         if(pos == String::npos) {
-            block_content += line;
+            blockContent += line;
             continue;
         }
-        block_content += line.substr(0, pos);
+        blockContent += line.substr(0, pos);
         if(pos + end.size() <= line.size()) line = line.substr(pos + end.size());
         else line = "";
-        inside_block = false;
-        res->push(vm.makeVarWithRef<VarStr>(loc, block_content));
-        block_content.clear();
-        goto begin_fetch;
+        insideBlock = false;
+        res->push(vm.makeVarWithRef<VarStr>(loc, blockContent));
+        blockContent.clear();
+        goto beginFetch;
     }
 
     if(lineptr) free(lineptr);
     fseek(file, 0, SEEK_SET);
 
-    // this should actually never occur since block_content
+    // this should actually never occur since blockContent
     // is always pushed back when end point is found
-    // if( !block_content.empty() ) {
-    //     res->push(vm.makeVar<VarStr>(loc, block_content));
+    // if( !blockContent.empty() ) {
+    //     res->push(vm.makeVar<VarStr>(loc, blockContent));
     // }
-    assert(block_content.empty());
+    assert(blockContent.empty());
 
     return res;
 }
@@ -291,7 +291,7 @@ Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // equivalent to open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)
 Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -311,7 +311,7 @@ Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -331,7 +331,7 @@ Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -355,7 +355,7 @@ Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -388,7 +388,7 @@ Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -404,7 +404,7 @@ Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -414,7 +414,7 @@ Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for source, found: ", vm.getTypeName(args[1]));
@@ -446,7 +446,7 @@ Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     for(size_t i = 1; i < args.size(); ++i) {
         if(!args[i]->is<VarStr>()) {
@@ -466,7 +466,7 @@ Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -489,7 +489,7 @@ Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     for(size_t i = 1; i < args.size(); ++i) {
         if(!args[i]->is<VarStr>()) {
@@ -509,7 +509,7 @@ Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     // args must have: nullptr, [src]+, dest
     if(args.size() < 3) {
@@ -542,7 +542,7 @@ Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fsMove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));

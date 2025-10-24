@@ -39,43 +39,43 @@ namespace fer
 #include "Incs/ToStr.hpp.in"
 
 Var *allGetTypeID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
 Var *allGetTypeFnID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
 }
 
 Var *allGetTypeStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
 Var *allEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *allNilCoalesce(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assnArgs)
 {
     return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
 Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     Var *copy = vm.copyVar(loc, args[0]);
     // decreased because system internally will increment it again
@@ -88,20 +88,20 @@ Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // there is no point in calling this since reference count of that object will be 1
 // and hence the VM won't create a copy of it when used in creating a new var.
 Var *reference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     args[1]->setLoadAsRef();
     return args[1];
 }
 Var *unreference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     args[1]->unsetLoadAsRef();
     return args[1];
 }
 
 Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     String res;
     for(size_t i = 1; i < args.size(); ++i) {
@@ -116,7 +116,7 @@ Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *evaluateCode(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
@@ -132,7 +132,7 @@ Var *evaluateCode(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
@@ -151,7 +151,7 @@ Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // vice-versa.
 
 Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     String name;
 #if defined(CORE_OS_WINDOWS)
@@ -169,7 +169,7 @@ Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     String distro;
 #if defined(CORE_OS_WINDOWS)
@@ -205,7 +205,7 @@ Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // Stuff from std/sys module
 
 Var *_exit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer for exit code, found: ", vm.getTypeName(args[1]));
@@ -217,7 +217,7 @@ Var *_exit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -238,7 +238,7 @@ Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *setMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assn_args)
+                      const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for max count, found: ", vm.getTypeName(args[1]));
@@ -249,13 +249,13 @@ Var *setMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *getMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assn_args)
+                      const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, vm.getRecurseMax());
 }
 
 Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                          const StringMap<AssnArgData> &assn_args)
+                          const StringMap<AssnArgData> &assnArgs)
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];
@@ -288,7 +288,7 @@ Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *removeGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                             const StringMap<AssnArgData> &assn_args)
+                             const StringMap<AssnArgData> &assnArgs)
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];

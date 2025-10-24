@@ -40,7 +40,7 @@ bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *cap
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *regexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected regex to be a string, found: ", vm.getTypeName(args[1]));
@@ -55,7 +55,7 @@ Var *regexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *regexMatch(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected regex target to be a string, found: ", vm.getTypeName(args[1]));

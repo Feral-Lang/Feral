@@ -70,7 +70,7 @@ public:
 
     int runFile(ModuleLoc loc, const char *file, StringRef threadName);
     Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args);
+                     const StringMap<AssnArgData> &assnArgs);
 
     // Must be used with full path of directory
     void tryAddModulePathsFromDir(String dir);
@@ -84,8 +84,8 @@ public:
     void addGlobal(StringRef name, Var *val, bool iref = true);
     Var *getGlobal(StringRef name);
 
-    void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va = false);
-    VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va = false);
+    void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false);
+    VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false);
 
     void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref);
     Var *getTypeFn(Var *var, StringRef name);
@@ -212,9 +212,9 @@ public:
     // Used primarily within libraries & by toStr, toBool
     // first arg must ALWAYS be self for memcall, nullptr otherwise
     Var *callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args);
+                 const StringMap<AssnArgData> &assnArgs);
     Var *callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args);
+                 const StringMap<AssnArgData> &assnArgs);
 
     // evaluate a given expression and return its result
     // primarily used for templates
@@ -244,14 +244,14 @@ public:
     inline Var *getGlobal(StringRef name) { return ip.getGlobal(name); }
 
     inline void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-                            bool is_va = false)
+                            bool isVa = false)
     {
-        return ip.addNativeFn(loc, name, fn, args, is_va);
+        return ip.addNativeFn(loc, name, fn, args, isVa);
     }
     inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-                              bool is_va = false)
+                              bool isVa = false)
     {
-        return ip.genNativeFn(loc, name, fn, args, is_va);
+        return ip.genNativeFn(loc, name, fn, args, isVa);
     }
 
     inline void setTypeName(size_t _typeid, StringRef name) { ip.setTypeName(_typeid, name); }
@@ -269,7 +269,7 @@ public:
     inline VarModule *getCurrModule() { return modulestack.back(); }
     inline bool isExitCalled() { return exitcalled; }
     inline void setExitCalled(bool called) { exitcalled = called; }
-    inline void setExitCode(int exit_code) { exitcode = exit_code; }
+    inline void setExitCode(int code) { exitcode = code; }
 
     inline Interpreter &getInterpreter() { return ip; }
     inline args::ArgParser &getArgParser() { return ip.argparser; }
@@ -339,19 +339,19 @@ public:
     }
 
     template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addNativeTypeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool is_va = false)
+    addNativeTypeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false)
     {
         VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
-                                         is_va ? "." : "", args, 0, FnBody{.native = fn}, true);
+                                         isVa ? "." : "", args, 0, FnBody{.native = fn}, true);
         for(size_t i = 0; i < args; ++i) f->pushParam("");
         addTypeFn(typeID<T>(), name, f, false);
     }
 
     template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
     callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assnArgs)
     {
-        if(!(retdata = callVar(loc, name, args, assn_args))) return false;
+        if(!(retdata = callVar(loc, name, args, assnArgs))) return false;
         if(!retdata->is<T>()) {
             fail(loc, "'", name, "' ", !args.empty() && args[0] != nullptr ? "member" : "func",
                  " call expected to return a '", getTypeName(typeID<T>()),
@@ -364,9 +364,9 @@ public:
 
     template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
     callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assnArgs)
     {
-        if(!(retdata = callVar(loc, name, callable, args, assn_args))) return false;
+        if(!(retdata = callVar(loc, name, callable, args, assnArgs))) return false;
         if(!retdata->is<T>()) {
             fail(loc, "'", name, "' ", !args.empty() && args[0] != nullptr ? "member" : "func",
                  " call expected to return a '", getTypeName(typeID<T>()),

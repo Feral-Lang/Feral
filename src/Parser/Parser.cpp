@@ -15,8 +15,8 @@ Parser::Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks)
 {}
 
 // on successful parse, returns true, and tree is allocated
-// if with_brace is true, it will attempt to find the beginning and ending brace for each block
-bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
+// if withBrace is true, it will attempt to find the beginning and ending brace for each block
+bool Parser::parseBlock(StmtBlock *&tree, bool withBrace)
 {
     tree = nullptr;
 
@@ -25,7 +25,7 @@ bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
 
     lex::Lexeme &start = p.peek();
 
-    if(with_brace) {
+    if(withBrace) {
         if(!p.acceptn(lex::LBRACE)) {
             err.fail(p.peek().getLoc(),
                      "expected opening braces '{' for block, found: ", p.peek().getTok().cStr());
@@ -33,24 +33,24 @@ bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
         }
     }
 
-    while(p.isValid() && (!with_brace || !p.accept(lex::RBRACE))) {
-        bool skip_cols = false;
+    while(p.isValid() && (!withBrace || !p.accept(lex::RBRACE))) {
+        bool skipCols = false;
         // logic
         if(p.accept(lex::LET)) {
             if(!parseVardecl(stmt)) return false;
         } else if(p.accept(lex::IF)) {
             if(!parseConds(stmt)) return false;
-            skip_cols = true;
+            skipCols = true;
         } else if(p.accept(lex::FOR)) {
             if(p.peekt(1) == lex::IDEN && p.peekt(2) == lex::FIN) {
                 if(!parseForIn(stmt)) return false;
             } else {
                 if(!parseFor(stmt)) return false;
             }
-            skip_cols = true;
+            skipCols = true;
         } else if(p.accept(lex::WHILE)) {
             if(!parseWhile(stmt)) return false;
-            skip_cols = true;
+            skipCols = true;
         } else if(p.accept(lex::RETURN)) {
             if(!parseRet(stmt)) return false;
         } else if(p.accept(lex::CONTINUE)) {
@@ -61,15 +61,15 @@ bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
             if(!parseDefer(stmt)) return false;
         } else if(p.accept(lex::INLINE)) {
             if(p.peekt(1) == lex::IF && !parseConds(stmt)) return false;
-            skip_cols = true;
+            skipCols = true;
         } else if(p.accept(lex::LBRACE)) {
             if(!parseBlock((StmtBlock *&)stmt)) return false;
-            skip_cols = true;
+            skipCols = true;
         } else if(!parseExpr(stmt)) {
             return false;
         }
 
-        if(skip_cols || p.acceptn(lex::COLS)) {
+        if(skipCols || p.acceptn(lex::COLS)) {
             stmts.push_back(stmt);
             stmt = nullptr;
             continue;
@@ -79,7 +79,7 @@ bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
         return false;
     }
 
-    if(with_brace) {
+    if(withBrace) {
         if(!p.acceptn(lex::RBRACE)) {
             err.fail(p.peek().getLoc(),
                      "expected closing braces '}' for block, found: ", p.peek().getTok().cStr());
@@ -87,7 +87,7 @@ bool Parser::parseBlock(StmtBlock *&tree, bool with_brace)
         }
     }
 
-    tree = StmtBlock::create(allocator, start.getLoc(), stmts, !with_brace);
+    tree = StmtBlock::create(allocator, start.getLoc(), stmts, !withBrace);
     return true;
 }
 
@@ -722,7 +722,7 @@ bool Parser::parseExpr01(Stmt *&expr)
     Stmt *rhs = nullptr;
     Vector<Stmt *> args;
     Stmt *arg = nullptr;
-    Vector<bool> unpack_vector; // works for variadic as well
+    Vector<bool> unpackVector; // works for variadic as well
 
     // prefixed/suffixed literals
     if(p.accept(lex::IDEN) && p.peek(1).getTok().isLiteral() ||
@@ -747,16 +747,16 @@ bool Parser::parseExpr01(Stmt *&expr)
         return false;
     }
     if(p.accept(lex::FN) && !parseFnDef(lhs)) return false;
-    goto begin_brack;
+    goto beginBrack;
 
-after_dot:
+afterDot:
     if(!p.acceptd() || !parseSimple(rhs)) return false;
     if(lhs && rhs) {
         lhs = StmtExpr::create(allocator, dot.getLoc(), lhs, dot, rhs);
         rhs = nullptr;
     }
 
-begin_brack:
+beginBrack:
     if(p.accept(lex::LBRACK)) {
         lex::Lexeme oper;
         p.sett(lex::SUBS);
@@ -776,7 +776,7 @@ begin_brack:
         lhs = StmtExpr::create(allocator, oper.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
         if(p.accept(lex::LBRACK, lex::LPAREN) || (p.peekt() == lex::DOT && p.peekt(1) == lex::LT))
-            goto begin_brack;
+            goto beginBrack;
     } else if(p.accept(lex::LPAREN)) {
         if(!p.accept(lex::LPAREN)) {
             err.fail(p.peek().getLoc(),
@@ -788,7 +788,7 @@ begin_brack:
         lex::Lexeme oper = p.peek();
         oper.getTok().setVal(lex::FNCALL);
         p.next();
-        if(p.acceptn(lex::RPAREN)) goto post_args;
+        if(p.acceptn(lex::RPAREN)) goto postArgs;
         // parse arguments
         while(true) {
             if(p.accept(lex::STR, lex::IDEN) && p.peekt(1) == lex::ASSN) {
@@ -802,9 +802,9 @@ begin_brack:
             } else if(!parseExpr17(arg)) { // normal arg
                 return false;
             }
-            unpack_vector.push_back(arg->isExpr() &&
-                                    as<StmtExpr>(arg)->getOperTok().isType(lex::PostVA));
-            if(unpack_vector.back()) arg = as<StmtExpr>(arg)->getLHS();
+            unpackVector.push_back(arg->isExpr() &&
+                                   as<StmtExpr>(arg)->getOperTok().isType(lex::PostVA));
+            if(unpackVector.back()) arg = as<StmtExpr>(arg)->getLHS();
             args.push_back(arg);
             arg = nullptr;
             if(!p.acceptn(lex::COMMA)) break;
@@ -816,15 +816,15 @@ begin_brack:
                      p.peek().getTok().cStr());
             return false;
         }
-    post_args:
+    postArgs:
         rhs =
-            StmtFnArgs::create(allocator, oper.getLoc(), std::move(args), std::move(unpack_vector));
-        lhs           = StmtExpr::create(allocator, oper.getLoc(), lhs, oper, rhs);
-        rhs           = nullptr;
-        args          = {};
-        unpack_vector = {};
+            StmtFnArgs::create(allocator, oper.getLoc(), std::move(args), std::move(unpackVector));
+        lhs          = StmtExpr::create(allocator, oper.getLoc(), lhs, oper, rhs);
+        rhs          = nullptr;
+        args         = {};
+        unpackVector = {};
 
-        if(p.accept(lex::LBRACK, lex::LPAREN)) goto begin_brack;
+        if(p.accept(lex::LBRACK, lex::LPAREN)) goto beginBrack;
     }
 
     if(p.acceptn(lex::DOT, lex::ARROW)) {
@@ -833,7 +833,7 @@ begin_brack:
             rhs = nullptr;
         }
         dot = p.peek(-1);
-        goto after_dot;
+        goto afterDot;
     }
 
     if(lhs && rhs) {
@@ -844,7 +844,7 @@ begin_brack:
     return true;
 }
 
-bool Parser::parseVar(StmtVar *&var, bool is_fn_arg)
+bool Parser::parseVar(StmtVar *&var, bool isFnArg)
 {
     var = nullptr;
 
@@ -858,7 +858,7 @@ bool Parser::parseVar(StmtVar *&var, bool is_fn_arg)
     Stmt *val = nullptr;
     Stmt *in  = nullptr;
 
-    if(p.acceptn(lex::FIN) && !is_fn_arg) {
+    if(p.acceptn(lex::FIN) && !isFnArg) {
         if(!parseExpr01((Stmt *&)in)) {
             err.fail(p.peek().getLoc(),
                      "failed to parse in-type for variable: ", name.getDataStr());
@@ -867,14 +867,14 @@ bool Parser::parseVar(StmtVar *&var, bool is_fn_arg)
     }
 
     if(!p.acceptn(lex::ASSN)) {
-        if(is_fn_arg) goto end;
+        if(isFnArg) goto end;
         err.fail(name.getLoc(), "invalid variable declaration - no value set");
         return false;
     }
     if(!parseExpr17(val)) return false;
 
 end:
-    var = StmtVar::create(allocator, name.getLoc(), name, in, val, is_fn_arg);
+    var = StmtVar::create(allocator, name.getLoc(), name, in, val, isFnArg);
     return true;
 }
 
@@ -885,7 +885,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
     Vector<StmtVar *> args;
     StmtVar *arg = nullptr;
     Set<StringRef> argnames;
-    StmtSimple *kwarg = nullptr, *vaarg = nullptr;
+    StmtSimple *kwArg = nullptr, *vaarg = nullptr;
     lex::Lexeme &start = p.peek();
 
     if(!p.acceptn(lex::FN)) {
@@ -898,12 +898,12 @@ bool Parser::parseFnSig(Stmt *&fsig)
                  p.peek().getTok().cStr());
         return false;
     }
-    if(p.acceptn(lex::RPAREN)) goto post_args;
+    if(p.acceptn(lex::RPAREN)) goto postArgs;
 
     // args
     while(true) {
-        bool attempt_kw = false;
-        if(p.accept(lex::STR)) attempt_kw = true;
+        bool tryKW = false;
+        if(p.accept(lex::STR)) tryKW = true;
         if(!p.accept(lex::IDEN, lex::STR)) {
             err.fail(p.peek().getLoc(),
                      "expected identifier/str for argument, found: ", p.peek().getTok().cStr());
@@ -916,15 +916,15 @@ bool Parser::parseFnSig(Stmt *&fsig)
         }
         argnames.insert(p.peek().getDataStr());
         // this is a keyword arg
-        if(attempt_kw) {
-            if(kwarg) {
+        if(tryKW) {
+            if(kwArg) {
                 err.fail(p.peek().getLoc(),
                          "function cannot have multiple"
                          " keyword arguments (previous: ",
-                         kwarg->getLexDataStr(), ")");
+                         kwArg->getLexDataStr(), ")");
                 return false;
             }
-            kwarg = StmtSimple::create(allocator, p.peek().getLoc(), p.peek());
+            kwArg = StmtSimple::create(allocator, p.peek().getLoc(), p.peek());
             p.next();
         } else if(p.peekt(1) == lex::PreVA) {
             p.peek(1).getTok().setVal(lex::PostVA);
@@ -953,8 +953,8 @@ bool Parser::parseFnSig(Stmt *&fsig)
         return false;
     }
 
-post_args:
-    fsig = StmtFnSig::create(allocator, start.getLoc(), args, kwarg, vaarg);
+postArgs:
+    fsig = StmtFnSig::create(allocator, start.getLoc(), args, kwArg, vaarg);
     return true;
 }
 bool Parser::parseFnDef(Stmt *&fndef)
@@ -1008,7 +1008,7 @@ bool Parser::parseConds(Stmt *&conds)
 
     lex::Lexeme &start = p.peek();
 
-    bool is_inline = p.acceptn(lex::INLINE);
+    bool isInline = p.acceptn(lex::INLINE);
 
 cond:
     if(!p.acceptn(lex::IF, lex::ELIF)) {
@@ -1027,7 +1027,7 @@ blk:
         return false;
     }
     // If the conditional is inline, the block shouldn't generate PUSH/POP_BLK instructions.
-    if(is_inline) c.getBlk()->setTop(is_inline);
+    if(isInline) c.getBlk()->setTop(isInline);
 
     cvec.emplace_back(c.getCond(), c.getBlk());
     c.reset();

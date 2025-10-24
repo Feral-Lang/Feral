@@ -78,23 +78,23 @@ Var *VarStack::get(StringRef name)
 void VarStack::pushLoop()
 {
     LockGuard<RecursiveMutex> _(mtx);
-    loops_from.push_back(stack.size());
+    loopsFrom.push_back(stack.size());
     pushStack(1);
 }
 void VarStack::popLoop()
 {
     LockGuard<RecursiveMutex> _(mtx);
-    assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
-    if(stack.size() - 1 >= loops_from.back()) {
-        popStack(stack.size() - loops_from.back());
+    assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
+    if(stack.size() - 1 >= loopsFrom.back()) {
+        popStack(stack.size() - loopsFrom.back());
     }
-    loops_from.pop_back();
+    loopsFrom.pop_back();
 }
 void VarStack::continueLoop()
 {
     LockGuard<RecursiveMutex> _(mtx);
-    assert(loops_from.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
-    if(stack.size() - 1 > loops_from.back()) popStack(stack.size() - 1 - loops_from.back());
+    assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
+    if(stack.size() - 1 > loopsFrom.back()) popStack(stack.size() - 1 - loopsFrom.back());
 }
 
 void VarStack::add(StringRef name, Var *val, bool iref)

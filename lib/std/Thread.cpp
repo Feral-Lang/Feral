@@ -25,23 +25,23 @@ size_t ThreadIdToNum(Thread::id id)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarThread::VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable,
-                     Span<Var *> _args, const StringMap<AssnArgData> &_assn_args)
+                     Span<Var *> _args, const StringMap<AssnArgData> &_assnArgs)
     : Var(loc, false, false), name(name), res(nullptr), thread(nullptr), ip(_ip),
       callable(_callable)
 {
     args.reserve(_args.size() + 1); // +1 for self/nullptr
-    auto selfArgLoc = _assn_args.find("selfVar");
+    auto selfArgLoc = _assnArgs.find("selfVar");
     Var *selfVar    = nullptr;
-    if(selfArgLoc != _assn_args.end()) {
+    if(selfArgLoc != _assnArgs.end()) {
         selfVar = selfArgLoc->second.val;
     }
     args.push_back(selfVar);
     args.insert(args.end(), _args.begin(), _args.end());
 
-    assn_args.reserve(_assn_args.size() - (selfVar != nullptr ? 1 : 0));
-    for(auto &aa : _assn_args) {
+    assnArgs.reserve(_assnArgs.size() - (selfVar != nullptr ? 1 : 0));
+    for(auto &aa : _assnArgs) {
         if(aa.first == "selfVar") continue;
-        assn_args.insert(aa);
+        assnArgs.insert(aa);
     }
 }
 VarThread::~VarThread() {}
@@ -52,9 +52,9 @@ void VarThread::onCreate(MemoryManager &mem)
     for(auto &a : args) {
         if(a) Var::incVarRef(a);
     }
-    for(auto &aa : assn_args) Var::incVarRef(aa.second.val);
+    for(auto &aa : assnArgs) Var::incVarRef(aa.second.val);
     PackagedTask<Var *()> task(
-        std::bind(&Interpreter::runCallable, &ip, getLoc(), name, callable, args, assn_args));
+        std::bind(&Interpreter::runCallable, &ip, getLoc(), name, callable, args, assnArgs));
     res    = new SharedFuture<Var *>(task.get_future());
     thread = new JThread(std::move(task));
 }
@@ -65,7 +65,7 @@ void VarThread::onDestroy(MemoryManager &mem)
         delete res;
         delete thread; // no need to join as we are using JThread
     }
-    for(auto &aa : assn_args) Var::decVarRef(mem, aa.second.val);
+    for(auto &aa : assnArgs) Var::decVarRef(mem, aa.second.val);
     for(auto &a : args) {
         if(a) Var::decVarRef(mem, a);
     }
@@ -81,25 +81,25 @@ void VarThread::onDestroy(MemoryManager &mem)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *getConcurrency(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, Thread::hardware_concurrency());
 }
 
 Var *getCurrentThreadId(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args)
+                        const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, ThreadIdToNum(std::this_thread::get_id()));
 }
 
 Var *getCurrentThreadName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                          const StringMap<AssnArgData> &assn_args)
+                          const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarStr>(loc, vm.getName());
 }
 
 Var *yieldCurrentThread(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args)
+                        const StringMap<AssnArgData> &assnArgs)
 {
     std::this_thread::yield();
     return vm.getNil();
@@ -110,16 +110,16 @@ Var *yieldCurrentThread(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *threadNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->isCallable()) {
         vm.fail(loc, "expected callable argument for multithreaded execution, found: ",
                 vm.getTypeName(args[1]));
         return nullptr;
     }
-    auto nameLoc   = assn_args.find("name");
+    auto nameLoc   = assnArgs.find("name");
     StringRef name = "FeralThread";
-    if(nameLoc != assn_args.end()) {
+    if(nameLoc != assnArgs.end()) {
         Var *nameVar = nameLoc->second.val;
         if(!nameVar->is<VarStr>()) {
             vm.fail(loc,
@@ -131,24 +131,24 @@ Var *threadNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     Var *callable = args[1];
     Span<Var *> passArgs(args.begin() + 2, args.end());
     VarThread *t =
-        vm.makeVar<VarThread>(loc, name, vm.getInterpreter(), callable, passArgs, assn_args);
+        vm.makeVar<VarThread>(loc, name, vm.getInterpreter(), callable, passArgs, assnArgs);
     return t;
 }
 
 Var *threadGetId(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, ThreadIdToNum(as<VarThread>(args[0])->getThreadId()));
 }
 
 Var *threadGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarStr>(loc, as<VarThread>(args[0])->getName());
 }
 
 Var *threadIsDone(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid()) return vm.getFalse();
@@ -157,7 +157,7 @@ Var *threadIsDone(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *threadJoin(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid()) return vm.getNil();
@@ -167,7 +167,7 @@ Var *threadJoin(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *threadGetRes(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assn_args)
+                  const StringMap<AssnArgData> &assnArgs)
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid() || fut->wait_for(std::chrono::seconds(0)) != std::future_status::ready)

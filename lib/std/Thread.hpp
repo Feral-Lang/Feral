@@ -13,14 +13,14 @@ class VarThread : public Var
     Interpreter &ip;
     Var *callable;
     Vector<Var *> args;
-    StringMap<AssnArgData> assn_args;
+    StringMap<AssnArgData> assnArgs;
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
 
 public:
     VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable, Span<Var *> _args,
-              const StringMap<AssnArgData> &_assn_args);
+              const StringMap<AssnArgData> &_assnArgs);
     ~VarThread();
 
     inline StringRef getName() { return name; }

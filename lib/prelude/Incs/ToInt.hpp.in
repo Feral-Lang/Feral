@@ -1,35 +1,35 @@
 Var *nilToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, 0);
 }
 
 Var *boolToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
 }
 
 Var *typeIDToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
 }
 
 Var *intToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return args[0];
 }
 
 Var *fltToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
 }
 
 Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     StringRef num = as<VarStr>(args[0])->getVal();
     for(auto c : num) {

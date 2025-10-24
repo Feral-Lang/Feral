@@ -19,10 +19,10 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, bool callable, bool attr_based) : loc(loc), ref(0), info(0)
+Var::Var(ModuleLoc loc, bool callable, bool attrBased) : loc(loc), ref(0), info(0)
 {
     if(callable) info |= (size_t)VarInfo::CALLABLE;
-    if(attr_based) info |= (size_t)VarInfo::ATTR_BASED;
+    if(attrBased) info |= (size_t)VarInfo::ATTR_BASED;
 }
 Var::~Var() {}
 
@@ -31,9 +31,9 @@ void Var::destroy(MemoryManager &mem) { onDestroy(mem); }
 Var *Var::copy(MemoryManager &mem, ModuleLoc loc) { return onCopy(mem, loc); }
 void Var::set(MemoryManager &mem, Var *from) { onSet(mem, from); }
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
+               const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
-    return onCall(vm, loc, args, assn_args, addFunc, addBlk);
+    return onCall(vm, loc, args, assnArgs, addFunc, addBlk);
 }
 
 void Var::onCreate(MemoryManager &mem) {}
@@ -41,7 +41,7 @@ void Var::onDestroy(MemoryManager &mem) {}
 Var *Var::onCopy(MemoryManager &mem, ModuleLoc loc) { return incVarRef(this); }
 void Var::onSet(MemoryManager &mem, Var *from) {}
 Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
+                 const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
     return nullptr;
 }
@@ -357,33 +357,33 @@ bool VarMapIterator::next(MemoryManager &mem, ModuleLoc loc, Var *&val)
 ////////////////////////////////////////// VarFn /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFn::VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
-             size_t paramcount, size_t assn_params_count, FnBody body, bool is_native)
-    : Var(loc, true, false), moduleId(moduleId), kw_arg(kw_arg), var_arg(var_arg), body(body),
-      is_native(is_native)
+VarFn::VarFn(ModuleLoc loc, ModuleId moduleId, const String &kwArg, const String &varArg,
+             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative)
+    : Var(loc, true, false), moduleId(moduleId), kwArg(kwArg), varArg(varArg), body(body),
+      isnative(isnative)
 {
     params.reserve(paramcount);
-    assn_params.reserve(assn_params_count);
+    assnParams.reserve(assnParamsCount);
 }
 void VarFn::onDestroy(MemoryManager &mem)
 {
-    for(auto &aa : assn_params) decVarRef(mem, aa.second);
+    for(auto &aa : assnParams) decVarRef(mem, aa.second);
 }
 Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
+                   const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
     MemoryManager &mem = vm.getMemoryManager();
     // -1 for self
-    if(args.size() - 1 < params.size() - assn_params.size() ||
-       (args.size() - 1 > params.size() && var_arg.empty()))
+    if(args.size() - 1 < params.size() - assnParams.size() ||
+       (args.size() - 1 > params.size() && varArg.empty()))
     {
         vm.fail(loc, "arg count required: ", params.size(),
-                " (without default args: ", params.size() - assn_args.size(),
+                " (without default args: ", params.size() - assnArgs.size(),
                 "); received: ", args.size() - 1);
         return nullptr;
     }
     if(isNative()) {
-        Var *res = body.native(vm, loc, args, assn_args);
+        Var *res = body.native(vm, loc, args, assnArgs);
         if(!res) return nullptr;
         return incVarRef(res);
     }
@@ -392,37 +392,37 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     // take care of 'self' (always present - either data or nullptr)
     if(args[0] != nullptr) vars.stash("self", args[0]);
     // default arguments
-    Set<StringRef> found_args;
+    Set<StringRef> foundArgs;
     size_t i = 1;
     for(auto &a : params) {
         if(i == args.size()) break;
         vars.stash(a, args[i++]);
-        found_args.insert(a);
+        foundArgs.insert(a);
     }
     // add all default args which have not been overwritten by args
-    for(auto &aa : assn_params) {
-        if(found_args.find(aa.first) != found_args.end()) continue;
+    for(auto &aa : assnParams) {
+        if(foundArgs.find(aa.first) != foundArgs.end()) continue;
         Var *cpy = copyVar(mem, loc, aa.second);
         vars.stash(aa.first, cpy, false); // copy will make sure there is ref = 1 already
     }
-    if(!var_arg.empty()) {
+    if(!varArg.empty()) {
         VarVec *v = makeVarWithRef<VarVec>(mem, loc, args.size(), false);
         while(i < args.size()) {
             incVarRef(args[i]);
             v->push(args[i]);
             ++i;
         }
-        vars.stash(var_arg, v, false);
+        vars.stash(varArg, v, false);
     }
-    if(!kw_arg.empty()) {
-        VarMap *m = makeVarWithRef<VarMap>(mem, loc, assn_args.size(), false);
-        m->initializePos(assn_args.size());
-        for(auto &a : assn_args) {
+    if(!kwArg.empty()) {
+        VarMap *m = makeVarWithRef<VarMap>(mem, loc, assnArgs.size(), false);
+        m->initializePos(assnArgs.size());
+        for(auto &a : assnArgs) {
             incVarRef(a.second.val);
             m->insert(a.first, a.second.val);
             m->setPos(a.second.pos, a.first);
         }
-        vars.stash(kw_arg, m, false);
+        vars.stash(kwArg, m, false);
     }
     Var *ret = nullptr;
     if(vm.execute(ret, addFunc, addBlk, body.feral.begin, body.feral.end) != 0 &&
@@ -459,14 +459,14 @@ bool VarModule::existsAttr(StringRef name) { return varStack->exists(name); }
 Var *VarModule::getAttr(StringRef name) { return varStack->get(name); }
 
 void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
-                            bool is_va)
+                            bool isVa)
 {
-    return addNativeFn(vm.getMemoryManager(), name, body, args, is_va);
+    return addNativeFn(vm.getMemoryManager(), name, body, args, isVa);
 }
 void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args,
-                            bool is_va)
+                            bool isVa)
 {
-    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", is_va ? "." : "", args, 0,
+    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", isVa ? "." : "", args, 0,
                                        FnBody{.native = body}, true);
     for(size_t i = 0; i < args; ++i) res->pushParam("");
     varStack->add(name, res, false);
@@ -498,10 +498,10 @@ void VarStructDef::onDestroy(MemoryManager &mem)
 }
 
 Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                          const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
+                          const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
     MemoryManager &mem = vm.getMemoryManager();
-    for(auto &aa : assn_args) {
+    for(auto &aa : assnArgs) {
         if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
             vm.fail(aa.second.val->getLoc(), "no attribute named '", aa.first,
                     "' in the structure definition");
@@ -522,7 +522,7 @@ Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         ++it;
     }
 
-    for(auto &aa : assn_args) {
+    for(auto &aa : assnArgs) {
         auto aloc = attrs.find(aa.first);
         if(aloc == attrs.end()) {
             vm.fail(aa.second.val->getLoc(), "attribute '", aa.first,
@@ -637,12 +637,12 @@ Var *VarStruct::getAttr(StringRef name)
 //////////////////////////////////////// VarFailure //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFailure::VarFailure(ModuleLoc loc, VarFn *_handler, size_t popLoc, size_t recurseCount,
+VarFailure::VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount,
                        bool irefHandler)
-    : Var(loc, false, false), handler(_handler), popLoc(popLoc), recurseCount(recurseCount),
+    : Var(loc, false, false), handler(handler), popLoc(popLoc), recurseCount(recurseCount),
       handling(false)
 {
-    if(irefHandler) incVarRef(handler);
+    if(irefHandler) incVarRef(this->handler);
 }
 
 void VarFailure::onDestroy(MemoryManager &mem) { decVarRef(mem, handler); }

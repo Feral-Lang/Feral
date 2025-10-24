@@ -6,7 +6,7 @@ namespace fer
 {
 
 Var *sysclkNow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     VarInt *res = vm.makeVar<VarInt>(loc, 0);
     // Not using nanoseconds because that's the same count of digits as int64_t::max
@@ -17,7 +17,7 @@ Var *sysclkNow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *formatTime(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument as time for formatting, found: ",

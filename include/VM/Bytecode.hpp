@@ -137,8 +137,8 @@ public:
     }
     inline void addInstrNil(Opcode opcode, ModuleLoc loc) { code.emplace_back(opcode, loc); }
 
-    inline void updateInstrInt(size_t instr_idx, int64_t data) { code[instr_idx].setInt(data); }
-    inline void updateInstrStr(size_t instr_idx, StringRef data) { code[instr_idx].setStr(data); }
+    inline void updateInstrInt(size_t instrIdx, int64_t data) { code[instrIdx].setInt(data); }
+    inline void updateInstrStr(size_t instrIdx, StringRef data) { code[instrIdx].setStr(data); }
 
     inline void pop() { code.pop_back(); }
     inline void erase(size_t idx) { code.erase(code.begin() + idx); }

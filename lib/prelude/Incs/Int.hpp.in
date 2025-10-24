@@ -1,6 +1,6 @@
 #define ARITHI_FUNC(fn, oper)                                                                    \
     Var *int##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                            \
-                 const StringMap<AssnArgData> &assn_args)                                        \
+                 const StringMap<AssnArgData> &assnArgs)                                         \
     {                                                                                            \
         if(args[1]->is<VarInt>()) {                                                              \
             return vm.makeVar<VarInt>(                                                           \
@@ -16,7 +16,7 @@
 
 #define ARITHI_ASSN_FUNC(fn, oper)                                                           \
     Var *intAssn##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                    \
-                     const StringMap<AssnArgData> &assn_args)                                \
+                     const StringMap<AssnArgData> &assnArgs)                                 \
     {                                                                                        \
         if(args[1]->is<VarInt>()) {                                                          \
             as<VarInt>(args[0])->setVal(                                                     \
@@ -34,7 +34,7 @@
 
 #define LOGICI_FUNC(fn, sym)                                                            \
     Var *int##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                   \
-                 const StringMap<AssnArgData> &assn_args)                               \
+                 const StringMap<AssnArgData> &assnArgs)                                \
     {                                                                                   \
         if(args[1]->is<VarInt>()) {                                                     \
             return as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal()      \
@@ -53,7 +53,7 @@
 
 #define BITWISE_FUNC(fn, sym)                                                            \
     Var *intB##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                   \
-                  const StringMap<AssnArgData> &assn_args)                               \
+                  const StringMap<AssnArgData> &assnArgs)                                \
     {                                                                                    \
         if(args[1]->is<VarInt>()) {                                                      \
             return vm.makeVar<VarInt>(                                                   \
@@ -66,7 +66,7 @@
 
 #define BITWISE_ASSN_FUNC(fn, sym)                                                \
     Var *intAssnB##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,        \
-                      const StringMap<AssnArgData> &assn_args)                    \
+                      const StringMap<AssnArgData> &assnArgs)                     \
     {                                                                             \
         if(args[1]->is<VarInt>()) {                                               \
             as<VarInt>(args[0])->setVal(                                          \
@@ -104,7 +104,7 @@ BITWISE_ASSN_FUNC(Or, |)
 BITWISE_ASSN_FUNC(XOr, ^)
 
 Var *intEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) return vm.getFalse();
     return as<VarInt>(args[0])->getVal() == as<VarInt>(args[1])->getVal() ? vm.getTrue()
@@ -112,7 +112,7 @@ Var *intEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) return vm.getTrue();
     return as<VarInt>(args[0])->getVal() == as<VarInt>(args[1])->getVal() ? vm.getFalse()
@@ -120,7 +120,7 @@ Var *intNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intDiv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         // rhs == 0
@@ -144,7 +144,7 @@ Var *intDiv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intAssnDiv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         // rhs == 0
@@ -168,26 +168,26 @@ Var *intAssnDiv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intBNot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, ~as<VarInt>(args[0])->getVal());
 }
 
 Var *intBNotAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     as<VarInt>(args[0])->setVal(~as<VarInt>(args[0])->getVal());
     return args[0];
 }
 
 Var *intPopCnt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, std::popcount((uint64_t)as<VarInt>(args[0])->getVal()));
 }
 
 Var *intLShift(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal()
@@ -201,7 +201,7 @@ Var *intLShift(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intRShift(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         return vm.makeVar<VarInt>(loc,
@@ -215,7 +215,7 @@ Var *intRShift(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intLShiftAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() << as<VarInt>(args[1])->getVal());
@@ -227,7 +227,7 @@ Var *intLShiftAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intRShiftAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     if(args[1]->is<VarInt>()) {
         as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() >> as<VarInt>(args[1])->getVal());
@@ -239,7 +239,7 @@ Var *intRShiftAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intPow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for int power, found: ", vm.getTypeName(args[1]));
@@ -257,20 +257,20 @@ Var *intPow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intSqRoot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, std::sqrt(as<VarInt>(args[0])->getVal()));
 }
 
 Var *intPreInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() + 1);
     return args[0];
 }
 
 Var *intPostInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal());
     as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() + 1);
@@ -278,14 +278,14 @@ Var *intPostInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intPreDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() - 1);
     return args[0];
 }
 
 Var *intPostDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     VarInt *res = vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal());
     as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() - 1);
@@ -293,47 +293,47 @@ Var *intPostDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *intUSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, -as<VarInt>(args[0])->getVal());
 }
 
 Var *intRange(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
-    Var *lhs_base  = args[1];
-    Var *rhs_base  = args.size() > 2 ? args[2] : nullptr;
-    Var *step_base = args.size() > 3 ? args[3] : nullptr;
+    Var *lhsBase  = args[1];
+    Var *rhsBase  = args.size() > 2 ? args[2] : nullptr;
+    Var *stepBase = args.size() > 3 ? args[3] : nullptr;
 
-    if(!lhs_base->is<VarInt>()) {
-        vm.fail(lhs_base->getLoc(),
-                "expected argument 1 to be of type int, found: ", vm.getTypeName(lhs_base));
+    if(!lhsBase->is<VarInt>()) {
+        vm.fail(lhsBase->getLoc(),
+                "expected argument 1 to be of type int, found: ", vm.getTypeName(lhsBase));
         return nullptr;
     }
-    if(rhs_base && !rhs_base->is<VarInt>()) {
-        vm.fail(rhs_base->getLoc(),
-                "expected argument 2 to be of type int, found: ", vm.getTypeName(rhs_base));
+    if(rhsBase && !rhsBase->is<VarInt>()) {
+        vm.fail(rhsBase->getLoc(),
+                "expected argument 2 to be of type int, found: ", vm.getTypeName(rhsBase));
         return nullptr;
     }
-    if(step_base && !step_base->is<VarInt>()) {
-        vm.fail(step_base->getLoc(),
-                "expected argument 3 to be of type int, found: ", vm.getTypeName(step_base));
+    if(stepBase && !stepBase->is<VarInt>()) {
+        vm.fail(stepBase->getLoc(),
+                "expected argument 3 to be of type int, found: ", vm.getTypeName(stepBase));
         return nullptr;
     }
 
     int64_t begin, end, step;
-    if(args.size() > 2) begin = as<VarInt>(lhs_base)->getVal();
+    if(args.size() > 2) begin = as<VarInt>(lhsBase)->getVal();
     else begin = 0;
-    if(rhs_base) end = as<VarInt>(rhs_base)->getVal();
-    else end = as<VarInt>(lhs_base)->getVal();
-    if(step_base) step = as<VarInt>(step_base)->getVal();
+    if(rhsBase) end = as<VarInt>(rhsBase)->getVal();
+    else end = as<VarInt>(lhsBase)->getVal();
+    if(stepBase) step = as<VarInt>(stepBase)->getVal();
     else step = 1;
     VarIntIterator *res = vm.makeVar<VarIntIterator>(loc, begin, end, step);
     return res;
 }
 
 Var *getIntIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args)
+                        const StringMap<AssnArgData> &assnArgs)
 {
     VarIntIterator *it = as<VarIntIterator>(args[0]);
     int64_t _res;

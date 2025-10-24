@@ -10,8 +10,8 @@ let str = 'abracadabra';
 # substring
 let ss = 'abra';
 let ssLen = ss.len();
-let ss_hash = 0;
-for let i = 0; i < ssLen; ++i { ss_hash += ss[i].byt() * 103; }
+let ssHash = 0;
+for let i = 0; i < ssLen; ++i { ssHash += ss[i].byt() * 103; }
 
 let locs = vec.new();
 let window = '';
@@ -24,7 +24,7 @@ for let i = 0; i < str.len(); ++i {
         hash -= window.front().byt() * 103;
         window.erase(0);
     }
-    if hash == ss_hash && ss == window {
+    if hash == ssHash && ss == window {
         locs.push(i - ssLen + 1);
     }
 }

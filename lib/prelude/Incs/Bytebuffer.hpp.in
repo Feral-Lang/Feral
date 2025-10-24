@@ -1,5 +1,5 @@
 Var *bytebufferNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                         const StringMap<AssnArgData> &assn_args)
+                         const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
@@ -9,19 +9,19 @@ Var *bytebufferNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *bytebufferCapacity(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args)
+                        const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->capacity());
 }
 
 Var *bytebufferLen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->getLen());
 }
 
 Var *bytebufferToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assnArgs)
 {
     VarBytebuffer *self = as<VarBytebuffer>(args[0]);
     if(self->capacity() == 0) return vm.makeVar<VarStr>(loc, "");

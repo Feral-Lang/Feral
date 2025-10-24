@@ -273,13 +273,13 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
 {
-    size_t block_till_loc = bc.size();
+    size_t blockTillPos = bc.size();
     bc.addInstrInt(Opcode::BLOCK_TILL, stmt->getLoc(), 0); // 0 is a placeholder
     if(!visit(stmt->getBlk(), asStmt(&stmt->getBlk()))) {
         err.fail(stmt->getLoc(), "failed to generate code for function definition block");
         return false;
     }
-    bc.updateInstrInt(block_till_loc, bc.size() - 1);
+    bc.updateInstrInt(blockTillPos, bc.size() - 1);
     if(!visit(stmt->getSig(), asStmt(&stmt->getSig()))) {
         err.fail(stmt->getLoc(), "failed to generate bytecode for function signature");
         return false;
@@ -349,8 +349,8 @@ bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
     Stmt *&incr     = stmt->getIncr();
     StmtBlock *&blk = stmt->getBlk();
 
-    size_t condloc    = 0;
-    size_t condjmploc = 0;
+    size_t condPos    = 0;
+    size_t condJmpPos = 0;
 
     bc.addInstrNil(Opcode::PUSH_LOOP, stmt->getLoc());
     if(init) {
@@ -362,24 +362,24 @@ bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
             bc.addInstrInt(Opcode::UNLOAD, init->getLoc(), 1);
         }
     }
-    condloc = bc.size();
+    condPos = bc.size();
     if(cond) {
         if(!visit(cond, &cond)) {
             err.fail(cond->getLoc(), "failed to generate code for loop init");
             return false;
         }
-        condjmploc = bc.size();
+        condJmpPos = bc.size();
         bc.addInstrInt(Opcode::JMP_FALSE_POP, cond->getLoc(), 0); // placeholder
     }
 
-    size_t body_begin = bc.size();
+    size_t bodyBegin = bc.size();
     if(blk && !visit(blk, asStmt(&blk))) {
         err.fail(blk->getLoc(), "failed to generate code for loop block");
         return false;
     }
     // TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
     // the Vars (and VarStack) ::continueLoop() should be able to take care of that
-    size_t body_end = bc.size(); // also = continue jump location
+    size_t bodyEnd = bc.size(); // also = continue jump location
 
     if(incr) {
         if(!visit(incr, &incr)) {
@@ -390,17 +390,17 @@ bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
             bc.addInstrInt(Opcode::UNLOAD, incr->getLoc(), 1);
         }
     }
-    bc.addInstrInt(Opcode::JMP, stmt->getLoc(), condloc); // jmp back to condition
-    if(cond) bc.updateInstrInt(condjmploc, bc.size());
+    bc.addInstrInt(Opcode::JMP, stmt->getLoc(), condPos); // jmp back to condition
+    if(cond) bc.updateInstrInt(condJmpPos, bc.size());
 
-    size_t breakjmppos = bc.size();
+    size_t breakJmpPos = bc.size();
     bc.addInstrNil(Opcode::POP_LOOP, stmt->getLoc());
 
     // update all continue and break instructions
-    for(size_t i = body_begin; i < body_end; ++i) {
+    for(size_t i = bodyBegin; i < bodyEnd; ++i) {
         auto &ins = bc.getInstrAt(i);
-        if(ins.getOpcode() == Opcode::CONTINUE && ins.getDataInt() == 0) ins.setInt(body_end);
-        else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0) ins.setInt(breakjmppos);
+        if(ins.getOpcode() == Opcode::CONTINUE && ins.getDataInt() == 0) ins.setInt(bodyEnd);
+        else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0) ins.setInt(breakJmpPos);
     }
     return true;
 }
@@ -434,32 +434,32 @@ bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
     bc.addInstrStr(Opcode::LOAD_DATA, loc, StringRef("next"));
     bc.addInstrStr(Opcode::MEM_CALL, loc, StringRef(""));
     // jump-nil location will be set later
-    size_t jmp_nil_loc = bc.size();
+    size_t jmpNilPos = bc.size();
     bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
     bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
 
-    size_t body_begin = bc.size();
+    size_t bodyBegin = bc.size();
     if(blk && !visit(blk, asStmt(&blk))) {
         err.fail(blk->getLoc(), "failed to generate code for loop block");
         return false;
     }
     // TODO: verify this works correctly for CONTINUE since it skips over a POP_BLK;
     // the Vars (and VarStack) ::continueLoop() should be able to take care of that
-    size_t body_end = bc.size();
+    size_t bodyEnd = bc.size();
 
     bc.addInstrInt(Opcode::JMP, loc, continuejmppos);
 
     // this is where break jumps to
-    size_t breakjmppos = bc.size();
+    size_t breakJmpPos = bc.size();
     bc.addInstrNil(Opcode::POP_LOOP, loc);
     // update the jump-nil loc to breakpos
-    bc.updateInstrInt(jmp_nil_loc, breakjmppos);
+    bc.updateInstrInt(jmpNilPos, breakJmpPos);
 
     // update all continue and break instructions
-    for(size_t i = body_begin; i < body_end; ++i) {
+    for(size_t i = bodyBegin; i < bodyEnd; ++i) {
         auto &ins = bc.getInstrAt(i);
         if(ins.getOpcode() == Opcode::CONTINUE && ins.getDataInt() == 0) ins.setInt(continuejmppos);
-        else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0) ins.setInt(breakjmppos);
+        else if(ins.getOpcode() == Opcode::BREAK && ins.getDataInt() == 0) ins.setInt(breakJmpPos);
     }
     return true;
 }

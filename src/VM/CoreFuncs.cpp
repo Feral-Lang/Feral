@@ -42,7 +42,7 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
 }
 
 Var *loadFile(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -59,7 +59,7 @@ Var *loadFile(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *loadLibrary(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -78,7 +78,7 @@ void setupCoreFuncs(Interpreter &ip, ModuleLoc loc)
 }
 
 Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assn_args)
+                       const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
@@ -99,7 +99,7 @@ Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *basicErrorHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assn_args)
+                       const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFailure>()) {
         vm.fail(loc, "expected argument of type failure, found: ", vm.getTypeName(args[1]));

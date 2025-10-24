@@ -53,7 +53,7 @@ ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> arg
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *print(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -61,7 +61,7 @@ Var *print(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *println(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -70,7 +70,7 @@ Var *println(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *cprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -78,7 +78,7 @@ Var *cprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *cprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -87,7 +87,7 @@ Var *cprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *eprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -95,7 +95,7 @@ Var *eprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *eprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -104,7 +104,7 @@ Var *eprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *ecprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -112,7 +112,7 @@ Var *ecprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *ecprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -121,7 +121,7 @@ Var *ecprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -140,7 +140,7 @@ Var *fprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -160,7 +160,7 @@ Var *fprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fcprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -179,7 +179,7 @@ Var *fcprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fcprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -199,7 +199,7 @@ Var *fcprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *scan(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-          const StringMap<AssnArgData> &assn_args)
+          const StringMap<AssnArgData> &assnArgs)
 {
     if(args.size() > 1 && !args[1]->is<VarStr>()) {
         vm.fail(args[1]->getLoc(),
@@ -222,7 +222,7 @@ Var *scan(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *scanEOF(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(args.size() > 1 && !args[1]->is<VarStr>()) {
         vm.fail(args[1]->getLoc(),
@@ -246,7 +246,7 @@ Var *scanEOF(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *fflush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -263,7 +263,7 @@ Var *fflush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *readChar(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(args[1]->getLoc(), "expected an integer argument for file descriptor, found: ",

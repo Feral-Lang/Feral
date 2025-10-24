@@ -12,7 +12,7 @@ static std::default_random_engine rng;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 Var *rngSeed(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected seed value to be integer, found: ", vm.getTypeName(args[1]));
@@ -24,7 +24,7 @@ Var *rngSeed(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // [0, to)
 Var *rngGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected upper bound to be an integer, found: ", vm.getTypeName(args[1]));

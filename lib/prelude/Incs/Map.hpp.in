@@ -1,15 +1,15 @@
 Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if((args.size() - 1) % 2 != 0) {
         vm.fail(loc, "argument count must be even to create a map");
         return nullptr;
     }
-    auto refloc    = assn_args.find("refs");
-    auto caploc    = assn_args.find("cap");
+    auto refloc    = assnArgs.find("refs");
+    auto caploc    = assnArgs.find("cap");
     size_t resvcap = args.size() - 1;
     bool refs      = false;
-    if(refloc != assn_args.end()) {
+    if(refloc != assnArgs.end()) {
         Var *refsv = refloc->second.val;
         if(!refsv->is<VarBool>()) {
             vm.fail(loc,
@@ -20,7 +20,7 @@ Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         }
         refs = as<VarBool>(refsv)->getVal();
     }
-    if(caploc != assn_args.end()) {
+    if(caploc != assnArgs.end()) {
         Var *capv = caploc->second.val;
         if(!capv->is<VarBool>()) {
             vm.fail(loc,
@@ -52,25 +52,25 @@ Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *mapSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
 }
 
 Var *mapIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
 Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     MemoryManager &mem = vm.getMemoryManager();
     VarMap *map        = as<VarMap>(args[0]);
@@ -87,7 +87,7 @@ Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
     Var *v                = nullptr;
@@ -103,14 +103,14 @@ Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *mapClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     as<VarMap>(args[0])->clear(vm.getMemoryManager());
     return vm.getNil();
 }
 
 Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     VarMap *map = as<VarMap>(args[0]);
     Var *v      = nullptr;
@@ -122,7 +122,7 @@ Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     VarMap *map = as<VarMap>(args[0]);
     Var *v      = nullptr;
@@ -134,13 +134,13 @@ Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *mapEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
 }
 
 Var *mapIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assn_args)
+                     const StringMap<AssnArgData> &assnArgs)
 {
     VarMapIterator *it = as<VarMapIterator>(args[0]);
     Var *res           = nullptr;

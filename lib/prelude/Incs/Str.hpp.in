@@ -1,5 +1,5 @@
 Var *strAdd(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -14,7 +14,7 @@ Var *strAdd(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for string multiplication, found: ",
@@ -31,7 +31,7 @@ Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strAddAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for addition assignment, found: ",
@@ -44,7 +44,7 @@ Var *strAddAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for string multiplication assignment, found: ",
@@ -62,7 +62,7 @@ Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // logical functions
 
 Var *strLT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -75,7 +75,7 @@ Var *strLT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strGT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
@@ -87,7 +87,7 @@ Var *strGT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strLE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
@@ -99,7 +99,7 @@ Var *strLE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strGE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
@@ -111,7 +111,7 @@ Var *strGE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) return vm.getFalse();
     StringRef lhs = as<VarStr>(args[0])->getVal();
@@ -120,7 +120,7 @@ Var *strEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) return vm.getTrue();
     StringRef lhs = as<VarStr>(args[0])->getVal();
@@ -129,7 +129,7 @@ Var *strNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assn_args)
+           const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for string.at(), found: ",
@@ -155,40 +155,40 @@ size_t sizePow(size_t base, int exp);
 size_t strToBin(StringRef str);
 
 Var *strSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size());
 }
 
 Var *strClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     as<VarStr>(args[0])->getVal().clear();
     return vm.getNil();
 }
 
 Var *strEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     return as<VarStr>(args[0])->getVal().size() == 0 ? vm.getTrue() : vm.getFalse();
 }
 
 Var *strFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     const String &str = as<VarStr>(args[0])->getVal();
     return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.front());
 }
 
 Var *strBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     String &str = as<VarStr>(args[0])->getVal();
     return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.back());
 }
 
 Var *strPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -202,7 +202,7 @@ Var *strPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assn_args)
+            const StringMap<AssnArgData> &assnArgs)
 {
     String &str = as<VarStr>(args[0])->getVal();
     if(str.size() > 0) str.pop_back();
@@ -210,7 +210,7 @@ Var *strPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected first argument to be of type integer for index, found: ",
@@ -237,7 +237,7 @@ Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected first argument to be of type integer for string.set(), found: ",
@@ -262,7 +262,7 @@ Var *strSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -290,7 +290,7 @@ Var *strInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for string.erase(), found: ",
@@ -304,7 +304,7 @@ Var *strErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type str for string.find(), found: ",
@@ -321,7 +321,7 @@ Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type str for string.rfind(), found: ",
@@ -338,7 +338,7 @@ Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strSubstr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected begin argument to be of type integer for string.substr(), found: ",
@@ -359,13 +359,13 @@ Var *strSubstr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strLast(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size() - 1);
 }
 
 Var *strTrim(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assn_args)
+             const StringMap<AssnArgData> &assnArgs)
 {
     String &str = as<VarStr>(args[0])->getVal();
     trim(str);
@@ -373,7 +373,7 @@ Var *strTrim(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strLower(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     String str = as<VarStr>(args[0])->getVal();
     size_t len = str.size();
@@ -384,7 +384,7 @@ Var *strLower(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strUpper(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     String str = as<VarStr>(args[0])->getVal();
     size_t len = str.size();
@@ -395,7 +395,7 @@ Var *strUpper(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strSplit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args)
+              const StringMap<AssnArgData> &assnArgs)
 {
     VarStr *str = as<VarStr>(args[0]);
     if(!args[1]->is<VarStr>()) {
@@ -418,7 +418,7 @@ Var *strSplit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strStartsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assn_args)
+                   const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string for string.starts_with(), found: ",
@@ -431,7 +431,7 @@ Var *strStartsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strEndsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assn_args)
+                 const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string for string.ends_with(), found: ",
@@ -445,7 +445,7 @@ Var *strEndsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *strFormat(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assn_args)
+               const StringMap<AssnArgData> &assnArgs)
 {
     String str    = as<VarStr>(args[0])->getVal();
     size_t argctr = 1;
@@ -492,7 +492,7 @@ Var *strFormat(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *hexStrToBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assn_args)
+                    const StringMap<AssnArgData> &assnArgs)
 {
     static std::unordered_map<char, const char *> hextobin = {
         {'0', "0000"}, {'1', "0001"}, {'2', "0010"}, {'3', "0011"}, {'4', "0100"}, {'5', "0101"},
@@ -515,7 +515,7 @@ Var *hexStrToBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args)
+                        const StringMap<AssnArgData> &assnArgs)
 {
     String str = as<VarStr>(args[0])->getVal();
     if(str.empty()) return vm.makeVar<VarStr>(loc, "");
@@ -568,7 +568,7 @@ Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // character (str[0]) to its ASCII (int)
 Var *byt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-         const StringMap<AssnArgData> &assn_args)
+         const StringMap<AssnArgData> &assnArgs)
 {
     const String &str = as<VarStr>(args[0])->getVal();
     if(str.empty()) return vm.makeVar<VarInt>(loc, 0);
@@ -577,7 +577,7 @@ Var *byt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // ASCII (int) to character (str)
 Var *chr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-         const StringMap<AssnArgData> &assn_args)
+         const StringMap<AssnArgData> &assnArgs)
 {
     uint8_t byt = (uint8_t)as<VarInt>(args[0])->getVal();
     return vm.makeVar<VarStr>(loc, String(1, byt));
@@ -604,7 +604,7 @@ Vector<Var *> _strSplit(VirtualMachine &vm, ModuleLoc loc, StringRef data, Strin
 }
 
 Var *strReplace(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args)
+                const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,

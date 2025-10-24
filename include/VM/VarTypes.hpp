@@ -54,16 +54,16 @@ class Var : public IAllocated
     virtual void onSet(MemoryManager &mem, Var *from);
     // Perform a call using this variable.
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk);
+                        const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
 
 protected:
-    Var(ModuleLoc loc, bool callable, bool attr_based);
+    Var(ModuleLoc loc, bool callable, bool attrBased);
     // No need to override the destructor. Override onDestroy() instead.
     virtual ~Var();
 
 public:
     Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assn_args, bool addFunc = true, bool addBlk = false);
+              const StringMap<AssnArgData> &assnArgs, bool addFunc = true, bool addBlk = false);
     virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
     virtual bool existsAttr(StringRef name);
     virtual Var *getAttr(StringRef name);
@@ -386,7 +386,7 @@ struct AssnArgData
 };
 
 typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                         const StringMap<AssnArgData> &assn_args);
+                         const StringMap<AssnArgData> &assnArgs);
 
 struct FeralFnBody
 {
@@ -403,45 +403,45 @@ union FnBody
 class VarFn : public Var
 {
     ModuleId moduleId;
-    String kw_arg;
-    String var_arg;
+    String kwArg;
+    String varArg;
     Vector<String> params;
-    StringMap<Var *> assn_params;
+    StringMap<Var *> assnParams;
     FnBody body;
-    bool is_native;
+    bool isnative;
 
     void onDestroy(MemoryManager &mem) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk) override;
+                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk) override;
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
-    VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
-          size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
+    VarFn(ModuleLoc loc, ModuleId moduleId, const String &kwArg, const String &varArg,
+          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative);
 
     inline void pushParam(const String &param) { params.push_back(param); }
     inline void setParams(Span<String> newparams)
     {
         params.assign(newparams.begin(), newparams.end());
     }
-    inline void insertAssnParam(const String &key, Var *val) { assn_params.insert({key, val}); }
-    inline void setAssnParams(const StringMap<Var *> &newmap) { assn_params = newmap; }
+    inline void insertAssnParam(const String &key, Var *val) { assnParams.insert({key, val}); }
+    inline void setAssnParams(const StringMap<Var *> &newmap) { assnParams = newmap; }
 
     inline ModuleId getModuleId() { return moduleId; }
-    inline StringRef getKwArg() { return kw_arg; }
-    inline StringRef getVarArg() { return var_arg; }
+    inline StringRef getKwArg() { return kwArg; }
+    inline StringRef getVarArg() { return varArg; }
     inline Vector<String> &getParams() { return params; }
     inline StringRef getParam(size_t idx) { return params[idx]; }
-    inline StringMap<Var *> &getAssnParam() { return assn_params; }
+    inline StringMap<Var *> &getAssnParam() { return assnParams; }
     inline Var *getAssnParam(StringRef name)
     {
-        auto loc = assn_params.find(name);
-        return loc == assn_params.end() ? nullptr : loc->second;
+        auto loc = assnParams.find(name);
+        return loc == assnParams.end() ? nullptr : loc->second;
     }
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
-    inline bool isNative() { return is_native; }
+    inline bool isNative() { return isnative; }
 };
 
 class VarStack;
@@ -467,9 +467,9 @@ public:
     Var *getAttr(StringRef name) override;
 
     void addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args = 0,
-                     bool is_va = false);
+                     bool isVa = false);
     void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
-                     bool is_va = false);
+                     bool isVa = false);
     void addNativeVar(StringRef name, Var *val, bool iref = true);
 
     inline StringRef getPath() { return path; }
@@ -489,7 +489,7 @@ class VarStructDef : public Var
 
     // returns VarStruct
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk) override;
+                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk) override;
 
 public:
     VarStructDef(ModuleLoc loc, size_t attrscount);
@@ -554,7 +554,7 @@ class VarFailure : public Var
     void reset();
 
 public:
-    VarFailure(ModuleLoc loc, VarFn *_handler, size_t popLoc, size_t recurseCount,
+    VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount,
                bool irefHandler = true);
 
     Var *callHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args);

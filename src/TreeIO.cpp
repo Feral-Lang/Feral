@@ -11,11 +11,11 @@ static Vector<bool> &_tab()
     return tabs;
 }
 
-static void _tab_apply(bool has_next)
+static void tabApply(bool hasNext)
 {
     for(size_t i = 0; i < _tab().size(); ++i) {
         if(i == _tab().size() - 1) {
-            std::cout << (has_next ? " ├─" : " └─");
+            std::cout << (hasNext ? " ├─" : " └─");
         } else {
             std::cout << (_tab()[i] ? " │" : "  ");
         }
@@ -30,9 +30,9 @@ void tabr(size_t num)
     for(size_t i = 0; i < num; ++i) _tab().pop_back();
 }
 
-void print(bool has_next, InitList<StringRef> data)
+void print(bool hasNext, InitList<StringRef> data)
 {
-    _tab_apply(has_next);
+    tabApply(hasNext);
     for(auto &d : data) std::cout << d;
 }
 void printf(InitList<StringRef> data)
