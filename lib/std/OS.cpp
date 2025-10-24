@@ -61,11 +61,15 @@ Var *setEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
-                "expected string argument for env variable name, found: ", vm.getTypeName(args[1]));
+                "expected string argument"
+                " for env variable name, found: ",
+                vm.getTypeName(args[1]));
         return nullptr;
     }
     if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for env variable value, found: ",
+        vm.fail(loc,
+                "expected string argument"
+                " for env variable value, found: ",
                 vm.getTypeName(args[2]));
         return nullptr;
     }

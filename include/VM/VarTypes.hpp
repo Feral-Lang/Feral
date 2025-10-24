@@ -93,18 +93,18 @@ public:
     inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 
     // used in native function calls
-    template<typename T, typename... Args> static
-        typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-        makeVar(MemoryManager &mem, Args &&...args)
+    template<typename T, typename... Args>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+    makeVar(MemoryManager &mem, Args &&...args)
     {
         T *res = new(mem.alloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
         res->create(mem);
         return res;
     }
     // supposed to call the overloaded new operator in Var - sets ref to one
-    template<typename T, typename... Args> static
-        typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-        makeVarWithRef(MemoryManager &mem, Args &&...args)
+    template<typename T, typename... Args>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+    makeVarWithRef(MemoryManager &mem, Args &&...args)
     {
         T *res = makeVar<T>(mem, std::forward<Args>(args)...);
         res->iref();
@@ -112,7 +112,8 @@ public:
     }
     // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
     // being used elsewhere.
-    template<typename T> static typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    template<typename T>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
     unmakeVar(MemoryManager &mem, T *var)
     {
         var->destroy(mem);
@@ -126,7 +127,8 @@ public:
         var->iref();
         return var;
     }
-    template<typename T> static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+    template<typename T>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     decVarRef(MemoryManager &mem, T *&var, bool del = true)
     {
         if(var == nullptr) return nullptr;
@@ -136,7 +138,8 @@ public:
         }
         return var;
     }
-    template<typename T> static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+    template<typename T>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     copyVar(MemoryManager &mem, ModuleLoc loc, T *var)
     {
         if(var->isLoadAsRef()) {
@@ -146,7 +149,8 @@ public:
         }
         return var->copy(mem, loc);
     }
-    template<typename T> static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
+    template<typename T>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     setVar(MemoryManager &mem, T *var, Var *from)
     {
         var->set(mem, from);

@@ -56,7 +56,9 @@ Var *atomicBoolSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                    const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarBool>()) {
-        vm.fail(loc, "expected int argument for setting an atomic int, found: ",
+        vm.fail(loc,
+                "expected int argument for setting"
+                " an atomic int, found: ",
                 vm.getTypeName(args[1]));
         return nullptr;
     }
@@ -78,7 +80,9 @@ Var *atomicIntNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                   const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for creating an atomic int, found: ",
+        vm.fail(loc,
+                "expected int argument for creating:"
+                " an atomic int, found: ",
                 vm.getTypeName(args[1]));
         return nullptr;
     }
@@ -89,7 +93,9 @@ Var *atomicIntSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                   const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for setting an atomic int, found: ",
+        vm.fail(loc,
+                "expected int argument for setting"
+                " an atomic int, found: ",
                 vm.getTypeName(args[1]));
         return nullptr;
     }

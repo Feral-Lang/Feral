@@ -145,13 +145,15 @@ public:
     {
         return Var::incVarRef<T>(var);
     }
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    decVarRef(T *&var, bool del = true)
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
+                                                                                 bool del = true)
     {
         return Var::decVarRef<T>(mem, var, del);
     }
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    copyVar(ModuleLoc loc, T *var)
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
+                                                                               T *var)
     {
         return Var::copyVar<T>(mem, loc, var);
     }
@@ -160,7 +162,8 @@ public:
     {
         return Var::setVar<T>(mem, var, from);
     }
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
     registerType(ModuleLoc loc, String name, VarModule *module = nullptr)
     {
         setTypeName(typeID<T>(), name);
@@ -316,13 +319,15 @@ public:
     {
         return ip.incVarRef(var);
     }
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    decVarRef(T *&var, bool del = true)
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
+                                                                                 bool del = true)
     {
         return ip.decVarRef(var, del);
     }
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    copyVar(ModuleLoc loc, T *var)
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
+                                                                               T *var)
     {
         return ip.copyVar(loc, var);
     }
@@ -332,13 +337,15 @@ public:
         return ip.setVar(var, from);
     }
 
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, String name)
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type registerType(ModuleLoc loc,
+                                                                                     String name)
     {
         return ip.registerType<T>(loc, name, modulestack.empty() ? nullptr : modulestack.back());
     }
 
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
     addNativeTypeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false)
     {
         VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
@@ -347,7 +354,8 @@ public:
         addTypeFn(typeID<T>(), name, f, false);
     }
 
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
     callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
                      const StringMap<AssnArgData> &assnArgs)
     {
@@ -362,7 +370,8 @@ public:
         return true;
     }
 
-    template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
     callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata, Span<Var *> args,
                      const StringMap<AssnArgData> &assnArgs)
     {

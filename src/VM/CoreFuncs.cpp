@@ -109,8 +109,8 @@ Var *basicErrorHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     Span<ModuleLoc> trace = f->getTrace();
     StringRef msg         = f->getMsg();
     if(msg.empty()) msg = "unknown failure";
-    for(size_t i = 0; i < trace.size(); ++i) {
-        err.outStr(trace[i], i != trace.size() - 1 ? "" : msg);
+    for(auto it = trace.rbegin(); it != trace.rend(); ++it) {
+        err.outStr((*it), it != trace.rend() - 1 ? "" : msg);
     }
     return nullptr;
 }
