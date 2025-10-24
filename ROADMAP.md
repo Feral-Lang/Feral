@@ -6,10 +6,8 @@ This file contains the roadmap for Feral. As the language grows, more things wil
 
 ## General
 
-- [x] (l)stat (fs module)
-- [x] JSON (de)serializer
+- [ ] Coroutines
 - [ ] IPC
-- [x] (Un)Archiver
 - [ ] Develop REPL (in Feral)
   - [ ] Requires getch() or similar (does **not** show on output; reads each char as raw byte)
     - [ ] Will require a full set of key list (`kb.A`, `kb.B`, `kb.CAPS`, ...)
