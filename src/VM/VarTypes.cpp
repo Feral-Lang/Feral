@@ -30,17 +30,22 @@ void Var::create(MemoryManager &mem) { onCreate(mem); }
 void Var::destroy(MemoryManager &mem) { onDestroy(mem); }
 Var *Var::copy(MemoryManager &mem, ModuleLoc loc) { return onCopy(mem, loc); }
 void Var::set(MemoryManager &mem, Var *from) { onSet(mem, from); }
+Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+	       const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
+{
+	return onCall(vm, loc, args, assn_args, addFunc, addBlk);
+}
 
 void Var::onCreate(MemoryManager &mem) {}
 void Var::onDestroy(MemoryManager &mem) {}
 Var *Var::onCopy(MemoryManager &mem, ModuleLoc loc) { return incVarRef(this); }
 void Var::onSet(MemoryManager &mem, Var *from) {}
-
-Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-	       const StringMap<AssnArgData> &assn_args)
+Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		 const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
 {
 	return nullptr;
 }
+
 void Var::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
@@ -365,8 +370,8 @@ void VarFn::onDestroy(MemoryManager &mem)
 {
 	for(auto &aa : assn_params) decVarRef(mem, aa.second);
 }
-Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		 const StringMap<AssnArgData> &assn_args)
+Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		   const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
 {
 	MemoryManager &mem = vm.getMemoryManager();
 	// -1 for self
@@ -421,7 +426,7 @@ Var *VarFn::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		vars.stash(kw_arg, m, false);
 	}
 	Var *ret = nullptr;
-	if(vm.execute(ret, true, false, body.feral.begin, body.feral.end) != 0 &&
+	if(vm.execute(ret, addFunc, addBlk, body.feral.begin, body.feral.end) != 0 &&
 	   !vm.isExitCalled())
 	{
 		vars.unstash();
@@ -493,8 +498,8 @@ void VarStructDef::onDestroy(MemoryManager &mem)
 	}
 }
 
-Var *VarStructDef::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-			const StringMap<AssnArgData> &assn_args)
+Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+			  const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk)
 {
 	MemoryManager &mem = vm.getMemoryManager();
 	for(auto &aa : assn_args) {
@@ -630,6 +635,35 @@ Var *VarStruct::getAttr(StringRef name)
 	auto loc = attrs.find(name);
 	if(loc == attrs.end()) return base ? base->getAttr(name) : nullptr;
 	return loc->second;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// VarFailure //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarFailure::VarFailure(ModuleLoc loc, VarFn *_handler, size_t popLoc, size_t recurseCount,
+		       bool irefHandler)
+	: Var(loc, false, false), handler(_handler), popLoc(popLoc), recurseCount(recurseCount),
+	  handling(false)
+{
+	if(irefHandler) incVarRef(handler);
+}
+
+void VarFailure::onDestroy(MemoryManager &mem) { decVarRef(mem, handler); }
+
+Var *VarFailure::callHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args)
+{
+	handling = true;
+	Var *res = handler->call(vm, loc, args, {}, false, true);
+	handling = false;
+	reset();
+	return res;
+}
+
+void VarFailure::reset()
+{
+	trace.clear();
+	msg.clear();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

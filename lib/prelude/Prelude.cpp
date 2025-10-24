@@ -396,6 +396,7 @@ INIT_MODULE(Prelude)
 	vm.addNativeTypeFn<VarFlt>(loc, "str", fltToStr, 0);
 	vm.addNativeTypeFn<VarStr>(loc, "str", strToStr, 0);
 	vm.addNativeTypeFn<VarTypeID>(loc, "str", typeIDToStr, 0);
+	vm.addNativeTypeFn<VarFailure>(loc, "str", failureToStr, 0);
 
 	// core type functions
 

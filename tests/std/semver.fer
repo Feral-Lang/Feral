@@ -26,6 +26,6 @@ assert.gt(parsedVersion1120, parsedVersion1);
 assert.gt(parsedVersion1121, parsedVersion1120);
 
 let invalidVersion = semver.parse('0.0.0') or e {
-	assert.eq(e, 'raised: Invalid semver: 0.0.0 with major, minor, and patch numbers being zero');
+	assert.eq(e.str(), 'raised: Invalid semver: 0.0.0 with major, minor, and patch numbers being zero');
 	return nil;
 };

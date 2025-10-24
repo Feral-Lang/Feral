@@ -3,7 +3,7 @@
 namespace fer
 {
 
-ErrorHandler err(10);
+ErrorHandler err;
 
 ModuleLoc::ModuleLoc()
 	: id((ModuleId)-1), offStart(static_cast<ModuleId>(-1)), offEnd(static_cast<ModuleId>(-1))
@@ -11,8 +11,6 @@ ModuleLoc::ModuleLoc()
 ModuleLoc::ModuleLoc(ModuleId id, uint64_t offStart, uint64_t offEnd)
 	: id(id), offStart(offStart), offEnd(offEnd)
 {}
-
-ErrorHandler::ErrorHandler(size_t maxErrors) : maxErrors(maxErrors) {}
 
 void ErrorHandler::addFile(ModuleId id, fs::File *f)
 {

@@ -50,5 +50,11 @@ Var *strToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	return args[0];
 }
 
+Var *failureToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		  const StringMap<AssnArgData> &assn_args)
+{
+	return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
+}
+
 // TODO: vecToStr() must be done in feral code as Var::toStr() does not exist
 // TODO: mapToStr() must be done in feral code as Var::toStr() does not exist

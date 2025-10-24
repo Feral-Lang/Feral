@@ -11,11 +11,14 @@ class Parser
 	ManagedAllocator &allocator;
 	ParseHelper p;
 
+	// Append a return statement if the block doesn't already contain one at the end
+	void ensureBlockReturns(StmtBlock *blk);
+
 public:
 	Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks);
 
-	// on successful parse, returns true, and tree is allocated
-	// if with_brace is true, it will attempt to find the beginning and ending brace for each
+	// On successful parse, returns true, and tree is allocated
+	// If with_brace is true, it will attempt to find the beginning and ending brace for each
 	// block
 	bool parseBlock(StmtBlock *&tree, bool with_brace = true);
 

@@ -52,6 +52,9 @@ class Var : public IAllocated
 	// As such, no type checking is required to cast `from` to the class in which
 	// this function is implemented.
 	virtual void onSet(MemoryManager &mem, Var *from);
+	// Perform a call using this variable.
+	virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+			    const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk);
 
 protected:
 	Var(ModuleLoc loc, bool callable, bool attr_based);
@@ -59,8 +62,9 @@ protected:
 	virtual ~Var();
 
 public:
-	virtual Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-			  const StringMap<AssnArgData> &assn_args);
+	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		  const StringMap<AssnArgData> &assn_args, bool addFunc = true,
+		  bool addBlk = false);
 	virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
 	virtual bool existsAttr(StringRef name);
 	virtual Var *getAttr(StringRef name);
@@ -413,13 +417,13 @@ class VarFn : public Var
 
 	void onDestroy(MemoryManager &mem) override;
 
+	Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		    const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk) override;
+
 public:
 	// args must be pushed to vector separately - this is done to reduce vector copies
 	VarFn(ModuleLoc loc, ModuleId moduleId, const String &kw_arg, const String &var_arg,
 	      size_t paramcount, size_t assn_params_count, FnBody body, bool is_native);
-
-	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args) override;
 
 	inline void pushParam(const String &param) { params.push_back(param); }
 	inline void setParams(Span<String> newparams)
@@ -488,13 +492,13 @@ class VarStructDef : public Var
 
 	void onDestroy(MemoryManager &mem) override;
 
+	// returns VarStruct
+	Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		    const StringMap<AssnArgData> &assn_args, bool addFunc, bool addBlk) override;
+
 public:
 	VarStructDef(ModuleLoc loc, size_t attrscount);
 	VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
-
-	// returns VarStruct
-	Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-		  const StringMap<AssnArgData> &assn_args) override;
 
 	void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 	inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
@@ -539,6 +543,44 @@ public:
 	inline const StringMap<Var *> &getAttrs() { return attrs; }
 	inline VarStructDef *getBase() { return base; }
 	inline size_t getAttrCount() { return attrs.size(); }
+};
+
+class VarFailure : public Var
+{
+	Vector<ModuleLoc> trace;
+	String msg;
+	VarFn *handler;
+	size_t popLoc;
+	size_t recurseCount;
+	bool handling; // is this failure currently being handled
+
+	void onDestroy(MemoryManager &mem) override;
+
+	void reset();
+
+public:
+	VarFailure(ModuleLoc loc, VarFn *_handler, size_t popLoc, size_t recurseCount,
+		   bool irefHandler = true);
+
+	Var *callHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args);
+
+	inline void setMsg(String &&newMsg)
+	{
+		using namespace std;
+		swap(msg, newMsg);
+	}
+
+	inline void pushFrame(ModuleLoc loc)
+	{
+		if(trace.empty() || trace.back() != loc) trace.push_back(loc);
+	}
+
+	inline Span<ModuleLoc> getTrace() { return trace; }
+	inline StringRef getMsg() { return msg; }
+	inline bool hasMsg() { return !msg.empty(); }
+	inline size_t getPopLoc() { return popLoc; }
+	inline size_t getRecurseCount() { return recurseCount; }
+	inline bool isHandling() { return handling; }
 };
 
 class VarFile : public Var

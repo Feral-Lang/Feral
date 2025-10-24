@@ -34,8 +34,9 @@ enum class Opcode : uint8_t
 	JMP_FALSE_POP, // jump if false; operand = index in bytecode to jump to
 
 	// for 'or' block
-	PUSH_JMP,      // marks the position to jump to if 'or' exists in an expression
-	POP_JMP,       // unmarks the position to jump to if 'or' exists in an expression
+	PUSH_TRY, // pushes a block alongside an error handler function from exec stack;
+		  // operand = index of the corresponding POP_TRY
+	POP_TRY,  // pops the block alongside the error handler function
 
 	ATTR, // operand = string - attribute name
 

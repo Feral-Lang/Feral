@@ -1,26 +1,56 @@
 #include "VM/FailStack.hpp"
 
+#include "VM/Interpreter.hpp"
+
 namespace fer
 {
+
 FailStack::FailStack(MemoryManager &mem) : mem(mem) {}
 FailStack::~FailStack()
 {
-	assert(stack.empty() && "Expected fail stack to be empty, but it is not");
+	assert(size() <= 1 && "Failstack must have <= 1 items before it is destroyed");
+	for(auto &s : stack) {
+		Var::decVarRef(mem, s);
+	}
 }
 
-void FailStack::initFrame(size_t recurseLevel, StringRef varName, size_t blkBegin, size_t blkEnd)
+void FailStack::pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler)
 {
-	stack.back().recurseLevel = recurseLevel;
-	stack.back().varName	  = varName;
-	stack.back().blkBegin	  = blkBegin;
-	stack.back().blkEnd	  = blkEnd;
-	stack.back().errMsg	  = nullptr;
+	VarFailure *failure = Var::makeVarWithRef<VarFailure>(mem, handler->getLoc(), handler,
+							      popLoc, recurseCount, irefHandler);
+	stack.push_back(failure);
 }
 
-void FailStack::reset()
+void FailStack::popHandler()
 {
-	if(stack.back().errMsg) Var::decVarRef(mem, stack.back().errMsg);
-	stack.back() = {};
+	Var::decVarRef(mem, stack.back());
+	stack.pop_back();
+}
+
+Var *FailStack::handle(VirtualMachine &vm, ModuleLoc loc, size_t &popLoc)
+{
+	if(stack.empty() || stack.back()->isHandling()) return nullptr;
+	VarFailure *f = stack.back();
+	Var::incVarRef(f);
+	Array<Var *, 2> args{nullptr, f};
+	Var *res = f->callHandler(vm, loc, args);
+	popLoc	 = f->getPopLoc();
+	Var::decVarRef(mem, f);
+	if(!res) popHandler();
+	return res;
+}
+
+void FailStack::failStr(ModuleLoc loc, size_t recurseCount, String &&msg)
+{
+	assert(!stack.empty() && "[Internal error] No element in failstack to handle error");
+	VarFailure *f = stack.back();
+	if(f->isHandling()) {
+		err.fail(loc, "Encountered error while handling another: ", msg);
+		return;
+	}
+	f->pushFrame(loc);
+	if(f->hasMsg()) return;
+	f->setMsg(std::move(msg));
 }
 
 } // namespace fer

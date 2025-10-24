@@ -320,7 +320,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
 				// don't show the following failure when exec stack count is
 				// exceeded or there'll be a GIANT stack trace
 				if(!recurseExceeded) {
-					warn(ins.getLoc(),
+					fail(ins.getLoc(),
 					     "function call failed, check the error above");
 				}
 				goto fncall_fail;
@@ -380,58 +380,25 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
 			i = ins.getDataInt() - 1;
 			break;
 		}
-		case Opcode::PUSH_JMP: {
-			// Decode the data from string.
-			// It contains blkBegin (size_t bytes) + blkEnd (size_t bytes) + var name.
-			StringRef data	= ins.getDataStr();
-			size_t blkBegin = *(size_t *)data.data();
-			size_t blkEnd	= *(((size_t *)data.data()) + 1);
-			data		= data.substr(sizeof(size_t) * 2);
-			failstack.pushScope();
-			failstack.initFrame(recurseCount, data, blkBegin, blkEnd);
+		case Opcode::PUSH_TRY: {
+			VarFn *handler = as<VarFn>(execstack.pop(false));
+			failstack.pushHandler(handler, ins.getDataInt(), recurseCount, false);
 			break;
 		}
-		case Opcode::POP_JMP: {
-			failstack.popScope();
+		case Opcode::POP_TRY: {
+			failstack.popHandler();
 			break;
 		}
 		case Opcode::LAST: {
 			assert(false);
 		handle_err:
-			if(!failstack.hasErr() || recurseCount != failstack.getRecurseLevel())
-				goto fail;
-			if(recurseExceeded) {
-				if(recurseCount != failstack.getRecurseLevel()) goto fail;
-				recurseExceeded = false;
-			}
-			StringRef varName = failstack.getVarName();
-			size_t blkBegin	  = failstack.getBlkBegin();
-			size_t blkEnd	  = failstack.getBlkEnd();
-			Var *err	  = failstack.getErr();
-			if(!varName.empty()) {
-				if(!err) err = makeVar<VarStr>(ins.getLoc(), "unknown failure");
-				vars.stash(varName, err, true);
-			}
-			pushModule(getCurrModule()->getModuleId());
-			Var *tmpRet = nullptr;
-			if(execute(tmpRet, false, false, blkBegin, blkEnd) && !isExitCalled()) {
-				if(!varName.empty()) vars.unstash();
-				if(tmpRet) pushExecStack(tmpRet, false);
-				popModule();
-				// Must pop failstack scope because this is a failure in the the
-				// scope itself - it can't recover using the POP_JMP instruction.
-				failstack.popScope();
-				goto handle_err;
-			}
-			if(tmpRet) pushExecStack(tmpRet, false);
-			// POP_JMP instr will take care of popping from jmps and failstack.
-			i = blkEnd - 1;
-			popModule();
-			if(isExitCalled()) {
-				// Will never reach POP_JMP, so pop the failstack here.
-				failstack.popScope();
-				goto done;
-			}
+			if(recurseCount > failstack.getLastRecurseCount()) goto fail;
+			if(recurseExceeded) recurseExceeded = false;
+			size_t popLoc = i + 1;
+			Var *res      = failstack.handle(*this, ins.getLoc(), popLoc);
+			if(!res) goto fail;
+			i = popLoc - 1;
+			pushExecStack(res, false);
 			break;
 		}
 		}

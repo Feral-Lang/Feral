@@ -205,12 +205,10 @@ bool Parser::parseExpr16(Stmt *&expr)
 {
 	expr = nullptr;
 
-	Stmt *lhs	  = nullptr;
-	Stmt *rhs	  = nullptr;
-	StmtBlock *or_blk = nullptr;
-	lex::Lexeme or_blk_var;
-
-	lex::Lexeme oper;
+	Stmt *lhs	 = nullptr;
+	Stmt *rhs	 = nullptr;
+	StmtBlock *orBlk = nullptr;
+	lex::Lexeme orBlkVar;
 
 	lex::Lexeme &start = p.peek();
 
@@ -223,7 +221,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 	      p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) ||
 	      p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN, lex::NIL_COALESCE_ASSN))
 	{
-		oper = p.peek();
+		lex::Lexeme &oper = p.peek();
 		p.next();
 		if(!parseExpr14(rhs)) {
 			return false;
@@ -234,20 +232,28 @@ bool Parser::parseExpr16(Stmt *&expr)
 
 	expr = lhs;
 
-	if(!p.acceptn(lex::OR)) return true;
+	if(!p.accept(lex::OR)) return true;
+	lex::Lexeme &orOp = p.peek();
+	p.next();
 
 	if(p.accept(lex::IDEN)) {
-		or_blk_var = p.peek();
+		orBlkVar = p.peek();
 		p.next();
+	} else {
+		orBlkVar = lex::Lexeme(p.peek().getLoc(), lex::IDEN, StringRef("_"));
 	}
 
-	if(!parseBlock(or_blk)) {
-		return false;
-	}
-	if(expr->getStmtType() != EXPR) {
-		expr = StmtExpr::create(allocator, expr->getLoc(), expr, {}, nullptr);
-	}
-	as<StmtExpr>(expr)->setOr(or_blk, or_blk_var);
+	if(!parseBlock(orBlk)) return false;
+
+	ensureBlockReturns(orBlk);
+
+	StmtVar *arg =
+	StmtVar::create(allocator, orBlkVar.getLoc(), orBlkVar, nullptr, nullptr, true);
+	StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVar.getLoc(), {arg}, nullptr, nullptr);
+	StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar.getLoc(), fnsig, orBlk);
+
+	// expr with or blk's format is: <fndef> <OR> <expr>
+	expr = StmtExpr::create(allocator, orOp.getLoc(), fndef, orOp, expr);
 	return true;
 }
 // Left Associative
@@ -974,13 +980,7 @@ bool Parser::parseFnDef(Stmt *&fndef)
 	if(!parseFnSig(sig)) return false;
 	if(!parseBlock(blk)) return false;
 
-	// append a return statement if the block doesn't already contain one at the end
-	if(blk) {
-		auto &stmts = blk->getStmts();
-		if(!stmts.empty() && !stmts.back()->isReturn()) {
-			stmts.emplace_back(StmtRet::create(allocator, blk->getLoc(), nullptr));
-		}
-	}
+	ensureBlockReturns(blk);
 
 	fndef = StmtFnDef::create(allocator, start.getLoc(), (StmtFnSig *)sig, blk);
 	return true;
@@ -1274,6 +1274,14 @@ bool Parser::parseDefer(Stmt *&defer)
 done:
 	defer = StmtDefer::create(allocator, start.getLoc(), val);
 	return true;
+}
+
+void Parser::ensureBlockReturns(StmtBlock *blk)
+{
+	auto &stmts = blk->getStmts();
+	if(stmts.empty() || !stmts.back()->isReturn()) {
+		stmts.emplace_back(StmtRet::create(allocator, blk->getLoc(), nullptr));
+	}
 }
 
 } // namespace fer::ast

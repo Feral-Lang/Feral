@@ -5,44 +5,32 @@
 namespace fer
 {
 
-struct ErrorHandlingInfo
-{
-	size_t recurseLevel;
-	StringRef varName;
-	size_t blkBegin, blkEnd;
-	Var *errMsg;
-};
-
 class FailStack
 {
-	Vector<ErrorHandlingInfo> stack;
+	Vector<VarFailure *> stack;
 	MemoryManager &mem;
+
+	void failStr(ModuleLoc loc, size_t recurseCount, String &&msg);
 
 public:
 	FailStack(MemoryManager &mem);
 	~FailStack();
 
-	inline void pushScope() { stack.emplace_back(); }
-	inline void popScope()
+	void pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler);
+	void popHandler();
+
+	Var *handle(VirtualMachine &vm, ModuleLoc loc, size_t &popLoc);
+
+	template<typename... Args> void fail(ModuleLoc loc, size_t recurseCount, Args &&...args)
 	{
-		reset(); // to decref errMsg if any
-		stack.pop_back();
+		failStr(loc, recurseCount, utils::toString(std::forward<Args>(args)...));
 	}
 
-	void initFrame(size_t recurseLevel, StringRef varName, size_t blkBegin, size_t blkEnd);
-	void reset();
-
-	inline void setErr(Var *var) { stack.back().errMsg = var; }
-
-	inline bool hasErr() { return !stack.empty() && stack.back().errMsg; }
-	inline size_t getRecurseLevel() { return stack.back().recurseLevel; }
-	inline StringRef getVarName() { return stack.back().varName; }
-	inline size_t getBlkBegin() { return stack.back().blkBegin; }
-	inline size_t getBlkEnd() { return stack.back().blkEnd; }
-	inline Var *getErr() { return stack.back().errMsg; }
-
-	inline size_t size() { return stack.size(); }
-	inline bool empty() { return stack.empty(); }
+	inline size_t getLastRecurseCount()
+	{
+		return stack.empty() ? 0 : stack.back()->getRecurseCount();
+	}
+	inline size_t size() const { return stack.size(); }
 };
 
 } // namespace fer

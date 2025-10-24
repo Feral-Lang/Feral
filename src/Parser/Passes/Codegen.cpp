@@ -128,14 +128,6 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 	lex::TokType oper		 = stmt->getOperTok().getVal();
 
 	size_t orInstrPos = 0;
-	if(stmt->getOrBlk()) {
-		StmtBlock *orblk = stmt->getOrBlk();
-		lex::Lexeme &var = stmt->getOrBlkVar();
-		orInstrPos	 = bc.size();
-		// Placeholder: The string in this instr will be modified later to encode the blk
-		// begin and end pos as well.
-		bc.addInstrStr(Opcode::PUSH_JMP, orblk->getLoc(), var.getDataStr());
-	}
 
 	// handle member function call - we don't want ATTR instr to be emitted so we take care
 	// of the whole thing ourselves
@@ -159,6 +151,11 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 		return false;
 	}
 
+	if(oper == lex::OR) {
+		orInstrPos = bc.size();
+		bc.addInstrInt(Opcode::PUSH_TRY, stmt->getOper().getLoc(), 0); // placeholder
+	}
+
 	if(oper == lex::LAND || oper == lex::LOR) {
 		jmplocs.push_back(bc.size());
 		bc.addInstrInt(oper == lex::LAND ? Opcode::JMP_FALSE : Opcode::JMP_TRUE,
@@ -166,8 +163,8 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 	}
 
 	// for operator based memcall, the operator must come before RHS (AKA the memcall arg)
-	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::LAND &&
-	   oper != lex::LOR && oper != lex::INVALID)
+	if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::OR &&
+	   oper != lex::LAND && oper != lex::LOR && oper != lex::INVALID)
 	{
 		bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(),
 			       String(lex::TokStrs[oper]));
@@ -176,6 +173,12 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 	if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
 		err.fail(stmt->getRHS()->getLoc(), "failed to generate code for RHS of expression");
 		return false;
+	}
+
+	if(oper == lex::OR) {
+		bc.updateInstrInt(orInstrPos, bc.size());
+		bc.addInstrNil(Opcode::POP_TRY, stmt->getOper().getLoc());
+		goto end;
 	}
 
 	if(oper == lex::LAND || oper == lex::LOR) {
@@ -207,29 +210,6 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 			       StringRef(stmt->getRHS() ? "0" : ""));
 	}
 end:
-	if(stmt->getOrBlk()) {
-		StmtBlock *&orblk     = stmt->getOrBlk();
-		size_t OrBlkSkipInstr = bc.size();
-		bc.addInstrInt(Opcode::JMP, orblk->getLoc(), 0); // placeholder
-		size_t orBlkBegin = bc.size();
-		if(!visit(orblk, asStmt(&orblk))) {
-			err.fail(orblk->getLoc(),
-				 "failed to generate bytecode for or-block of expression");
-			return false;
-		}
-		size_t orBlkEnd = bc.size();
-		bc.updateInstrInt(OrBlkSkipInstr, orBlkEnd);
-		bc.addInstrNil(Opcode::POP_JMP, orblk->getLoc());
-		// Contains or block begin (size_t bytes) + or block end (size_t bytes) + error
-		// variable name encoded in a single string
-		String orInstrData;
-		orInstrData.resize(sizeof(size_t) * 2);
-		*((size_t *)orInstrData.data())	      = orBlkBegin;
-		*(((size_t *)orInstrData.data()) + 1) = orBlkEnd;
-		if(!stmt->getOrBlkVar().getDataStr().empty())
-			orInstrData += stmt->getOrBlkVar().getDataStr();
-		bc.updateInstrStr(orInstrPos, orInstrData);
-	}
 	return true;
 }
 

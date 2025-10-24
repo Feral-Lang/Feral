@@ -135,8 +135,6 @@ class StmtExpr : public Stmt
 	Stmt *lhs;
 	lex::Lexeme oper;
 	Stmt *rhs;
-	StmtBlock *or_blk;
-	lex::Lexeme or_blk_var;
 
 public:
 	StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs);
@@ -147,18 +145,10 @@ public:
 
 	void disp(bool has_next);
 
-	inline void setOr(StmtBlock *blk, const lex::Lexeme &blk_var)
-	{
-		or_blk	   = blk;
-		or_blk_var = blk_var;
-	}
-
 	inline Stmt *&getLHS() { return lhs; }
 	inline Stmt *&getRHS() { return rhs; }
 	inline lex::Lexeme &getOper() { return oper; }
 	inline lex::Tok &getOperTok() { return oper.getTok(); }
-	inline StmtBlock *&getOrBlk() { return or_blk; }
-	inline lex::Lexeme &getOrBlkVar() { return or_blk_var; }
 };
 
 class StmtVar : public Stmt

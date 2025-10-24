@@ -28,8 +28,8 @@ StringRef getOpcodeStr(Opcode opcode)
 	case Opcode::JMP_FALSE: return "JMP_FALSE";
 	case Opcode::JMP_TRUE_POP: return "JMP_TRUE_POP";
 	case Opcode::JMP_FALSE_POP: return "JMP_FALSE_POP";
-	case Opcode::PUSH_JMP: return "PUSH_JMP";
-	case Opcode::POP_JMP: return "POP_JMP";
+	case Opcode::PUSH_TRY: return "PUSH_TRY";
+	case Opcode::POP_TRY: return "POP_TRY";
 	case Opcode::ATTR: return "ATTR";
 	case Opcode::CALL: return "FNCALL";
 	case Opcode::MEM_CALL: return "MEM_FNCALL";

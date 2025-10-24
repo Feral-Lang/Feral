@@ -119,7 +119,7 @@ void StmtFnArgs::disp(bool has_next)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtExpr::StmtExpr(ModuleLoc loc, Stmt *lhs, const lex::Lexeme &oper, Stmt *rhs)
-	: Stmt(EXPR, loc), lhs(lhs), oper(oper), rhs(rhs), or_blk(nullptr), or_blk_var(loc)
+	: Stmt(EXPR, loc), lhs(lhs), oper(oper), rhs(rhs)
 {}
 StmtExpr::~StmtExpr() {}
 StmtExpr *StmtExpr::create(ManagedAllocator &allocator, ModuleLoc loc, Stmt *lhs,
@@ -133,28 +133,20 @@ void StmtExpr::disp(bool has_next)
 	tio::taba(has_next);
 	tio::print(has_next, {"Expression\n"});
 	if(lhs) {
-		tio::taba(oper.getTok().isValid() || rhs || or_blk);
-		tio::print(oper.getTok().isValid() || rhs || or_blk, {"LHS:\n"});
+		tio::taba(oper.getTok().isValid() || rhs);
+		tio::print(oper.getTok().isValid() || rhs, {"LHS:\n"});
 		lhs->disp(false);
 		tio::tabr();
 	}
 	if(oper.getTok().isValid()) {
-		tio::taba(rhs || or_blk);
-		tio::print(rhs || or_blk, {"Oper: ", oper.getTok().cStr(), "\n"});
+		tio::taba(rhs);
+		tio::print(rhs, {"Oper: ", oper.getTok().cStr(), "\n"});
 		tio::tabr();
 	}
 	if(rhs) {
-		tio::taba(or_blk);
-		tio::print(or_blk, {"RHS:\n"});
-		rhs->disp(false);
-		tio::tabr();
-	}
-	if(or_blk) {
 		tio::taba(false);
-		StringRef orblkvardata =
-		or_blk_var.getTok().isData() ? or_blk_var.getDataStr() : "<none>";
-		tio::print(false, {"Or: ", orblkvardata, "\n"});
-		or_blk->disp(false);
+		tio::print(false, {"RHS:\n"});
+		rhs->disp(false);
 		tio::tabr();
 	}
 	tio::tabr();

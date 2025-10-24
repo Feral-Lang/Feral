@@ -33,6 +33,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
 	  managedAllocator(mem, "VM::ManagedAllocator"),
 	  simpleAllocator(mem, "VM::SimpleAllocator"), globals(VarFrame::create(mem)),
 	  prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+	  basicErrHandler(genNativeFn({}, "basicErrorHandler", basicErrorHandler, 1)),
 	  moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
 	  tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
@@ -95,6 +96,7 @@ Interpreter::~Interpreter()
 	decVarRef(cmdargs);
 	decVarRef(moduleFinders);
 	decVarRef(moduleDirs);
+	decVarRef(basicErrHandler);
 	for(auto &typefn : typefns) {
 		VarFrame::destroy(mem, typefn.second);
 	}
@@ -129,9 +131,10 @@ bool Interpreter::loadPrelude()
 	return true;
 }
 
-VirtualMachine *Interpreter::createVM(StringRef name)
+VirtualMachine *Interpreter::createVM(StringRef name, VarFn *errHandler, bool iref)
 {
-	return simpleAllocator.alloc<VirtualMachine>(*this, name);
+	if(!errHandler) errHandler = basicErrHandler;
+	return simpleAllocator.alloc<VirtualMachine>(*this, name, errHandler, iref);
 }
 void Interpreter::destroyVM(VirtualMachine *vm) { simpleAllocator.free(vm); }
 
@@ -337,6 +340,7 @@ void Interpreter::initTypeNames()
 	registerType<VarTypeID>({}, "TypeID");
 	registerType<VarStructDef>({}, "StructDef");
 	registerType<VarStruct>({}, "Struct");
+	registerType<VarFailure>({}, "Failure");
 	registerType<VarFile>({}, "File");
 	registerType<VarBytebuffer>({}, "Bytebuffer");
 	registerType<VarIntIterator>({}, "IntIterator");
@@ -362,6 +366,8 @@ void Interpreter::initTypeNames()
 		     false);
 	globals->add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()),
 		     false);
+	globals->add("FailureTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFailure>()),
+		     false);
 	globals->add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
 	globals->add("BytebufferTy",
 		     makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()), false);
@@ -379,13 +385,19 @@ void Interpreter::initTypeNames()
 //////////////////////////////////// VirtualMachine //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VirtualMachine::VirtualMachine(Interpreter &ip, StringRef name)
+VirtualMachine::VirtualMachine(Interpreter &ip, StringRef name, VarFn *errHandler, bool iref)
 	: ip(ip), name(name), vars(ip.mem), failstack(ip.mem), execstack(ip.mem), recurseCount(0),
 	  exitcode(0), recurseExceeded(false), exitcalled(false)
 {
+	// -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
+	failstack.pushHandler(errHandler, -1, 1, iref);
 	ip.incVMCount();
 }
-VirtualMachine::~VirtualMachine() { ip.decVMCount(); }
+VirtualMachine::~VirtualMachine()
+{
+	if(failstack.size() > 0) failstack.popHandler();
+	ip.decVMCount();
+}
 
 int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 {

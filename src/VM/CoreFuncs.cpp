@@ -102,4 +102,21 @@ Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 	return vm.makeVar<VarStr>(loc, modfile);
 }
 
+Var *basicErrorHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		       const StringMap<AssnArgData> &assn_args)
+{
+	if(!args[1]->is<VarFailure>()) {
+		vm.fail(loc, "expected argument of type failure, found: ", vm.getTypeName(args[1]));
+		return nullptr;
+	}
+	VarFailure *f	      = as<VarFailure>(args[1]);
+	Span<ModuleLoc> trace = f->getTrace();
+	StringRef msg	      = f->getMsg();
+	if(msg.empty()) msg = "unknown failure";
+	for(size_t i = 0; i < trace.size(); ++i) {
+		err.outStr(trace[i], i != trace.size() - 1 ? "" : msg);
+	}
+	return nullptr;
+}
+
 } // namespace fer

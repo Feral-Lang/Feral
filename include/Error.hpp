@@ -19,6 +19,12 @@ struct ModuleLoc
 	ModuleLoc();
 	// Note: off{Start,End} take uint64_t, but are actually 24 bits each in size.
 	ModuleLoc(ModuleId id, uint64_t offStart, uint64_t offEnd);
+
+	inline bool operator==(const ModuleLoc &other) const
+	{
+		return id == other.id && offStart == other.offStart && offEnd == other.offEnd;
+	}
+	inline bool operator!=(const ModuleLoc &other) const { return !(*this == other); }
 };
 
 static_assert(sizeof(ModuleLoc) == sizeof(uint64_t));
@@ -27,32 +33,26 @@ class ErrorHandler
 {
 	Map<ModuleId, StringRef> paths;
 	Map<ModuleId, fs::File *> files;
-	size_t maxErrors;
 
 public:
-	ErrorHandler(size_t maxErrors);
-
 	void addFile(ModuleId id, fs::File *f);
 
 	fs::File *getFileForId(ModuleId id);
 	StringRef getPathForId(ModuleId id);
 
 	inline bool moduleIdExists(ModuleId id) { return paths.contains(id); }
-	inline void setMaxErrors(size_t maxErr) { maxErrors = maxErr; }
-	inline size_t getMaxErrors() { return maxErrors; }
 
 	///////////////////////////// Actual error related functions. /////////////////////////////
 
-	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
+	inline void outStr(ModuleLoc loc, StringRef data = "")
 	{
-		utils::output(getFileForId(loc.id), std::cerr, loc.offStart, loc.offEnd, false,
-			      std::forward<Args>(args)...);
+		utils::output(std::cerr, getFileForId(loc.id), loc.offStart, loc.offEnd, data);
 	}
 
-	template<typename... Args> void warn(ModuleLoc loc, Args &&...args)
+	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
 	{
-		utils::output(getFileForId(loc.id), std::cerr, loc.offStart, loc.offEnd, true,
-			      std::forward<Args>(args)...);
+		String s = utils::toString("Error: ", std::forward<Args>(args)...);
+		outStr(loc, s);
 	}
 };
 

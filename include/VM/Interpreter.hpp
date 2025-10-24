@@ -40,6 +40,8 @@ class Interpreter
 	// Path where feral binary exists (used by <prelude>.binaryPath)
 	String binaryPath;
 	Mutex globalMutex;
+	// Default error handler
+	VarFn *basicErrHandler;
 	// Default dirs to search for modules. Used by basic{Import,Module}Finder()
 	VarVec *moduleDirs;
 	// Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is
@@ -59,7 +61,7 @@ class Interpreter
 
 	bool loadPrelude();
 
-	VirtualMachine *createVM(StringRef name);
+	VirtualMachine *createVM(StringRef name, VarFn *errHandler = nullptr, bool iref = true);
 	void destroyVM(VirtualMachine *vm);
 
 public:
@@ -186,7 +188,7 @@ class VirtualMachine : public IAllocated
 	bool exitcalled;
 
 public:
-	VirtualMachine(Interpreter &ip, StringRef name);
+	VirtualMachine(Interpreter &ip, StringRef name, VarFn *errHandler, bool iref);
 	~VirtualMachine();
 
 	int compileAndRun(ModuleLoc loc, const char *file);
@@ -384,29 +386,9 @@ public:
 		return true;
 	}
 
-	template<typename... Args> bool fail(ModuleLoc loc, Args &&...args)
+	template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
 	{
-		if(failstack.empty() || exitcalled) {
-			warn(loc, std::forward<Args>(args)...);
-			return false;
-		}
-		if(failstack.hasErr()) {
-			err.fail(loc, std::forward<Args>(args)...);
-			return false;
-		}
-		VarStr *str = makeVarWithRef<VarStr>(loc, "");
-		utils::appendToString(str->getVal(), std::forward<Args>(args)...);
-		failstack.setErr(str);
-		return true;
-	}
-
-	// Only shows output if failstack is not in use.
-	template<typename... Args> void warn(ModuleLoc loc, Args &&...args)
-	{
-		if(failstack.empty() || exitcalled) {
-			err.fail(loc, std::forward<Args>(args)...);
-		}
-		// Lose the error msg to the void if failstack is already in place.
+		return failstack.fail(loc, recurseCount, std::forward<Args>(args)...);
 	}
 };
 

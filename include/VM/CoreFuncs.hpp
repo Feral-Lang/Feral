@@ -10,4 +10,7 @@ void setupCoreFuncs(Interpreter &ip, ModuleLoc loc);
 Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 		       const StringMap<AssnArgData> &assn_args);
 
+// This is the default error handler which simply shows the error output using std::cerr
+Var *basicErrorHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+		       const StringMap<AssnArgData> &assn_args);
 } // namespace fer

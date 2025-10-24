@@ -1,3 +1,4 @@
+let io = import('std/io');
 let assert = import('std/assert');
 
 assert.eq('some string'._typestr_(), 'Str');
@@ -11,9 +12,10 @@ let div = fn(x, y) {
 };
 
 let x = div(5, 0) or e {
-	return 10 / 0 or e2 {
-		assert.eq(e, 'raised: div by zero');
-		assert.eq(e2, 'division by zero');
+	let p = 0; # to prevent const folding
+	return 10 / p or e2 {
+		assert.eq(e.str(), 'raised: div by zero');
+		assert.eq(e2.str(), 'division by zero');
 		return 20; # set 20 as the value
 	};
 };
