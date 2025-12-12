@@ -81,8 +81,6 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             break;
         }
         case Opcode::CREATE_IN: {
-            // back() and pop() are not combined because pop can cause the Var* to be
-            // destroyed
             StringRef name = ins.getDataStr();
             Var *in        = popExecStack(false);
             Var *val       = popExecStack(false);
