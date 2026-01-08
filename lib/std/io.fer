@@ -1,7 +1,7 @@
 loadlib('std/IO');
 
 inline if getOSName() == 'windows' {
-let null = '$null';
+let null = 'NUL';
 } else {
 let null = '/dev/null';
 }

@@ -71,12 +71,6 @@ let files = fs.walkDir(testsDir, fs.WALK_RECURSE, filePattern);
 files.sort();
 let passed = 0, failed = 0;
 let tpool = vec.new(refs = true);
-inline if os.name == 'windows' {
-# Apparently, $null cannot be accessed by more than one process at a time.
-let maxProcs = 1;
-} else {
-let maxProcs = thread.getConcurrency();
-}
 
 let waitProcs = fn(maxProcs, withValgrind, counter = true) {
     while tpool.len() >= maxProcs {
@@ -120,13 +114,15 @@ if args.has('runs') {
     runCount = args.getValue('runs').int();
 }
 
+let MAX_PROCS = thread.getConcurrency();
+
 let timeBegin = time.now();
 
 let totalTests = runCount * files.len();
 let counter = 0;
 for let i = 0; i < runCount; ++i {
     for file in files.each() {
-        waitProcs(maxProcs, !valgrindCmd.empty());
+        waitProcs(MAX_PROCS, !valgrindCmd.empty());
         let cmd = valgrindCmd;
         cmd.append(fmtWithPath(file, execCmd));
         cmd.push('^>' + io.null);
@@ -145,7 +141,7 @@ let totalTime = time.now() - timeBegin;
 
 if !cleanCmd.empty() {
     for file in files.each() {
-        waitProcs(maxProcs, false, false);
+        waitProcs(MAX_PROCS, false, false);
         let cmd = fmtWithPath(file, cleanCmd);
         cmd.push('^>' + io.null);
         io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
