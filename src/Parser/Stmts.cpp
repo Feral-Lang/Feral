@@ -219,9 +219,7 @@ void StmtFnSig::disp(bool hasNext)
     if(args.size() > 0) {
         tio::taba(false);
         tio::print(false, {"Parameters\n"});
-        for(size_t i = 0; i < args.size(); ++i) {
-            args[i]->disp(i != args.size() - 1);
-        }
+        for(size_t i = 0; i < args.size(); ++i) { args[i]->disp(i != args.size() - 1); }
         tio::tabr();
     }
     tio::tabr();
@@ -274,9 +272,7 @@ void StmtVarDecl::disp(bool hasNext)
 {
     tio::taba(hasNext);
     tio::print(hasNext, {"Variable declarations\n"});
-    for(size_t i = 0; i < decls.size(); ++i) {
-        decls[i]->disp(i != decls.size() - 1);
-    }
+    for(size_t i = 0; i < decls.size(); ++i) { decls[i]->disp(i != decls.size() - 1); }
     tio::tabr();
 }
 

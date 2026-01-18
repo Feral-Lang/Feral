@@ -10,33 +10,6 @@ Var *createStruct(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *structToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
-{
-    VarStruct *st = as<VarStruct>(args[0]);
-    VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getTypeFnID()));
-    res->getVal() += "{";
-    for(auto &a : st->getAttrs()) {
-        Var *v = nullptr;
-        Array<Var *, 1> tmp{a.second};
-        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
-            vm.unmakeVar(res);
-            return nullptr;
-        }
-        res->getVal() += a.first;
-        res->getVal() += ": ";
-        res->getVal() += as<VarStr>(v)->getVal();
-        vm.decVarRef(v);
-        res->getVal() += ", ";
-    }
-    if(!st->getAttrs().empty()) {
-        res->getVal().pop_back();
-        res->getVal().pop_back();
-    }
-    res->getVal() += "}";
-    return res;
-}
-
 Var *structDefSetTypeName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                           const StringMap<AssnArgData> &assnArgs)
 {
@@ -55,9 +28,7 @@ Var *structDefGetFields(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 {
     VarStructDef *def = as<VarStructDef>(args[0]);
     VarVec *res       = vm.makeVar<VarVec>(loc, def->getAttrOrder().size(), false);
-    for(auto &a : def->getAttrOrder()) {
-        res->push(vm.makeVarWithRef<VarStr>(loc, a));
-    }
+    for(auto &a : def->getAttrOrder()) { res->push(vm.makeVarWithRef<VarStr>(loc, a)); }
     return res;
 }
 
@@ -88,9 +59,7 @@ Var *structGetFields(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 {
     VarStruct *st = as<VarStruct>(args[0]);
     VarVec *res   = vm.makeVar<VarVec>(loc, st->getAttrs().size(), false);
-    for(auto &a : st->getAttrs()) {
-        res->push(vm.makeVarWithRef<VarStr>(loc, a.first));
-    }
+    for(auto &a : st->getAttrs()) { res->push(vm.makeVarWithRef<VarStr>(loc, a.first)); }
     return res;
 }
 

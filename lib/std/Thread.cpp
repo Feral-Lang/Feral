@@ -32,9 +32,7 @@ VarThread::VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_call
     args.reserve(_args.size() + 1); // +1 for self/nullptr
     auto selfArgLoc = _assnArgs.find("selfVar");
     Var *selfVar    = nullptr;
-    if(selfArgLoc != _assnArgs.end()) {
-        selfVar = selfArgLoc->second.val;
-    }
+    if(selfArgLoc != _assnArgs.end()) { selfVar = selfArgLoc->second.val; }
     args.push_back(selfVar);
     args.insert(args.end(), _args.begin(), _args.end());
 

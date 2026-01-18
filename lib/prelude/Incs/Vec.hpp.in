@@ -34,9 +34,7 @@ Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
             res->push(args[i]);
         }
     } else {
-        for(size_t i = 1; i < args.size(); ++i) {
-            res->push(vm.copyVar(loc, args[i]));
-        }
+        for(size_t i = 1; i < args.size(); ++i) { res->push(vm.copyVar(loc, args[i])); }
     }
     return res;
 }
@@ -109,9 +107,7 @@ Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
               const StringMap<AssnArgData> &assnArgs)
 {
     VarVec *v = as<VarVec>(args[0]);
-    for(auto &e : v->getVal()) {
-        vm.decVarRef(e);
-    }
+    for(auto &e : v->getVal()) { vm.decVarRef(e); }
     v->clear();
     return args[0];
 }
@@ -301,9 +297,7 @@ Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     }
     VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
     if(end <= beg) return res;
-    for(size_t i = beg; i < end; ++i) {
-        res->push(vm.copyVar(loc, v->at(i)));
-    }
+    for(size_t i = beg; i < end; ++i) { res->push(vm.copyVar(loc, v->at(i))); }
     return res;
 }
 

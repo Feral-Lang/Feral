@@ -28,9 +28,7 @@ bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *cap
         }
     } else if(captures->is<VarStr>()) {
         VarStr *caps = as<VarStr>(captures);
-        for(size_t i = ignoreMatch; i < resCount; ++i) {
-            caps->getVal() += results[i].str();
-        }
+        for(size_t i = ignoreMatch; i < resCount; ++i) { caps->getVal() += results[i].str(); }
     }
     return found;
 }

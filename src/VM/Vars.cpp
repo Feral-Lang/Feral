@@ -21,9 +21,7 @@ void VarFrame::dump(OStream &os, size_t tab)
     String tabs(tab, '\t');
     os << tabs << "VarFrame\n";
     tabs += '\t';
-    for(auto it : vars) {
-        os << tabs << it.first << "\n";
-    }
+    for(auto it : vars) { os << tabs << it.first << "\n"; }
 }
 
 void VarFrame::add(StringRef name, Var *val, bool iref)
@@ -85,9 +83,7 @@ void VarStack::popLoop()
 {
     LockGuard<RecursiveMutex> _(mtx);
     assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
-    if(stack.size() - 1 >= loopsFrom.back()) {
-        popStack(stack.size() - loopsFrom.back());
-    }
+    if(stack.size() - 1 >= loopsFrom.back()) { popStack(stack.size() - loopsFrom.back()); }
     loopsFrom.pop_back();
 }
 void VarStack::continueLoop()
@@ -116,9 +112,7 @@ void VarStack::dump(OStream &os, size_t tab)
 {
     String tabs(tab, '\t');
     os << tabs << "VarStack\n";
-    for(auto &item : stack) {
-        item->dump(os, tab + 1);
-    }
+    for(auto &item : stack) { item->dump(os, tab + 1); }
 }
 
 Vars::Vars(MemoryManager &mem) : fnstack(-1), mem(mem) {}
@@ -128,9 +122,7 @@ Var *Vars::get(StringRef name)
 {
     assert(fnstack != -1);
     Var *res = fnvars[fnstack]->get(name);
-    if(res == nullptr && fnstack != 0) {
-        res = fnvars[0]->get(name);
-    }
+    if(res == nullptr && fnstack != 0) { res = fnvars[0]->get(name); }
     return res;
 }
 

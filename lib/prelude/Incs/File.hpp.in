@@ -191,7 +191,7 @@ Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     VarFileIterator *it = as<VarFileIterator>(args[0]);
     VarStr *res         = vm.makeVar<VarStr>(loc, "");
     if(!it->next(res)) {
-        vm.unmakeVar(res);
+        vm.decVarRef(res);
         return vm.getNil();
     }
     return res;

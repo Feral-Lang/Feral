@@ -72,9 +72,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     tryAddModulePathsFromFile(getGlobalModulePathsFile());
 
 #if defined(CORE_OS_WINDOWS)
-    for(auto &modDir : moduleDirs->getVal()) {
-        addDLLDirectory(as<VarStr>(modDir)->getVal());
-    }
+    for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
 #endif
 
     if(!loadPrelude()) throw "Failed to load prelude";
@@ -83,12 +81,8 @@ Interpreter::~Interpreter()
 {
     using namespace std::chrono_literals;
     stopExecution();
-    while(vmCount.load() > 0) {
-        std::this_thread::sleep_for(1ms);
-    }
-    for(auto &mod : modules) {
-        decVarRef(mod.second);
-    }
+    while(vmCount.load() > 0) { std::this_thread::sleep_for(1ms); }
+    for(auto &mod : modules) { decVarRef(mod.second); }
     decVarRef(nil);
     decVarRef(fals);
     decVarRef(tru);
@@ -96,13 +90,9 @@ Interpreter::~Interpreter()
     decVarRef(moduleFinders);
     decVarRef(moduleDirs);
     decVarRef(basicErrHandler);
-    for(auto &typefn : typefns) {
-        VarFrame::destroy(mem, typefn.second);
-    }
+    for(auto &typefn : typefns) { VarFrame::destroy(mem, typefn.second); }
     VarFrame::destroy(mem, globals);
-    for(auto &deinitfn : dlldeinitfns) {
-        deinitfn.second(*this);
-    }
+    for(auto &deinitfn : dlldeinitfns) { deinitfn.second(*this); }
 
 #if defined(CORE_OS_WINDOWS)
     remDLLDirectories();
@@ -638,9 +628,7 @@ bool addDLLDirectory(StringRef dir)
 }
 void remDLLDirectories()
 {
-    for(auto dir : dllDirectories) {
-        RemoveDllDirectory(dir.second);
-    }
+    for(auto dir : dllDirectories) { RemoveDllDirectory(dir.second); }
 }
 #endif
 

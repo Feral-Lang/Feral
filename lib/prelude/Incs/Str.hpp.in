@@ -24,9 +24,7 @@ Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     StringRef lhs = as<VarStr>(args[0])->getVal();
     int64_t rhs   = as<VarInt>(args[1])->getVal();
     VarStr *res   = vm.makeVar<VarStr>(loc, "");
-    for(int64_t i = 1; i < rhs; ++i) {
-        res->getVal() += lhs;
-    }
+    for(int64_t i = 1; i < rhs; ++i) { res->getVal() += lhs; }
     return res;
 }
 
@@ -53,9 +51,7 @@ Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     }
     String lhs  = as<VarStr>(args[0])->getVal();
     int64_t rhs = as<VarInt>(args[1])->getVal();
-    for(int64_t i = 1; i < rhs; ++i) {
-        as<VarStr>(args[0])->getVal() += lhs;
-    }
+    for(int64_t i = 1; i < rhs; ++i) { as<VarStr>(args[0])->getVal() += lhs; }
     return args[0];
 }
 
@@ -314,9 +310,7 @@ Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     String &str  = as<VarStr>(args[0])->getVal();
     String &what = as<VarStr>(args[1])->getVal();
     size_t pos   = str.find(what);
-    if(pos == String::npos) {
-        return vm.makeVar<VarInt>(loc, -1);
-    }
+    if(pos == String::npos) { return vm.makeVar<VarInt>(loc, -1); }
     return vm.makeVar<VarInt>(loc, pos);
 }
 
@@ -331,9 +325,7 @@ Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     String &str  = as<VarStr>(args[0])->getVal();
     String &what = as<VarStr>(args[1])->getVal();
     size_t pos   = str.rfind(what);
-    if(pos == String::npos) {
-        return vm.makeVar<VarInt>(loc, -1);
-    }
+    if(pos == String::npos) { return vm.makeVar<VarInt>(loc, -1); }
     return vm.makeVar<VarInt>(loc, pos);
 }
 
@@ -535,28 +527,20 @@ Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     String &r   = as<VarStr>(res)->getVal();
     if(str.size() <= 7) {
-        while(str.size() < 7) {
-            str.insert(str.begin(), '0');
-        }
+        while(str.size() < 7) { str.insert(str.begin(), '0'); }
         str.insert(str.begin(), '0');
         r = strToBin(str);
     } else if(str.size() <= 11) {
-        while(str.size() < 11) {
-            str.insert(str.begin(), '0');
-        }
+        while(str.size() < 11) { str.insert(str.begin(), '0'); }
         r = strToBin("110" + str.substr(0, 5));
         r += strToBin("10" + str.substr(5));
     } else if(str.size() <= 16) {
-        while(str.size() < 16) {
-            str.insert(str.begin(), '0');
-        }
+        while(str.size() < 16) { str.insert(str.begin(), '0'); }
         r = strToBin("1110" + str.substr(0, 4));
         r += strToBin("10" + str.substr(4, 6));
         r += strToBin("10" + str.substr(10));
     } else { // str.size() <= 21
-        while(str.size() < 21) {
-            str.insert(str.begin(), '0');
-        }
+        while(str.size() < 21) { str.insert(str.begin(), '0'); }
         r = strToBin("11110" + str.substr(0, 3));
         r += strToBin("10" + str.substr(3, 6));
         r += strToBin("10" + str.substr(9, 6));
@@ -659,9 +643,7 @@ size_t strToBin(StringRef str)
     size_t exp = sizePow(2, str.size() - 1);
     size_t bin = 0;
     for(auto &c : str) {
-        if(c == '1') {
-            bin += exp;
-        }
+        if(c == '1') { bin += exp; }
         exp /= 2;
     }
     return bin;

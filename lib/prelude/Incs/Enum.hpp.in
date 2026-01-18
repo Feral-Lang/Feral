@@ -9,7 +9,7 @@ Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         if(!a->is<VarStr>()) {
             vm.fail(a->getLoc(), "expected strings for enums (use strings or atoms), found: ",
                     vm.getTypeName(a));
-            vm.unmakeVar(res);
+            vm.decVarRef(res);
             return nullptr;
         }
         res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
@@ -20,7 +20,7 @@ Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
             vm.fail(a.second.val->getLoc(),
                     "expected argument value to be of type integer for enums, found: ",
                     vm.getTypeName(a.second.val));
-            vm.unmakeVar(res);
+            vm.decVarRef(res);
             return nullptr;
         }
         res->setAttr(mem, a.first, vm.copyVar(loc, a.second.val), false);

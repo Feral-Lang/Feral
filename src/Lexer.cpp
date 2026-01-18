@@ -682,9 +682,7 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
 
 void dumpTokens(OStream &os, Span<Lexeme> toks)
 {
-    for(auto &t : toks) {
-        os << t.str() << "\n";
-    }
+    for(auto &t : toks) { os << t.str() << "\n"; }
 }
 
 } // namespace fer::lex

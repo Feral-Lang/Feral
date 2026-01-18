@@ -628,10 +628,10 @@ class VarBytebuffer : public Var
     void onSet(MemoryManager &mem, Var *from) override;
 
 public:
-    VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, char *buf = nullptr);
+    VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, const char *buf = nullptr);
     ~VarBytebuffer();
 
-    void setData(char *newbuf, size_t newlen);
+    void setData(const char *newbuf, size_t newlen);
 
     inline void setLen(size_t len) { buflen = len; }
     inline char *&getBuf() { return buffer; }

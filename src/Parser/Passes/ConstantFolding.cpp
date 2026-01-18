@@ -80,9 +80,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         if(ltok == lex::STR && rtok == lex::INT) {
             String res;
             res.reserve(l->getLexDataStr().size() * r->getLexDataInt());
-            for(int64_t i = 0; i < r->getLexDataInt(); ++i) {
-                res += l->getLexDataStr();
-            }
+            for(int64_t i = 0; i < r->getLexDataInt(); ++i) { res += l->getLexDataStr(); }
             lex::Lexeme restok(l->getLoc(), lex::STR, StringRef());
             restok.setDataStr(res);
             resultStmt = allocator.alloc<StmtSimple>(restok.getLoc(), restok);
@@ -91,9 +89,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         if(ltok == lex::INT && rtok == lex::STR) {
             String res;
             res.reserve(l->getLexDataInt() * r->getLexDataStr().size());
-            for(int64_t i = 0; i < l->getLexDataInt(); ++i) {
-                res += r->getLexDataStr();
-            }
+            for(int64_t i = 0; i < l->getLexDataInt(); ++i) { res += r->getLexDataStr(); }
             lex::Lexeme restok(l->getLoc(), lex::STR, StringRef());
             restok.setDataStr(res);
             resultStmt = allocator.alloc<StmtSimple>(restok.getLoc(), restok);

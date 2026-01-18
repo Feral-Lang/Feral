@@ -144,17 +144,13 @@ bool Parser::parseExpr18(Stmt *&expr)
 
     size_t commas = 0;
 
-    if(!parseExpr17(rhs)) {
-        return false;
-    }
+    if(!parseExpr17(rhs)) { return false; }
 
     while(p.accept(lex::COMMA)) {
         ++commas;
         oper = p.peek();
         p.next();
-        if(!parseExpr17(lhs)) {
-            return false;
-        }
+        if(!parseExpr17(lhs)) { return false; }
         rhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         lhs = nullptr;
     }
@@ -175,16 +171,12 @@ bool Parser::parseExpr17(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr15(rhs)) {
-        return false;
-    }
+    if(!parseExpr15(rhs)) { return false; }
 
     while(p.accept(lex::ASSN)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr15(lhs)) {
-            return false;
-        }
+        if(!parseExpr15(lhs)) { return false; }
         rhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         lhs = nullptr;
     }
@@ -209,9 +201,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr14(lhs)) {
-        return false;
-    }
+    if(!parseExpr14(lhs)) { return false; }
 
     while(p.accept(lex::ADD_ASSN, lex::SUB_ASSN, lex::MUL_ASSN) ||
           p.accept(lex::DIV_ASSN, lex::MOD_ASSN, lex::LSHIFT_ASSN) ||
@@ -220,9 +210,7 @@ bool Parser::parseExpr16(Stmt *&expr)
     {
         lex::Lexeme &oper = p.peek();
         p.next();
-        if(!parseExpr14(rhs)) {
-            return false;
-        }
+        if(!parseExpr14(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -264,17 +252,13 @@ bool Parser::parseExpr15(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr16(cond)) {
-        return false;
-    }
+    if(!parseExpr16(cond)) { return false; }
     if(!p.acceptn(lex::QUEST)) {
         expr = cond;
         return true;
     }
 
-    if(!parseExpr16(blkStmt)) {
-        return false;
-    }
+    if(!parseExpr16(blkStmt)) { return false; }
     if(!p.acceptn(lex::COL)) {
         err.fail(p.peek().getLoc(),
                  "expected ':' for ternary operator, found: ", p.peek().getTok().cStr());
@@ -284,9 +268,7 @@ bool Parser::parseExpr15(Stmt *&expr)
     as<StmtBlock>(blkStmt)->setUnload(false);
     cvec.emplace_back(cond, as<StmtBlock>(blkStmt));
     blkStmt = nullptr;
-    if(!parseExpr16(blkStmt)) {
-        return false;
-    }
+    if(!parseExpr16(blkStmt)) { return false; }
     blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
     as<StmtBlock>(blkStmt)->setUnload(false);
     cvec.emplace_back(nullptr, as<StmtBlock>(blkStmt));
@@ -306,16 +288,12 @@ bool Parser::parseExpr14(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr13(lhs)) {
-        return false;
-    }
+    if(!parseExpr13(lhs)) { return false; }
 
     while(p.accept(lex::NIL_COALESCE)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr13(rhs)) {
-            return false;
-        }
+        if(!parseExpr13(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -336,16 +314,12 @@ bool Parser::parseExpr13(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr12(lhs)) {
-        return false;
-    }
+    if(!parseExpr12(lhs)) { return false; }
 
     while(p.accept(lex::LOR)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr12(rhs)) {
-            return false;
-        }
+        if(!parseExpr12(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -366,16 +340,12 @@ bool Parser::parseExpr12(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr11(lhs)) {
-        return false;
-    }
+    if(!parseExpr11(lhs)) { return false; }
 
     while(p.accept(lex::LAND)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr11(rhs)) {
-            return false;
-        }
+        if(!parseExpr11(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -396,16 +366,12 @@ bool Parser::parseExpr11(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr10(lhs)) {
-        return false;
-    }
+    if(!parseExpr10(lhs)) { return false; }
 
     while(p.accept(lex::BOR)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr10(rhs)) {
-            return false;
-        }
+        if(!parseExpr10(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -426,16 +392,12 @@ bool Parser::parseExpr10(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr09(lhs)) {
-        return false;
-    }
+    if(!parseExpr09(lhs)) { return false; }
 
     while(p.accept(lex::BXOR)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr09(rhs)) {
-            return false;
-        }
+        if(!parseExpr09(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -456,16 +418,12 @@ bool Parser::parseExpr09(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr08(lhs)) {
-        return false;
-    }
+    if(!parseExpr08(lhs)) { return false; }
 
     while(p.accept(lex::BAND)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr08(rhs)) {
-            return false;
-        }
+        if(!parseExpr08(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -486,16 +444,12 @@ bool Parser::parseExpr08(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr07(lhs)) {
-        return false;
-    }
+    if(!parseExpr07(lhs)) { return false; }
 
     while(p.accept(lex::EQ, lex::NE)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr07(rhs)) {
-            return false;
-        }
+        if(!parseExpr07(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -517,16 +471,12 @@ bool Parser::parseExpr07(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr06(lhs)) {
-        return false;
-    }
+    if(!parseExpr06(lhs)) { return false; }
 
     while(p.accept(lex::LT, lex::LE) || p.accept(lex::GT, lex::GE)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr06(rhs)) {
-            return false;
-        }
+        if(!parseExpr06(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -547,16 +497,12 @@ bool Parser::parseExpr06(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr05(lhs)) {
-        return false;
-    }
+    if(!parseExpr05(lhs)) { return false; }
 
     while(p.accept(lex::LSHIFT, lex::RSHIFT)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr05(rhs)) {
-            return false;
-        }
+        if(!parseExpr05(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -577,16 +523,12 @@ bool Parser::parseExpr05(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr04(lhs)) {
-        return false;
-    }
+    if(!parseExpr04(lhs)) { return false; }
 
     while(p.accept(lex::ADD, lex::SUB)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr04(rhs)) {
-            return false;
-        }
+        if(!parseExpr04(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -607,16 +549,12 @@ bool Parser::parseExpr04(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr03(lhs)) {
-        return false;
-    }
+    if(!parseExpr03(lhs)) { return false; }
 
     while(p.accept(lex::MUL, lex::DIV, lex::MOD) || p.accept(lex::POWER, lex::ROOT)) {
         oper = p.peek();
         p.next();
-        if(!parseExpr03(rhs)) {
-            return false;
-        }
+        if(!parseExpr03(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start.getLoc(), lhs, oper, rhs);
         rhs = nullptr;
     }
@@ -652,9 +590,7 @@ bool Parser::parseExpr03(Stmt *&expr)
         p.next();
     }
 
-    if(!parseExpr02(lhs)) {
-        return false;
-    }
+    if(!parseExpr02(lhs)) { return false; }
 
     if(!lhs) {
         err.fail(start.getLoc(), "invalid expression");
@@ -678,9 +614,7 @@ bool Parser::parseExpr03(Stmt *&expr)
         }
     }
 
-    for(auto &op : opers) {
-        lhs = StmtExpr::create(allocator, op.getLoc(), lhs, op, nullptr);
-    }
+    for(auto &op : opers) { lhs = StmtExpr::create(allocator, op.getLoc(), lhs, op, nullptr); }
 
     expr = lhs;
     return true;
@@ -698,9 +632,7 @@ bool Parser::parseExpr02(Stmt *&expr)
 
     lex::Lexeme &start = p.peek();
 
-    if(!parseExpr01(lhs)) {
-        return false;
-    }
+    if(!parseExpr01(lhs)) { return false; }
 
     if(p.accept(lex::XINC, lex::XDEC, lex::PreVA)) {
         if(p.accept(lex::PreVA)) p.sett(lex::PostVA);
@@ -732,9 +664,7 @@ bool Parser::parseExpr01(Stmt *&expr)
     }
 
     if(p.acceptn(lex::LPAREN)) {
-        if(!parseExpr(lhs)) {
-            return false;
-        }
+        if(!parseExpr(lhs)) { return false; }
         if(!p.acceptn(lex::RPAREN)) {
             err.fail(p.peek().getLoc(), "expected ending parenthesis ')' for expression, found: ",
                      p.peek().getTok().cStr());

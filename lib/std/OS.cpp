@@ -163,9 +163,7 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
             }
             newEnv[item.first] = as<VarStr>(v)->getVal();
         }
-        for(auto &item : newEnv) {
-            env::set(item.first.c_str(), item.second.c_str(), true);
-        }
+        for(auto &item : newEnv) { env::set(item.first.c_str(), item.second.c_str(), true); }
     }
 
     FILE *pipe = popen(cmd.c_str(), "r");
@@ -199,9 +197,7 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     int res = pclose(pipe);
 
     if(envVar) {
-        for(auto &item : existingEnv) {
-            env::set(item.first.c_str(), item.second.c_str(), true);
-        }
+        for(auto &item : existingEnv) { env::set(item.first.c_str(), item.second.c_str(), true); }
     }
 
 #if !defined(CORE_OS_WINDOWS)
@@ -265,7 +261,7 @@ Var *osGetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
     if(res->getVal().empty()) {
         vm.fail(loc, "getCWD() failed - internal error");
-        vm.unmakeVar(res);
+        vm.decVarRef(res);
         return nullptr;
     }
     return res;

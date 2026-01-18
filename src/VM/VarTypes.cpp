@@ -227,9 +227,7 @@ void VarVec::setVal(MemoryManager &mem, Span<Var *> newval)
     for(auto &v : val) decVarRef(mem, v);
     val.clear();
     if(asrefs) {
-        for(auto &v : newval) {
-            incVarRef(v);
-        }
+        for(auto &v : newval) { incVarRef(v); }
         val.assign(newval.begin(), newval.end());
     } else {
         for(auto &v : newval) val.push_back(copyVar(mem, getLoc(), v));
@@ -288,9 +286,7 @@ void VarMap::setVal(MemoryManager &mem, const StringMap<Var *> &newval)
 {
     clear(mem);
     if(asrefs) {
-        for(auto &v : newval) {
-            incVarRef(v.second);
-        }
+        for(auto &v : newval) { incVarRef(v.second); }
         val.insert(newval.begin(), newval.end());
     } else {
         for(auto &v : newval) val.insert({v.first, copyVar(mem, getLoc(), v.second)});
@@ -492,9 +488,7 @@ VarStructDef::VarStructDef(ModuleLoc loc, size_t attrscount, size_t id)
 }
 void VarStructDef::onDestroy(MemoryManager &mem)
 {
-    for(auto &attr : attrs) {
-        decVarRef(mem, attr.second);
-    }
+    for(auto &attr : attrs) { decVarRef(mem, attr.second); }
 }
 
 Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
@@ -544,16 +538,14 @@ Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
     return res;
 fail:
-    vm.unmakeVar(res);
+    vm.decVarRef(res);
     return nullptr;
 }
 
 void VarStructDef::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
     auto loc = attrs.find(name);
-    if(loc != attrs.end()) {
-        decVarRef(mem, loc->second);
-    }
+    if(loc != attrs.end()) { decVarRef(mem, loc->second); }
     if(iref) incVarRef(val);
     attrs.insert_or_assign(String(name), val);
 }
@@ -585,9 +577,7 @@ void VarStruct::onCreate(MemoryManager &mem)
 }
 void VarStruct::onDestroy(MemoryManager &mem)
 {
-    for(auto &attr : attrs) {
-        decVarRef(mem, attr.second);
-    }
+    for(auto &attr : attrs) { decVarRef(mem, attr.second); }
     if(base) decVarRef(mem, base);
 }
 Var *VarStruct::onCopy(MemoryManager &mem, ModuleLoc loc)
@@ -603,9 +593,7 @@ void VarStruct::onSet(MemoryManager &mem, Var *from)
 {
     VarStruct *st = as<VarStruct>(from);
 
-    for(auto &attr : attrs) {
-        decVarRef(mem, attr.second);
-    }
+    for(auto &attr : attrs) { decVarRef(mem, attr.second); }
     for(auto &attr : st->attrs) {
         incVarRef(attr.second);
         attrs[attr.first] = attr.second;
@@ -619,9 +607,7 @@ void VarStruct::onSet(MemoryManager &mem, Var *from)
 void VarStruct::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 {
     auto loc = attrs.find(name);
-    if(loc != attrs.end()) {
-        decVarRef(mem, loc->second);
-    }
+    if(loc != attrs.end()) { decVarRef(mem, loc->second); }
     if(iref) incVarRef(val);
     attrs.insert_or_assign(String(name), val);
 }
@@ -728,7 +714,7 @@ bool VarFileIterator::next(VarStr *&val)
 //////////////////////////////////////////// VarByteBuffer ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, char *buf)
+VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const char *buf)
     : Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
     if(bufsz > 0) buffer = (char *)malloc(bufsz);
@@ -747,7 +733,7 @@ void VarBytebuffer::onSet(MemoryManager &mem, Var *from)
     VarBytebuffer *tmp = as<VarBytebuffer>(from);
     setData(tmp->buffer, tmp->buflen);
 }
-void VarBytebuffer::setData(char *newbuf, size_t newlen)
+void VarBytebuffer::setData(const char *newbuf, size_t newlen)
 {
     if(newlen == 0) return;
     if(bufsz > 0 && newlen > bufsz) {

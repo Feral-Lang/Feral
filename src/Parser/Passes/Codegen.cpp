@@ -260,9 +260,7 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
     if(stmt->getKwArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
                        stmt->getKwArg()->getLexDataStr());
-    for(auto &a : args) {
-        arginfo += a->getVal() ? "1" : "0";
-    }
+    for(auto &a : args) { arginfo += a->getVal() ? "1" : "0"; }
     fndefarginfo.push_back(std::move(arginfo));
     return true;
 }
@@ -328,13 +326,9 @@ bool CodegenPass::visit(StmtCond *stmt, Stmt **source)
             bc.addInstrInt(Opcode::JMP, c.getCond() ? c.getCond()->getLoc() : c.getBlk()->getLoc(),
                            0);
         }
-        if(c.getCond()) {
-            bc.updateInstrInt(falsejmppos, bc.size());
-        }
+        if(c.getCond()) { bc.updateInstrInt(falsejmppos, bc.size()); }
     }
-    for(auto &bodyjmp : bodyjmps) {
-        bc.updateInstrInt(bodyjmp, bc.size());
-    }
+    for(auto &bodyjmp : bodyjmps) { bc.updateInstrInt(bodyjmp, bc.size()); }
     return true;
 }
 

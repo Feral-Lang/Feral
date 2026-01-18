@@ -9,9 +9,7 @@ FailStack::FailStack(MemoryManager &mem) : mem(mem) {}
 FailStack::~FailStack()
 {
     assert(size() <= 1 && "Failstack must have <= 1 items before it is destroyed");
-    for(auto &s : stack) {
-        Var::decVarRef(mem, s);
-    }
+    for(auto &s : stack) { Var::decVarRef(mem, s); }
 }
 
 void FailStack::pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler)
