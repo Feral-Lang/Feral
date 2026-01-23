@@ -41,7 +41,7 @@ void DeferStack::applyDefers(Vector<Stmt *> &stmts)
     }
 }
 
-SimplifyPass::SimplifyPass(ManagedAllocator &allocator)
+SimplifyPass::SimplifyPass(ManagedList &allocator)
     : Pass(Pass::genPassID<SimplifyPass>(), allocator)
 {}
 SimplifyPass::~SimplifyPass() {}
@@ -128,7 +128,7 @@ bool SimplifyPass::visit(StmtVar *stmt, Stmt **source)
 {
     if(stmt->getVal() && !visit(stmt->getVal(), asStmt(&stmt->getVal()))) {
         err.fail(stmt->getLoc(),
-                 "failed to apply simplify pass on var: ", stmt->getName().getDataStr());
+                 "failed to apply simplify pass on var: ", stmt->getName()->getDataStr());
         return false;
     }
     return true;

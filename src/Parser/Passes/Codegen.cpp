@@ -5,7 +5,7 @@
 namespace fer::ast
 {
 
-CodegenPass::CodegenPass(ManagedAllocator &allocator, Bytecode &bc)
+CodegenPass::CodegenPass(ManagedList &allocator, Bytecode &bc)
     : Pass(Pass::genPassID<CodegenPass>(), allocator), bc(bc)
 {}
 CodegenPass::~CodegenPass() {}
@@ -60,23 +60,28 @@ bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
 {
-    const lex::Lexeme &val = stmt->getLexValue();
-    switch(val.getTokVal()) {
+    lex::Lexeme *val = stmt->getLexValue();
+    switch(val->getTokVal()) {
     case lex::IDEN:
-        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataStr());
+        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val->getMoveDataStr());
         return true;
     case lex::STR:
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), utils::fromRawString(val.getDataStr()));
+        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(),
+                       utils::fromRawString(val->getMoveDataStr()));
         return true;
-    case lex::INT: bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataInt()); return true;
-    case lex::FLT: bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val.getDataFlt()); return true;
+    case lex::INT:
+        bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataInt());
+        return true;
+    case lex::FLT:
+        bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataFlt());
+        return true;
     case lex::FTRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
     case lex::FFALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
     case lex::NIL: bc.addInstrNil(Opcode::LOAD_DATA, stmt->getLoc()); return true;
     default: break;
     }
     err.fail(stmt->getLoc(),
-             "unable to generate bytecode - unknown simple type: ", val.getTok().cStr());
+             "unable to generate bytecode - unknown simple type: ", val->getTok().cStr());
     return false;
 }
 
@@ -117,7 +122,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 {
     // if LHS is a dot operation and the current expr is a function call, we want the
     // member function call instr to be emitted
-    StringRef attrname;
+    bool hasAttrName = false;
     // index to edit from where the jump after RHS is to occur (for && and || operations)
     size_t beforelogicaljmplocscount = jmplocs.size();
     lex::TokType oper                = stmt->getOperTok().getVal();
@@ -135,19 +140,20 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
                          "failed to generate bytecode for LHS of dot operation");
                 return false;
             }
-            attrname = as<StmtSimple>(l->getRHS())->getLexDataStr();
-            bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), attrname);
+            hasAttrName = true;
+            bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(),
+                           as<StmtSimple>(l->getRHS())->getMoveLexDataStr());
         }
     }
 
-    if(attrname.empty() && !visit(stmt->getLHS(), &stmt->getLHS())) {
+    if(!hasAttrName && !visit(stmt->getLHS(), &stmt->getLHS())) {
         err.fail(stmt->getLHS()->getLoc(), "failed to generate code for LHS of expression");
         return false;
     }
 
     if(oper == lex::OR) {
         orInstrPos = bc.size();
-        bc.addInstrInt(Opcode::PUSH_TRY, stmt->getOper().getLoc(), 0); // placeholder
+        bc.addInstrInt(Opcode::PUSH_TRY, stmt->getOper()->getLoc(), 0); // placeholder
     }
 
     if(oper == lex::LAND || oper == lex::LOR) {
@@ -160,7 +166,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::OR &&
        oper != lex::LAND && oper != lex::LOR && oper != lex::INVALID)
     {
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper().getLoc(), String(lex::TokStrs[oper]));
+        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper()->getLoc(), String(lex::TokStrs[oper]));
     }
 
     if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
@@ -170,7 +176,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 
     if(oper == lex::OR) {
         bc.updateInstrInt(orInstrPos, bc.size());
-        bc.addInstrNil(Opcode::POP_TRY, stmt->getOper().getLoc());
+        bc.addInstrNil(Opcode::POP_TRY, stmt->getOper()->getLoc());
         goto end;
     }
 
@@ -188,17 +194,23 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     } else if(oper == lex::DOT) {
         assert(stmt->getRHS()->isSimple() && "RHS of dot operation must always be a primitive");
         StmtSimple *r = as<StmtSimple>(stmt->getRHS());
-        if(r->getLexValue().getTok().isType(lex::INT))
+        if(r->getLexValue()->getTok().isType(lex::INT))
             bc.addInstrStr(Opcode::ATTR, r->getLoc(),
-                           std::to_string(r->getLexValue().getDataInt()));
-        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
+                           std::to_string(r->getLexValue()->getDataInt()));
+        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getMoveLexDataStr());
     } else if(oper == lex::FNCALL) {
+        if(!stmt->getRHS()->isFnArgs()) {
+            err.fail(stmt->getLoc(),
+                     "expected RHS to be function args for a function call, found: ",
+                     stmt->getRHS()->getStmtTypeString());
+            return false;
+        }
         assert(stmt->getRHS()->isFnArgs() && "fnargs expected as RHS for function call");
-        bc.addInstrStr(attrname.empty() ? Opcode::CALL : Opcode::MEM_CALL, stmt->getLoc(),
-                       fncallarginfo.back());
+        bc.addInstrStr(hasAttrName ? Opcode::MEM_CALL : Opcode::CALL, stmt->getLoc(),
+                       std::move(fncallarginfo.back()));
         fncallarginfo.pop_back();
     } else {
-        bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), StringRef(stmt->getRHS() ? "0" : ""));
+        bc.addInstrStr(Opcode::MEM_CALL, stmt->getLoc(), String(stmt->getRHS() ? "0" : ""));
     }
 end:
     return true;
@@ -210,16 +222,16 @@ end:
 
 bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 {
-    Stmt *&val              = stmt->getVal();
-    const lex::Lexeme &name = stmt->getName();
+    Stmt *&val        = stmt->getVal();
+    lex::Lexeme *name = stmt->getName();
     if(!val && !stmt->isArg()) {
         err.fail(stmt->getLoc(),
-                 "cannot generate bytecode of a variable with no value: ", name.getDataStr());
+                 "cannot generate bytecode of a variable with no value: ", name->getDataStr());
         return false;
     }
     if(val && !visit(val, &val)) {
         err.fail(stmt->getLoc(),
-                 "failed to generate bytecode of variable val: ", name.getDataStr());
+                 "failed to generate bytecode of variable val: ", name->getDataStr());
         return false;
     }
     if(stmt->getIn()) {
@@ -227,12 +239,12 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
             err.fail(stmt->getIn()->getLoc(), "failed to generate bytecode for 'in' part");
             return false;
         }
-        bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), name.getDataStr());
+        bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), name->getMoveDataStr());
         return true;
     }
     // if the var is a function arg, CREATE instr must not be created
-    if(stmt->isArg()) bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), name.getDataStr());
-    else bc.addInstrStr(Opcode::CREATE, stmt->getLoc(), name.getDataStr());
+    if(stmt->isArg()) bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), name->getMoveDataStr());
+    else bc.addInstrStr(Opcode::CREATE, stmt->getLoc(), name->getMoveDataStr());
     return true;
 }
 
@@ -250,16 +262,16 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
         auto &a = *arg;
         if(!visit(a, asStmt(&a))) {
             err.fail(a->getLoc(), "failed to generate bytecode for function parameter: ",
-                     a->getName().getDataStr());
+                     a->getName()->getDataStr());
             return false;
         }
     }
     if(stmt->getVaArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
-                       stmt->getVaArg()->getLexDataStr());
+                       stmt->getVaArg()->getMoveLexDataStr());
     if(stmt->getKwArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
-                       stmt->getKwArg()->getLexDataStr());
+                       stmt->getKwArg()->getMoveLexDataStr());
     for(auto &a : args) { arginfo += a->getVal() ? "1" : "0"; }
     fndefarginfo.push_back(std::move(arginfo));
     return true;
@@ -282,7 +294,7 @@ bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
         err.fail(stmt->getLoc(), "failed to generate bytecode for function signature");
         return false;
     }
-    bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), fndefarginfo.back());
+    bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), std::move(fndefarginfo.back()));
     fndefarginfo.pop_back();
     return true;
 }
@@ -405,11 +417,12 @@ bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
 {
-    lex::Lexeme &iter  = stmt->getIter();
-    lex::Lexeme __iter = iter;
-    Stmt *&in          = stmt->getIn();
-    StmtBlock *&blk    = stmt->getBlk();
-    ModuleLoc loc      = stmt->getLoc();
+    lex::Lexeme *iter = stmt->getIter();
+    lex::Lexeme *__iter =
+        allocator.alloc<lex::Lexeme>(iter->getLoc(), lex::IDEN, iter->getDataStr());
+    Stmt *&in       = stmt->getIn();
+    StmtBlock *&blk = stmt->getBlk();
+    ModuleLoc loc   = stmt->getLoc();
 
     bc.addInstrNil(Opcode::PUSH_LOOP, loc);
 
@@ -418,19 +431,19 @@ bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
         err.fail(in->getLoc(), "failed to generate bytecode for forin loop in-expr");
         return false;
     }
-    __iter.setDataStr("__", __iter.getDataStr());
-    bc.addInstrStr(Opcode::CREATE, loc, __iter.getDataStr());
+    __iter->setDataStr("__", __iter->getDataStr());
+    bc.addInstrStr(Opcode::CREATE, loc, String(__iter->getDataStr()));
 
     size_t continuejmppos = bc.size();
 
     // let <iter> = __<iter>.next();
-    bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter.getDataStr());
-    bc.addInstrStr(Opcode::LOAD_DATA, loc, StringRef("next"));
-    bc.addInstrStr(Opcode::MEM_CALL, loc, StringRef(""));
+    bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter->getMoveDataStr());
+    bc.addInstrStr(Opcode::LOAD_DATA, loc, String("next"));
+    bc.addInstrStr(Opcode::MEM_CALL, loc, String(""));
     // jump-nil location will be set later
     size_t jmpNilPos = bc.size();
     bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
-    bc.addInstrStr(Opcode::CREATE, loc, iter.getDataStr());
+    bc.addInstrStr(Opcode::CREATE, loc, iter->getMoveDataStr());
 
     size_t bodyBegin = bc.size();
     if(blk && !visit(blk, asStmt(&blk))) {

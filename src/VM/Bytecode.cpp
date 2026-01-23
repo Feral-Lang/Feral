@@ -41,9 +41,6 @@ StringRef getOpcodeStr(Opcode opcode)
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype)
     : data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype)
-    : data(String(data)), loc(loc), dtype(dtype), opcode(opcode)
-{}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, int64_t data)
     : data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
 {}

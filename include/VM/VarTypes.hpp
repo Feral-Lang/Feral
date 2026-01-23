@@ -97,7 +97,7 @@ public:
     static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     makeVar(MemoryManager &mem, Args &&...args)
     {
-        T *res = new(mem.alloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
+        T *res = new(mem.allocRaw(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
         res->create(mem);
         return res;
     }
@@ -117,8 +117,7 @@ public:
     unmakeVar(MemoryManager &mem, T *var)
     {
         var->destroy(mem);
-        var->~T();
-        mem.free(var);
+        mem.freeDeinit(var);
     }
     template<typename T>
     static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)

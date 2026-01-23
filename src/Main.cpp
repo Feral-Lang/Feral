@@ -79,7 +79,11 @@ int main(int argc, char **argv)
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
                  StringRef data, bool exprOnly)
 {
-    Vector<lex::Lexeme> tokens;
+    MemoryManager &mem = vm.getMemoryManager();
+
+    // Separate allocator for tokens since we don't want the them to persist outside
+    // this function - because this function is supposed to generate IR for the VM to consume.
+    ManagedList tokens(mem, "TokensList");
     if(!lex::tokenize(moduleId, path, data, tokens)) {
         std::cout << "Failed to tokenize file: " << path << "\n";
         return false;
@@ -92,11 +96,9 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
         lex::dumpTokens(std::cout, tokens);
     }
 
-    MemoryManager &mem = vm.getMemoryManager();
-
     // Separate allocator for AST since we don't want the AST nodes (Stmt) to persist outside
     // this function - because this function is supposed to generate IR for the VM to consume.
-    ManagedAllocator astallocator(mem, utils::toString("AST(", path, ")"));
+    ManagedList astallocator(mem, utils::toString("AST(", path, ")"));
     ast::Stmt *ptree = nullptr;
     if(!ast::parse(astallocator, tokens, ptree, exprOnly)) {
         std::cout << "Failed to parse tokens for file: " << path << "\n";

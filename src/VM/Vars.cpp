@@ -39,12 +39,8 @@ bool VarFrame::rem(StringRef name, bool dref)
     vars.erase(loc);
     return true;
 }
-VarFrame *VarFrame::create(MemoryManager &mem) { return mem.alloc<VarFrame>(mem); }
-void VarFrame::destroy(MemoryManager &mem, VarFrame *frame)
-{
-    frame->~VarFrame();
-    mem.free(frame);
-}
+VarFrame *VarFrame::create(MemoryManager &mem) { return mem.allocInit<VarFrame>(mem); }
+void VarFrame::destroy(MemoryManager &mem, VarFrame *frame) { mem.freeDeinit(frame); }
 
 VarStack::VarStack(MemoryManager &mem) : mem(mem) { pushStack(1); }
 VarStack::~VarStack() { popStack(stack.size()); }

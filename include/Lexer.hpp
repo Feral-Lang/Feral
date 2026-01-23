@@ -178,10 +178,10 @@ public:
     inline bool isType(TokType other) const { return val == other; }
 };
 
-class Lexeme
+class Lexeme : public IAllocated
 {
 public:
-    using Data = Variant<String, int64_t, long double>;
+    using Data = Variant<String, StringRef, int64_t, long double>;
 
 private:
     Data data;
@@ -206,7 +206,8 @@ public:
     }
     inline bool operator!=(const Lexeme &other) const { return *this == other ? false : true; }
 
-    inline void setDataStr(StringRef str) { data = String(str); }
+    inline void setDataStr(String &&str) { data = std::move(str); }
+    inline void setDataStr(StringRef str) { data = str; }
     inline void setDataInt(int64_t i) { data = i; }
     inline void setDataFlt(long double f) { data = f; }
     template<typename... Args> void setDataStr(Args... args)
@@ -214,7 +215,21 @@ public:
         data = utils::toString(std::forward<Args>(args)...);
     }
 
-    inline StringRef getDataStr() const { return std::get<String>(data); }
+    inline void appendDataStr(StringRef str)
+    {
+        if(!hasString()) data = String(getDataStr());
+        std::get<String>(data) += str;
+    }
+
+    inline String getMoveDataStr()
+    {
+        return hasString() ? std::move(std::get<String>(data)) : String(std::get<StringRef>(data));
+    }
+
+    inline StringRef getDataStr() const
+    {
+        return hasString() ? std::get<String>(data) : std::get<StringRef>(data);
+    }
     inline int64_t getDataInt() const { return std::get<int64_t>(data); }
     inline long double getDataFlt() const { return std::get<long double>(data); }
 
@@ -222,9 +237,11 @@ public:
     inline const Tok &getTok() const { return tok; }
     inline TokType getTokVal() const { return tok.getVal(); }
     inline ModuleLoc getLoc() const { return loc; }
+
+    inline bool hasString() const { return std::holds_alternative<String>(data); }
 };
 
-bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks);
-void dumpTokens(OStream &os, Span<Lexeme> toks);
+bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &toks);
+void dumpTokens(OStream &os, const ManagedList &toks);
 
 } // namespace fer::lex

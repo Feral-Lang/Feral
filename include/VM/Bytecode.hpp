@@ -75,7 +75,6 @@ private:
 
 public:
     Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype);
-    Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype);
     Instruction(Opcode opcode, ModuleLoc loc, int64_t data);
     Instruction(Opcode opcode, ModuleLoc loc, long double data);
     Instruction(Opcode opcode, ModuleLoc loc, bool data);
@@ -91,7 +90,7 @@ public:
     isDataX(Iden, IDEN);
 
     inline void setInt(int64_t dat) { data = dat; }
-    inline void setStr(StringRef dat) { std::get<String>(data) = dat; }
+    inline void setStr(String &&dat) { data = std::move(dat); }
 
     inline ModuleLoc getLoc() const { return loc; }
     inline StringRef getDataStr() const { return std::get<String>(data); }
@@ -115,13 +114,9 @@ public:
     {
         code.emplace_back(opcode, loc, std::move(data), DataType::STR);
     }
-    inline void addInstrStr(Opcode opcode, ModuleLoc loc, StringRef data)
+    inline void addInstrIden(Opcode opcode, ModuleLoc loc, String &&data)
     {
-        code.emplace_back(opcode, loc, data, DataType::STR);
-    }
-    inline void addInstrIden(Opcode opcode, ModuleLoc loc, StringRef data)
-    {
-        code.emplace_back(opcode, loc, data, DataType::IDEN);
+        code.emplace_back(opcode, loc, std::move(data), DataType::IDEN);
     }
     inline void addInstrInt(Opcode opcode, ModuleLoc loc, int64_t data)
     {
@@ -138,7 +133,10 @@ public:
     inline void addInstrNil(Opcode opcode, ModuleLoc loc) { code.emplace_back(opcode, loc); }
 
     inline void updateInstrInt(size_t instrIdx, int64_t data) { code[instrIdx].setInt(data); }
-    inline void updateInstrStr(size_t instrIdx, StringRef data) { code[instrIdx].setStr(data); }
+    inline void updateInstrStr(size_t instrIdx, String &&data)
+    {
+        code[instrIdx].setStr(std::move(data));
+    }
 
     inline void pop() { code.pop_back(); }
     inline void erase(size_t idx) { code.erase(code.begin() + idx); }

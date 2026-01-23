@@ -20,7 +20,7 @@ class CodegenPass : public Pass
     Bytecode &bc;
 
 public:
-    CodegenPass(ManagedAllocator &allocator, Bytecode &bc);
+    CodegenPass(ManagedList &allocator, Bytecode &bc);
     ~CodegenPass() override;
 
     bool visit(Stmt *stmt, Stmt **source) override;

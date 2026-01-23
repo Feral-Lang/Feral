@@ -23,12 +23,11 @@ public:
 
 class SimplifyPass : public Pass
 {
-    bool applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r,
-                              const lex::Lexeme &oper);
+    bool applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r, lex::Lexeme *oper);
     DeferStack defers;
 
 public:
-    SimplifyPass(ManagedAllocator &allocator);
+    SimplifyPass(ManagedList &allocator);
     ~SimplifyPass() override;
 
     bool visit(Stmt *stmt, Stmt **source) override;

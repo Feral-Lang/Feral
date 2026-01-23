@@ -24,8 +24,7 @@ class Interpreter
     args::ArgParser &argparser;
     ParseSourceFn parseSourceFn;
     MemoryManager mem;
-    ManagedAllocator managedAllocator;
-    SimpleAllocator simpleAllocator;
+    ManagedList managedAllocator;
     Map<ModuleId, VarModule *> modules;
     // All functions to call before unloading dlls
     StringMap<ModDeinitFn> dlldeinitfns;

@@ -30,8 +30,8 @@ void remDLLDirectories();
 
 Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn)
     : vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
-      managedAllocator(mem, "VM::ManagedAllocator"), simpleAllocator(mem, "VM::SimpleAllocator"),
-      globals(VarFrame::create(mem)), prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+      managedAllocator(mem, "VM::ManagedAllocator"), globals(VarFrame::create(mem)),
+      prelude("prelude/prelude"), binaryPath(env::getProcPath()),
       basicErrHandler(genNativeFn({}, "basicErrorHandler", basicErrorHandler, 1)),
       moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
       moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -123,9 +123,9 @@ bool Interpreter::loadPrelude()
 VirtualMachine *Interpreter::createVM(StringRef name, VarFn *errHandler, bool iref)
 {
     if(!errHandler) errHandler = basicErrHandler;
-    return simpleAllocator.alloc<VirtualMachine>(*this, name, errHandler, iref);
+    return mem.allocInit<VirtualMachine>(*this, name, errHandler, iref);
 }
-void Interpreter::destroyVM(VirtualMachine *vm) { simpleAllocator.free(vm); }
+void Interpreter::destroyVM(VirtualMachine *vm) { mem.freeDeinit(vm); }
 
 int Interpreter::runFile(ModuleLoc loc, const char *file, StringRef threadName)
 {

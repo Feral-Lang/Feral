@@ -8,25 +8,30 @@ namespace fer::ast
 class ParseHelper
 {
     // requires modification at parsing stage, hence not set as const
-    Vector<lex::Lexeme> &toks;
+    const ManagedList &toks;
     lex::Lexeme invalid, eof;
-    size_t idx;
+    lex::Lexeme *curr;
+
+    lex::Lexeme *getAt(lex::Lexeme *from, int offset);
 
 public:
-    ParseHelper(Vector<lex::Lexeme> &toks, size_t begin = 0);
+    ParseHelper(const ManagedList &toks, lex::Lexeme *curr = 0);
 
-    lex::Lexeme &peek(int offset = 0);
-    lex::TokType peekt(int offset = 0) const;
+    // never returns nullptr - returns either valid data or eof
+    inline lex::Lexeme *peek(int offset = 0) { return getAt(curr, offset); }
+    lex::TokType peekt(int offset = 0);
 
-    lex::Lexeme &next();
+    // never returns nullptr - returns either valid data or eof
+    inline lex::Lexeme *next() { return curr = getAt(curr, 1); }
     lex::TokType nextt();
 
-    lex::Lexeme &prev();
+    // never returns nullptr - returns either valid data or eof
+    inline lex::Lexeme *prev() { return curr = getAt(curr, -1); }
     lex::TokType prevt();
 
     inline void sett(lex::TokType type)
     {
-        if(idx < toks.size()) toks[idx].getTok().setVal(type);
+        if(curr) curr->getTok().setVal(type);
     }
 
     inline bool accept(lex::TokType type) { return peekt() == type; }
@@ -60,13 +65,11 @@ public:
         return true;
     }
 
-    inline bool acceptd() { return peek().getTok().isData(); }
-    inline bool isValid() { return !accept(lex::INVALID, lex::FEOF); }
-    inline bool hasNext() const { return idx + 1 < toks.size(); }
-    inline void setPos(size_t idx) { this->idx = idx; }
-    inline size_t getPos() const { return idx; }
+    inline bool acceptd() { return peek()->getTok().isData(); }
+    inline bool isValid() { return curr && !accept(lex::INVALID, lex::FEOF); }
+    inline bool hasNext() { return peek(1) != nullptr; }
 
-    const lex::Lexeme *at(size_t idx) const;
+    lex::Lexeme *at(size_t idx) const;
 };
 
 } // namespace fer::ast

@@ -125,9 +125,7 @@ Lexeme::Lexeme(ModuleLoc loc, TokType type) : loc(loc), tok(type) {}
 Lexeme::Lexeme(ModuleLoc loc, TokType type, String &&_data)
     : loc(loc), tok(type), data(std::move(_data))
 {}
-Lexeme::Lexeme(ModuleLoc loc, TokType type, StringRef _data)
-    : loc(loc), tok(type), data(String(_data))
-{}
+Lexeme::Lexeme(ModuleLoc loc, TokType type, StringRef _data) : loc(loc), tok(type), data(_data) {}
 Lexeme::Lexeme(ModuleLoc loc, int64_t _data) : loc(loc), tok(INT), data(_data) {}
 Lexeme::Lexeme(ModuleLoc loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
 
@@ -135,9 +133,9 @@ bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
 {
     switch(type) {
     case STR: // fallthrough
-    case IDEN: return std::get<String>(data) == std::get<String>(other.data);
-    case INT: return std::get<int64_t>(data) == std::get<int64_t>(other.data);
-    case FLT: return std::get<long double>(data) == std::get<long double>(other.data);
+    case IDEN: return getDataStr() == other.getDataStr();
+    case INT: return getDataInt() == other.getDataInt();
+    case FLT: return getDataFlt() == other.getDataFlt();
     default: return false;
     }
     return false;
@@ -182,13 +180,13 @@ String Lexeme::str(int64_t pad) const
 
 StringRef getName(StringRef data, size_t &i);
 TokType classifyStr(StringRef str);
-String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &lineStart,
-              TokType &numType, int &base);
+StringRef getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &lineStart,
+                 TokType &numType, int &base);
 bool getConstStr(ModuleId moduleId, StringRef data, char &quoteType, size_t &i, size_t &line,
-                 size_t &lineStart, String &buf);
+                 size_t &lineStart, StringRef &buf);
 TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, size_t lineStart);
 
-bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> &toks)
+bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &toks)
 {
     int commentBlock = 0; // int to handle nested comment blocks
     bool commentLine = false;
@@ -248,22 +246,23 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
             TokType strClass = classifyStr(str);
             if(!str.empty() && str[0] == '.') str = str.substr(1);
             if(str == "__SRC_PATH__") {
-                // toRawString() because in codegen, all strings are passed through
-                // fromRawString()
+                // toRawString() because in codegen, all strings are passed through fromRawString()
                 tmpstr   = utils::toRawString(path);
-                str      = tmpstr;
                 strClass = STR;
             } else if(str == "__SRC_DIR__") {
                 tmpstr   = utils::toRawString(fs::parentDir(path));
-                str      = tmpstr;
                 strClass = STR;
             }
             if(strClass == STR || strClass == IDEN) {
                 // place either the data itself (type = STR, IDEN)
-                toks.emplace_back(ModuleLoc(moduleId, startPos, i), strClass, str);
+                if(tmpstr.empty())
+                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass, str);
+                else
+                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass,
+                                       std::move(tmpstr));
             } else {
                 // or the type
-                toks.emplace_back(ModuleLoc(moduleId, startPos, i), strClass);
+                toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass);
             }
             continue;
         }
@@ -272,19 +271,18 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
         if(isdigit(CURR)) {
             TokType numType = INT;
             int base        = 10;
-            String num      = getNum(moduleId, data, i, line, lineStart, numType, base);
+            StringRef num   = getNum(moduleId, data, i, line, lineStart, numType, base);
             if(num.empty()) return false;
             if(numType == FLT) {
                 // FIXME: from_chars() does not work with LLVM's libc++
 #if defined(_LIBCPP_VERSION)
                 String numtmp(num);
-                char *end          = NULL;
-                long double fltval = std::strtold(numtmp.c_str(), &end);
+                long double fltval = std::strtold(numtmp.c_str(), nullptr);
 #else
                 long double fltval;
                 std::from_chars(num.data(), num.data() + num.size(), fltval);
 #endif
-                toks.emplace_back(ModuleLoc(moduleId, i - num.size(), i), fltval);
+                toks.alloc<Lexeme>(ModuleLoc(moduleId, i - num.size(), i), fltval);
                 continue;
             }
             int64_t intval;
@@ -294,17 +292,17 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
                 num = num.substr(base == 8 ? 1 : 2);
             }
             std::from_chars(num.data(), num.data() + num.size(), intval, base);
-            toks.emplace_back(ModuleLoc(moduleId, i - num.size(), i), intval);
+            toks.alloc<Lexeme>(ModuleLoc(moduleId, i - num.size(), i), intval);
             continue;
         }
 
         // const strings
         if(CURR == '\"' || CURR == '\'' || CURR == '`') {
-            String buf;
+            StringRef buf;
             size_t startloc = i + 1;
             char quoteType  = 0;
             if(!getConstStr(moduleId, data, quoteType, i, line, lineStart, buf)) return false;
-            toks.emplace_back(ModuleLoc(moduleId, startloc, i), STR, buf);
+            toks.alloc<Lexeme>(ModuleLoc(moduleId, startloc, i), STR, buf);
             continue;
         }
 
@@ -312,7 +310,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, Vector<Lexeme> 
         size_t begin   = i;
         TokType opType = getOperator(moduleId, data, i, line, lineStart);
         if(opType == INVALID) return false;
-        toks.emplace_back(ModuleLoc(moduleId, begin, i - 1), opType);
+        toks.alloc<Lexeme>(ModuleLoc(moduleId, begin, i - 1), opType);
     }
     return true;
 }
@@ -356,17 +354,17 @@ TokType classifyStr(StringRef str)
     return str[0] == '.' ? STR : IDEN;
 }
 
-String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &lineStart,
-              TokType &numType, int &base)
+StringRef getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t &lineStart,
+                 TokType &numType, int &base)
 {
-    size_t len = data.size();
-    String buf;
+    size_t len          = data.size();
     size_t firstDigitAt = i;
 
     int dotLoc = -1;
     base       = 10;
 
-    bool readBase = false;
+    bool readBase = CURR == '0';
+    bool failed   = false;
 
     while(i < len) {
         const char c    = CURR;
@@ -443,29 +441,31 @@ String getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, size_t
             if(isalnum(c)) {
                 err.fail(ModuleLoc(moduleId, firstDigitAt, i), "encountered invalid character '", c,
                          "' while retrieving a number of base ", base);
-                return "";
-            } else {
-                goto end;
+                failed = true;
             }
+            goto end;
         }
-        if(!buf.empty() || c != '0') readBase = false;
-        buf.push_back(c);
         ++i;
     }
 end:
-    return buf;
+    return failed ? "" : data.substr(firstDigitAt, i - firstDigitAt);
 }
 
 bool getConstStr(ModuleId moduleId, StringRef data, char &quoteType, size_t &i, size_t &line,
-                 size_t &lineStart, String &buf)
+                 size_t &lineStart, StringRef &buf)
 {
-    size_t len = data.size();
-    buf.clear();
+    size_t len                 = data.size();
+    buf                        = "";
     quoteType                  = CURR;
     int startsAt               = i + 1;
     size_t continuousBackslash = 0;
     // omit beginning quote
     ++i;
+    // ignore one newline in the beginning
+    if(CURR == '\n') {
+        ++startsAt;
+        ++i;
+    }
     while(i < len) {
         if(CURR == '\n') {
             ++line;
@@ -473,17 +473,18 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quoteType, size_t &i, 
         }
         if(CURR == '\\') {
             ++continuousBackslash;
-            buf.push_back(data[i++]);
+            ++i;
             continue;
         }
         if(CURR == quoteType && continuousBackslash % 2 == 0) break;
-        buf.push_back(data[i++]);
+        ++i;
         continuousBackslash = 0;
     }
     if(CURR != quoteType) {
         err.fail(ModuleLoc(moduleId, startsAt, i), "no matching quote for '", quoteType, "' found");
         return false;
     }
+    buf = data.substr(startsAt, i - startsAt);
     // omit ending quote
     ++i;
     return true;
@@ -680,9 +681,10 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
     return opType;
 }
 
-void dumpTokens(OStream &os, Span<Lexeme> toks)
+void dumpTokens(OStream &os, const ManagedList &toks)
 {
-    for(auto &t : toks) { os << t.str() << "\n"; }
+    Lexeme *t = nullptr;
+    while((t = (Lexeme *)toks.next(t))) { os << t->str() << "\n"; }
 }
 
 } // namespace fer::lex

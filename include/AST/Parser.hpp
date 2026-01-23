@@ -8,14 +8,14 @@ namespace fer::ast
 
 class Parser
 {
-    ManagedAllocator &allocator;
+    ManagedList &allocator;
     ParseHelper p;
 
     // Append a return statement if the block doesn't already contain one at the end
     void ensureBlockReturns(StmtBlock *blk);
 
 public:
-    Parser(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks);
+    Parser(ManagedList &allocator, ManagedList &toks);
 
     // On successful parse, returns true, and tree is allocated
     // If withBrace is true, it will attempt to find the beginning and ending brace for each
@@ -65,7 +65,7 @@ public:
 };
 
 // Can modify toks since some stuff requires it (like determining pre/post operators)
-bool parse(ManagedAllocator &allocator, Vector<lex::Lexeme> &toks, Stmt *&s, bool exprOnly);
+bool parse(ManagedList &allocator, ManagedList &toks, Stmt *&s, bool exprOnly);
 void dumpTree(OStream &os, Stmt *tree);
 
 } // namespace fer::ast

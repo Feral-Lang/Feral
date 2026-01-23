@@ -3,8 +3,7 @@
 namespace fer::ast
 {
 
-Pass::Pass(const size_t &passid, ManagedAllocator &allocator) : passid(passid), allocator(allocator)
-{}
+Pass::Pass(size_t passid, ManagedList &allocator) : passid(passid), allocator(allocator) {}
 Pass::~Pass() {}
 
 PassManager::PassManager() {}
