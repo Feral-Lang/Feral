@@ -291,7 +291,7 @@ Var *Interpreter::getConst(ModuleLoc loc, const Instruction::Data &d, DataType d
     case DataType::NIL: return nil;
     case DataType::BOOL: return std::get<bool>(d) ? tru : fals;
     case DataType::INT: return makeVar<VarInt>(loc, std::get<int64_t>(d));
-    case DataType::FLT: return makeVar<VarFlt>(loc, std::get<long double>(d));
+    case DataType::FLT: return makeVar<VarFlt>(loc, std::get<double>(d));
     case DataType::STR: return makeVar<VarStr>(loc, std::get<String>(d));
     default: err.fail(loc, "internal error: invalid data type encountered");
     }
@@ -413,12 +413,52 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
                                    VarStack *existingVarStack)
 {
     static ModuleId moduleIdCtr = 0;
+    StringRef bcFilePath(f->getPath());
+    String bcPath(TEMP_PATH);
+    bcPath += "/cache";
+#if defined(CORE_OS_WINDOWS)
+    bcPath += "/";
+    auto colonLoc = bcFilePath.find(':');
+    if(colonLoc != StringRef::npos) bcFilePath = bcFilePath.substr(colonLoc + 1);
+#endif
+    bcPath += bcFilePath;
+    bcPath += ".bc";
+    bool bcFileExists = fs::isFileNewer(bcPath.c_str(), f->getPathCStr());
     Bytecode bc;
-    err.addFile(moduleIdCtr, f);
-    if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
-        fail(loc, "failed to parse source: ", f->getPath());
-        return -1;
+    if(bcFileExists) {
+        if(!f->isVirtual()) {
+            logger.info("Reading bytecode file: ", bcPath);
+            FILE *f = fopen(bcPath.c_str(), "rb");
+            Bytecode::readFromFile(f, bc);
+            fclose(f);
+            logger.info("- Read bytecodes: ", bc.size());
+        }
+    } else {
+        if(!ip.parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
+            fail(loc, "failed to parse source: ", f->getPath());
+            return -1;
+        }
+        if(!f->isVirtual()) {
+            logger.info("Writing bytecode file: ", bcPath);
+            std::error_code ec;
+            if(fs::mkdir(fs::parentDir(bcPath), ec)) {
+                logger.fatal("failed to create directory for bytecode file: ", bcPath,
+                             "; error: ", ec.message());
+                fail(loc, "failed to create directory for bytecode file: ", bcPath,
+                     "; error: ", ec.message());
+                return -1;
+            }
+            FILE *f = fopen(bcPath.c_str(), "wb");
+            if(!f) {
+                logger.fatal("failed to write bytecode file: ", bcPath);
+                fail(loc, "failed to write bytecode file: ", bcPath);
+                return -1;
+            }
+            bc.writeToFile(f);
+            fclose(f);
+        }
     }
+    err.addFile(moduleIdCtr, f);
     VarModule *mod = makeVarWithRef<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
                                                moduleIdCtr, existingVarStack);
     LockGuard<Mutex> globalGuard(ip.globalMutex);

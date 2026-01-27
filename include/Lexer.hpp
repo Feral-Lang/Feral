@@ -181,7 +181,7 @@ public:
 class Lexeme : public IAllocated
 {
 public:
-    using Data = Variant<String, StringRef, int64_t, long double>;
+    using Data = Variant<String, StringRef, int64_t, double>;
 
 private:
     Data data;
@@ -194,7 +194,7 @@ public:
     explicit Lexeme(ModuleLoc loc, TokType type, String &&_data);
     explicit Lexeme(ModuleLoc loc, TokType type, StringRef _data);
     explicit Lexeme(ModuleLoc loc, int64_t _data);
-    explicit Lexeme(ModuleLoc loc, long double _data);
+    explicit Lexeme(ModuleLoc loc, double _data);
 
     bool cmpData(const Lexeme &other, TokType type) const;
 
@@ -209,7 +209,7 @@ public:
     inline void setDataStr(String &&str) { data = std::move(str); }
     inline void setDataStr(StringRef str) { data = str; }
     inline void setDataInt(int64_t i) { data = i; }
-    inline void setDataFlt(long double f) { data = f; }
+    inline void setDataFlt(double f) { data = f; }
     template<typename... Args> void setDataStr(Args... args)
     {
         data = utils::toString(std::forward<Args>(args)...);
@@ -231,7 +231,7 @@ public:
         return hasString() ? std::get<String>(data) : std::get<StringRef>(data);
     }
     inline int64_t getDataInt() const { return std::get<int64_t>(data); }
-    inline long double getDataFlt() const { return std::get<long double>(data); }
+    inline double getDataFlt() const { return std::get<double>(data); }
 
     inline Tok &getTok() { return tok; }
     inline const Tok &getTok() const { return tok; }

@@ -247,17 +247,17 @@ public:
 
 class VarFlt : public Var
 {
-    long double val;
+    double val;
 
     Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
     void onSet(MemoryManager &mem, Var *from) override;
 
 public:
-    VarFlt(ModuleLoc loc, long double _val);
+    VarFlt(ModuleLoc loc, double _val);
     VarFlt(ModuleLoc loc, const char *_val);
 
-    inline void setVal(long double newval) { val = newval; }
-    inline long double getVal() { return val; }
+    inline void setVal(double newval) { val = newval; }
+    inline double getVal() { return val; }
 };
 
 class VarStr : public Var

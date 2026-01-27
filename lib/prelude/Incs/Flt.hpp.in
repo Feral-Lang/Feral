@@ -70,8 +70,7 @@ Var *fltEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFlt>()) return vm.getFalse();
-    return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) <
-                   (long double)0.0001
+    return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) < (double)0.0001
                ? vm.getTrue()
                : vm.getFalse();
 }
@@ -80,8 +79,7 @@ Var *fltNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarFlt>()) return vm.getTrue();
-    return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) <
-                   (long double)0.0001
+    return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) < (double)0.0001
                ? vm.getFalse()
                : vm.getTrue();
 }

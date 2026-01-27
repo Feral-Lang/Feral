@@ -127,7 +127,7 @@ Lexeme::Lexeme(ModuleLoc loc, TokType type, String &&_data)
 {}
 Lexeme::Lexeme(ModuleLoc loc, TokType type, StringRef _data) : loc(loc), tok(type), data(_data) {}
 Lexeme::Lexeme(ModuleLoc loc, int64_t _data) : loc(loc), tok(INT), data(_data) {}
-Lexeme::Lexeme(ModuleLoc loc, long double _data) : loc(loc), tok(FLT), data(_data) {}
+Lexeme::Lexeme(ModuleLoc loc, double _data) : loc(loc), tok(FLT), data(_data) {}
 
 bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
 {
@@ -277,9 +277,9 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
                 // FIXME: from_chars() does not work with LLVM's libc++
 #if defined(_LIBCPP_VERSION)
                 String numtmp(num);
-                long double fltval = std::strtold(numtmp.c_str(), nullptr);
+                double fltval = std::strtod(numtmp.c_str(), nullptr);
 #else
-                long double fltval;
+                double fltval;
                 std::from_chars(num.data(), num.data() + num.size(), fltval);
 #endif
                 toks.alloc<Lexeme>(ModuleLoc(moduleId, i - num.size(), i), fltval);
@@ -484,7 +484,9 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quoteType, size_t &i, 
         err.fail(ModuleLoc(moduleId, startsAt, i), "no matching quote for '", quoteType, "' found");
         return false;
     }
-    buf = data.substr(startsAt, i - startsAt);
+    // ignore one newline at the end
+    bool isLastCharNewline = PREV == '\n';
+    buf                    = data.substr(startsAt, i - startsAt - isLastCharNewline);
     // omit ending quote
     ++i;
     return true;

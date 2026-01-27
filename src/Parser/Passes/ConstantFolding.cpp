@@ -25,25 +25,25 @@ template<typename T> T getValueAs(const lex::Lexeme *tok)
         resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok); \
     }                                                                                  \
     if(ltok == lex::INT && rtok == lex::FLT) {                                         \
-        long double res     = (long double)l->getLexDataInt() OPER r->getLexDataFlt(); \
+        double res          = (double)l->getLexDataInt() OPER r->getLexDataFlt();      \
         lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);          \
         resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok); \
     }                                                                                  \
     if(ltok == lex::FLT && rtok == lex::INT) {                                         \
-        long double res     = l->getLexDataFlt() OPER(long double) r->getLexDataInt(); \
+        double res          = l->getLexDataFlt() OPER(double) r->getLexDataInt();      \
         lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);          \
         resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok); \
     }                                                                                  \
     if(ltok == lex::FLT && rtok == lex::FLT) {                                         \
-        long double res     = l->getLexDataFlt() OPER r->getLexDataFlt();              \
+        double res          = l->getLexDataFlt() OPER r->getLexDataFlt();              \
         lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);          \
         resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok); \
     }
 
 #define comparisonOps(OPER)                                                                     \
     if(ltok == lex::FLT || rtok == lex::FLT) {                                                  \
-        long double lhs = getValueAs<long double>(l->getLexValue());                            \
-        long double rhs = getValueAs<long double>(r->getLexValue());                            \
+        double lhs = getValueAs<double>(l->getLexValue());                                      \
+        double rhs = getValueAs<double>(r->getLexValue());                                      \
         lex::Lexeme *restok =                                                                   \
             allocator.alloc<lex::Lexeme>(l->getLoc(), lhs OPER rhs ? lex::FTRUE : lex::FFALSE); \
         resultStmt = StmtSimple::create(allocator, restok->getLoc(), restok);                   \
@@ -125,7 +125,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res++);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -138,7 +138,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), ++res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -151,7 +151,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res--);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -164,7 +164,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), --res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -177,7 +177,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), +res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -190,7 +190,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT) {
-            long double res     = l->getLexDataFlt();
+            double res          = l->getLexDataFlt();
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), -res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -204,13 +204,13 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         }
         if(ltok == lex::INT && rtok == lex::FLT) {
             lex::TokType res =
-                (long double)l->getLexDataInt() && r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
+                (double)l->getLexDataInt() && r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT && rtok == lex::INT) {
             lex::TokType res =
-                l->getLexDataFlt() && (long double)r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
+                l->getLexDataFlt() && (double)r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
@@ -257,13 +257,13 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         }
         if(ltok == lex::INT && rtok == lex::FLT) {
             lex::TokType res =
-                (long double)l->getLexDataInt() || r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
+                (double)l->getLexDataInt() || r->getLexDataFlt() ? lex::FTRUE : lex::FFALSE;
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }
         if(ltok == lex::FLT && rtok == lex::INT) {
             lex::TokType res =
-                l->getLexDataFlt() || (long double)r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
+                l->getLexDataFlt() || (double)r->getLexDataInt() ? lex::FTRUE : lex::FFALSE;
             lex::Lexeme *restok = allocator.alloc<lex::Lexeme>(l->getLoc(), res);
             resultStmt          = StmtSimple::create(allocator, restok->getLoc(), restok);
         }

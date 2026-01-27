@@ -170,7 +170,7 @@ bool VarIntIterator::next(int64_t &val)
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFlt::VarFlt(ModuleLoc loc, long double _val) : Var(loc, false, false), val(_val) {}
+VarFlt::VarFlt(ModuleLoc loc, double _val) : Var(loc, false, false), val(_val) {}
 VarFlt::VarFlt(ModuleLoc loc, const char *_val) : Var(loc, false, false), val(std::stold(_val)) {}
 Var *VarFlt::onCopy(MemoryManager &mem, ModuleLoc loc)
 {

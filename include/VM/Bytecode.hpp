@@ -65,7 +65,7 @@ enum class DataType : uint8_t
 class Instruction
 {
 public:
-    using Data = Variant<String, int64_t, long double, bool>;
+    using Data = Variant<String, int64_t, double, bool>;
 
 private:
     Data data;
@@ -76,7 +76,7 @@ private:
 public:
     Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype);
     Instruction(Opcode opcode, ModuleLoc loc, int64_t data);
-    Instruction(Opcode opcode, ModuleLoc loc, long double data);
+    Instruction(Opcode opcode, ModuleLoc loc, double data);
     Instruction(Opcode opcode, ModuleLoc loc, bool data);
     Instruction(Opcode opcode, ModuleLoc loc); // for nil
 
@@ -95,7 +95,7 @@ public:
     inline ModuleLoc getLoc() const { return loc; }
     inline StringRef getDataStr() const { return std::get<String>(data); }
     inline int64_t getDataInt() const { return std::get<int64_t>(data); }
-    inline long double getDataFlt() const { return std::get<long double>(data); }
+    inline double getDataFlt() const { return std::get<double>(data); }
     inline bool getDataBool() const { return std::get<bool>(data); }
 
     inline const Data &getData() const { return data; }
@@ -103,6 +103,9 @@ public:
     inline Opcode getOpcode() const { return opcode; }
 
     void dump(OStream &os) const;
+
+    static bool readFromFile(FILE *f, Instruction &ins);
+    void writeToFile(FILE *f) const;
 };
 
 class Bytecode
@@ -122,7 +125,7 @@ public:
     {
         code.emplace_back(opcode, loc, data);
     }
-    inline void addInstrFlt(Opcode opcode, ModuleLoc loc, long double data)
+    inline void addInstrFlt(Opcode opcode, ModuleLoc loc, double data)
     {
         code.emplace_back(opcode, loc, data);
     }
@@ -147,6 +150,9 @@ public:
     inline const Instruction &getInstrAt(size_t idx) const { return code[idx]; }
 
     void dump(OStream &os) const;
+
+    static bool readFromFile(FILE *f, Bytecode &bc);
+    void writeToFile(FILE *f) const;
 };
 
 } // namespace fer
