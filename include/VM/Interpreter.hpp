@@ -288,7 +288,7 @@ public:
 
     inline bool hasModule(StringRef path) { return ip.hasModule(path); }
     inline VarModule *getModule(StringRef path) { return ip.getModule(path); }
-    inline StringRef getTypeName(Var *var) { return ip.getTypeName(var->getTypeFnID()); }
+    inline StringRef getTypeName(Var *var) { return ip.getTypeName(var->getSubType()); }
     inline const char *getGlobalModulePathsFile() { return ip.getGlobalModulePathsFile(); }
     inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
     inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }

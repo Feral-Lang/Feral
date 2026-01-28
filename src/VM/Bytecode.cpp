@@ -38,8 +38,9 @@ StringRef getOpcodeStr(Opcode opcode)
     return "";
 }
 
-Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype)
-    : data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode)
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype,
+                         String &&comment)
+    : data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode), comment(std::move(comment))
 {}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, int64_t data)
     : data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
@@ -64,6 +65,7 @@ void Instruction::dump(OStream &os) const
     if(isDataStr()) os << "[str]  " << getDataStr();
     if(isDataIden()) os << "[iden] " << getDataStr();
     if(isDataBool()) os << "[bool] " << (getDataBool() ? "true" : "false");
+    if(!comment.empty()) os << "; [comment] " << comment;
 }
 
 bool Instruction::readFromFile(FILE *f, Instruction &ins)
@@ -93,6 +95,15 @@ bool Instruction::readFromFile(FILE *f, Instruction &ins)
         fread(&d, sizeof(d), 1, f);
         ins.data = d;
     }
+    bool hasComm = false;
+    fread(&hasComm, sizeof(hasComm), 1, f);
+    if(hasComm) {
+        size_t sz;
+        fread(&sz, sizeof(sz), 1, f);
+        String d(sz, '0');
+        if(sz) fread(d.data(), sizeof(String::value_type), sz, f);
+        ins.comment = std::move(d);
+    }
     return true;
 }
 
@@ -115,6 +126,13 @@ void Instruction::writeToFile(FILE *f) const
     } else if(isDataBool()) {
         bool d = getDataBool();
         fwrite(&d, sizeof(d), 1, f);
+    }
+    bool hasComm = hasComment();
+    fwrite(&hasComm, sizeof(hasComm), 1, f);
+    if(hasComm) {
+        size_t sz = comment.size();
+        fwrite(&sz, sizeof(sz), 1, f);
+        if(sz) fwrite(comment.data(), sizeof(StringRef::value_type), sz, f);
     }
 }
 

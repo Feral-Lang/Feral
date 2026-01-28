@@ -68,7 +68,7 @@ Var *structToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                  const StringMap<AssnArgData> &assnArgs)
 {
     VarStruct *st = as<VarStruct>(args[0]);
-    VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getTypeFnID()));
+    VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getSubType()));
     res->getVal() += "{";
     for(auto &a : st->getAttrs()) {
         Var *v = nullptr;

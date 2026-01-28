@@ -69,12 +69,13 @@ public:
 
 private:
     Data data;
+    String comment;
     ModuleLoc loc;
     DataType dtype;
     Opcode opcode;
 
 public:
-    Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype);
+    Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype, String &&comment);
     Instruction(Opcode opcode, ModuleLoc loc, int64_t data);
     Instruction(Opcode opcode, ModuleLoc loc, double data);
     Instruction(Opcode opcode, ModuleLoc loc, bool data);
@@ -91,6 +92,7 @@ public:
 
     inline void setInt(int64_t dat) { data = dat; }
     inline void setStr(String &&dat) { data = std::move(dat); }
+    inline void setComment(String &&dat) { comment = std::move(dat); }
 
     inline ModuleLoc getLoc() const { return loc; }
     inline StringRef getDataStr() const { return std::get<String>(data); }
@@ -99,6 +101,8 @@ public:
     inline bool getDataBool() const { return std::get<bool>(data); }
 
     inline const Data &getData() const { return data; }
+    inline StringRef getComment() const { return comment; }
+    inline bool hasComment() const { return !comment.empty(); }
     inline DataType getDataType() const { return dtype; }
     inline Opcode getOpcode() const { return opcode; }
 
@@ -113,13 +117,13 @@ class Bytecode
     Vector<Instruction> code;
 
 public:
-    inline void addInstrStr(Opcode opcode, ModuleLoc loc, String &&data)
+    inline void addInstrStr(Opcode opcode, ModuleLoc loc, String &&data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, std::move(data), DataType::STR);
+        code.emplace_back(opcode, loc, std::move(data), DataType::STR, std::move(comment));
     }
-    inline void addInstrIden(Opcode opcode, ModuleLoc loc, String &&data)
+    inline void addInstrIden(Opcode opcode, ModuleLoc loc, String &&data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, std::move(data), DataType::IDEN);
+        code.emplace_back(opcode, loc, std::move(data), DataType::IDEN, std::move(comment));
     }
     inline void addInstrInt(Opcode opcode, ModuleLoc loc, int64_t data)
     {

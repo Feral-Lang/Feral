@@ -26,7 +26,7 @@ let dumps = fn(obj, indentation = false, indentChar = ' ') {
     if indentation { indent = 0; }
     let js = obj.jsonToStr(indent, indentChar);
     if js.empty() {
-        raise('type ' + obj._typestr_() + ' does not implement JSON serialization');
+        raise('type ' + obj._typename_() + ' does not implement JSON serialization');
     }
     return js;
 };

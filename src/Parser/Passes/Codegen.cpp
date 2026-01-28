@@ -222,16 +222,16 @@ end:
 
 bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 {
-    Stmt *&val        = stmt->getVal();
-    lex::Lexeme *name = stmt->getName();
+    Stmt *&val  = stmt->getVal();
+    String name = stmt->getName()->getMoveDataStr();
+    String doc;
+    if(stmt->getDoc()) doc = stmt->getDoc()->getMoveDataStr();
     if(!val && !stmt->isArg()) {
-        err.fail(stmt->getLoc(),
-                 "cannot generate bytecode of a variable with no value: ", name->getDataStr());
+        err.fail(stmt->getLoc(), "cannot generate bytecode of a variable with no value: ", name);
         return false;
     }
     if(val && !visit(val, &val)) {
-        err.fail(stmt->getLoc(),
-                 "failed to generate bytecode of variable val: ", name->getDataStr());
+        err.fail(stmt->getLoc(), "failed to generate bytecode of variable val: ", name);
         return false;
     }
     if(stmt->getIn()) {
@@ -239,12 +239,12 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
             err.fail(stmt->getIn()->getLoc(), "failed to generate bytecode for 'in' part");
             return false;
         }
-        bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), name->getMoveDataStr());
+        bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), std::move(name), std::move(doc));
         return true;
     }
     // if the var is a function arg, CREATE instr must not be created
-    if(stmt->isArg()) bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), name->getMoveDataStr());
-    else bc.addInstrStr(Opcode::CREATE, stmt->getLoc(), name->getMoveDataStr());
+    bc.addInstrStr(stmt->isArg() ? Opcode::LOAD_DATA : Opcode::CREATE, stmt->getLoc(),
+                   std::move(name), std::move(doc));
     return true;
 }
 

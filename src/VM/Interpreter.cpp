@@ -257,7 +257,7 @@ void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 }
 Var *Interpreter::getTypeFn(Var *var, StringRef name)
 {
-    auto loc = typefns.find(var->getTypeFnID());
+    auto loc = typefns.find(var->getSubType());
     Var *res = nullptr;
     if(loc != typefns.end()) {
         res = loc->second->get(name);

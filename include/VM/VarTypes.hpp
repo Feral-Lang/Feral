@@ -17,6 +17,7 @@ class VirtualMachine;
 
 class Var : public IAllocated
 {
+    StringRef doc;
     ModuleLoc loc;
     Atomic<ssize_t> ref;
 
@@ -67,7 +68,7 @@ public:
     virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
     virtual bool existsAttr(StringRef name);
     virtual Var *getAttr(StringRef name);
-    virtual size_t getTypeFnID();
+    virtual size_t getSubType();
     void dump(OStream &os, VirtualMachine *vm);
 
     template<typename T>
@@ -81,8 +82,12 @@ public:
         return dynamic_cast<T *>(this) != 0;
     }
 
+    // does NOT create a new String instance for the doc
+    inline void setDoc(StringRef newDoc) { doc = newDoc; }
     inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 
+    inline StringRef getDoc() const { return doc; }
+    inline bool hasDoc() const { return !doc.empty(); }
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 
@@ -533,7 +538,7 @@ public:
 
     void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 
-    inline size_t getTypeFnID() override { return id; }
+    inline size_t getSubType() override { return id; }
 
     inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
     Var *getAttr(StringRef name) override;

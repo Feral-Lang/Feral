@@ -68,6 +68,11 @@ public:
     {
         if(stack.size() > count) popStack(stack.size() - count);
     }
+
+    inline VarFrame *getFrameAt(size_t index)
+    {
+        return index < stack.size() ? stack[index] : nullptr;
+    }
 };
 
 class Vars

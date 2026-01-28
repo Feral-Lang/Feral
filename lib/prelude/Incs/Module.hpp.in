@@ -1,0 +1,20 @@
+Var *moduleGetPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                   const StringMap<AssnArgData> &assnArgs)
+{
+    return vm.makeVar<VarStr>(loc, as<VarModule>(args[0])->getPath());
+}
+
+Var *moduleGetVars(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                   const StringMap<AssnArgData> &assnArgs)
+{
+    VarStack *stack = as<VarModule>(args[0])->getVarStack();
+    VarFrame *frame = stack->getFrameAt(0);
+    if(!frame) {
+        vm.fail(loc, "VarStack for the module: ", as<VarModule>(args[0])->getPath(), " is nullptr");
+        return nullptr;
+    }
+    StringMap<Var *> &vars = frame->get();
+    VarVec *v              = vm.makeVar<VarVec>(loc, vars.size(), true);
+    for(auto &e : vars) v->push(vm.makeVarWithRef<VarStr>(loc, e.first));
+    return v;
+}

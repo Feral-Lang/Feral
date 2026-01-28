@@ -25,6 +25,7 @@ namespace fer
 #include "Incs/Flt.hpp.in"
 #include "Incs/Int.hpp.in"
 #include "Incs/Map.hpp.in"
+#include "Incs/Module.hpp.in"
 #include "Incs/Nil.hpp.in"
 #include "Incs/Str.hpp.in"
 #include "Incs/Struct.hpp.in"
@@ -38,20 +39,47 @@ namespace fer
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
 
+Var *allGetDoc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+               const StringMap<AssnArgData> &assnArgs)
+{
+    return vm.makeVar<VarStr>(loc, args[0]->getDoc());
+}
+
+Var *allGetAttr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                const StringMap<AssnArgData> &assnArgs)
+{
+    Var *in = args[0];
+    if(!in->isAttrBased()) {
+        vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
+        return nullptr;
+    }
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    StringRef attr = as<VarStr>(args[1])->getVal();
+    Var *res       = in->getAttr(attr);
+    if(!res) {
+        vm.fail(loc, "attribute `", attr, "` not found");
+        return nullptr;
+    }
+    return res;
+}
+
 Var *allGetTypeID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                   const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
-Var *allGetTypeFnID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assnArgs)
+Var *allGetSubType(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                   const StringMap<AssnArgData> &assnArgs)
 {
-    return vm.makeVar<VarTypeID>(loc, args[0]->getTypeFnID());
+    return vm.makeVar<VarTypeID>(loc, args[0]->getSubType());
 }
 
-Var *allGetTypeStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+Var *allGetTypeName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                    const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
@@ -145,6 +173,12 @@ Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         return nullptr;
     }
     return vm.decVarRef(res, false);
+}
+
+Var *getCurrentModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                      const StringMap<AssnArgData> &assnArgs)
+{
+    return vm.getCurrModule();
 }
 
 // getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
@@ -334,6 +368,7 @@ INIT_MODULE(Prelude)
     vm.addNativeFn(loc, "raise", raise, 1, true);
     vm.addNativeFn(loc, "evalCode", evaluateCode, 1);
     vm.addNativeFn(loc, "evalExpr", evaluateExpr, 1);
+    vm.addNativeFn(loc, "getCurrModule", getCurrentModule, 0);
     vm.addNativeFn(loc, "getOSName", getOSName, 0);
     vm.addNativeFn(loc, "getOSDistro", getOSDistro, 0);
     // enum/struct
@@ -349,9 +384,11 @@ INIT_MODULE(Prelude)
     mod->addNativeVar("moduleFinders", vm.getModuleFinders());
 
     // fundamental functions for builtin types
+    vm.addNativeTypeFn<VarAll>(loc, "_doc_", allGetDoc, 0);
+    vm.addNativeTypeFn<VarAll>(loc, "_attr_", allGetAttr, 1);
     vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetTypeID, 0);
-    vm.addNativeTypeFn<VarAll>(loc, "_typefid_", allGetTypeFnID, 0);
-    vm.addNativeTypeFn<VarAll>(loc, "_typestr_", allGetTypeStr, 0);
+    vm.addNativeTypeFn<VarAll>(loc, "_subtype_", allGetSubType, 0);
+    vm.addNativeTypeFn<VarAll>(loc, "_typename_", allGetTypeName, 0);
     vm.addNativeTypeFn<VarAll>(loc, "==", allEq, 1);
     vm.addNativeTypeFn<VarAll>(loc, "!=", allNe, 1);
     vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce, 1);
@@ -623,6 +660,10 @@ INIT_MODULE(Prelude)
     vm.addNativeTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks, 2);
 
     vm.addNativeTypeFn<VarFileIterator>(loc, "next", fileIteratorNext, 0);
+
+    // modules
+    vm.addNativeTypeFn<VarModule>(loc, "_path_", moduleGetPath, 0);
+    vm.addNativeTypeFn<VarModule>(loc, "_vars_", moduleGetVars, 0);
 
     // constants (for file/filesystem)
     // stdin, stdout, stderr file descriptors

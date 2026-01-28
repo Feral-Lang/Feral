@@ -1,7 +1,7 @@
 let io = import('std/io');
 let assert = import('std/assert');
 
-assert.eq('some string'._typestr_(), 'Str');
+assert.eq('some string'._typename_(), 'Str');
 
 # raise
 let div = fn(x, y) {

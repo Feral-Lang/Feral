@@ -28,8 +28,18 @@ Var::~Var() {}
 
 void Var::create(MemoryManager &mem) { onCreate(mem); }
 void Var::destroy(MemoryManager &mem) { onDestroy(mem); }
-Var *Var::copy(MemoryManager &mem, ModuleLoc loc) { return onCopy(mem, loc); }
-void Var::set(MemoryManager &mem, Var *from) { onSet(mem, from); }
+Var *Var::copy(MemoryManager &mem, ModuleLoc loc)
+{
+    Var *res = onCopy(mem, loc);
+    if(!hasDoc()) { return res; }
+    res->setDoc(getDoc());
+    return res;
+}
+void Var::set(MemoryManager &mem, Var *from)
+{
+    onSet(mem, from);
+    if(from->hasDoc()) doc = from->getDoc();
+}
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
@@ -49,7 +59,7 @@ Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 void Var::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
-size_t Var::getTypeFnID() { return getType(); }
+size_t Var::getSubType() { return getType(); }
 
 void Var::dump(OStream &os, VirtualMachine *vm)
 {
