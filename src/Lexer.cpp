@@ -211,8 +211,9 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
         }
         if(CURR == '*' && NEXT == '/') {
             if(!commentBlock) {
-                err.fail(ModuleLoc(moduleId, i, i + 1), "encountered multi line comment "
-                                                        "terminator '*/' in non comment block");
+                err.fail(ModuleLoc(moduleId, i, i + 1),
+                         "encountered multi line comment "
+                         "terminator '*/' in non comment block");
                 return false;
             }
             i += 2;

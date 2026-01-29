@@ -645,8 +645,9 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     popModule();
     if(tmpRet) {
         decVarRef(tmpRet);
-        fail(loc, "internal error: VirtualMachine::eval() must not generate a return value "
-                  "from execute()");
+        fail(loc,
+             "internal error: VirtualMachine::eval() must not generate a return value "
+             "from execute()");
         return nullptr;
     }
     if(ec) return nullptr;

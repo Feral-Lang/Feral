@@ -95,8 +95,9 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 }
             } else {
                 if(!val->isCallable()) {
-                    fail(ins.getLoc(), "only callables can be added to non "
-                                       "attribute based types");
+                    fail(ins.getLoc(),
+                         "only callables can be added to non "
+                         "attribute based types");
                     goto createFail;
                 }
                 addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->getVal() : in->getType(), name,

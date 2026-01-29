@@ -39,12 +39,20 @@ namespace fer
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
 
+static constexpr StringRef allGetDocDoc =
+    "  var.fn() -> str | nil\n"
+    "Returns the doc string for `var` (can be function) if one is defined, nil otherwise.";
 Var *allGetDoc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs)
 {
+    if(!args[0]->hasDoc()) return vm.getNil();
     return vm.makeVar<VarStr>(loc, args[0]->getDoc());
 }
 
+static constexpr StringRef allGetAttrDoc =
+    "  var.fn(str) -> str\n"
+    "Given the attribute name, returns the attribute contained in `var`.\n"
+    "Requires the var to be attribute based (like VarModule).";
 Var *allGetAttr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                 const StringMap<AssnArgData> &assnArgs)
 {
@@ -66,42 +74,64 @@ Var *allGetAttr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *allGetTypeID(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+static constexpr StringRef allGetTypeDoc =
+    "  var.fn() -> TypeID\n"
+    "Returns the type ID of `var`.";
+Var *allGetType(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
+static constexpr StringRef allGetSubTypeDoc =
+    "  var.fn() -> TypeID\n"
+    "Returns the subtype ID of `var`.\n"
+    "For example, a struct instance's definition's type.";
 Var *allGetSubType(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                    const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarTypeID>(loc, args[0]->getSubType());
 }
 
+static constexpr StringRef allGetTypeNameDoc =
+    "  var.fn() -> str\n"
+    "Returns the name of the type of `var`.";
 Var *allGetTypeName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                     const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
+static constexpr StringRef allEqDoc =
+    "  var.fn(other) -> bool\n"
+    "Checks if the types of `var` and `other` are same.";
 Var *allEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
     return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
+static constexpr StringRef allNeDoc =
+    "  var.fn(other) -> bool\n"
+    "Checks if the types of `var` and `other` are not same.";
 Var *allNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
     return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
 }
 
+static constexpr StringRef allNilCoalesceDoc =
+    "  var.fn(other) -> this | other\n"
+    "If `var` is nil, return `other`, otherwise return `var`.";
 Var *allNilCoalesce(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                     const StringMap<AssnArgData> &assnArgs)
 {
     return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
+static constexpr StringRef allCopyDoc =
+    "  var.fn() -> var\n"
+    "Returns a copy of `var`.";
 Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
              const StringMap<AssnArgData> &assnArgs)
 {
@@ -115,12 +145,20 @@ Var *allCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // If a new instance is created and simply returned without storing in a container,
 // there is no point in calling this since reference count of that object will be 1
 // and hence the VM won't create a copy of it when used in creating a new var.
+static constexpr StringRef referenceDoc =
+    "  fn(var) -> var\n"
+    "Returns the argument itself, but with loadAsRef internal variable set as true.\n"
+    "This ensures that the next time a new object is created using `var` as the value, `var` is "
+    "not copied.";
 Var *reference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs)
 {
     args[1]->setLoadAsRef();
     return args[1];
 }
+static constexpr StringRef unReferenceDoc =
+    "  fn(var) -> var\n"
+    "Returns the argument itself, but with loadAsRef internal variable set as false.";
 Var *unreference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                  const StringMap<AssnArgData> &assnArgs)
 {
@@ -128,6 +166,10 @@ Var *unreference(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[1];
 }
 
+static constexpr StringRef raiseDoc =
+    "  fn(data...) -> var\n"
+    "Concatenates data into a string by calling `var.str()` on each data item, which is then used "
+    "to raise an error.";
 Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
@@ -143,6 +185,9 @@ Var *raise(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return nullptr;
 }
 
+static constexpr StringRef evaluateCodeDoc =
+    "  fn(code:str) -> var\n"
+    "Evaluates the given code and returns the result.";
 Var *evaluateCode(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                   const StringMap<AssnArgData> &assnArgs)
 {
@@ -159,6 +204,10 @@ Var *evaluateCode(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.decVarRef(res, false);
 }
 
+static constexpr StringRef evaluateExprDoc =
+    "  fn(expr:str) -> var\n"
+    "Evaluates the given code as an expression and returns the result.\n"
+    "Unlike `eval()`, this just expects an expression and doesn't need a return statement.";
 Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                   const StringMap<AssnArgData> &assnArgs)
 {
@@ -175,15 +224,18 @@ Var *evaluateExpr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.decVarRef(res, false);
 }
 
+static constexpr StringRef getCurrentModuleDoc =
+    "  fn() -> Module\n"
+    "Returns the current module.";
 Var *getCurrentModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                       const StringMap<AssnArgData> &assnArgs)
 {
     return vm.getCurrModule();
 }
 
-// getOSName and getOSDistro must be here because I don't want OS module's dependency on FS or
-// vice-versa.
-
+static constexpr StringRef getOSNameDoc =
+    "  fn() -> str\n"
+    "Returns the name of the current operating system.";
 Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs)
 {
@@ -202,6 +254,9 @@ Var *getOSName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, name);
 }
 
+static constexpr StringRef getOSDistroDoc =
+    "  fn() -> str\n"
+    "Returns the current operating system's distribution - like various flavors of BSD.";
 Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                  const StringMap<AssnArgData> &assnArgs)
 {
@@ -238,6 +293,9 @@ Var *getOSDistro(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // Stuff from std/sys module
 
+static constexpr StringRef _exitDoc =
+    "  fn(code) -> nil\n"
+    "Shuts down / exits the program with `code` as the exit/status code.";
 Var *_exit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
            const StringMap<AssnArgData> &assnArgs)
 {
@@ -250,6 +308,10 @@ Var *_exit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
+static constexpr StringRef varExistsDoc =
+    "  fn(varName, varModule = nil) -> bool\n"
+    "Returns `true` if the given variable `varName` exists.\n"
+    "If `varModule` is an instance of Module, checks within that too.";
 Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs)
 {
@@ -258,36 +320,49 @@ Var *varExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                 "expected string argument for variable name, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
-    VarModule *mod   = vm.getCurrModule();
-    bool providedMod = false;
-    if(args.size() > 2 && args[2] && args[2]->is<VarModule>()) {
+    StringRef varName = as<VarStr>(args[1])->getVal();
+    VarModule *mod    = vm.getCurrModule();
+    bool providedMod  = false;
+    if(args.size() > 2 && args[2]->is<VarModule>()) {
         mod         = as<VarModule>(args[2]);
         providedMod = true;
+        return mod->getAttr(varName) ? vm.getTrue() : vm.getFalse();
     }
-
     Vars &moduleVars = vm.getVars();
-    StringRef var    = as<VarStr>(args[1])->getVal();
-    return moduleVars.get(var) || (!providedMod && vm.getGlobal(var)) ? vm.getTrue()
-                                                                      : vm.getFalse();
+    return moduleVars.get(varName) || vm.getGlobal(varName) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *setMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assnArgs)
+static constexpr StringRef setMaxRecursionDoc =
+    "  fn(maxRecursion) -> nil\n"
+    "Sets the maximum recursion limit for `VirtualMachine::execute()` to be `maxRecursion`.";
+Var *setMaxRecursion(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                     const StringMap<AssnArgData> &assnArgs)
 {
     if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for max count, found: ", vm.getTypeName(args[1]));
+        vm.fail(loc,
+                "expected int argument for max recursion count, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
     vm.setRecurseMax(as<VarInt>(args[1])->getVal());
     return vm.getNil();
 }
 
-Var *getMaxCallstacks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assnArgs)
+static constexpr StringRef getMaxRecursionDoc =
+    "  fn() -> int\n"
+    "Gets the maximum recursion limit for `VirtualMachine::execute()`.";
+Var *getMaxRecursion(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
+                     const StringMap<AssnArgData> &assnArgs)
 {
     return vm.makeVar<VarInt>(loc, vm.getRecurseMax());
 }
 
+static constexpr StringRef addGlobalModulePathsDoc =
+    "  fn(paths...) -> int\n"
+    "Adds each of the provided paths to the global module paths' file.\n"
+    "Feral searches each of the paths in this file for modules when the `import()` function is "
+    "called.\n"
+    "Returns the total number of paths added. If the path already exists in the module file, it "
+    "doesn't count.";
 Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                           const StringMap<AssnArgData> &assnArgs)
 {
@@ -321,6 +396,13 @@ Var *addGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, added);
 }
 
+static constexpr StringRef removeGlobalModulePathsDoc =
+    "  fn(paths...) -> int\n"
+    "Removes each of the provided paths from the global module paths' file.\n"
+    "Feral searches each of the paths in this file for modules when the `import()` function is "
+    "called.\n"
+    "Returns the total number of paths removed. If the path isn't present in the module file, it "
+    "doesn't count.";
 Var *removeGlobalModulePaths(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                              const StringMap<AssnArgData> &assnArgs)
 {
@@ -371,22 +453,39 @@ INIT_MODULE(Prelude)
     vm.addNativeFn(loc, "getCurrModule", getCurrentModule, 0);
     vm.addNativeFn(loc, "getOSName", getOSName, 0);
     vm.addNativeFn(loc, "getOSDistro", getOSDistro, 0);
-    // enum/struct
     vm.addNativeFn(loc, "enum", createEnum, 0, true);
     vm.addNativeFn(loc, "struct", createStruct, 0);
 
     // module functions
     mod->addNativeFn(vm, "addGlobalModulePaths", addGlobalModulePaths, 1, true);
     mod->addNativeFn(vm, "removeGlobalModulePaths", removeGlobalModulePaths, 1, true);
+    mod->addNativeFn(vm, "exitNative", _exit, 1);
+    // variadic as there can be no proxy for this function (to make args[2] (VarModule) optional)
+    mod->addNativeFn(vm, "varExists", varExists, 1, true);
+    mod->addNativeFn(vm, "setMaxRecursionNative", setMaxRecursion, 1);
+    mod->addNativeFn(vm, "getMaxRecursion", getMaxRecursion, 0);
 
     // VM altering variables
     mod->addNativeVar("moduleDirs", vm.getModuleDirs());
     mod->addNativeVar("moduleFinders", vm.getModuleFinders());
+    mod->addNativeVar("args", vm.getCLIArgs());
+    mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
+    mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
+    mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, PROJECT_MINOR));
+    mod->addNativeVar("versionPatch", vm.makeVar<VarInt>(loc, PROJECT_PATCH));
+    mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
+    mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_COMPILER));
+    mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
+    mod->addNativeVar("minCmakeVersion", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
+    mod->addNativeVar("cmakeVersion", vm.makeVar<VarStr>(loc, CMAKE_VERSION));
+    mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, INSTALL_PATH));
+    mod->addNativeVar("tempPath", vm.makeVar<VarStr>(loc, TEMP_PATH));
+    mod->addNativeVar("DEFAULT_MAX_RECURSION", vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 
     // fundamental functions for builtin types
     vm.addNativeTypeFn<VarAll>(loc, "_doc_", allGetDoc, 0);
     vm.addNativeTypeFn<VarAll>(loc, "_attr_", allGetAttr, 1);
-    vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetTypeID, 0);
+    vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetType, 0);
     vm.addNativeTypeFn<VarAll>(loc, "_subtype_", allGetSubType, 0);
     vm.addNativeTypeFn<VarAll>(loc, "_typename_", allGetTypeName, 0);
     vm.addNativeTypeFn<VarAll>(loc, "==", allEq, 1);
@@ -697,33 +796,6 @@ INIT_MODULE(Prelude)
     mod->addNativeVar("FS_O_RSYNC", vm.makeVar<VarInt>(loc, O_RSYNC));
 #endif
     mod->addNativeVar("FS_O_TRUNC", vm.makeVar<VarInt>(loc, O_TRUNC));
-
-    // From std/sys
-
-    mod->addNativeFn(vm, "exitNative", _exit, 1);
-    // va because there can be no proxy for this function (to make args[2] (VarModule) optional)
-    mod->addNativeFn(vm, "varExists", varExists, 1, true);
-    mod->addNativeFn(vm, "setMaxCallstacksNative", setMaxCallstacks, 1);
-    mod->addNativeFn(vm, "getMaxCallstacks", getMaxCallstacks, 0);
-
-    mod->addNativeVar("args", vm.getCLIArgs());
-
-    mod->addNativeVar("binaryPath", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
-
-    mod->addNativeVar("versionMajor", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
-    mod->addNativeVar("versionMinor", vm.makeVar<VarInt>(loc, PROJECT_MINOR));
-    mod->addNativeVar("versionPatch", vm.makeVar<VarInt>(loc, PROJECT_PATCH));
-
-    mod->addNativeVar("buildDate", vm.makeVar<VarStr>(loc, BUILD_DATE));
-    mod->addNativeVar("buildCompiler", vm.makeVar<VarStr>(loc, BUILD_COMPILER));
-    mod->addNativeVar("buildType", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
-    mod->addNativeVar("minCmakeVersion", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
-    mod->addNativeVar("cmakeVersion", vm.makeVar<VarStr>(loc, CMAKE_VERSION));
-
-    mod->addNativeVar("installPath", vm.makeVar<VarStr>(loc, INSTALL_PATH));
-    mod->addNativeVar("tempPath", vm.makeVar<VarStr>(loc, TEMP_PATH));
-
-    mod->addNativeVar("DEFAULT_MAX_CALLSTACKS", vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 
     return true;
 }

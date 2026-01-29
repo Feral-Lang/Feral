@@ -11,8 +11,8 @@ let exit = fn(code = 0) {
     return exitNative(code);
 };
 
-let setMaxCallstacks = fn(size = DEFAULT_MAX_CALLSTACKS) {
-    setMaxCallstacksNative(size);
+let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
+    setMaxRecursionNative(size);
 };
 
 ################################ Types ################################

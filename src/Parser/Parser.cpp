@@ -817,8 +817,9 @@ bool Parser::parseFnSig(Stmt *&fsig)
             return false;
         }
         if(argnames.find(p.peek()->getDataStr()) != argnames.end()) {
-            err.fail(p.peek()->getLoc(), "this argument name is already used "
-                                         "before in this function signature");
+            err.fail(p.peek()->getLoc(),
+                     "this argument name is already used "
+                     "before in this function signature");
             return false;
         }
         argnames.insert(p.peek()->getDataStr());
