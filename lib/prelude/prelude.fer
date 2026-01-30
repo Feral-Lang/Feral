@@ -5,12 +5,18 @@ loadlib('prelude/Prelude');
 
 ############################ Core Functions ###########################
 
-# From std/sys
-
+"
+  fn(code = 0) -> nil
+Shuts down / exits the program with `code` as the exit/status code.
+"
 let exit = fn(code = 0) {
     return exitNative(code);
 };
 
+"
+  fn(maxRecursion) -> nil
+Sets the maximum recursion limit for `VirtualMachine::execute()` to be `maxRecursion`.
+"
 let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
     setMaxRecursionNative(size);
 };
@@ -19,34 +25,64 @@ let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
 
 # Str
 
+"
+  var.fn(base = 10) -> Int
+Converts the string `var` which must represent an int and returns it as an int type using the given `base`.
+"
 let int in StrTy = fn(base = 10) {
     return self.intNative(base);
 };
 
+"
+  var.fn(startIndex = 0, count = -1) -> Str
+Returns the substring from `startIndex` to `count` characters within string `var`.
+If `count` is `-1`, includes all the remaining characters.
+"
 let sub in StrTy = fn(begin = 0, len = -1) {
     if len == -1 { len = self.len(); }
     return self.substrNative(begin, len);
 };
 
+"
+  var.fn(delimiter = ' ', count = -1) -> Vec<Str>
+Splits the string `var` using `delimiter`, upto `count` number of times, and returns the resulting list of strings.
+If `count` is less than 0, it's considered unlimited.
+"
 let split in StrTy = fn(delim = ' ', maxDelimCount = -1) {
     return self.splitNative(delim, maxDelimCount);
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if the string `var` is a valid ASCII alphabet character (a-z, A-Z).
+"
 let isAlpha in StrTy = fn() {
     if self.empty() { return false; }
     return (self >= 'a' && self <= 'z') || (self >= 'A' && self <= 'Z');
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if the string `var` is a valid ASCII digit character (0-9).
+"
 let isDigit in StrTy = fn() {
     if self.empty() { return false; }
     return self >= '0' && self <= '9';
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if the string `var` is a valid ASCII space/tab/newline character (` ` / `\\t` / `\\r` / `\\n`).
+"
 let isSpace in StrTy = fn() {
     if self.empty() { return false; }
     return self == ' ' || self == '\t' || self == '\r' || self == '\n';
 };
 
+"
+  var.fn(data...) -> var
+Appends all the `data` in `var` using `.str()` member function on each item in `data` and returns `var` itself.
+"
 let append in StrTy = fn(data...) {
     for item in data.each() {
         self += item;
@@ -54,6 +90,10 @@ let append in StrTy = fn(data...) {
     return ref(self);
 };
 
+"
+  var.fn() -> Str
+Returns the equivalent UTF-8 character from the given hex string `var`.
+"
 # requires the source to be a UTF-16 hex string.
 let getUTF8CharFromHexString in StrTy = fn() {
     return self.getBinStrFromHexStr().getUTF8CharFromBinStr();
@@ -61,8 +101,12 @@ let getUTF8CharFromHexString in StrTy = fn() {
 
 # Vec
 
+"
+  var.fn(other) -> Bool
+Returns `true` if the vectors `var` and `other` have the same length and equal elements.
+"
 let '==' in VecTy = fn(other) {
-    if self._type_() != other._type_() { return false; }
+    if getType(self) != getType(other) { return false; }
     if self.len() != other.len() { return false; }
     let len = self.len();
     for let i = 0; i < len; ++i {
@@ -71,7 +115,10 @@ let '==' in VecTy = fn(other) {
     return true;
 };
 
-# stores in the type - NOT object
+"
+  var.fn(item) -> Bool
+Returns `true` if the `item` is present in the vector `var`.
+"
 let find in VecTy = fn(obj) {
     for data in self.each() {
         if data == obj { return true; }
@@ -79,7 +126,10 @@ let find in VecTy = fn(obj) {
     return false;
 };
 
-# returns true if element is found in the list, else false
+"
+  var.fn(item) -> Bool
+Returns `true` if the `item` is found in the vector `var` and is removed.
+"
 let remove in VecTy = fn(obj) {
     let len = self.len();
     for let i = 0; i < len; ++i {
@@ -91,6 +141,10 @@ let remove in VecTy = fn(obj) {
     return false;
 };
 
+"
+  var.fn(with) -> Str
+Creates and returns a `with` separated string of all the items in the vector `var`.
+"
 let join in VecTy = fn(with) {
     if self.empty() { return ''; }
     let res = '';
@@ -106,21 +160,42 @@ let join in VecTy = fn(with) {
     return res;
 };
 
+"
+  var.fn(list, startPos = 0, endPos = -1) -> var
+Appends all items in `list` from `startPos` to `endPos` (exclusive) in the vector `var` and returns `var` itself.
+If `endPos` is less than 0, it's considered to be end of the vector `list`.
+"
 let append in VecTy = fn(src, start = 0, end = -1) {
     return self.appendNative(src, start, end);
 };
 
+"
+  var.fn(startPos, endPos = -1) -> Vec
+Returns a vector that is a referenced subset from `startPos` to `endPos` (exclusive) of vector `var`.
+If `endPos` is less than 0, it's considered to be end of the vector `var`.
+"
 let slice in VecTy = fn(start, end = -1) {
     if end == -1 { end = self.len(); }
     return self.sliceNative(start, end);
 };
 
+"
+  var.fn(startPos, endPos = -1) -> Vec
+Returns a vector that is a copy of the subset from `startPos` to `endPos` (exclusive) of vector `var`.
+If `endPos` is less than 0, it's considered to be end of the vector `var`.
+"
 let sub in VecTy = fn(start, end = -1) {
     if end == -1 { end = self.len(); }
     return self.subNative(start, end);
 };
 
-# Takes 'rev' keyword argument which can be true or false (reverse or not)
+"
+  var.fn(comparator = nil) -> Nil
+Sorts the given vector `var` and returns `var` itself.
+A custom `comparator` may be optionally provided which must take 2 arguments and return `true` or `false` based on the sorting criteria.
+Can also accept the following named arguments:
+  `rev = true` to sort in the reverse order.
+"
 let sort in VecTy = fn(comparator = nil, .kw) {
     if self.len() <= 1 { return; }
 
@@ -129,6 +204,11 @@ let sort in VecTy = fn(comparator = nil, .kw) {
     quickSort(self, cmp, 0, self.len() - 1);
 };
 
+"
+  var.fn(comparator = nil) -> Var
+Finds and returns the index of the smallest item in the vector `var`.
+A custom `comparator` may be optionally provided which must take 2 arguments and return `true` or `false` based on the sorting criteria.
+"
 let min in VecTy = fn(lt = fn(a, b) { return a < b; }) {
     if self.empty() {
         raise('cannot find min in an empty list');
@@ -141,6 +221,11 @@ let min in VecTy = fn(lt = fn(a, b) { return a < b; }) {
     return min;
 };
 
+"
+  var.fn(comparator = nil) -> Var
+Finds and returns the index of the largest item in the vector `var`.
+A custom `comparator` may be optionally provided which must take 2 arguments and return `true` or `false` based on the sorting criteria.
+"
 let max in VecTy = fn(gt = fn(a, b) { return a > b; }) {
     if self.empty() {
         raise('cannot find max in an empty list');
@@ -153,18 +238,10 @@ let max in VecTy = fn(gt = fn(a, b) { return a > b; }) {
     return max;
 };
 
-let mean in VecTy = fn(onEach = fn(e) { return e; }) {
-    if self.empty() {
-        raise('cannot find mean of an empty list');
-    }
-    let count = self.len();
-    let sum = onEach(self[0]);
-    for let i = 1; i < count; ++i {
-        sum += onEach(self[i]);
-    }
-    return sum / count;
-};
-
+"
+  var.fn() -> Str
+Returns a string beginning with `[` and ending with `]`, containing a comma separated list of all the items in the vector `var`.
+"
 let str in VecTy = fn() {
     let res = '[';
     res += self.join(', ');
@@ -174,8 +251,12 @@ let str in VecTy = fn() {
 
 # Map
 
+"
+  var.fn(other) -> Bool
+Returns `true` if the maps `var` and `other` have the same length and equal elements.
+"
 let '==' in MapTy = fn(other) {
-    if self._type_() != other._type_() { return false; }
+    if getType(self) != getType(other) { return false; }
     if self.len() != other.len() { return false; }
     for e in self.each() {
         if other[e.0] != e.1 { return false; }
@@ -183,14 +264,10 @@ let '==' in MapTy = fn(other) {
     return true;
 };
 
-let keys in MapTy = fn() {
-    let v = vecNew(refs = true);
-    for e in self.each() {
-        v.push(e.0);
-    }
-    return v;
-};
-
+"
+  var.fn() -> Str
+Returns a string beginning with `{` and ending with `}`, containing a comma separated list of all the key-colon-value pairs in the map `var`.
+"
 let str in MapTy = fn() {
     let res = '{';
     for pair in self.each() {
@@ -209,6 +286,10 @@ let str in MapTy = fn() {
 
 # FS
 
+"
+  var.fn(path, mode = 'r') -> var
+On an existing file handle `var`, closes it (if needed) and reopens using `path` and `mode` and returns `var` itself.
+"
 let reopen in FileTy = fn(file, mode = 'r') {
     return self.reopenNative(file, mode);
 };

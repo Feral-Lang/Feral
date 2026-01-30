@@ -1,35 +1,46 @@
-Var *nilToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+#include <charconv>
+
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(nilToInt, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns `0` which is the int equivalent for nil.")
 {
     return vm.makeVar<VarInt>(loc, 0);
 }
 
-Var *boolToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolToInt, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns `1` if `var` is `true`, `0` otherwise.")
 {
     return vm.makeVar<VarInt>(loc, as<VarBool>(args[0])->getVal() ? 1 : 0);
 }
 
-Var *typeIDToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(typeIDToInt, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the integer value of the given typeID `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarTypeID>(args[0])->getVal());
 }
 
-Var *intToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(intToInt, 0, false,
+           "  var.fn() -> var\n"
+           "Returns `var` as is.")
 {
     return args[0];
 }
 
-Var *fltToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltToInt, 0, false,
+           "  var.fn() -> Int\n"
+           "Converts the given float `var` to int and returns it.")
 {
     return vm.makeVar<VarInt>(loc, as<VarFlt>(args[0])->getVal());
 }
 
-Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strToIntNative, 1, false, "")
 {
     StringRef num = as<VarStr>(args[0])->getVal();
     for(auto c : num) {
@@ -46,3 +57,5 @@ Var *strToInt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     std::from_chars(num.data(), num.data() + num.size(), val, base);
     return vm.makeVar<VarInt>(loc, val);
 }
+
+} // namespace fer

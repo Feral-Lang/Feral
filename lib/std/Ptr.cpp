@@ -24,22 +24,25 @@ void VarPtr::setVal(MemoryManager &mem, Var *newval)
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *ptrNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(ptrNewNative, 1, false,
+           "  fn(data) -> Ptr\n"
+           "Creates and returns an instance of a Ptr containing `data`.")
 {
     return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
-Var *ptrSet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(ptrSet, 1, false,
+           "  var.fn(data) -> var\n"
+           "Sets the Ptr `var` to contain `data` and returns `var` itself.")
 {
     VarPtr *self = as<VarPtr>(args[0]);
     self->setVal(vm.getMemoryManager(), args[1]);
     return args[0];
 }
 
-Var *ptrGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(ptrGet, 0, false,
+           "  var.fn() -> Var\n"
+           "Returns the contained data in Ptr `var`.")
 {
     return as<VarPtr>(args[0])->getVal();
 }
@@ -48,12 +51,13 @@ INIT_MODULE(Ptr)
 {
     VarModule *mod = vm.getCurrModule();
 
-    vm.registerType<VarPtr>(loc, "Ptr");
+    vm.registerType<VarPtr>(loc, "Ptr",
+                            "A reference container type which can contain and get other data.");
 
-    mod->addNativeFn(vm, "new", ptrNewNative, 1);
+    mod->addNativeFn(vm, "new", ptrNewNative);
 
-    vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet, 1);
-    vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet, 0);
+    vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet);
+    vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet);
     return true;
 }
 

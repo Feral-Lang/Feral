@@ -1,5 +1,11 @@
-Var *bytebufferNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                         const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(bytebufferNew, 1, false,
+           "  fn(size) -> Bytebuffer\n"
+           "Creates and returns a Bytebuffer with `size` bytes reserved.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
@@ -8,14 +14,18 @@ Var *bytebufferNewNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 
-Var *bytebufferCapacity(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(bytebufferCapacity, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the capacity in bytes of the Bytebuffer `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->capacity());
 }
 
-Var *bytebufferLen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(bytebufferLen, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of bytes contained within the Bytebuffer `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->getLen());
 }
+
+} // namespace fer

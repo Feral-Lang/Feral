@@ -52,16 +52,20 @@ ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> arg
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *print(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(print, 1, true,
+           "  fn(args...) -> Int\n"
+           "Prints each of `args` on `stdout` and returns the number of characters printed.")
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *println(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(println, 0, true,
+           "  fn(args...) -> Int\n"
+           "Prints each of `args` on `stdout`, as well as a newline character at the end.\n"
+           "If there are no `args`, just the newline character is printed.\n"
+           "Returns the number of printed characters, including the newline character.")
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -69,16 +73,34 @@ Var *println(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *cprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(cprint, 1, true,
+           "  fn(args...) -> Int\n"
+           "Same as `print` but also applies terminal color codes on the output.\n"
+           "The color shorthands are:\n"
+           "  {0}  => Resets any previous colors\n"
+           "  {r}  => Red\n"
+           "  {g}  => Green\n"
+           "  {y}  => Yellow\n"
+           "  {b}  => Blue\n"
+           "  {m}  => Magenta\n"
+           "  {c}  => Cyan\n"
+           "  {w}  => White\n"
+           "  {br} => Bright Red\n"
+           "  {bg} => Bright Green\n"
+           "  {by} => Bright Yellow\n"
+           "  {bb} => Bright Blue\n"
+           "  {bm} => Bright Magenta\n"
+           "  {bc} => Bright Cyan\n"
+           "  {bw} => Bright White")
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *cprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(cprintln, 0, true,
+           "  fn(args...) -> Int\n"
+           "Same as `println` but also applies terminal color codes on the output like `cprint`.")
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -86,16 +108,18 @@ Var *cprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *eprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(eprint, 1, true,
+           "  fn(args...) -> Int\n"
+           "Same as `print` but writes on `stderr` instead of `stdout`.")
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *eprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(eprintln, 0, true,
+           "  fn(args...) -> Int\n"
+           "Same as `println` but writes on `stderr` instead of `stdout`.")
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, false);
     if(count < 0) return nullptr;
@@ -103,16 +127,18 @@ Var *eprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *ecprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(ecprint, 1, true,
+           "  fn(args...) -> Int\n"
+           "Same as `cprint` but writes on `stderr` instead of `stdout`.")
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *ecprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(ecprintln, 0, true,
+           "  fn(args...) -> Int\n"
+           "Same as `cprintln` but writes on `stderr` instead of `stdout`.")
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()}, true);
     if(count < 0) return nullptr;
@@ -120,8 +146,9 @@ Var *ecprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fprint, 1, true,
+           "  fn(file, args...) -> Int\n"
+           "Same as `print` but accepts a File `file` to write to.")
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -139,8 +166,9 @@ Var *fprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fprintln, 0, true,
+           "  fn(file, args...) -> Int\n"
+           "Same as `println` but accepts a File `file` to write to.")
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -159,8 +187,9 @@ Var *fprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fcprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fcprint, 1, true,
+           "  fn(file, args...) -> Int\n"
+           "Same as `cprint` but accepts a File `file` to write to.")
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -178,8 +207,9 @@ Var *fcprint(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *fcprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fcprintln, 0, true,
+           "  fn(file, args...) -> Int\n"
+           "Same as `cprintln` but accepts a File `file` to write to.")
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -198,20 +228,10 @@ Var *fcprintln(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-Var *scan(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-          const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(scan, 0, false,
+           "  fn() -> Str\n"
+           "Reads input line from `stdin` and returns it as a string.")
 {
-    if(args.size() > 1 && !args[1]->is<VarStr>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected string data for input prompt, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-
-    if(args.size() > 1) {
-        const String &prompt = as<VarStr>(args[1])->getVal();
-        write(STDOUT_FILENO, prompt.data(), prompt.size());
-    }
-
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     std::getline(std::cin, res->getVal());
 
@@ -221,32 +241,23 @@ Var *scan(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *scanEOF(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(scanEOF, 0, false,
+           "  fn() -> Str\n"
+           "Reads input until EOF character from `stdin` and returns it as a string.")
 {
-    if(args.size() > 1 && !args[1]->is<VarStr>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected string data for input prompt, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-
-    if(args.size() > 1) {
-        const String &prompt = as<VarStr>(args[1])->getVal();
-        write(STDOUT_FILENO, prompt.data(), prompt.size());
-    }
-
     String line;
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     while(std::getline(std::cin, line)) res->getVal() += line;
 
-    if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
-    if(!res->getVal().empty() && res->getVal().back() == '\n') res->getVal().pop_back();
+    if(!res->getVal().empty() && (res->getVal().back() == '\r' || res->getVal().back() == '\n'))
+        res->getVal().pop_back();
 
     return res;
 }
 
-Var *fflush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fflush, 1, false,
+           "  fn(file) -> Nil\n"
+           "Flush the `file`, writing any pending data to it.")
 {
     if(!args[1]->is<VarFile>()) {
         vm.fail(args[1]->getLoc(),
@@ -258,12 +269,13 @@ Var *fflush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                 vm.getTypeName(args[1]));
         return nullptr;
     }
-    fflush(as<VarFile>(args[1])->getFile());
+    ::fflush(as<VarFile>(args[1])->getFile());
     return vm.getNil();
 }
 
-Var *readChar(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(readChar, 1, false,
+           "  fn(file) -> Str\n"
+           "Reads a character from the file descriptor `file` and returns it as a string.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(args[1]->getLoc(), "expected an integer argument for file descriptor, found: ",
@@ -285,27 +297,30 @@ INIT_MODULE(IO)
 {
     VarModule *mod = vm.getCurrModule();
 
-    mod->addNativeFn(vm, "print", print, 1, true);
-    mod->addNativeFn(vm, "println", println, 0, true);
-    mod->addNativeFn(vm, "cprint", cprint, 1, true);
-    mod->addNativeFn(vm, "cprintln", cprintln, 0, true);
-    mod->addNativeFn(vm, "eprint", eprint, 1, true);
-    mod->addNativeFn(vm, "eprintln", eprintln, 0, true);
-    mod->addNativeFn(vm, "ecprint", ecprint, 1, true);
-    mod->addNativeFn(vm, "ecprintln", ecprintln, 0, true);
-    mod->addNativeFn(vm, "fprint", fprint, 2, true);
-    mod->addNativeFn(vm, "fprintln", fprintln, 1, true);
-    mod->addNativeFn(vm, "fcprint", fcprint, 1, true);
-    mod->addNativeFn(vm, "fcprintln", fcprintln, 0, true);
-    mod->addNativeFn(vm, "scan", scan, 0, true);
-    mod->addNativeFn(vm, "scanEOF", scanEOF, 0, true);
-    mod->addNativeFn(vm, "fflush", fflush, 1);
-    mod->addNativeFn(vm, "readChar", readChar, 1);
+    mod->addNativeFn(vm, "print", print);
+    mod->addNativeFn(vm, "println", println);
+    mod->addNativeFn(vm, "cprint", cprint);
+    mod->addNativeFn(vm, "cprintln", cprintln);
+    mod->addNativeFn(vm, "eprint", eprint);
+    mod->addNativeFn(vm, "eprintln", eprintln);
+    mod->addNativeFn(vm, "ecprint", ecprint);
+    mod->addNativeFn(vm, "ecprintln", ecprintln);
+    mod->addNativeFn(vm, "fprint", fprint);
+    mod->addNativeFn(vm, "fprintln", fprintln);
+    mod->addNativeFn(vm, "fcprint", fcprint);
+    mod->addNativeFn(vm, "fcprintln", fcprintln);
+    mod->addNativeFn(vm, "scan", scan);
+    mod->addNativeFn(vm, "scanEOF", scanEOF);
+    mod->addNativeFn(vm, "fflush", fflush);
+    mod->addNativeFn(vm, "readChar", readChar);
 
     // stdin, stdout, and stderr cannot be owned by a VarFile
-    mod->addNativeVar("stdin", vm.makeVar<VarFile>(loc, stdin, "r", false));
-    mod->addNativeVar("stdout", vm.makeVar<VarFile>(loc, stdout, "w", false));
-    mod->addNativeVar("stderr", vm.makeVar<VarFile>(loc, stderr, "w", false));
+    mod->addNativeVar(vm, "stdin", "The standard input stream.",
+                      vm.makeVar<VarFile>(loc, stdin, "r", false));
+    mod->addNativeVar(vm, "stdout", "The standard output stream.",
+                      vm.makeVar<VarFile>(loc, stdout, "w", false));
+    mod->addNativeVar(vm, "stderr", "The standard error stream.",
+                      vm.makeVar<VarFile>(loc, stderr, "w", false));
     return true;
 }
 

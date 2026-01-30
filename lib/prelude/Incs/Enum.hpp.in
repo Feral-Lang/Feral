@@ -1,5 +1,11 @@
-Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(createEnum, 1, true,
+           " fn(values...) -> Enum\n"
+           "Creates and returns an Enum using the given values")
 {
     MemoryManager &mem = vm.getMemoryManager();
     VarStruct *res     = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assnArgs.size() - 1);
@@ -28,3 +34,5 @@ Var *createEnum(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
     return res;
 }
+
+} // namespace fer

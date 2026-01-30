@@ -30,8 +30,9 @@ int execInternal(const String &file);
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *sleepCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(sleepCustom, 1, false,
+           "  fn(duration) -> Nil\n"
+           "Suspends the current thread for `duration` milliseconds.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for sleep time, found: ", vm.getTypeName(args[1]));
@@ -42,8 +43,9 @@ Var *sleepCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *getEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(getEnv, 1, false,
+           "  fn(variable) -> Str | Nil\n"
+           "Returns the value of the environment `variable` as string, or `nil` if not found.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -56,8 +58,10 @@ Var *getEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
-Var *setEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(setEnv, 3, false,
+           "  fn(variable, value, overwrite = false) -> Nil\n"
+           "Sets the `value` of the environment `variable` as string.\n"
+           "If `overwrite` is `true`, any existing environment `variable` is overwritten.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -88,8 +92,11 @@ Var *setEnv(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, env::set(var.c_str(), val.c_str(), overwrite));
 }
 
-Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    execCustom, 1, true,
+    "  fn(command...) -> Int\n"
+    "Runs `command` on the shell and returns the exit code.\n"
+    "`command` can be either a vector or a variadic of the command and its arguments/parameters.")
 {
     Span<Var *> argsToUse = args;
     size_t startFrom      = 1;
@@ -206,8 +213,10 @@ Var *execCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(systemCustom, 1, false,
+           "  fn(command) -> Int\n"
+           "Runs the `command` using C's `system()` function and returns the exit code.\n"
+           "Here, the `command` is a single string containing the command and all parameters.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for command, found: ", vm.getTypeName(args[1]));
@@ -222,26 +231,9 @@ Var *systemCustom(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *osGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
-{
-#if defined(CORE_OS_WINDOWS)
-    return vm.makeVar<VarStr>(loc, "windows");
-#elif defined(CORE_OS_ANDROID)
-    return vm.makeVar<VarStr>(loc, "android");
-#elif defined(CORE_OS_LINUX)
-    return vm.makeVar<VarStr>(loc, "linux");
-#elif defined(CORE_OS_APPLE)
-    return vm.makeVar<VarStr>(loc, "macos");
-#elif defined(CORE_OS_BSD)
-    return vm.makeVar<VarStr>(loc, "bsd");
-#else
-    return vm.makeVar<VarStr>(loc, "unknown");
-#endif
-}
-
-Var *osStrErr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(osStrErr, 0, false,
+           "  fn(errCode) -> Str\n"
+           "Returns the string equivalent for the `errCode`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for destination directory, found: ",
@@ -255,8 +247,9 @@ Var *osStrErr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////// Extra Functions /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *osGetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(osGetCWD, 0, false,
+           "  fn() -> Str\n"
+           "Returns the current working directory of the program.")
 {
     VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
     if(res->getVal().empty()) {
@@ -267,8 +260,9 @@ Var *osGetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(osSetCWD, 1, false,
+           "  fn(dir) -> Nil\n"
+           "Sets the current working directory to `dir` of the program.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for destination directory, found: ",
@@ -280,8 +274,11 @@ Var *osSetCWD(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 #if !defined(CORE_OS_WINDOWS)
-Var *osChmod(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    osChmod, 3, false,
+    "  fn(dest, mode = '0755', recursive = true) -> Int\n"
+    "Changes permissions of path `dest` as `mode` string.\n"
+    "If `recursive` is `true` and `dest` is a directory, update the permissions recursively.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -320,21 +317,20 @@ INIT_MODULE(OS)
 {
     VarModule *mod = vm.getCurrModule();
 
-    mod->addNativeFn(vm, "sleep", sleepCustom, 1);
+    mod->addNativeFn(vm, "sleep", sleepCustom);
 
-    mod->addNativeFn(vm, "getEnv", getEnv, 1);
-    mod->addNativeFn(vm, "setEnvNative", setEnv, 3);
+    mod->addNativeFn(vm, "getEnv", getEnv);
+    mod->addNativeFn(vm, "setEnvNative", setEnv);
 
-    mod->addNativeFn(vm, "exec", execCustom, 1, true);
-    mod->addNativeFn(vm, "system", systemCustom, 1);
-    mod->addNativeFn(vm, "strErr", osStrErr, 1);
-    mod->addNativeFn(vm, "getNameNative", osGetName);
+    mod->addNativeFn(vm, "exec", execCustom);
+    mod->addNativeFn(vm, "system", systemCustom);
+    mod->addNativeFn(vm, "strErr", osStrErr);
 
     mod->addNativeFn(vm, "getCWD", osGetCWD);
-    mod->addNativeFn(vm, "setCWD", osSetCWD, 1);
+    mod->addNativeFn(vm, "setCWD", osSetCWD);
 
 #if !defined(CORE_OS_WINDOWS)
-    mod->addNativeFn(vm, "chmodNative", osChmod, 3);
+    mod->addNativeFn(vm, "chmodNative", osChmod);
 #endif
 
     return true;

@@ -16,8 +16,17 @@ let remove = feral.fsRemove;
 let copy = feral.fsCopy;
 let move = feral.fsMove;
 
+"
+The standard input stream.
+"
 let stdin = feral.fsStdin;
+"
+The standard output stream.
+"
 let stdout = feral.fsStdout;
+"
+The standard error stream.
+"
 let stderr = feral.fsStderr;
 
 # fs.walkdir()
@@ -34,26 +43,37 @@ let O_WRONLY = feral.FS_O_WRONLY;
 let O_RDWR = feral.FS_O_RDWR;
 let O_APPEND = feral.FS_O_APPEND;
 let O_CREAT = feral.FS_O_CREAT;
-inline if getOSName() == 'linux' || getOSName() == 'macos' {
+inline if feral.getOSName() == 'linux' || feral.getOSName() == 'macos' {
 let O_DSYNC = feral.FS_O_DSYNC;
 }
 let O_EXCL = feral.FS_O_EXCL;
-inline if getOSName() != 'windows' {
+inline if feral.getOSName() != 'windows' {
 let O_NOCTTY = feral.FS_O_NOCTTY;
 let O_NONBLOCK = feral.FS_O_NONBLOCK;
 let O_SYNC = feral.FS_O_SYNC;
 }
-inline if getOSName() == 'linux' {
+inline if feral.getOSName() == 'linux' {
 let O_RSYNC = feral.FS_O_RSYNC;
 }
 let O_TRUNC = feral.FS_O_TRUNC;
 
 ####################################################################################
 
+"
+  fn(path, mode = 'r', shouldClose = true) -> File
+Opens a file a returns its handle given the `path` and the `mode` string.
+If `shouldClose` is `true`, the file won't be closed when the returned variable goes out of scope.
+That is useful for handles like `stdout` and `stderr`.
+"
 let fopen = fn(file, mode = 'r', mustClose = true) {
     return feral.fsFopen(file, mode, mustClose);
 };
 
+"
+  fn(dirPath, walkMode = WALK_FILES, fileRegex = '(.*)') -> File
+Given a directory path `dirPath`, get all files and/or directories with/without going in subdirectories, based on `walkMode`.
+`fileRegex` can be used to filter out the results based on some regular expression.
+"
 let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
     let res = feral.fsWalkDir(dir, mode, regex);
     let nameOnly = kw['nameOnly'] != nil && kw['nameOnly'];
@@ -70,15 +90,27 @@ let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
     return res;
 };
 
-let fdOpen = fn(name, mode = O_RDONLY) {
-    return feral.fsFdOpen(name, mode);
+"
+  fn(path, flags = fs.O_RDONLY) -> Int
+Open and return a file descriptor using `path` and `flags`.
+"
+let fdOpen = fn(name, flags = O_RDONLY) {
+    return feral.fsFdOpen(name, flags);
 };
 
+"
+  fn(path) -> Bool
+Returns `true` if a `path` exists and is a directory.
+"
 let dirExists = fn(name) {
     if !exists(name) { return false; }
     return stat.stat(name).isDir();
 };
 
+"
+  fn(path, parts...) -> Nil
+Appends each of `parts` to `path` using `/` as the separator.
+"
 let pathAppend = fn(fullpath, pathparts...) {
     for let i = 0; i < pathparts.len(); ++i {
         if !fullpath.empty() { fullpath += '/'; }
@@ -86,6 +118,10 @@ let pathAppend = fn(fullpath, pathparts...) {
     }
 };
 
+"
+  fn(parts...) -> Str
+Create and return a string using each of `parts`, separated by `/`.
+"
 let pathFrom = fn(pathparts...) {
     if pathparts.empty() { return ''; }
     let fullpath = '';
@@ -93,13 +129,21 @@ let pathFrom = fn(pathparts...) {
     return fullpath;
 };
 
-# Converts all \ with / where needed.
+"
+  fn(path) -> Str
+Replaces all `\\` and `//` in `path` with `/` and returns the new string.
+"
 let normalizePath = fn(path) {
     return path.replace('\\', '/').replace('//', '/');
 };
 
-# can also be written as:
-#  fmtWithPath('$d', path)
+"
+  fn(path) -> Str
+Returns the parent directory of `path` as a new string.
+If no `/` is found, returns `.`.
+Can also be written as:
+  fmtWithPath('$d', path)
+"
 let parentDir = fn(path) {
     let dirname = '';
     let locslash = path.rfind('/');
@@ -108,13 +152,17 @@ let parentDir = fn(path) {
     return dirname;
 };
 
-# config shorthands:
-#   $s => feral binary location (self)
-#   $p => full file path
-#   $d => dirname (file's directory)
-#   $f => filename (file name without directory)
-#   $b => basename (file name without directory and extension)
-#   $e => file extension
+"
+  fn(fmtstr, path) -> Str
+Uses the `path` to format the format string `fmtstr` using specific shorthands, and returns the new string.
+The shorthands are:
+  $s => feral binary (which is running the program) location
+  $p => `path` as is
+  $d => parent directory of `path`
+  $f => filename (file name without directory)
+  $b => basename (file name without directory and extension)
+  $e => file extension
+"
 let fmtWithPath = fn(fmtstr, fpath) {
     let shorthand = false;
     let dirname = '';

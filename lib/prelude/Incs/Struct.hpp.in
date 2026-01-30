@@ -1,5 +1,11 @@
-Var *createStruct(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(createStruct, 0, false,
+           "  fn(assnArgs...) -> Struct\n"
+           "Creates a structure definition with fields defined by `assnArgs` and returns it.")
 {
     MemoryManager &mem = vm.getMemoryManager();
     VarStructDef *res  = vm.makeVar<VarStructDef>(loc, assnArgs.size());
@@ -10,8 +16,11 @@ Var *createStruct(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *structDefSetTypeName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                          const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(structDefSetTypeName, 1, false,
+           "  var.fn(name) -> Nil\n"
+           "Sets a `name` for the Struct definition `var` in the Feral virtual machine.\n"
+           "This is used mainly to provide better error messages but its always best to set it for "
+           "any Struct.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected typename to be of type string, found: ", vm.getTypeName(args[1]));
@@ -23,74 +32,20 @@ Var *structDefSetTypeName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *structDefGetFields(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs)
-{
-    VarStructDef *def = as<VarStructDef>(args[0]);
-    VarVec *res       = vm.makeVar<VarVec>(loc, def->getAttrOrder().size(), false);
-    for(auto &a : def->getAttrOrder()) { res->push(vm.makeVarWithRef<VarStr>(loc, a)); }
-    return res;
-}
-
-Var *structDefGetFieldValue(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                            const StringMap<AssnArgData> &assnArgs)
-{
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected field name to be "
-                "of type string, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    const String &name = as<VarStr>(args[1])->getVal();
-    Var *res           = as<VarStructDef>(args[0])->getAttr(name);
-    return res ? res : vm.getNil();
-}
-
-Var *structDefLen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(structDefLen, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of fields in the Struct definition `var`.")
 {
     VarStructDef *def = as<VarStructDef>(args[0]);
     return vm.makeVar<VarInt>(loc, def->getAttrCount());
 }
 
-Var *structGetFields(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
-{
-    VarStruct *st = as<VarStruct>(args[0]);
-    VarVec *res   = vm.makeVar<VarVec>(loc, st->getAttrs().size(), false);
-    for(auto &a : st->getAttrs()) { res->push(vm.makeVarWithRef<VarStr>(loc, a.first)); }
-    return res;
-}
-
-Var *structSetFieldValue(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                         const StringMap<AssnArgData> &assnArgs)
-{
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected field name to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    const String &name = as<VarStr>(args[1])->getVal();
-
-    VarStruct *st = as<VarStruct>(args[0]);
-    Var *val      = st->getAttr(name);
-    if(!val) {
-        vm.fail(loc, "field name: '", name, "' not found in struct");
-        return nullptr;
-    }
-
-    if(val->getType() != args[2]->getType()) {
-        vm.fail(loc, "attribute value type mismatch; expected: '", vm.getTypeName(val),
-                "', provided: '", vm.getTypeName(args[2]), "'");
-        return nullptr;
-    }
-    vm.setVar(val, args[2]);
-    return vm.getNil();
-}
-
-Var *structLen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(structLen, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of fields in the Struct instance `var`.")
 {
     VarStruct *st = as<VarStruct>(args[0]);
     return vm.makeVar<VarInt>(loc, st->getAttrCount());
 }
+
+} // namespace fer

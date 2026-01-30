@@ -1,5 +1,17 @@
-Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(mapNew, 0, true,
+           "  fn(args...) -> Map\n"
+           "Creates and returns a new map/dictionary.\n"
+           "The args (optional) are key-value pairs to initialize the map with, and hence must be "
+           "even in number.\n"
+           "Can also accept the following named arguments:\n"
+           "  `cap = n` where `n` is the initial capacity of the map\n"
+           "  `refs = true` which makes it so that any value inserted in the map is stored as a "
+           "reference.")
 {
     if((args.size() - 1) % 2 != 0) {
         vm.fail(loc, "argument count must be even to create a map");
@@ -51,26 +63,31 @@ Var *mapNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
 }
 
-Var *mapSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapSize, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of elements in the map `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
 }
 
-Var *mapIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapIsRef, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the map `var` stores values as references.")
 {
     return as<VarMap>(args[0])->isRefMap() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapEmpty, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the map `var` is empty.")
 {
     return as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapInsert, 2, false,
+           "  var.fn(key, value) -> var\n"
+           "Stores the `value` at `key` in `var` and returns `var`.\n"
+           "The key is always converted into a string using its `.str()` method.")
 {
     MemoryManager &mem = vm.getMemoryManager();
     VarMap *map        = as<VarMap>(args[0]);
@@ -86,8 +103,10 @@ Var *mapInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    mapErase, 1, false,
+    "  var.fn(key) -> var\n"
+    "Deletes the given `key` and its respective value from the map `var`, and returns `var`.")
 {
     StringMap<Var *> &map = as<VarMap>(args[0])->getVal();
     Var *v                = nullptr;
@@ -102,15 +121,17 @@ Var *mapErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *mapClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapClear, 0, false,
+           "  var.fn() -> Nil\n"
+           "Removes all key-value pairs from the map `var`.")
 {
     as<VarMap>(args[0])->clear(vm.getMemoryManager());
     return vm.getNil();
 }
 
-Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapAt, 1, false,
+           "  var.fn(key) -> value | Nil\n"
+           "Returns the value at `key` or `nil` if the map `var` doesn't contain the `key`.")
 {
     VarMap *map = as<VarMap>(args[0]);
     Var *v      = nullptr;
@@ -121,8 +142,9 @@ Var *mapAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res ? res : vm.getNil();
 }
 
-Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapFind, 1, false,
+           "  var.fn(key) -> Bool\n"
+           "Returns `true` if the `key` exists in the map `var`.")
 {
     VarMap *map = as<VarMap>(args[0]);
     Var *v      = nullptr;
@@ -133,14 +155,18 @@ Var *mapFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapEach, 0, false,
+           "  var.fn() -> MapIterator\n"
+           "Returns a MapIterator which can be used to iterate through the key-value pairs in the "
+           "map `var`.")
 {
     return vm.makeVar<VarMapIterator>(loc, as<VarMap>(args[0]));
 }
 
-Var *mapIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapIteratorNext, 0, false,
+           "  var.fn() -> key-value-pair | Nil\n"
+           "Returns the next pair from the MapIterator `var`, or `nil` if nothing's left.\n"
+           "This function is mainly used by for-in loop.")
 {
     VarMapIterator *it = as<VarMapIterator>(args[0]);
     Var *res           = nullptr;
@@ -148,3 +174,5 @@ Var *mapIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     res->setLoadAsRef();
     return res;
 }
+
+} // namespace fer

@@ -11,8 +11,9 @@ static std::default_random_engine rng;
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *rngSeed(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(rngSeed, 1, false,
+           "  fn(seed) -> Nil\n"
+           "Provides a `seed` number to the random number generator.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected seed value to be integer, found: ", vm.getTypeName(args[1]));
@@ -22,9 +23,9 @@ Var *rngSeed(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-// [0, to)
-Var *rngGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(rngGet, 1, false,
+           "  fn(upto) -> Int\n"
+           "Returns a random number between [0, `upto`).")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected upper bound to be an integer, found: ", vm.getTypeName(args[1]));
@@ -37,8 +38,8 @@ Var *rngGet(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 INIT_MODULE(RNG)
 {
     VarModule *mod = vm.getCurrModule();
-    mod->addNativeFn(vm, "seed", rngSeed, 1);
-    mod->addNativeFn(vm, "getNative", rngGet, 1);
+    mod->addNativeFn(vm, "seed", rngSeed);
+    mod->addNativeFn(vm, "getNative", rngGet);
     return true;
 }
 

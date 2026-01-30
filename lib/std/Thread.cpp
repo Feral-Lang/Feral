@@ -78,26 +78,30 @@ void VarThread::onDestroy(MemoryManager &mem)
 //////////////////////////////////////////// Common //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *getConcurrency(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(getConcurrency, 0, false,
+           "  fn() -> Int\n"
+           "Returns the number of hardware thread contexts - number of max threads on the CPU.")
 {
     return vm.makeVar<VarInt>(loc, Thread::hardware_concurrency());
 }
 
-Var *getCurrentThreadId(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(getCurrentThreadId, 0, false,
+           "  fn() -> Int\n"
+           "Returns the ID of the current thread.")
 {
     return vm.makeVar<VarInt>(loc, ThreadIdToNum(std::this_thread::get_id()));
 }
 
-Var *getCurrentThreadName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                          const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(getCurrentThreadName, 0, false,
+           "  fn() -> Str\n"
+           "Returns the name of the current thread.")
 {
     return vm.makeVar<VarStr>(loc, vm.getName());
 }
 
-Var *yieldCurrentThread(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(yieldCurrentThread, 0, false,
+           "  fn() -> Nil\n"
+           "Yields the current thread, freeing CPU to work on other threads on the system.")
 {
     std::this_thread::yield();
     return vm.getNil();
@@ -107,8 +111,11 @@ Var *yieldCurrentThread(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////// Thread //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *threadNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadNew, 1, true,
+           "  fn(callable, args...) -> Thread\n"
+           "Creates and returns a Thread instance which runs the `callable` with all of `args`.\n"
+           "Accepts optional argument:\n"
+           "  `name = '<threadName>'` to set the thread name, defaults to `FeralThread`.")
 {
     if(!args[1]->isCallable()) {
         vm.fail(loc, "expected callable argument for multithreaded execution, found: ",
@@ -133,20 +140,23 @@ Var *threadNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return t;
 }
 
-Var *threadGetId(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadGetId, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the ID of the Thread `var`.")
 {
     return vm.makeVar<VarInt>(loc, ThreadIdToNum(as<VarThread>(args[0])->getThreadId()));
 }
 
-Var *threadGetName(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadGetName, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the name of the Thread `var`.")
 {
     return vm.makeVar<VarStr>(loc, as<VarThread>(args[0])->getName());
 }
 
-Var *threadIsDone(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadIsDone, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the Thread `var` is finished with its task.")
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid()) return vm.getFalse();
@@ -154,8 +164,11 @@ Var *threadIsDone(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                                                                                : vm.getFalse();
 }
 
-Var *threadJoin(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadJoin, 0, false,
+           "  var.fn() -> Var | Nil\n"
+           "Joins the Thread `var` to the current thread, making the execution of the current "
+           "thread wait for `var` to end.\n"
+           "Returns the return value of `var`'s function, or nil if `var` wasn't valid.")
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid()) return vm.getNil();
@@ -164,8 +177,9 @@ Var *threadJoin(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return fut->get();
 }
 
-Var *threadGetRes(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(threadGetRes, 0, false,
+           "  var.fn() -> Var | Nil\n"
+           "Returns the return value of `var`'s function, or nil if `var` wasn't valid.")
 {
     SharedFuture<Var *> *&fut = as<VarThread>(args[0])->getFuture();
     if(!fut->valid() || fut->wait_for(std::chrono::seconds(0)) != std::future_status::ready)
@@ -177,20 +191,21 @@ INIT_MODULE(Thread)
 {
     VarModule *mod = vm.getCurrModule();
 
-    vm.registerType<VarThread>(loc, "Thread");
+    vm.registerType<VarThread>(
+        loc, "Thread", "Thread type - building block for multithreading / concurrent programming.");
 
     mod->addNativeFn(vm, "getConcurrency", getConcurrency);
     mod->addNativeFn(vm, "getCurrentId", getCurrentThreadId);
     mod->addNativeFn(vm, "getCurrentName", getCurrentThreadName);
     mod->addNativeFn(vm, "yield", yieldCurrentThread);
 
-    mod->addNativeFn(vm, "new", threadNew, 1, true);
+    mod->addNativeFn(vm, "new", threadNew);
 
-    vm.addNativeTypeFn<VarThread>(loc, "getId", threadGetId, 0);
-    vm.addNativeTypeFn<VarThread>(loc, "getName", threadGetName, 0);
-    vm.addNativeTypeFn<VarThread>(loc, "isDone", threadIsDone, 0);
-    vm.addNativeTypeFn<VarThread>(loc, "join", threadJoin, 0);
-    vm.addNativeTypeFn<VarThread>(loc, "getResult", threadGetRes, 0);
+    vm.addNativeTypeFn<VarThread>(loc, "getId", threadGetId);
+    vm.addNativeTypeFn<VarThread>(loc, "getName", threadGetName);
+    vm.addNativeTypeFn<VarThread>(loc, "isDone", threadIsDone);
+    vm.addNativeTypeFn<VarThread>(loc, "join", threadJoin);
+    vm.addNativeTypeFn<VarThread>(loc, "getResult", threadGetRes);
     return true;
 }
 

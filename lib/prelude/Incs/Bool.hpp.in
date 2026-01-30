@@ -1,40 +1,31 @@
-#define BoolComparison(name, op, opname)                                                         \
-    Var *bool##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                         \
-                    const StringMap<AssnArgData> &assnArgs)                                      \
-    {                                                                                            \
-        if(!args[1]->is<VarBool>()) {                                                            \
-            vm.fail(loc, "expected boolean argument for logical '", opname,                      \
-                    "', found: ", vm.getTypeName(args[1]));                                      \
-            return nullptr;                                                                      \
-        }                                                                                        \
-        return as<VarBool>(args[0])->getVal() op as<VarBool>(args[1])->getVal() ? vm.getTrue()   \
-                                                                                : vm.getFalse(); \
-    }
+#include "VM/Interpreter.hpp"
 
-// logical functions
-BoolComparison(LT, <, "<");
-BoolComparison(GT, >, ">");
-BoolComparison(LE, <=, "<=");
-BoolComparison(GE, >=, ">=");
+namespace fer
+{
 
-Var *boolEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolEQ, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if both `var` and `other` are equal.")
 {
     if(!args[1]->is<VarBool>()) return vm.getFalse();
     return as<VarBool>(args[0])->getVal() == as<VarBool>(args[1])->getVal() ? vm.getTrue()
                                                                             : vm.getFalse();
 }
 
-Var *boolNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolNE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if both `var` and `other` are not equal.")
 {
     if(!args[1]->is<VarBool>()) return vm.getTrue();
     return as<VarBool>(args[0])->getVal() != as<VarBool>(args[1])->getVal() ? vm.getTrue()
                                                                             : vm.getFalse();
 }
 
-Var *boolNot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolNot, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `false` if `var` is `true`.")
 {
     return as<VarBool>(args[0])->getVal() ? vm.getFalse() : vm.getTrue();
 }
+
+} // namespace fer

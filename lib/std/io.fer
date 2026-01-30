@@ -1,7 +1,13 @@
 loadlib('std/IO');
 
-inline if getOSName() == 'windows' {
+inline if feral.getOSName() == 'windows' {
+"
+Can be used to dump any output to the void.
+"
 let null = 'NUL';
 } else {
+"
+Can be used to dump any output to the void.
+"
 let null = '/dev/null';
 }

@@ -1,29 +1,42 @@
-Var *nilToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(nilToFlt, 0, false,
+           "  var.fn() -> Flt\n"
+           "Returns 0.0 which is the float equivalent of nil.")
 {
     return vm.makeVar<VarFlt>(loc, 0.0);
 }
 
-Var *boolToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolToFlt, 0, false,
+           "  var.fn() -> Flt\n"
+           "Returns `1.0` if `var` is `true`, `0.0` otherwise.")
 {
     return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->getVal() ? 1.0 : 0.0);
 }
 
-Var *intToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(intToFlt, 0, false,
+           "  var.fn() -> Flt\n"
+           "Converts the int `var` to float and returns it.")
 {
     return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getVal());
 }
 
-Var *fltToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltToFlt, 0, false,
+           "  var.fn() -> var\n"
+           "Returns `var` as is.")
 {
     return args[0];
 }
 
-Var *strToFlt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    strToFlt, 0, false,
+    "  var.fn() -> Flt\n"
+    "Converts the string `var` which should represent a float and returns it as a float type.")
 {
     return vm.makeVar<VarFlt>(loc, std::stod(as<VarStr>(args[0])->getVal()));
 }
+
+} // namespace fer

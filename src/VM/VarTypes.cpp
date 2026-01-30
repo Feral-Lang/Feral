@@ -19,7 +19,7 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, bool callable, bool attrBased) : loc(loc), ref(0), info(0)
+Var::Var(ModuleLoc loc, bool callable, bool attrBased) : loc(loc), ref(0), info(0), doc(nullptr)
 {
     if(callable) info |= (size_t)VarInfo::CALLABLE;
     if(attrBased) info |= (size_t)VarInfo::ATTR_BASED;
@@ -27,18 +27,21 @@ Var::Var(ModuleLoc loc, bool callable, bool attrBased) : loc(loc), ref(0), info(
 Var::~Var() {}
 
 void Var::create(MemoryManager &mem) { onCreate(mem); }
-void Var::destroy(MemoryManager &mem) { onDestroy(mem); }
+void Var::destroy(MemoryManager &mem)
+{
+    onDestroy(mem);
+    if(doc) decVarRef(mem, doc);
+}
 Var *Var::copy(MemoryManager &mem, ModuleLoc loc)
 {
     Var *res = onCopy(mem, loc);
-    if(!hasDoc()) { return res; }
-    res->setDoc(getDoc());
+    if(doc) res->setDoc(mem, doc);
     return res;
 }
 void Var::set(MemoryManager &mem, Var *from)
 {
     onSet(mem, from);
-    if(from->hasDoc()) doc = from->getDoc();
+    if(from->doc) setDoc(mem, from->doc);
 }
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
@@ -59,7 +62,16 @@ Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 void Var::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) {}
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
+void Var::getAttrList(MemoryManager &mem, VarVec *dest) {}
+size_t Var::getAttrCount() { return 0; }
 size_t Var::getSubType() { return getType(); }
+
+void Var::setDoc(MemoryManager &mem, VarStr *newDoc)
+{
+    if(newDoc) incVarRef(newDoc);
+    if(doc) decVarRef(mem, doc);
+    doc = newDoc;
+}
 
 void Var::dump(OStream &os, VirtualMachine *vm)
 {
@@ -325,6 +337,10 @@ Var *VarMap::getAttr(StringRef name)
     if(loc == this->val.end()) return nullptr;
     return loc->second;
 }
+void VarMap::getAttrList(MemoryManager &mem, VarVec *dest)
+{
+    for(auto &e : val) dest->push(makeVarWithRef<VarStr>(mem, dest->getLoc(), e.first));
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// VarMapIterator ///////////////////////////////////////////
@@ -384,7 +400,7 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
        (args.size() - 1 > params.size() && varArg.empty()))
     {
         vm.fail(loc, "arg count required: ", params.size(),
-                " (without default args: ", params.size() - assnArgs.size(),
+                " (without default args: ", (int64_t)params.size() - (int64_t)assnArgs.size(),
                 "); received: ", args.size() - 1);
         return nullptr;
     }
@@ -463,22 +479,39 @@ void VarModule::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 }
 bool VarModule::existsAttr(StringRef name) { return varStack->exists(name); }
 Var *VarModule::getAttr(StringRef name) { return varStack->get(name); }
-
-void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
-                            bool isVa)
+void VarModule::getAttrList(MemoryManager &mem, VarVec *dest)
 {
-    return addNativeFn(vm.getMemoryManager(), name, body, args, isVa);
+    VarFrame *frame = varStack->getFrameAt(0);
+    if(!frame) return;
+    auto &f = frame->get();
+    for(auto &e : f) dest->push(makeVarWithRef<VarStr>(mem, dest->getLoc(), e.first));
 }
-void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args,
-                            bool isVa)
+size_t VarModule::getAttrCount()
 {
-    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", isVa ? "." : "", args, 0,
-                                       FnBody{.native = body}, true);
-    for(size_t i = 0; i < args; ++i) res->pushParam("");
+    VarFrame *frame = varStack->getFrameAt(0);
+    if(!frame) return 0;
+    return frame->get().size();
+}
+
+void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj)
+{
+    return addNativeFn(vm.getMemoryManager(), name, fnObj);
+}
+void VarModule::addNativeFn(MemoryManager &mem, StringRef name, const FeralNativeFnDesc &fnObj)
+{
+    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", fnObj.isVariadic ? "." : "",
+                                       fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
+    if(!fnObj.doc.empty()) res->setDoc(mem, makeVar<VarStr>(mem, getLoc(), fnObj.doc));
+    for(size_t i = 0; i < fnObj.argCount; ++i) res->pushParam("");
     varStack->add(name, res, false);
 }
-void VarModule::addNativeVar(StringRef name, Var *val, bool iref)
+void VarModule::addNativeVar(VirtualMachine &vm, StringRef name, StringRef doc, Var *val, bool iref)
 {
+    addNativeVar(vm.getMemoryManager(), name, doc, val, iref);
+}
+void VarModule::addNativeVar(MemoryManager &mem, StringRef name, StringRef doc, Var *val, bool iref)
+{
+    if(!doc.empty()) val->setDoc(mem, makeVar<VarStr>(mem, getLoc(), doc));
     varStack->add(name, val, iref);
 }
 
@@ -567,6 +600,11 @@ Var *VarStructDef::getAttr(StringRef name)
     return loc->second;
 }
 
+void VarStructDef::getAttrList(MemoryManager &mem, VarVec *dest)
+{
+    for(auto &e : attrorder) dest->push(makeVarWithRef<VarStr>(mem, dest->getLoc(), e));
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarStruct ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -627,6 +665,11 @@ Var *VarStruct::getAttr(StringRef name)
     auto loc = attrs.find(name);
     if(loc == attrs.end()) return base ? base->getAttr(name) : nullptr;
     return loc->second;
+}
+
+void VarStruct::getAttrList(MemoryManager &mem, VarVec *dest)
+{
+    for(auto &e : attrs) dest->push(makeVarWithRef<VarStr>(mem, dest->getLoc(), e.first));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

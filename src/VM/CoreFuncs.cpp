@@ -41,8 +41,9 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
     return true;
 }
 
-Var *loadFile(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(loadFile, 1, false,
+           "  fn(file) -> Module\n"
+           "Imports a feral script `file` and returns the imported Module.")
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -58,8 +59,9 @@ Var *loadFile(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getModule(file);
 }
 
-Var *loadLibrary(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(loadLibrary, 1, false,
+           "  fn(file) -> Nil\n"
+           "Loads a native (C/C++) object `file`.")
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -73,12 +75,11 @@ Var *loadLibrary(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 void setupCoreFuncs(Interpreter &ip, ModuleLoc loc)
 {
-    ip.addNativeFn(loc, "import", loadFile, 1);
-    ip.addNativeFn(loc, "loadlib", loadLibrary, 1);
+    ip.addNativeFn(loc, "import", loadFile);
+    ip.addNativeFn(loc, "loadlib", loadLibrary);
 }
 
-Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC_DEF(basicModuleFinder)
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
@@ -98,8 +99,7 @@ Var *basicModuleFinder(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, modfile);
 }
 
-Var *basicErrorHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC_DEF(basicErrorHandler)
 {
     if(!args[1]->is<VarFailure>()) {
         vm.fail(loc, "expected argument of type failure, found: ", vm.getTypeName(args[1]));

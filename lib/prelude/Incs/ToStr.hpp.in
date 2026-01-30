@@ -1,5 +1,13 @@
-Var *allToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(allToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the type name and memory address of `var`.\n"
+           "This function is used as a default if a type doesn't implement its own `.str()` member "
+           "function.")
 {
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     res->getVal() += "Type: ";
@@ -11,28 +19,33 @@ Var *allToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *bytebufferToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(bytebufferToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts the bytes in the Bytebuffer `var` into a string and returns it.")
 {
     VarBytebuffer *self = as<VarBytebuffer>(args[0]);
     if(self->capacity() == 0) return vm.makeVar<VarStr>(loc, "");
     return vm.makeVar<VarStr>(loc, self->getBuf(), self->getLen());
 }
 
-Var *nilToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(nilToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns `'(nil)'`.")
 {
     return vm.makeVar<VarStr>(loc, "(nil)");
 }
 
-Var *boolToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns `'true'` if `var` is `true`, `'false'` otherwise.")
 {
     return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false");
 }
 
-Var *typeIDToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(typeIDToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the string representation of the typeID `var` with the ID as `number` as "
+           "`'typeid<number>'`.")
 {
     VarStr *res = vm.makeVar<VarStr>(loc, "typeid<");
     res->getVal() += std::to_string(as<VarTypeID>(args[0])->getVal());
@@ -40,32 +53,40 @@ Var *typeIDToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *intToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(intToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts the int `var` into a string and returns it.")
 {
     return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->getVal()));
 }
 
-Var *fltToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts the float `var` into a string and returns it.")
 {
     return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->getVal()));
 }
 
-Var *strToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strToStr, 0, false,
+           "  var.fn() -> var\n"
+           "Returns `var` as is.")
 {
     return args[0];
 }
 
-Var *failureToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(failureToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the message in the failure `var`.")
 {
     return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
 }
 
-Var *structToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(structToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns a string representation of all the fields and their respective values in the "
+           "struct `var`.\n"
+           "Each of the fields' values have their `.str()` member function invoked to get their "
+           "string representation.")
 {
     VarStruct *st = as<VarStruct>(args[0]);
     VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getSubType()));
@@ -90,6 +111,8 @@ Var *structToStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     res->getVal() += "}";
     return res;
 }
+
+} // namespace fer
 
 // TODO: vecToStr() must be done in feral code as Var::toStr() does not exist
 // TODO: mapToStr() must be done in feral code as Var::toStr() does not exist

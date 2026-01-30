@@ -15,14 +15,17 @@ enum class VarInfo
 struct AssnArgData;
 class VirtualMachine;
 
+class VarStr;
+class VarVec;
+
 class Var : public IAllocated
 {
-    StringRef doc;
     ModuleLoc loc;
     Atomic<ssize_t> ref;
-
     // for VarInfo
     size_t info;
+
+    VarStr *doc;
 
     friend class VirtualMachine;
 
@@ -68,7 +71,11 @@ public:
     virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
     virtual bool existsAttr(StringRef name);
     virtual Var *getAttr(StringRef name);
+    virtual void getAttrList(MemoryManager &mem, VarVec *dest);
+    virtual size_t getAttrCount();
     virtual size_t getSubType();
+
+    void setDoc(MemoryManager &mem, VarStr *newDoc);
     void dump(OStream &os, VirtualMachine *vm);
 
     template<typename T>
@@ -82,12 +89,10 @@ public:
         return dynamic_cast<T *>(this) != 0;
     }
 
-    // does NOT create a new String instance for the doc
-    inline void setDoc(StringRef newDoc) { doc = newDoc; }
     inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 
-    inline StringRef getDoc() const { return doc; }
-    inline bool hasDoc() const { return !doc.empty(); }
+    inline VarStr *getDoc() { return doc; }
+    inline bool hasDoc() const { return doc != nullptr; }
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 
@@ -360,6 +365,8 @@ public:
     void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
+    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    inline size_t getAttrCount() override { return val.size(); }
 
     inline StringMap<Var *> &getVal() { return val; }
     inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }
@@ -395,6 +402,33 @@ struct AssnArgData
 
 typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                          const StringMap<AssnArgData> &assnArgs);
+
+class FeralNativeFnDesc
+{
+public:
+    StringRef doc;
+    NativeFn fn;
+    size_t argCount;
+    bool isVariadic;
+
+    constexpr FeralNativeFnDesc(StringRef doc, NativeFn fn, size_t argCount, bool isVariadic)
+        : doc(doc), fn(fn), argCount(argCount), isVariadic(isVariadic)
+    {}
+};
+
+#define NATIVE_FUNC_SIGNATURE(name)                                       \
+    Var *func_##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, \
+                     const StringMap<AssnArgData> &assnArgs)
+
+#define FERAL_FUNC_DECL(name, argCount, isVariadic, doc) \
+    NATIVE_FUNC_SIGNATURE(name);                         \
+    static constexpr FeralNativeFnDesc name(doc, func_##name, argCount, isVariadic);
+#define FERAL_FUNC_DEF(name) NATIVE_FUNC_SIGNATURE(name)
+
+#define FERAL_FUNC(name, argCount, isVariadic, doc)                                  \
+    NATIVE_FUNC_SIGNATURE(name);                                                     \
+    static constexpr FeralNativeFnDesc name(doc, func_##name, argCount, isVariadic); \
+    NATIVE_FUNC_SIGNATURE(name)
 
 struct FeralFnBody
 {
@@ -473,12 +507,15 @@ public:
     void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
+    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    size_t getAttrCount() override;
 
-    void addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args = 0,
-                     bool isVa = false);
-    void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
-                     bool isVa = false);
-    void addNativeVar(StringRef name, Var *val, bool iref = true);
+    void addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj);
+    void addNativeFn(MemoryManager &mem, StringRef name, const FeralNativeFnDesc &fnObj);
+    void addNativeVar(VirtualMachine &vm, StringRef name, StringRef doc, Var *val,
+                      bool iref = true);
+    void addNativeVar(MemoryManager &mem, StringRef name, StringRef doc, Var *val,
+                      bool iref = true);
 
     inline StringRef getPath() { return path; }
     inline const Bytecode &getBytecode() { return bc; }
@@ -506,6 +543,8 @@ public:
     void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
     inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
     Var *getAttr(StringRef name) override;
+    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    inline size_t getAttrCount() override { return attrs.size(); }
 
     inline void pushAttrOrder(StringRef attr) { attrorder.emplace_back(attr); }
     inline void setAttrOrderAt(size_t idx, StringRef attr) { attrorder[idx] = attr; }
@@ -516,7 +555,6 @@ public:
     inline Span<String> getAttrOrder() { return attrorder; }
     inline StringRef getAttrOrderAt(size_t idx) { return attrorder[idx]; }
     inline size_t getID() { return id; }
-    inline size_t getAttrCount() { return attrs.size(); }
 };
 
 class VarStruct : public Var
@@ -538,14 +576,15 @@ public:
 
     void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
 
-    inline size_t getSubType() override { return id; }
-
     inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
     Var *getAttr(StringRef name) override;
+    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    inline size_t getAttrCount() override { return attrs.size(); }
+
+    inline size_t getSubType() override { return id; }
 
     inline const StringMap<Var *> &getAttrs() { return attrs; }
     inline VarStructDef *getBase() { return base; }
-    inline size_t getAttrCount() { return attrs.size(); }
 };
 
 class VarFailure : public Var

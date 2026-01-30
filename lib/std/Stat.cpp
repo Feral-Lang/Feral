@@ -28,8 +28,9 @@ namespace fer
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *statNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statNative, 2, false,
+           "  fn(statInst, path) -> Nil\n"
+           "Sets the Stat structure `statInst` to be the value of stat on `path`.")
 {
     if(!args[1]->is<VarStruct>()) {
         vm.fail(args[1]->getLoc(), "expected a struct (of type Stat) as first argument, found: ",
@@ -106,24 +107,27 @@ Var *statNative(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *statIsReg(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsReg, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `regular`.")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
     return S_ISREG(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsDir, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `directory`.")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
     return S_ISDIR(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsChr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsChr, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `character` (device).")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -131,32 +135,36 @@ Var *statIsChr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 #if !defined(CORE_OS_WINDOWS)
-Var *statIsBlk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsBlk, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `block` (device).")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
     return S_ISBLK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsFifo(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsFifo, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `fifo`.")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
     return S_ISFIFO(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsLnk(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsLnk, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `link`.")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
     return S_ISLNK(mode) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *statIsSock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(statIsSock, 1, false,
+           "  fn(statInst) -> Bool\n"
+           "Returns `true` if `mode` in `statInst` is `socket`.")
 {
     VarStruct *st = as<VarStruct>(args[1]);
     int mode      = as<VarInt>(st->getAttr("mode"))->getVal();
@@ -168,15 +176,15 @@ INIT_MODULE(Stat)
 {
     VarModule *mod = vm.getCurrModule();
 
-    mod->addNativeFn(vm, "statNative", statNative, 2);
-    mod->addNativeFn(vm, "isRegNative", statIsReg, 1);
-    mod->addNativeFn(vm, "isDirNative", statIsDir, 1);
-    mod->addNativeFn(vm, "isChrNative", statIsChr, 1);
+    mod->addNativeFn(vm, "statNative", statNative);
+    mod->addNativeFn(vm, "isRegNative", statIsReg);
+    mod->addNativeFn(vm, "isDirNative", statIsDir);
+    mod->addNativeFn(vm, "isChrNative", statIsChr);
 #if !defined(CORE_OS_WINDOWS)
-    mod->addNativeFn(vm, "isBlkNative", statIsBlk, 1);
-    mod->addNativeFn(vm, "isFifoNative", statIsFifo, 1);
-    mod->addNativeFn(vm, "isLnkNative", statIsLnk, 1);
-    mod->addNativeFn(vm, "isSockNative", statIsSock, 1);
+    mod->addNativeFn(vm, "isBlkNative", statIsBlk);
+    mod->addNativeFn(vm, "isFifoNative", statIsFifo);
+    mod->addNativeFn(vm, "isLnkNative", statIsLnk);
+    mod->addNativeFn(vm, "isSockNative", statIsSock);
 #endif
     return true;
 }

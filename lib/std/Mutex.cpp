@@ -52,33 +52,38 @@ void VarLockGuard::onDestroy(MemoryManager &mem)
 /////////////////////////////////////////// Mutexes //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *mutexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mutexNew, 0, false,
+           "  fn() -> Mutex\n"
+           "Creates and returns an instance of a Mutex.")
 {
     return vm.makeVar<VarMutex>(loc);
 }
 
-Var *recursiveMutexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                       const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(recursiveMutexNew, 0, false,
+           "  fn() -> RecursiveMutex\n"
+           "Creates and returns an instance of a RecursiveMutex.")
 {
     return vm.makeVar<VarRecursiveMutex>(loc);
 }
 
-Var *mutexLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mutexLock, 0, false,
+           "  var.fn() -> Nil\n"
+           "Locks the mutex `var`.")
 {
     as<VarMutexBase>(args[0])->lock();
     return vm.getNil();
 }
 
-Var *mutexTryLock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mutexTryLock, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if attempting to lock the mutex `var` succeeds.")
 {
     return as<VarMutexBase>(args[0])->tryLock() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mutexUnlock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mutexUnlock, 0, false,
+           "  var.fn() -> Nil\n"
+           "Unlocks the mutex `var`.")
 {
     as<VarMutexBase>(args[0])->unlock();
     return vm.getNil();
@@ -88,8 +93,9 @@ Var *mutexUnlock(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 ////////////////////////////////////////// LockGuard /////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *lockGuardNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(lockguardNew, 1, false,
+           "  fn(mutex) -> LockGuard\n"
+           "Creates and returns a lock guard, locking the `mutex`.")
 {
     if(!args[1]->isDerivedFrom<VarMutexBase>()) {
         vm.fail(loc, "expected a mutex argument for creating a lockguard, found: ",
@@ -103,20 +109,24 @@ INIT_MODULE(Mutex)
 {
     VarModule *mod = vm.getCurrModule();
 
-    vm.registerType<VarMutex>(loc, "Mutex");
-    vm.registerType<VarRecursiveMutex>(loc, "RecursiveMutex");
-    vm.registerType<VarLockGuard>(loc, "LockGuard");
+    vm.registerType<VarMutex>(loc, "Mutex", "Mutex to use for multithreading.");
+    vm.registerType<VarRecursiveMutex>(
+        loc, "RecursiveMutex",
+        "Unlike Mutex, this allows one thread to lock it over and over again.");
+    vm.registerType<VarLockGuard>(
+        loc, "LockGuard",
+        "An object that blocks a mutex and releases it when the object goes out of scope.");
 
     mod->addNativeFn(vm, "new", mutexNew);
     mod->addNativeFn(vm, "newRecursive", recursiveMutexNew);
-    mod->addNativeFn(vm, "newGuard", lockGuardNew, 1);
+    mod->addNativeFn(vm, "newGuard", lockguardNew);
 
-    vm.addNativeTypeFn<VarMutex>(loc, "lock", mutexLock, 0);
-    vm.addNativeTypeFn<VarMutex>(loc, "tryLock", mutexTryLock, 0);
-    vm.addNativeTypeFn<VarMutex>(loc, "unlock", mutexUnlock, 0);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "lock", mutexLock, 0);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "tryLock", mutexTryLock, 0);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "unlock", mutexUnlock, 0);
+    vm.addNativeTypeFn<VarMutex>(loc, "lock", mutexLock);
+    vm.addNativeTypeFn<VarMutex>(loc, "tryLock", mutexTryLock);
+    vm.addNativeTypeFn<VarMutex>(loc, "unlock", mutexUnlock);
+    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "lock", mutexLock);
+    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "tryLock", mutexTryLock);
+    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "unlock", mutexUnlock);
     return true;
 }
 

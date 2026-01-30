@@ -1,23 +1,47 @@
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is not equal to `rhs`.
+"
 let eq = fn(lhs, rhs) {
     if lhs == rhs { return; }
     raise('assertion `', lhs, '` == `', rhs, '` failed');
 };
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is equal to `rhs`.
+"
 let ne = fn(lhs, rhs) {
     if lhs != rhs { return; }
     raise('assertion `', lhs, '` != `', rhs, '` failed');
 };
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is not greater than `rhs`.
+"
 let gt = fn(lhs, rhs) {
     if lhs > rhs { return; }
     raise('assertion `', lhs, '` > `', rhs, '` failed');
 };
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is not less than `rhs`.
+"
 let lt = fn(lhs, rhs) {
     if lhs < rhs { return; }
     raise('assertion `', lhs, '` < `', rhs, '` failed');
 };
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is not greater than or equal to `rhs`.
+"
 let ge = fn(lhs, rhs) {
     if lhs >= rhs { return; }
     raise('assertion `', lhs, '` >= `', rhs, '` failed');
 };
+"
+  fn(lhs, rhs) -> Nil
+Raises an error if `lhs` is not less than or equal to `rhs`.
+"
 let le = fn(lhs, rhs) {
     if lhs <= rhs { return; }
     raise('assertion `', lhs, '` <= `', rhs, '` failed');

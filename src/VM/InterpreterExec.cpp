@@ -6,6 +6,7 @@ namespace fer
 int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, size_t end)
 {
     ++recurseCount;
+    MemoryManager &mem = getMemoryManager();
     VarModule *varmod  = getCurrModule();
     Vars &vars         = getVars();
     const Bytecode &bc = varmod->getBytecode();
@@ -31,6 +32,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
         // std::cout << "\n";
 
         if(ip.shouldStopExecution()) goto fail;
+        if(exitcalled) goto done;
 
         if(addFunc && recurseCount >= getRecurseMax()) {
             fail(ins.getLoc(), "stack overflow, current max: ", getRecurseMax());
@@ -71,7 +73,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                      ", but found none");
                 goto handleErr;
             }
-            if(ins.hasComment()) val->setDoc(ins.getComment());
+            if(ins.hasComment()) val->setDoc(mem, makeVar<VarStr>(ins.getLoc(), ins.getComment()));
             // only copy if reference count > 1 (no point in copying unique values)
             if(val->getRef() == 1) {
                 vars.add(name, val, true);
@@ -89,15 +91,14 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 // only copy if reference count > 1 (no point in copying unique
                 // values) or if loadAsRef() of value is false
                 if(val->getRef() == 1) {
-                    in->setAttr(getMemoryManager(), name, val, true);
+                    in->setAttr(mem, name, val, true);
                 } else {
-                    in->setAttr(getMemoryManager(), name, copyVar(ins.getLoc(), val), false);
+                    in->setAttr(mem, name, copyVar(ins.getLoc(), val), false);
                 }
             } else {
                 if(!val->isCallable()) {
-                    fail(ins.getLoc(),
-                         "only callables can be added to non "
-                         "attribute based types");
+                    fail(ins.getLoc(), "only callables can be added to non "
+                                       "attribute based types");
                     goto createFail;
                 }
                 addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->getVal() : in->getType(), name,

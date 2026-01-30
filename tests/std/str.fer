@@ -13,7 +13,7 @@ assert.eq(s.pop(), '12345');
 assert.eq(s.set(0, '0'), '02345');
 assert.eq(s.insert(1, '1'), '012345');
 assert.eq(s.erase(0), '12345');
-assert.eq(s.lastIdx(), 4);
+assert.eq(s.len() - 1, 4);
 assert.ge(s.find('123'), 0);
 assert.lt(s.find('0'), 0);
 

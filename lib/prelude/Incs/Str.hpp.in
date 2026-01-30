@@ -1,5 +1,11 @@
-Var *strAdd(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(strAdd, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Concatenates the strings `var` and `other` and returns the result.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -13,8 +19,9 @@ Var *strAdd(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strMul, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Returns a string that is `var`, `other` number of times.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for string multiplication, found: ",
@@ -28,8 +35,9 @@ Var *strMul(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *strAddAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strAssnAdd, 1, false,
+           "  var.fn(other) -> var\n"
+           "Concatenates the string `other` with `var` returns the updated `var`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for addition assignment, found: ",
@@ -41,8 +49,9 @@ Var *strAddAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strAssnMul, 1, false,
+           "  var.fn(other) -> var\n"
+           "Updates and returns `var` that is `var`, `other` number of times.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument for string multiplication assignment, found: ",
@@ -57,8 +66,9 @@ Var *strMulAssn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 // logical functions
 
-Var *strLT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strLT, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` is less than `other` lexicographically.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -70,8 +80,9 @@ Var *strLT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs < rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strGT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strGT, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` is greater than `other` lexicographically.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '>', found: ", vm.getTypeName(args[1]));
@@ -82,8 +93,9 @@ Var *strGT(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs > rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strLE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strLE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` is less than or equal to `other` lexicographically.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '<=', found: ", vm.getTypeName(args[1]));
@@ -94,8 +106,9 @@ Var *strLE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs <= rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strGE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strGE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` is greater than or equal to `other` lexicographically.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for '>=', found: ", vm.getTypeName(args[1]));
@@ -106,8 +119,9 @@ Var *strGE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs >= rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strEQ, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` represent same strings.")
 {
     if(!args[1]->is<VarStr>()) return vm.getFalse();
     StringRef lhs = as<VarStr>(args[0])->getVal();
@@ -115,8 +129,9 @@ Var *strEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs == rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strNE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` don't represent same strings.")
 {
     if(!args[1]->is<VarStr>()) return vm.getTrue();
     StringRef lhs = as<VarStr>(args[0])->getVal();
@@ -124,8 +139,10 @@ Var *strNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return lhs != rhs ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strAt, 1, false,
+           "  var.fn(index) -> Str | Nil\n"
+           "Returns the character in `var` at the given `index`, or `Nil` if `var` has less "
+           "characters than the provided index.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for string.at(), found: ",
@@ -142,49 +159,52 @@ Var *strAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 //////////////////////////////////////////// Utility /////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Vector<Var *> _strSplit(VirtualMachine &vm, ModuleLoc loc, StringRef data, StringRef delim,
-                        int64_t maxDelimCount);
-
 static inline void trim(String &s);
 
 size_t sizePow(size_t base, int exp);
 size_t strToBin(StringRef str);
 
-Var *strSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strSize, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of characters in the string `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size());
 }
 
-Var *strClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strClear, 0, false,
+           "  var.fn() -> Nil\n"
+           "Clears out the string `var`.")
 {
     as<VarStr>(args[0])->getVal().clear();
     return vm.getNil();
 }
 
-Var *strEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strEmpty, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the string `var` doesn't contain any characters / is empty.")
 {
     return as<VarStr>(args[0])->getVal().size() == 0 ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strFront, 0, false,
+           "  var.fn() -> Str | Nil\n"
+           "Returns the first character in the string `var` or `nil` if `var` is empty.")
 {
     const String &str = as<VarStr>(args[0])->getVal();
     return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.front());
 }
 
-Var *strBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strBack, 0, false,
+           "  var.fn() -> Str | Nil\n"
+           "Returns the last character in the string `var` or `nil` if `var` is empty.")
 {
     String &str = as<VarStr>(args[0])->getVal();
     return str.size() == 0 ? (Var *)vm.getNil() : (Var *)vm.makeVar<VarStr>(loc, str.back());
 }
 
-Var *strPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strPush, 1, false,
+           "  var.fn(source) -> var\n"
+           "Appends the `source` string into `var` and returns the updated `var`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -197,16 +217,19 @@ Var *strPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *strPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strPop, 0, false,
+           "  var.fn() -> var\n"
+           "Pops the last character from the string `var` if `var` is not empty, and returns the "
+           "updated `var`.")
 {
     String &str = as<VarStr>(args[0])->getVal();
     if(str.size() > 0) str.pop_back();
     return args[0];
 }
 
-Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strIsChAt, 2, false,
+           "  var.fn(position, char) -> Bool\n"
+           "Returns `true` if `var` contains `char` at index `position`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected first argument to be of type integer for index, found: ",
@@ -232,8 +255,9 @@ Var *strIsChAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return chars.find(dest[pos]) == String::npos ? vm.getFalse() : vm.getTrue();
 }
 
-Var *strSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strSetAt, 2, false,
+           "  var.fn(position, char) -> var\n"
+           "Sets `char` at index `position` in `var` and returns the updated `var`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected first argument to be of type integer for string.set(), found: ",
@@ -257,8 +281,9 @@ Var *strSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *strInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strInsert, 2, false,
+           "  var.fn(position, data) -> Bool\n"
+           "Inserts `data` at index `position` in `var` and returns the updated `var`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -285,8 +310,9 @@ Var *strInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *strErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strErase, 1, false,
+           "  var.fn(position) -> var\n"
+           "Removes the char at index `position` in `var` and returns the updated `var`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for string.erase(), found: ",
@@ -299,8 +325,10 @@ Var *strErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strFind, 1, false,
+           "  var.fn(data) -> Int\n"
+           "Returns the position / index of the first occurrence of `data` in `var`. If it's not "
+           "found, returns -1.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type str for string.find(), found: ",
@@ -314,8 +342,10 @@ Var *strFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, pos);
 }
 
-Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strRFind, 1, false,
+           "  var.fn(data) -> Int\n"
+           "Returns the position / index of the last occurrence of `data` in `var`. If it's not "
+           "found, returns -1.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type str for string.rfind(), found: ",
@@ -329,8 +359,7 @@ Var *strRFind(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, pos);
 }
 
-Var *strSubstr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strSubstrNative, 2, false, "")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected begin argument to be of type integer for string.substr(), found: ",
@@ -350,22 +379,20 @@ Var *strSubstr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, str.substr(pos, len));
 }
 
-Var *strLast(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
-{
-    return vm.makeVar<VarInt>(loc, as<VarStr>(args[0])->getVal().size() - 1);
-}
-
-Var *strTrim(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strTrim, 0, false,
+           "  var.fn() -> var\n"
+           "Trims the string `var` - removing any space/tab/newline characters from the beginning "
+           "and the end of the string, and returns the updated `var`.")
 {
     String &str = as<VarStr>(args[0])->getVal();
     trim(str);
     return args[0];
 }
 
-Var *strLower(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strLower, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts all the upper case charcters in the string `var` to lower case and returns "
+           "that as a new string.")
 {
     String str = as<VarStr>(args[0])->getVal();
     size_t len = str.size();
@@ -375,8 +402,10 @@ Var *strLower(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, str);
 }
 
-Var *strUpper(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strUpper, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts all the lower case charcters in the string `var` to upper case and returns "
+           "that as a new string.")
 {
     String str = as<VarStr>(args[0])->getVal();
     size_t len = str.size();
@@ -386,15 +415,15 @@ Var *strUpper(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, str);
 }
 
-Var *strSplit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strSplitNative, 2, false, "")
 {
-    VarStr *str = as<VarStr>(args[0]);
+    StringRef str = as<VarStr>(args[0])->getVal();
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for delimiter, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
-    if(as<VarStr>(args[1])->getVal().size() == 0) {
+    StringRef delim = as<VarStr>(args[1])->getVal();
+    if(delim.size() == 0) {
         vm.fail(loc, "found empty delimiter for string split");
         return nullptr;
     }
@@ -402,15 +431,31 @@ Var *strSplit(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         vm.fail(loc, "expected int argument for max delim count, found: ", vm.getTypeName(args[2]));
         return nullptr;
     }
-    StringRef delim       = as<VarStr>(args[1])->getVal();
-    int64_t maxDelimCount = as<VarInt>(args[2])->getVal();
-    if(maxDelimCount < 0) maxDelimCount = std::numeric_limits<int64_t>().max();
-    return vm.makeVar<VarVec>(
-        loc, std::move(_strSplit(vm, loc, str->getVal(), delim, maxDelimCount)), false);
+    int64_t _maxDelimCount = as<VarInt>(args[2])->getVal();
+    uint64_t maxDelimCount = std::numeric_limits<uint64_t>().max();
+    if(_maxDelimCount >= 0) maxDelimCount = _maxDelimCount;
+
+    VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
+    if(str.empty()) return res;
+    VarStr *temp       = vm.makeVarWithRef<VarStr>(loc, "");
+    int64_t delimCount = 0;
+    for(auto c : str) {
+        if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
+            ++delimCount;
+            if(temp->getVal().empty()) continue;
+            res->push(temp);
+            temp = vm.makeVarWithRef<VarStr>(loc, "");
+            continue;
+        }
+        temp->getVal() += c;
+    }
+    if(!temp->getVal().empty()) res->push(temp);
+    return res;
 }
 
-Var *strStartsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strStartsWith, 1, false,
+           "  var.fn(data) -> Bool\n"
+           "Returns `true` if the string `var` starts with `data`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string for string.starts_with(), found: ",
@@ -419,11 +464,12 @@ Var *strStartsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     }
     const String &str = as<VarStr>(args[0])->getVal();
     String &with      = as<VarStr>(args[1])->getVal();
-    return vm.makeVar<VarBool>(loc, str.rfind(with, 0) == 0);
+    return str.rfind(with, 0) == 0 ? vm.getTrue() : vm.getFalse();
 }
 
-Var *strEndsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strEndsWith, 1, false,
+           "  var.fn(data) -> Bool\n"
+           "Returns `true` if the string `var` ends with `data`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string for string.ends_with(), found: ",
@@ -436,8 +482,14 @@ Var *strEndsWith(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
 
-Var *strFormat(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    strFormat, 0, true,
+    "  var.fn(args...) -> Str\n"
+    "Applies `args` as the values in the template string `var` and returns the resulting string.\n"
+    "For example:\n"
+    "  let result = '1 + 2 = {} and 3 + 4 = {}'.fmt(1 + 2, 3 + 4);\n"
+    "Here, `result` will be:\n"
+    "  '1 + 2 = 3 and 3 + 4 = 7'")
 {
     String str    = as<VarStr>(args[0])->getVal();
     size_t argctr = 1;
@@ -483,8 +535,9 @@ Var *strFormat(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, std::move(str));
 }
 
-Var *hexStrToBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(hexStrToBinStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts a hexadecimal string `var` to binary string and returns it.")
 {
     static std::unordered_map<char, const char *> hextobin = {
         {'0', "0000"}, {'1', "0001"}, {'2', "0010"}, {'3', "0011"}, {'4', "0100"}, {'5', "0101"},
@@ -506,8 +559,9 @@ Var *hexStrToBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, bin);
 }
 
-Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(utf8CharFromBinStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the UTF-8 encoded character as a string from a binary string `var`.")
 {
     String str = as<VarStr>(args[0])->getVal();
     if(str.empty()) return vm.makeVar<VarStr>(loc, "");
@@ -551,8 +605,9 @@ Var *utf8CharFromBinStr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 // character (str[0]) to its ASCII (int)
-Var *byt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-         const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(byt, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the first character (byte) in the string `var` as an integer.")
 {
     const String &str = as<VarStr>(args[0])->getVal();
     if(str.empty()) return vm.makeVar<VarInt>(loc, 0);
@@ -560,35 +615,17 @@ Var *byt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 }
 
 // ASCII (int) to character (str)
-Var *chr(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-         const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(chr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts the integer `var` (1 byte) into a character and returns it as a string.")
 {
     uint8_t byt = (uint8_t)as<VarInt>(args[0])->getVal();
     return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 
-Vector<Var *> _strSplit(VirtualMachine &vm, ModuleLoc loc, StringRef data, StringRef delim,
-                        int64_t maxDelimCount)
-{
-    String temp;
-    Vector<Var *> vec;
-    int64_t delimCount = 0;
-    for(auto c : data) {
-        if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
-            ++delimCount;
-            if(temp.empty()) continue;
-            vec.push_back(vm.makeVarWithRef<VarStr>(loc, temp));
-            temp.clear();
-            continue;
-        }
-        temp += c;
-    }
-    if(!temp.empty()) vec.push_back(vm.makeVarWithRef<VarStr>(loc, temp));
-    return vec;
-}
-
-Var *strReplace(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strReplace, 2, false,
+           "  var.fn(from, to) -> Str\n"
+           "Replaces `from` with `to` in string `var` and returns the resulting string.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -648,3 +685,5 @@ size_t strToBin(StringRef str)
     }
     return bin;
 }
+
+} // namespace fer

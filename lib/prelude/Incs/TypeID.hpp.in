@@ -1,15 +1,24 @@
-Var *typeIDEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(typeIDEq, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Returns `true` if `var` and `other` contain the same type IDs.")
 {
     if(!args[1]->is<VarTypeID>()) { return vm.getFalse(); }
     return as<VarTypeID>(args[0])->getVal() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
                                                                                 : vm.getFalse();
 }
 
-Var *typeIDNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(typeIDNe, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Returns `true` if `var` and `other` do not contain the same type IDs.")
 {
     if(!args[1]->is<VarTypeID>()) { return vm.getTrue(); }
     return as<VarTypeID>(args[0])->getVal() != as<VarTypeID>(args[1])->getVal() ? vm.getTrue()
                                                                                 : vm.getFalse();
 }
+
+} // namespace fer

@@ -1,7 +1,7 @@
 loadlib('std/Stat');
 
 # Windows does not have blksize and blocks field in the stat struct.
-inline if getOSName() == 'windows' {
+inline if feral.getOSName() == 'windows' {
 let Stat = struct(
     dev = 0,
     ino = 0,
@@ -39,7 +39,7 @@ let isReg  in Stat = fn() { return isRegNative(self);  };
 let isDir  in Stat = fn() { return isDirNative(self);  };
 let isChr  in Stat = fn() { return isChrNative(self);  };
 
-inline if getOSName() != 'windows' {
+inline if feral.getOSName() != 'windows' {
 let isBlk  in Stat = fn() { return isBlkNative(self);  };
 let isFifo in Stat = fn() { return isFifoNative(self); };
 let isLnk  in Stat = fn() { return isLnkNative(self);  };

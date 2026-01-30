@@ -13,12 +13,41 @@ let Arg = struct(
 );
 Arg.setTypeName('Arg');
 
+"
+  var.fn(name) -> var
+Sets the `name` of Arg `var` and returns `var` itself.
+"
 let setName in Arg = fn(name) { self.name = name; return ref(self); };
+"
+  var.fn(help) -> var
+Sets the `help` string of Arg `var` and returns `var` itself.
+"
 let setHelp in Arg = fn(help) { self.help = help; return ref(self); };
+"
+  var.fn(val) -> var
+Sets the `val` of Arg `var` and returns `var` itself.
+"
 let setVal in Arg = fn(val) { self.val = val; return ref(self); };
+"
+  var.fn(reqd) -> var
+Sets the `isRequired` flag of Arg `var` using `reqd` and returns `var` itself.
+"
 let setReqd in Arg = fn(reqd) { self.reqd = reqd; return ref(self); };
+"
+  var.fn(valReqd) -> var
+Sets the `isValueRequired` flag of Arg `var` using `valReqd` and returns `var` itself.
+"
 let setValReqd in Arg = fn(valReqd) { self.valReqd = valReqd; return ref(self); };
+"
+  var.fn(found) -> var
+Sets the `isFound` flag of Arg `var` using `found` and returns `var` itself.
+"
 let setFound in Arg = fn(found) { self.found = found; return ref(self); };
+"
+  var.fn(opts...) -> var
+Adds each of the `opts` in Arg `var` and returns `var` itself.
+Each of the `opts` is expected to be a string.
+"
 let addOpts in Arg = fn(opts...) {
     for o in opts.each() {
         self.opts.push(o);
@@ -26,16 +55,55 @@ let addOpts in Arg = fn(opts...) {
     return ref(self);
 };
 
+"
+  var.fn() -> Str
+Returns the name in the Arg `var`.
+"
 let getName in Arg = fn() { return self.name; };
+"
+  var.fn() -> Str
+Returns the help string in the Arg `var`.
+"
 let getHelp in Arg = fn() { return self.help; };
+"
+  var.fn() -> Vec<Str>
+Returns the list of options in the Arg `var`.
+"
 let getOpts in Arg = fn() { return self.opts; };
+"
+  var.fn() -> Str
+Returns the value in the Arg `var`.
+"
 let getVal in Arg = fn() { return self.val; };
+"
+  var.fn() -> Bool
+Returns `true` if Arg `var` is required.
+"
 let isRequired in Arg = fn() { return self.reqd; };
+"
+  var.fn() -> Bool
+Returns `true` if Arg `var` is a positional parameter.
+"
 let isPositional in Arg = fn() { return self.opts.empty(); };
+"
+  var.fn() -> Bool
+Returns `true` if Arg `var` requires a value (ie. it's not a flag).
+"
 let requiresValue in Arg = fn() { return self.valReqd || self.isPositional(); };
+"
+  var.fn() -> Bool
+Returns `true` if Arg `var` is found after parsing.
+"
 let isFound in Arg = fn() { return self.found; };
+"
+  var.fn(index) -> Str | Nil
+Returns the option at the given `index`, or `nil` if `index` is out of bounds.
+"
 let getOpt in Arg = fn(idx) { return self.opts[idx]; };
-
+"
+  var.fn(opt) -> Bool
+Returns `true` if Arg `var` contains the option string `opt`.
+"
 let hasOpt in Arg = fn(opt) { return self.opts.find(opt); };
 
 ###############################################################################################
@@ -49,6 +117,10 @@ let ArgParser = struct(
 );
 ArgParser.setTypeName('ArgParser');
 
+"
+  fn(args) -> ArgParser
+Creates and returns a new ArgParser instance which will parse `args`.
+"
 let new = fn(args) {
     let parser = ArgParser();
     for a in args.each() {
@@ -58,14 +130,27 @@ let new = fn(args) {
     return ref(parser);
 };
 
+"
+  var.fn(name) -> Nil
+Sets the last argument in the ArgParser `var`, after which all arguments are simply stored as a list and not parsed.
+"
 let setLastArg in ArgParser = fn(name) { self.lastParsedArg = name; };
 
+"
+  var.fn(name) -> Arg
+Adds a parameter with name `name` to the ArgParser `var` and returns the added Arg.
+The options, help, etc. for the Arg can be added using this returned object.
+"
 let addArg in ArgParser = fn(name) {
     let a = Arg(name = name);
     self.argDefs.push(a);
     return ref(a);
 };
 
+"
+  var.fn(name) -> Arg | Nil
+Returns the Arg associated with `name` in ArgParser `var`, or `nil` if not found.
+"
 let getArg in ArgParser = fn(name) {
     for a in self.argDefs.each() {
         if a.getName() == name { return ref(a); }
@@ -73,6 +158,10 @@ let getArg in ArgParser = fn(name) {
     return nil;
 };
 
+"
+  var.fn(name) -> Bool
+Returns `true` if the ArgParser `var` contains an Arg named `name`.
+"
 let has in ArgParser = fn(name) {
     for a in self.argDefs.each() {
         if a.getName() != name { continue; }
@@ -81,6 +170,10 @@ let has in ArgParser = fn(name) {
     return false;
 };
 
+"
+  var.fn(name) -> Str | Nil
+Returns the value for Arg named `name` in ArgParser `var`, or empty string if not found.
+"
 let getValue in ArgParser = fn(name) {
     for a in self.argDefs.each() {
         if a.getName() != name { continue; }
@@ -89,6 +182,10 @@ let getValue in ArgParser = fn(name) {
     return "";
 };
 
+"
+  var.fn() -> Vec<Str>
+Returns a list of all passthrough args - all the arguments remaining after last parsed arg to the end.
+"
 let getPassthrough in ArgParser = fn() {
     let res = vec.new(refs = true);
     if self.passThroughFrom == -1 || self.passThroughFrom >= self.argv.len() { return res; }
@@ -98,6 +195,10 @@ let getPassthrough in ArgParser = fn() {
     return res;
 };
 
+"
+  var.fn(from = 0) -> Nil
+Parse all the arguments in ArgParser `var`, starting with index `from`.
+"
 let parse in ArgParser = fn(from = 0) {
     let expectKey = '';
     let expectingValIdx = -1;
@@ -166,7 +267,10 @@ let parse in ArgParser = fn(from = 0) {
     }
 };
 
-# file:  like io.stdout
+"
+  var.fn(file) -> Nil
+Prints the help message using `file`, which must be an instance of `File` (like io.stdout).
+"
 let printHelp in ArgParser = fn(file) {
     io.fprint(file, 'Usage: <script>');
     for a in self.argDefs.each() {

@@ -37,8 +37,9 @@ bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *cap
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *regexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(regexNew, 2, false,
+           "  fn(regex, flags) -> Regex\n"
+           "Creates and returns an instance of Regex using `regex` string and `flags`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected regex to be a string, found: ", vm.getTypeName(args[1]));
@@ -52,8 +53,14 @@ Var *regexNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                                 (std::regex::flag_type)as<VarInt>(args[2])->getVal());
 }
 
-Var *regexMatch(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(regexMatch, 3, false,
+           "  var.fn(data, dest, ignoreFirstMatch) -> Bool\n"
+           "Matches the regex `var` with `data`. Stores any captured result in `dest`.\n"
+           "Returns `true` if the match succeeds.\n"
+           "`dest` can be either of string, vector, or nil, depending on if resulting match should "
+           "be returned, and how.\n"
+           "If `ignoreFirstMatch` is `true`, first match (usually full string `data`) is ignored "
+           "from being put in `dest`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected regex target to be a string, found: ", vm.getTypeName(args[1]));
@@ -82,25 +89,39 @@ INIT_MODULE(Regex)
 {
     VarModule *mod = vm.getCurrModule();
 
-    vm.registerType<VarRegex>(loc, "Regex");
+    vm.registerType<VarRegex>(loc, "Regex", "The regex type for performing regex matching.");
 
-    vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch, 3);
+    vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch);
 
-    mod->addNativeFn(vm, "newNative", regexNew, 2, false);
+    mod->addNativeFn(vm, "newNative", regexNew);
 
-    mod->addNativeVar("icase", vm.makeVar<VarInt>(loc, std::regex_constants::icase));
-    mod->addNativeVar("nosubs", vm.makeVar<VarInt>(loc, std::regex_constants::nosubs));
-    mod->addNativeVar("optimize", vm.makeVar<VarInt>(loc, std::regex_constants::optimize));
-    mod->addNativeVar("collate", vm.makeVar<VarInt>(loc, std::regex_constants::collate));
-    mod->addNativeVar("ecmascript", vm.makeVar<VarInt>(loc, std::regex_constants::ECMAScript));
-    mod->addNativeVar("basic", vm.makeVar<VarInt>(loc, std::regex_constants::basic));
-    mod->addNativeVar("extended", vm.makeVar<VarInt>(loc, std::regex_constants::extended));
-    mod->addNativeVar("awk", vm.makeVar<VarInt>(loc, std::regex_constants::awk));
-    mod->addNativeVar("grep", vm.makeVar<VarInt>(loc, std::regex_constants::grep));
-    mod->addNativeVar("egrep", vm.makeVar<VarInt>(loc, std::regex_constants::egrep));
+    mod->addNativeVar(vm, "icase", "Ignore case.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::icase));
+    mod->addNativeVar(vm, "nosubs",
+                      "When a regular expression is matched against a character "
+                      "container sequence, don't store sub-expression matches.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::nosubs));
+    mod->addNativeVar(vm, "optimize", "Optimize regex for matching speed.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::optimize));
+    mod->addNativeVar(vm, "collate", "Make the character ranges like [a-b] locale sensitive.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::collate));
+    mod->addNativeVar(vm, "ecmascript", "Use the ECMAScript regex format.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::ECMAScript));
+    mod->addNativeVar(vm, "basic", "Use the basic regex format.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::basic));
+    mod->addNativeVar(vm, "extended", "Use the extended regex format.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::extended));
+    mod->addNativeVar(vm, "awk", "Use `awk` grammer.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::awk));
+    mod->addNativeVar(vm, "grep", "Use `grep` grammer.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::grep));
+    mod->addNativeVar(vm, "egrep", "Use `grep -E` grammer - consider newlines as whitespace.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::egrep));
     // Not sure why but multiline is undefined on Windows MSVC at the moment.
 #if !defined(CORE_OS_WINDOWS) && (__cplusplus >= 201703L || !defined __STRICT_ANSI__)
-    mod->addNativeVar("multiline", vm.makeVar<VarInt>(loc, std::regex_constants::multiline));
+    mod->addNativeVar(vm, "multiline",
+                      "Makes `^` and `$` work on each line and not the whole input.",
+                      vm.makeVar<VarInt>(loc, std::regex_constants::multiline));
 #endif
     return true;
 }

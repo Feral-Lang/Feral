@@ -6,15 +6,24 @@ let vec = import('std/vec');
 # API
 ###################################################################################################
 
+"
+  fn(data) -> Var
+Loads the `data` string that represents FeCL code and returns its equivalent Feral object.
+"
 let loads = fn(data) {
     let toks = Tokenize(data);
     return Parse(toks, toks.len());
 };
 
+"
+  fn(data, indentLevel = -1, indentWith = ' ') -> Str
+Creates and returns a string that is the representation of the `data` object in FeCL format.
+Uses `indentLevel` and `indentWith` to format the string.
+"
 let dumps = fn(obj, indentLevel = -1, indentWith = ' ') {
     let res = obj.feclString(indentLevel, indentWith, true);
     if res.empty() {
-        raise('type ' + obj._typename_() + ' does not implement FeCL serialization');
+        raise('type ' + feral.getTypeName(obj) + ' does not implement FeCL serialization');
     }
     res.trim();
     return res;

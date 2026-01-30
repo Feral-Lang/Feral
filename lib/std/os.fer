@@ -10,7 +10,7 @@ let fs = import('std/fs');
 #   linux
 #   macos
 #   bsd
-let name = getOSName();
+let name = feral.getOSName();
 # OS distro, current possible values:
 #   windows
 #   windows64
@@ -23,7 +23,7 @@ let name = getOSName();
 #   openbsd
 #   bsdi
 #   dragonflybsd
-let distro = getOSDistro();
+let distro = feral.getOSDistro();
 
 # chmod command wrapper
 inline if name != 'windows' {

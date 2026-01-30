@@ -1,6 +1,14 @@
+#include <cmath> // std::round()
+
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
 #define ARITHF_FUNC(fn, oper)                                                           \
-    Var *flt##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                   \
-                 const StringMap<AssnArgData> &assnArgs)                                \
+    FERAL_FUNC(flt##fn, 1, false,                                                       \
+               "  var.fn(other) -> Flt\n"                                               \
+               "Float operation " STRINGIFY(fn) " between `var` and `other`.")          \
     {                                                                                   \
         if(args[1]->is<VarInt>()) {                                                     \
             return vm.makeVar<VarFlt>(                                                  \
@@ -14,27 +22,30 @@
         return nullptr;                                                                 \
     }
 
-#define ARITHF_ASSN_FUNC(fn, oper)                                                      \
-    Var *fltAssn##fn(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,               \
-                     const StringMap<AssnArgData> &assnArgs)                            \
-    {                                                                                   \
-        if(args[1]->is<VarInt>()) {                                                     \
-            as<VarFlt>(args[0])->setVal(                                                \
-                as<VarFlt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());      \
-            return args[0];                                                             \
-        } else if(args[1]->is<VarFlt>()) {                                              \
-            as<VarFlt>(args[0])->setVal(                                                \
-                as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal());      \
-            return args[0];                                                             \
-        }                                                                               \
-        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) "-assn, found: ", \
-                vm.getTypeName(args[1]));                                               \
-        return nullptr;                                                                 \
+#define ARITHF_ASSN_FUNC(fn, oper)                                                                \
+    FERAL_FUNC(                                                                                   \
+        fltAssn##fn, 1, false,                                                                    \
+        "  var.fn(other) -> var\n"                                                                \
+        "Float assignment operation " STRINGIFY(fn) " between `var` and `other`, returns `var`.") \
+    {                                                                                             \
+        if(args[1]->is<VarInt>()) {                                                               \
+            as<VarFlt>(args[0])->setVal(                                                          \
+                as<VarFlt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());                \
+            return args[0];                                                                       \
+        } else if(args[1]->is<VarFlt>()) {                                                        \
+            as<VarFlt>(args[0])->setVal(                                                          \
+                as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal());                \
+            return args[0];                                                                       \
+        }                                                                                         \
+        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) "-assn, found: ",           \
+                vm.getTypeName(args[1]));                                                         \
+        return nullptr;                                                                           \
     }
 
-#define LOGICF_FUNC(name, checksym)                                                     \
-    Var *flt##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,                 \
-                   const StringMap<AssnArgData> &assnArgs)                              \
+#define LOGICF_FUNC(fn, checksym)                                                       \
+    FERAL_FUNC(flt##fn, 1, false,                                                       \
+               "  var.fn(other) -> Bool\n"                                              \
+               "Float logical operation " STRINGIFY(fn) " between `var` and `other`.")  \
     {                                                                                   \
         if(args[1]->is<VarFlt>()) {                                                     \
             return as<VarFlt>(args[0])->getVal() checksym as<VarFlt>(args[1])->getVal() \
@@ -46,7 +57,7 @@
                        ? vm.getTrue()                                                   \
                        : vm.getFalse();                                                 \
         }                                                                               \
-        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(name) ", found: ",    \
+        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) ", found: ",      \
                 vm.getTypeName(args[1]));                                               \
         return nullptr;                                                                 \
     }
@@ -66,8 +77,9 @@ LOGICF_FUNC(GT, >)
 LOGICF_FUNC(LE, <=)
 LOGICF_FUNC(GE, >=)
 
-Var *fltEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltEQ, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` are equal.")
 {
     if(!args[1]->is<VarFlt>()) return vm.getFalse();
     return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) < (double)0.0001
@@ -75,8 +87,9 @@ Var *fltEQ(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                : vm.getFalse();
 }
 
-Var *fltNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltNE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` are not equal.")
 {
     if(!args[1]->is<VarFlt>()) return vm.getTrue();
     return std::fabs(as<VarFlt>(args[0])->getVal() - as<VarFlt>(args[1])->getVal()) < (double)0.0001
@@ -84,50 +97,57 @@ Var *fltNE(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                : vm.getTrue();
 }
 
-Var *fltPreInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltPreInc, 0, false,
+           "  var.fn() -> var\n"
+           "Increments `var` and returns itself.")
 {
     as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() + 1);
     return args[0];
 }
 
-Var *fltPostInc(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltPostInc, 0, false,
+           "  var.fn() -> Flt\n"
+           "Increments `var` and returns the previous value.")
 {
     VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->getVal());
     as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() + 1);
     return res;
 }
 
-Var *fltPreDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltPreDec, 0, false,
+           "  var.fn() -> var\n"
+           "Decrements `var` and returns itself.")
 {
     as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() - 1);
     return args[0];
 }
 
-Var *fltPostDec(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltPostDec, 0, false,
+           "  var.fn() -> Flt\n"
+           "Decrements `var` and returns the previous value.")
 {
     VarFlt *res = vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->getVal());
     as<VarFlt>(args[0])->setVal(as<VarFlt>(args[0])->getVal() - 1);
     return res;
 }
 
-Var *fltUSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltUSub, 0, false,
+           "  var.fn() -> Flt\n"
+           "Returns negative value of `var`.")
 {
     return vm.makeVar<VarFlt>(loc, -as<VarFlt>(args[0])->getVal());
 }
 
-Var *fltRound(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltRound, 0, false,
+           "  var.fn() -> Int\n"
+           "Rounds off the value in `var` and returns an `int` out of it.")
 {
     return vm.makeVar<VarInt>(loc, std::round(as<VarFlt>(args[0])->getVal()));
 }
 
-Var *fltPow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltPow, 1, false,
+           "  var.fn(exponent) -> Flt\n"
+           "Returns the value of `var` raised to the power of `exponent`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "power must be an integer, found: ", vm.getTypeName(args[1]));
@@ -137,8 +157,11 @@ Var *fltPow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         loc, std::pow(as<VarFlt>(args[0])->getVal(), as<VarInt>(args[1])->getVal()));
 }
 
-Var *fltSqRoot(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltSqRoot, 0, false,
+           "  var.fn() -> Flt\n"
+           "Returns the square root of `var`.")
 {
     return vm.makeVar<VarFlt>(loc, std::sqrt(as<VarFlt>(args[0])->getVal()));
 }
+
+} // namespace fer

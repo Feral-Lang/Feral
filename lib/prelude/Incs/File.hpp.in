@@ -1,3 +1,11 @@
+#include <fcntl.h>
+#include <filesystem> // used by File.hpp.in
+
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
 enum WalkEntry
 {
     FILES   = 1 << 0,
@@ -36,8 +44,7 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr,
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsFopen, 3, false, "")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -64,8 +71,7 @@ Var *fsOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarFile>(loc, file, mode, mustClose);
 }
 
-Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsWalkDir, 3, false, "")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -99,8 +105,9 @@ Var *fsWalkDir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsAbsPath, 1, false,
+           "  fn(path) -> str\n"
+           "Get the absolute path from the given (relative) path.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -110,8 +117,7 @@ Var *fsAbsPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
 }
 
-Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileReopenNative, 2, false, "")
 {
     VarFile *filev = as<VarFile>(args[0]);
     if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
@@ -137,8 +143,9 @@ Var *fileReopen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileLines, 0, false,
+           "  var.fn() -> Vec<str>\n"
+           "Read all lines in the File `var`, and return them as a list separated by newlines.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     char *lineptr    = NULL;
@@ -160,13 +167,15 @@ Var *fileLines(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileSeek, 2, false,
+           "  var.fn(offset, origin) -> Int\n"
+           "Move the position of File `var` from `origin` by `offset` bytes.\n"
+           "`origin` can be one of SEEK_SET / SEEK_CURR / SEEK_END.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
-                "expected int argument for file seek position, found: ", vm.getTypeName(args[1]));
+                "expected int argument for file seek offset, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
     if(!args[2]->is<VarInt>()) {
@@ -174,19 +183,23 @@ Var *fileSeek(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                 "expected int argument for file seek origin, found: ", vm.getTypeName(args[2]));
         return nullptr;
     }
-    long pos   = as<VarInt>(args[1])->getVal();
-    int origin = as<VarInt>(args[2])->getVal();
-    return vm.makeVar<VarInt>(loc, fseek(file, pos, origin));
+    long offset = as<VarInt>(args[1])->getVal();
+    int origin  = as<VarInt>(args[2])->getVal();
+    return vm.makeVar<VarInt>(loc, fseek(file, offset, origin));
 }
 
-Var *fileEachLine(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileEachLine, 0, false,
+           "  var.fn() -> FileIterator\n"
+           "Create and return an iterator from File `var`.\n"
+           "This iterator can be used to loop through each line.")
 {
     return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
 }
 
-Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                      const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileIteratorNext, 0, false,
+           "  var.fn() -> Str | Nil\n"
+           "Fetch the next line from the FileIterator `var`.\n"
+           "This function is mainly used by for-in loop.")
 {
     VarFileIterator *it = as<VarFileIterator>(args[0]);
     VarStr *res         = vm.makeVar<VarStr>(loc, "");
@@ -197,8 +210,9 @@ Var *fileIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileReadAll, 0, false,
+           "  var.fn() -> Str\n"
+           "Read all lines in the File `var` and return a string containing them all.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     char *lineptr    = NULL;
@@ -217,8 +231,9 @@ Var *fileReadAll(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                    const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fileReadBlocks, 2, false,
+           "  var.fn(blockBegin, blockEnd) -> Vec<Str>\n"
+           "Retrieve a list of lines between `blockBegin` and `blockEnd` in File `var`.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
 
@@ -290,8 +305,9 @@ Var *fileReadBlocks(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 // TODO: write tests
 
 // equivalent to open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)
-Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fdCreate, 2, false,
+           "  fn(path, mode = 'r') -> Int\n"
+           "Create and return a file descriptor using the `path` and `mode` strings.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -310,8 +326,7 @@ Var *fdCreate(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fdOpen, 2, false, "")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -330,8 +345,10 @@ Var *fdOpen(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fdRead, 2, false,
+           "  fn(fileDescriptor, bytebufferData) -> Int\n"
+           "Given a `fileDescriptor`, read up to capacity of `bytebufferData` bytes from it.\n"
+           "Returns number of read bytes.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -354,8 +371,9 @@ Var *fdRead(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fdWrite, 2, false,
+           "  fn(fileDescriptor, bytebufferData | str) -> Int\n"
+           "Given a `fileDescriptor`, write `bytebufferData` / `str` to it.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -387,8 +405,9 @@ Var *fdWrite(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fdClose, 1, false,
+           "  fn(fileDescriptor) -> Int\n"
+           "Close the given `fileDescriptor` and return the status.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
@@ -403,8 +422,9 @@ Var *fdClose(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.makeVar<VarInt>(loc, res);
 }
 
-Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsExists, 1, false,
+           "  fn(path) -> Bool\n"
+           "Returns if the given `path` exists or not.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
@@ -413,8 +433,10 @@ Var *fsExists(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
 }
 
-Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsInstall, 2, false,
+           "  fn(source, destination) -> Nil\n"
+           "Copy the `source` file to `destination`.\n"
+           "Creates parent directories for `desination` as needed.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for source, found: ", vm.getTypeName(args[1]));
@@ -426,7 +448,7 @@ Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     }
     const String &src  = as<VarStr>(args[1])->getVal();
     const String &dest = as<VarStr>(args[2])->getVal();
-    if(src.empty() || dest.empty()) return vm.makeVar<VarInt>(loc, 0);
+    if(src.empty() || dest.empty()) return vm.getNil();
 
     StringRef parent = fs::parentDir(dest);
 
@@ -445,8 +467,9 @@ Var *fsInstall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsMkdir, 1, true,
+           "  fn(paths...) -> Nil\n"
+           "Creates all directories in `paths`.")
 {
     for(size_t i = 1; i < args.size(); ++i) {
         if(!args[i]->is<VarStr>()) {
@@ -465,8 +488,9 @@ Var *fsMkdir(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsMklink, 2, false,
+           "  fn(source, destination) -> Nil\n"
+           "Creates a symbolic link at `destination` from `source`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc,
@@ -474,7 +498,7 @@ Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
         return nullptr;
     }
     if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for copy destination argument, found: ",
+        vm.fail(loc, "expected string argument for mklink destination argument, found: ",
                 vm.getTypeName(args[2]));
         return nullptr;
     }
@@ -488,8 +512,9 @@ Var *fsMklink(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsRemove, 1, true,
+           "  fn(paths...) -> Nil\n"
+           "Removes all the given `paths`, will also delete any subfolders/files if present.")
 {
     for(size_t i = 1; i < args.size(); ++i) {
         if(!args[i]->is<VarStr>()) {
@@ -508,8 +533,9 @@ Var *fsRemove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsCopy, 2, true,
+           "  fn(sources..., destination) -> Nil\n"
+           "Copies all `sources` to `destination`.")
 {
     // args must have: nullptr, [src]+, dest
     if(args.size() < 3) {
@@ -541,8 +567,9 @@ Var *fsCopy(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return vm.getNil();
 }
 
-Var *fsMove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fsMove, 2, false,
+           "  fn(source, destination) -> Nil\n"
+           "Move the file/directory from `source` to `destination`.")
 {
     if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
@@ -561,3 +588,5 @@ Var *fsMove(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     }
     return vm.getNil();
 }
+
+} // namespace fer

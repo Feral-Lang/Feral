@@ -5,8 +5,9 @@
 namespace fer
 {
 
-Var *sysclkNow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(sysClockNow, 0, false,
+           "  fn() -> Int\n"
+           "Returns the current time in microseconds since epoch.")
 {
     VarInt *res = vm.makeVar<VarInt>(loc, 0);
     // Not using nanoseconds because that's the same count of digits as int64_t::max
@@ -16,8 +17,10 @@ Var *sysclkNow(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *formatTime(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(formatTime, 2, false,
+           "  fn(timestamp, format) -> Str\n"
+           "Formats the `timestamp` which is in microseconds since epoch, using `format` string, "
+           "returning the resulting string.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected integer argument as time for formatting, found: ",
@@ -44,8 +47,8 @@ Var *formatTime(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 INIT_MODULE(Time)
 {
     VarModule *mod = vm.getCurrModule();
-    mod->addNativeFn(vm, "systemClockNowNative", sysclkNow);
-    mod->addNativeFn(vm, "formatNative", formatTime, 2);
+    mod->addNativeFn(vm, "systemClockNowNative", sysClockNow);
+    mod->addNativeFn(vm, "formatNative", formatTime);
     return true;
 }
 

@@ -80,11 +80,11 @@ public:
     // ext can be empty
     bool findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir);
 
-    void addGlobal(StringRef name, Var *val, bool iref = true);
+    void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true);
     Var *getGlobal(StringRef name);
 
-    void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false);
-    VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false);
+    void addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
+    VarFn *genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
 
     void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref);
     Var *getTypeFn(Var *var, StringRef name);
@@ -163,13 +163,13 @@ public:
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, String name, VarModule *module = nullptr)
+    registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
         name += "Ty";
-        if(!module) addGlobal(name, tyvar, false);
-        else module->addNativeVar(name, tyvar, false);
+        if(!module) addGlobal(name, doc, tyvar, false);
+        else module->addNativeVar(mem, name, doc, tyvar, false);
     }
 };
 
@@ -239,21 +239,19 @@ public:
         return ip.tryAddModulePathsFromFile(file);
     }
 
-    inline void addGlobal(StringRef name, Var *val, bool iref = true)
+    inline void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true)
     {
-        return ip.addGlobal(name, val, iref);
+        return ip.addGlobal(name, doc, val, iref);
     }
     inline Var *getGlobal(StringRef name) { return ip.getGlobal(name); }
 
-    inline void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-                            bool isVa = false)
+    inline void addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
-        return ip.addNativeFn(loc, name, fn, args, isVa);
+        return ip.addNativeFn(loc, name, fnObj);
     }
-    inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-                              bool isVa = false)
+    inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
-        return ip.genNativeFn(loc, name, fn, args, isVa);
+        return ip.genNativeFn(loc, name, fnObj);
     }
 
     inline void setTypeName(size_t _typeid, StringRef name) { ip.setTypeName(_typeid, name); }
@@ -337,19 +335,22 @@ public:
     }
 
     template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type registerType(ModuleLoc loc,
-                                                                                     String name)
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    registerType(ModuleLoc loc, StringRef name, StringRef doc)
     {
-        return ip.registerType<T>(loc, name, modulestack.empty() ? nullptr : modulestack.back());
+        return ip.registerType<T>(loc, String(name), doc,
+                                  modulestack.empty() ? nullptr : modulestack.back());
     }
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addNativeTypeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false)
+    addNativeTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
         VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
-                                         isVa ? "." : "", args, 0, FnBody{.native = fn}, true);
-        for(size_t i = 0; i < args; ++i) f->pushParam("");
+                                         fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
+                                         FnBody{.native = fnObj.fn}, true);
+        f->setDoc(getMemoryManager(), makeVar<VarStr>(loc, fnObj.doc));
+        for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
         addTypeFn(typeID<T>(), name, f, false);
     }
 

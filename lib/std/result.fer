@@ -6,19 +6,43 @@ let Result = struct(
 );
 Result.setTypeName('Result');
 
+"
+  fn(value) -> Result
+Creates and returns an okay-representing Result containing `value`.
+"
 let ok = fn(val) {
     return Result(ref(val), true);
 };
 
+"
+  fn(code, msg...) -> Result
+Creates and returns an error-representing Result containing `code` and all of `msg`.
+"
 let err = fn(code, msg...) {
     return Result(error.new(code, msg...), false);
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if the Result `var` represents an okay state.
+"
 let isOk in Result = fn() { return self.isok; };
+"
+  var.fn() -> Bool
+Returns `true` if the Result `var` represents an error state.
+"
 let isErr in Result = fn() { return !self.isok; };
 
+"
+  var.fn() -> Var
+Returns the value contained in the Result `var` as a reference.
+"
 let getVal in Result = fn() { return ref(self.val); };
 
+"
+  var.fn() -> Str
+Returns a string representation of the Result `var`.
+"
 let str in Result = fn() {
     let s = 'Result<';
     s += val.str();
