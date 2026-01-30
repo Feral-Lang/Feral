@@ -21,6 +21,11 @@
 let map = import('std/map');
 let vec = import('std/vec');
 
+"
+  fn(obj, indentation = false, indentChar = ' ') -> Str
+Returns a string representation of `obj`, indenting using `indentChar`.
+If `indentation` is `true`, write a newline character and apply the indentation.
+"
 let dumps = fn(obj, indentation = false, indentChar = ' ') {
     let indent = -1;
     if indentation { indent = 0; }
@@ -31,14 +36,26 @@ let dumps = fn(obj, indentation = false, indentChar = ' ') {
     return js;
 };
 
+"
+  fn(obj, indentation = false, indentChar = ' ') -> Str
+Returns a string representation of `obj`, indenting using `indentChar`.
+If `indentation` is `true`, write a newline character and apply the indentation.
+"
 let loads = fn(data) {
     let toks = tokenize(data);
     return parse(toks);
 };
 
+"
+  fn(structInstance, jsonObj) -> Nil
+Loops through the fields in `jsonObj` and sets the value of the equivalent ones in `structInstance`
+If a field dosn't exist in `structInstance`, it is ignored.
+"
 let bind = fn(structInst, jsonObj) {
+    # TODO: maybe this loop should be on structInst.fields()?
     for f in jsonObj.each() {
-        structInst.setField(f.0, f.1);
+        if !structInst._hasattr_(f.0) { continue; }
+        structInst._setattr_(f.0, f.1);
     }
 };
 

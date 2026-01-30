@@ -1,3 +1,1 @@
-let new = fn(size) {
-    return feral.bytebufferNew(size);
-};
+let new = feral.bytebufferNew;

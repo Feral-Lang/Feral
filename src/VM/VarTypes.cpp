@@ -464,22 +464,26 @@ void VarModule::setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref)
 bool VarModule::existsAttr(StringRef name) { return varStack->exists(name); }
 Var *VarModule::getAttr(StringRef name) { return varStack->get(name); }
 
-void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args,
-                            bool isVa)
+void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj)
 {
-    return addNativeFn(vm.getMemoryManager(), name, body, args, isVa);
+    return addNativeFn(vm.getMemoryManager(), name, fnObj);
 }
-void VarModule::addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args,
-                            bool isVa)
+void VarModule::addNativeFn(MemoryManager &mem, StringRef name, const FeralNativeFnDesc &fnObj)
 {
-    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", isVa ? "." : "", args, 0,
-                                       FnBody{.native = body}, true);
-    for(size_t i = 0; i < args; ++i) res->pushParam("");
+    VarFn *res = makeVarWithRef<VarFn>(mem, getLoc(), moduleId, "", fnObj.isVariadic ? "." : "",
+                                       fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
+    res->setDoc(fnObj.doc);
+    for(size_t i = 0; i < fnObj.argCount; ++i) res->pushParam("");
     varStack->add(name, res, false);
+}
+void VarModule::addNativeVar(StringRef name, StringRef doc, Var *val, bool iref)
+{
+    val->setDoc(doc);
+    varStack->add(name, val, iref);
 }
 void VarModule::addNativeVar(StringRef name, Var *val, bool iref)
 {
-    varStack->add(name, val, iref);
+    addNativeVar(name, "", val, iref);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

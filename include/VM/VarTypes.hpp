@@ -396,6 +396,27 @@ struct AssnArgData
 typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                          const StringMap<AssnArgData> &assnArgs);
 
+class FeralNativeFnDesc
+{
+public:
+    StringRef doc;
+    NativeFn fn;
+    size_t argCount;
+    bool isVariadic;
+
+    constexpr FeralNativeFnDesc(StringRef doc, NativeFn fn, size_t argCount, bool isVariadic)
+        : doc(doc), fn(fn), argCount(argCount), isVariadic(isVariadic)
+    {}
+};
+
+#define NATIVE_FUNC_SIGNATURE(name)                                       \
+    Var *func_##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, \
+                     const StringMap<AssnArgData> &assnArgs)
+#define FERAL_FUNC(name, argCount, isVariadic, doc)                                  \
+    NATIVE_FUNC_SIGNATURE(name);                                                     \
+    static constexpr FeralNativeFnDesc name(doc, func_##name, argCount, isVariadic); \
+    NATIVE_FUNC_SIGNATURE(name)
+
 struct FeralFnBody
 {
     size_t begin;
@@ -474,10 +495,9 @@ public:
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
 
-    void addNativeFn(VirtualMachine &vm, StringRef name, NativeFn body, size_t args = 0,
-                     bool isVa = false);
-    void addNativeFn(MemoryManager &mem, StringRef name, NativeFn body, size_t args = 0,
-                     bool isVa = false);
+    void addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj);
+    void addNativeFn(MemoryManager &mem, StringRef name, const FeralNativeFnDesc &fnObj);
+    void addNativeVar(StringRef name, StringRef doc, Var *val, bool iref = true);
     void addNativeVar(StringRef name, Var *val, bool iref = true);
 
     inline StringRef getPath() { return path; }

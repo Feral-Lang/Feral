@@ -1,53 +1,70 @@
-Var *allToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(allToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `false`. Any type/struct must implement a `.bool()` member function themselves "
+           "to override this.")
 {
     return vm.getFalse();
 }
 
-Var *nilToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(nilToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `false` which is what Nil equates to.")
 {
     return vm.getFalse();
 }
 
-Var *boolToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(boolToBool, 0, false,
+           "  var.fn() -> var\n"
+           "Returns `var` as is since it's already a boolean.")
 {
     return args[0];
 }
 
-Var *typeIDToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                  const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(typeIDToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true`. typeID being false is just weird to be honest.")
 {
     return vm.getTrue();
 }
 
-Var *intToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(intToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the int `var` is not 0.")
 {
     return as<VarInt>(args[0])->getVal() == 0 ? vm.getFalse() : vm.getTrue();
 }
 
-Var *fltToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(fltToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the float `var` is not 0.0.")
 {
     return as<VarFlt>(args[0])->getVal() == 0.0 ? vm.getFalse() : vm.getTrue();
 }
 
-Var *strToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(strToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the string `var` is not empty.")
 {
     return !as<VarStr>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the vector `var` is not empty.")
 {
     return !as<VarVec>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *mapToBool(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(mapToBool, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the map `var` is not empty.")
 {
     return !as<VarMap>(args[0])->getVal().empty() ? vm.getTrue() : vm.getFalse();
 }
+
+} // namespace fer

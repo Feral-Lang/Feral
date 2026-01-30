@@ -163,13 +163,13 @@ public:
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, String name, VarModule *module = nullptr)
+    registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
         name += "Ty";
         if(!module) addGlobal(name, tyvar, false);
-        else module->addNativeVar(name, tyvar, false);
+        else module->addNativeVar(name, doc, tyvar, false);
     }
 };
 
@@ -245,10 +245,9 @@ public:
     }
     inline Var *getGlobal(StringRef name) { return ip.getGlobal(name); }
 
-    inline void addNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
-                            bool isVa = false)
+    inline void addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
-        return ip.addNativeFn(loc, name, fn, args, isVa);
+        return ip.addNativeFn(loc, name, fnObj.fn, fnObj.argCount, fnObj.isVariadic);
     }
     inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args,
                               bool isVa = false)
@@ -337,19 +336,22 @@ public:
     }
 
     template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type registerType(ModuleLoc loc,
-                                                                                     String name)
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    registerType(ModuleLoc loc, StringRef name, StringRef doc)
     {
-        return ip.registerType<T>(loc, name, modulestack.empty() ? nullptr : modulestack.back());
+        return ip.registerType<T>(loc, name, doc,
+                                  modulestack.empty() ? nullptr : modulestack.back());
     }
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addNativeTypeFn(ModuleLoc loc, StringRef name, NativeFn fn, size_t args, bool isVa = false)
+    addNativeTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
         VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
-                                         isVa ? "." : "", args, 0, FnBody{.native = fn}, true);
-        for(size_t i = 0; i < args; ++i) f->pushParam("");
+                                         fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
+                                         FnBody{.native = fnObj.fn}, true);
+        f->setDoc(fnObj.doc);
+        for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
         addTypeFn(typeID<T>(), name, f, false);
     }
 

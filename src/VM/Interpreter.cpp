@@ -315,55 +315,26 @@ VarModule *Interpreter::getModule(StringRef path)
 
 void Interpreter::initTypeNames()
 {
-    registerType<VarAll>({}, "All");
-
-    registerType<VarNil>({}, "Nil");
-    registerType<VarBool>({}, "Bool");
-    registerType<VarInt>({}, "Int");
-    registerType<VarFlt>({}, "Flt");
-    registerType<VarStr>({}, "Str");
-    registerType<VarVec>({}, "Vec");
-    registerType<VarMap>({}, "Map");
-    registerType<VarFn>({}, "Func");
-    registerType<VarModule>({}, "Module");
-    registerType<VarTypeID>({}, "TypeID");
-    registerType<VarStructDef>({}, "StructDef");
-    registerType<VarStruct>({}, "Struct");
-    registerType<VarFailure>({}, "Failure");
-    registerType<VarFile>({}, "File");
-    registerType<VarBytebuffer>({}, "Bytebuffer");
-    registerType<VarIntIterator>({}, "IntIterator");
-    registerType<VarVecIterator>({}, "VecIterator");
-    registerType<VarMapIterator>({}, "MapIterator");
-    registerType<VarFileIterator>({}, "FileIterator");
-
-    globals->add("AllTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarAll>()), false);
-
-    globals->add("NilTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarNil>()), false);
-    globals->add("BoolTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBool>()), false);
-    globals->add("IntTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarInt>()), false);
-    globals->add("FltTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFlt>()), false);
-    globals->add("StrTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStr>()), false);
-    globals->add("VecTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVec>()), false);
-    globals->add("MapTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMap>()), false);
-    globals->add("FuncTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFn>()), false);
-    globals->add("ModuleTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarModule>()), false);
-    globals->add("TypeIDTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarTypeID>()), false);
-    globals->add("StructDefTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStructDef>()),
-                 false);
-    globals->add("StructTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarStruct>()), false);
-    globals->add("FailureTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFailure>()), false);
-    globals->add("FileTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFile>()), false);
-    globals->add("BytebufferTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarBytebuffer>()),
-                 false);
-    globals->add("IntIteratorTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarIntIterator>()),
-                 false);
-    globals->add("VecIteratorTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarVecIterator>()),
-                 false);
-    globals->add("MapIteratorTy", makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarMapIterator>()),
-                 false);
-    globals->add("FileIteratorTy",
-                 makeVarWithRef<VarTypeID>(ModuleLoc(), typeID<VarFileIterator>()), false);
+    registerType<VarAll>({}, "All", "Base type for all types.");
+    registerType<VarNil>({}, "Nil", "Builtin type.");
+    registerType<VarBool>({}, "Bool", "Builtin type.");
+    registerType<VarInt>({}, "Int", "Builtin type.");
+    registerType<VarFlt>({}, "Flt", "Builtin type.");
+    registerType<VarStr>({}, "Str", "Builtin type.");
+    registerType<VarVec>({}, "Vec", "Builtin type.");
+    registerType<VarMap>({}, "Map", "Builtin type.");
+    registerType<VarFn>({}, "Func", "Builtin type.");
+    registerType<VarModule>({}, "Module", "Builtin type.");
+    registerType<VarTypeID>({}, "TypeID", "Builtin type.");
+    registerType<VarStructDef>({}, "StructDef", "Builtin type.");
+    registerType<VarStruct>({}, "Struct", "Builtin type.");
+    registerType<VarFailure>({}, "Failure", "Builtin type.");
+    registerType<VarFile>({}, "File", "Builtin type.");
+    registerType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
+    registerType<VarIntIterator>({}, "IntIterator", "Builtin type.");
+    registerType<VarVecIterator>({}, "VecIterator", "Builtin type.");
+    registerType<VarMapIterator>({}, "MapIterator", "Builtin type.");
+    registerType<VarFileIterator>({}, "FileIterator", "Builtin type.");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -645,9 +616,8 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     popModule();
     if(tmpRet) {
         decVarRef(tmpRet);
-        fail(loc,
-             "internal error: VirtualMachine::eval() must not generate a return value "
-             "from execute()");
+        fail(loc, "internal error: VirtualMachine::eval() must not generate a return value "
+                  "from execute()");
         return nullptr;
     }
     if(ec) return nullptr;

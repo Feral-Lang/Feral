@@ -1,11 +1,18 @@
-Var *moduleGetPath(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(moduleGetPath, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the path of the module `var`.")
 {
     return vm.makeVar<VarStr>(loc, as<VarModule>(args[0])->getPath());
 }
 
-Var *moduleGetVars(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                   const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(moduleGetVars, 0, false,
+           "  var.fn() -> Vec<Str>\n"
+           "Returns a list of names of all the top level variables in the module `var`.")
 {
     VarStack *stack = as<VarModule>(args[0])->getVarStack();
     VarFrame *frame = stack->getFrameAt(0);
@@ -18,3 +25,5 @@ Var *moduleGetVars(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     for(auto &e : vars) v->push(vm.makeVarWithRef<VarStr>(loc, e.first));
     return v;
 }
+
+} // namespace fer

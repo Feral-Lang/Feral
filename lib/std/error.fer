@@ -4,9 +4,22 @@ let Error = struct(
 );
 Error.setTypeName('Error');
 
+"
+  var.fn() -> Int
+Returns the code present in the Error `var`.
+"
 let getCode in Error = fn() { return ref(self.code); };
+"
+  var.fn() -> Str
+Returns the message present in the Error `var`.
+"
 let getMsg in Error = fn() { return ref(self.msg); };
 
+"
+  fn(code, msg...) -> Error
+Creates and returns an instance of Error using `code` as the status, and all of the items in `msg` as the message.
+Calls `.str()` on all the `msg` items.
+"
 let new = fn(code, msg...) {
     let e = Error(code);
     for m in msg.each() {
@@ -15,6 +28,10 @@ let new = fn(code, msg...) {
     return ref(e);
 };
 
+"
+  var.fn() -> Str
+Returns the string representation of the Error `var`.
+"
 let str in Error = fn() {
     let s = 'Error<';
     s += self.val.str();

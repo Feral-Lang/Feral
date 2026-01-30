@@ -1,11 +1,20 @@
-Var *nilEq(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(nilEQ, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Returns `true` if `other` is also Nil.")
 {
     return args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *nilNe(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(nilNE, 1, false,
+           "  var.fn(other) -> Str\n"
+           "Returns `true` if `other` is not Nil.")
 {
     return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
+
+} // namespace fer

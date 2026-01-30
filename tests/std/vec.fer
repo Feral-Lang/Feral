@@ -2,6 +2,18 @@ let assert = import('std/assert');
 
 let vec = import('std/vec');
 
+let mean in VecTy = fn(onEach = fn(e) { return e; }) {
+    if self.empty() {
+        raise('cannot find mean of an empty list');
+    }
+    let count = self.len();
+    let sum = onEach(self[0]);
+    for let i = 1; i < count; ++i {
+        sum += onEach(self[i]);
+    }
+    return sum / count;
+};
+
 let v = vec.new(3, 2, 1, 4);
 
 assert.eq(v.capacity(), 4);

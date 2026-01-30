@@ -1,29 +1,49 @@
 let map = import('std/map');
 let vec = import('std/vec');
 
+"
+A top level struct containing a map of DependenceTreeNode's.
+"
 let DependenceTree = struct(
     nodes = map.new(refs = true) # <string, DependenceTreeNode>
 );
 DependenceTree.setTypeName('DependenceTree');
 
+"
+Each DependenceTreeNode contains:
+  data: Str
+  dependencies: list of DependenceTreeNode's
+"
 let DependenceTreeNode = struct(
     data = '',
     deps = vec.new(refs = true) # each is a DependenceTreeNode
 );
 DependenceTreeNode.setTypeName('DependenceTreeNode');
 
+"
+  fn() -> DependenceTree
+Creates and returns a new instance of `DependenceTree`.
+"
 let newDependenceTree = fn() {
     return DependenceTree();
 };
 
 # here data is simply a unique identifier for the node
 # it must have a str() member function to work with std/map
+"
+  var.fn(data) -> Node
+Inserts a Node in the dependence tree `var` and returns the inserted Node.
+"
 let newNode in DependenceTree = fn(data) {
     let node = DependenceTreeNode(data = data.str());
     self.nodes.insert(data, node);
     return ref(node);
 };
 
+"
+  var.fn(nodes...) -> var
+Creates a dependency of the node `var` on each of `nodes` and returns the `var` itself.
+"
 let dependsOn in DependenceTreeNode = fn(nodes...) {
     for node in nodes.each() {
         self.deps.push(node);
@@ -31,17 +51,20 @@ let dependsOn in DependenceTreeNode = fn(nodes...) {
     return ref(self);
 };
 
-# generates a list of frames, each frame's nodes can be 'executed' in parallel
-# without breaking dependence, and each frame must be executed sequentially in
-# ascending order
-# the data structure looks something like:
-#  Frames[
-#    Frame[
-#        Node,
-#        ...
-#    ],
-#    ...
-# ]
+"
+  var.fn() -> Vec<Vec<Node>>
+This is the actual algorithm which generates a list of frames, where each frame is a list of nodes.
+The idea is that all the nodes in each frame can be 'executed' in parallel without breaking dependence.
+However, each frame must be 'executed' sequentially, in order.
+The returned data structure looks something like:
+  Frames [
+    Frame [
+      Node,
+      ...
+    ],
+    ...
+  ]
+"
 let generateParallelFrames in DependenceTree = fn() {
     let frames = vec.new();
     let frametmp = vec.new(refs = true);
@@ -79,6 +102,10 @@ let generateParallelFrames in DependenceTree = fn() {
     return dataframes;
 };
 
+"
+  var.fn() -> Str
+Returns a string representation for the DependenceTree `var`.
+"
 let str in DependenceTree = fn() {
     let res = '<DependenceTree: headers: ';
     res += self.headers.str();
@@ -95,6 +122,10 @@ let str in DependenceTree = fn() {
     return res;
 };
 
+"
+  var.fn() -> Str
+Returns a string representation for the DependenceTreeNode `var`.
+"
 let str in DependenceTreeNode = fn() {
     let res = '<DependenceTreeNode: ';
     res += self.data;

@@ -1,5 +1,16 @@
-Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+#include "VM/Interpreter.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(vecNew, 0, true,
+           "  fn(args...) -> Vec\n"
+           "Creates and returns a new vector/list.\n"
+           "The args (optional) are elements to initialize the vector with.\n"
+           "Can also accept the following named arguments:\n"
+           "  `cap = n` where `n` is the initial capacity of the map\n"
+           "  `refs = true` which makes it so that any value inserted in the map is stored as a "
+           "reference.")
 {
     auto refloc    = assnArgs.find("refs");
     auto caploc    = assnArgs.find("cap");
@@ -39,44 +50,51 @@ Var *vecNew(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *vecSize(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecSize, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of elements in the vector `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->size());
 }
 
-Var *vecCapacity(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecCapacity, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the number of elements in the vector `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarVec>(args[0])->capacity());
 }
 
-Var *vecIsRef(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecIsRef, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the vector `var` stores values as references.")
 {
     return as<VarVec>(args[0])->isRefVec() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecEmpty(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecEmpty, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the vector `var` is empty.")
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
 }
 
-Var *vecFront(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecFront, 0, false,
+           "  var.fn() -> Var\n"
+           "Returns the first element in the vector `var`, or `nil` if the vector is empty.")
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
-Var *vecBack(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecBack, 0, false,
+           "  var.fn() -> Var\n"
+           "Returns the last element in the vector `var`, or `nil` if the vector is empty.")
 {
     return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
-Var *vecPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecPush, 1, true,
+           "  var.fn(args...) -> var\n"
+           "Pushes all the given `args` in the vector `var` and returns `var` itself.")
 {
     VarVec *res = as<VarVec>(args[0]);
     for(size_t i = 1; i < args.size(); ++i) {
@@ -90,8 +108,9 @@ Var *vecPush(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecPop, 0, false,
+           "  var.fn() -> var\n"
+           "Pops the last element in the vector `var` and returns `var` itself.")
 {
     VarVec *res = as<VarVec>(args[0]);
     if(res->isEmpty()) {
@@ -103,8 +122,9 @@ Var *vecPop(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecClear, 0, false,
+           "  var.fn() -> var\n"
+           "Removes all elements from the vector `var` and returns `var` itself.")
 {
     VarVec *v = as<VarVec>(args[0]);
     for(auto &e : v->getVal()) { vm.decVarRef(e); }
@@ -112,8 +132,37 @@ Var *vecClear(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecInsert, 2, false,
+           "  var.fn(position, item) -> Nil\n"
+           "Inserts `item` at the index `position` in the vector `var` and returns `var` itself.")
+{
+    if(!args[1]->is<VarInt>()) {
+        vm.fail(loc,
+                "expected first argument to be of"
+                " type integer for vec.insert(), found: ",
+                vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    VarVec *res = as<VarVec>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) {
+        vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
+                std::to_string(res->size()));
+        return nullptr;
+    }
+    if(res->isRefVec()) {
+        vm.incVarRef(args[2]);
+        res->insert(res->begin() + pos, args[2]);
+    } else {
+        res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
+    }
+    return args[0];
+}
+
+FERAL_FUNC(vecSetAt, 2, false,
+           "  var.fn(position, item) -> var\n"
+           "Sets (replaces) the `item` at the index `position` in the vector `var` and returns "
+           "`var` itself.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -139,8 +188,9 @@ Var *vecSetAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecErase, 1, false,
+           "  var.fn(position) -> var\n"
+           "Deletes the item located at index `position` and returns `var` itself.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
@@ -159,34 +209,7 @@ Var *vecErase(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecInsert(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
-{
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected first argument to be of"
-                " type integer for vec.insert(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    VarVec *res = as<VarVec>(args[0]);
-    size_t pos  = as<VarInt>(args[1])->getVal();
-    if(pos >= res->size()) {
-        vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
-                std::to_string(res->size()));
-        return nullptr;
-    }
-    if(res->isRefVec()) {
-        vm.incVarRef(args[2]);
-        res->insert(res->begin() + pos, args[2]);
-    } else {
-        res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
-    }
-    return args[0];
-}
-
-Var *vecAppend(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-               const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecAppendNative, 3, false, "")
 {
     if(!args[1]->is<VarVec>()) {
         vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
@@ -226,8 +249,10 @@ Var *vecAppend(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return dest;
 }
 
-Var *vecSwap(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecSwap, 2, false,
+           "  var.fn(positionA, positionB) -> var\n"
+           "Swaps the elements at `positionA` and `positionB` in the vector `var` and returns "
+           "`var` itself.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
@@ -243,16 +268,19 @@ Var *vecSwap(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return args[0];
 }
 
-Var *vecReverse(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecReverse, 0, false,
+           "  var.fn() -> var\n"
+           "Reverses the vector `var` and returns `var` itself.")
 {
     VarVec *res = as<VarVec>(args[0]);
     std::reverse(res->begin(), res->end());
     return args[0];
 }
 
-Var *vecAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-           const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecAt, 1, false,
+           "  var.fn(position) -> value | Nil\n"
+           "Returns the value at index `position` in vector `var`, or `nil` if `position` is out "
+           "of range in `var`.")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
@@ -265,8 +293,7 @@ Var *vecAt(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res->at(pos);
 }
 
-Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-            const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecSubNative, 2, false, "")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc,
@@ -301,8 +328,7 @@ Var *vecSub(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *vecSlice(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecSliceNative, 2, false, "")
 {
     if(!args[1]->is<VarInt>()) {
         vm.fail(loc, "expected starting index to be of type integer for vec.slice(), found: ",
@@ -337,14 +363,18 @@ Var *vecSlice(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     return res;
 }
 
-Var *vecEach(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-             const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(
+    vecEach, 0, false,
+    "  var.fn() -> VecIterator\n"
+    "Returns a VecIterator which can be used to iterate through the elements in the vector `var`.")
 {
     return vm.makeVar<VarVecIterator>(loc, as<VarVec>(args[0]));
 }
 
-Var *vecIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
+FERAL_FUNC(vecIteratorNext, 0, false,
+           "  var.fn() -> Var | Nil\n"
+           "Returns the next element from the VecIterator `var`, or `nil` if nothing's left.\n"
+           "This function is mainly used by for-in loop.")
 {
     VarVecIterator *it = as<VarVecIterator>(args[0]);
     Var *res           = nullptr;
@@ -352,3 +382,5 @@ Var *vecIteratorNext(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
     res->setLoadAsRef();
     return res;
 }
+
+} // namespace fer
