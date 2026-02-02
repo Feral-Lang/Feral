@@ -33,8 +33,7 @@ FERAL_FUNC(formatTime, 2, false,
         return nullptr;
     }
     uint64_t val = as<VarInt>(args[1])->getVal();
-    std::chrono::microseconds usval(val);
-    std::chrono::system_clock::time_point tp(std::chrono::microseconds{usval});
+    std::chrono::system_clock::time_point tp(std::chrono::microseconds{val});
     std::time_t time = std::chrono::system_clock::to_time_t(tp);
     std::tm *t       = std::localtime(&time);
     char fmt[1024]   = {0};

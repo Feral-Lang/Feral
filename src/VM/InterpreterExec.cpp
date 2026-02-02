@@ -25,11 +25,10 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
 
     for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
-        // std::cout << "[" << i << ": " << getCurrModule()->getPath() << "] ";
-        // ins.dump(std::cout);
-        // std::cout << " :: ";
-        // dumpExecStack(std::cout);
-        // std::cout << "\n";
+#if defined(CORE_BUILD_DEBUG)
+        logger.trace("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
+                     " :: ", execstack.dump(this));
+#endif
 
         if(ip.shouldStopExecution()) goto fail;
         if(exitcalled) goto done;
@@ -404,14 +403,6 @@ fail:
     else vars.resizeBlkTo(currBlkSize);
     --recurseCount;
     return 1;
-}
-
-void VirtualMachine::dumpExecStack(OStream &os)
-{
-    for(auto &e : execstack.get()) {
-        e->dump(std::cout, this);
-        std::cout << " -- ";
-    }
 }
 
 } // namespace fer

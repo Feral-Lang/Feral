@@ -23,4 +23,14 @@ Var *ExecStack::pop(bool dref)
     return back;
 }
 
+String ExecStack::dump(VirtualMachine *vm)
+{
+    String outStr;
+    for(auto &e : stack) {
+        e->dump(outStr, vm);
+        outStr += " -- ";
+    }
+    return outStr;
+}
+
 } // namespace fer

@@ -9,8 +9,7 @@ let minute = second / 60;
 let hour = minute / 60;
 
 let resolution = micro; # set to micro by default
-let timeFormat = '%a %b %e %T %Z %Y';
-
+let timeFormat = '%FT%T%z'; # %Y-%m-%dT%H:%M:%S+0000
 let setResolution = fn(num) {
     resolution = num;
 };

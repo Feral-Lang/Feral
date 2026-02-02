@@ -222,8 +222,6 @@ public:
     // primarily used for templates
     Var *eval(ModuleLoc loc, StringRef code, bool isExpr);
 
-    void dumpExecStack(OStream &os);
-
     inline StringRef getName() { return name; }
 
     inline void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)

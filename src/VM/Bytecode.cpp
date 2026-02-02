@@ -68,6 +68,45 @@ void Instruction::dump(OStream &os) const
     if(!comment.empty()) os << "; [comment] " << comment;
 }
 
+String Instruction::dump() const
+{
+    String outStr;
+    outStr += getOpcodeStr(getOpcode());
+    outStr += "[";
+    outStr += std::to_string(loc.id);
+    outStr += ", ";
+    outStr += std::to_string(loc.offStart);
+    outStr += " .. ";
+    outStr += std::to_string(loc.offEnd);
+    outStr += "] ";
+    if(isDataNil()) outStr += "[nil]";
+    if(isDataInt()) {
+        outStr += "[int]  ";
+        outStr += std::to_string(getDataInt());
+    }
+    if(isDataFlt()) {
+        outStr += "[flt]  ";
+        outStr += std::to_string(getDataFlt());
+    }
+    if(isDataStr()) {
+        outStr += "[str]  ";
+        outStr += getDataStr();
+    }
+    if(isDataIden()) {
+        outStr += "[iden] ";
+        outStr += getDataStr();
+    }
+    if(isDataBool()) {
+        outStr += "[bool] ";
+        outStr += (getDataBool() ? "true" : "false");
+    }
+    if(!comment.empty()) {
+        outStr += "; [comment] ";
+        outStr += comment;
+    }
+    return outStr;
+}
+
 bool Instruction::readFromFile(FILE *f, Instruction &ins)
 {
     fread(&ins.loc, sizeof(ins.loc), 1, f);

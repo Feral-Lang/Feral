@@ -23,6 +23,8 @@ public:
     inline size_t size() const { return stack.size(); }
     inline bool empty() const { return stack.empty(); }
     inline void clear() { stack.clear(); }
+
+    String dump(VirtualMachine *vm);
 };
 
 } // namespace fer

@@ -94,12 +94,13 @@ FERAL_FUNC(mapInsert, 2, false,
     Var *v             = nullptr;
     Array<Var *, 1> tmp{args[1]};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-    const String &key = as<VarStr>(v)->getVal();
+    StringRef key = as<VarStr>(v)->getVal();
     if(map->isRefMap()) {
         map->setAttr(mem, key, args[2], true);
     } else {
         map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
     }
+    vm.decVarRef(v);
     return args[0];
 }
 

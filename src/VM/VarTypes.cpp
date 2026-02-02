@@ -73,21 +73,25 @@ void Var::setDoc(MemoryManager &mem, VarStr *newDoc)
     doc = newDoc;
 }
 
-void Var::dump(OStream &os, VirtualMachine *vm)
+void Var::dump(String &outStr, VirtualMachine *vm)
 {
-    os << "<" << ref << ">";
+    outStr += "<";
+    outStr += std::to_string(ref);
+    outStr += ">";
     if(is<VarInt>()) {
-        os << "int";
+        outStr += "int";
     } else if(is<VarFlt>()) {
-        os << "flt";
+        outStr += "flt";
     } else if(is<VarStr>()) {
-        os << "Str:" << as<VarStr>(this)->getVal();
+        outStr += "Str:";
+        outStr += as<VarStr>(this)->getVal();
     } else if(is<VarNil>()) {
-        os << "nil";
+        outStr += "nil";
     } else if(is<VarBool>()) {
-        os << "bool:" << (as<VarBool>(this)->getVal() ? "true" : "false");
+        outStr += "bool:";
+        outStr += (as<VarBool>(this)->getVal() ? "true" : "false");
     } else if(vm) {
-        os << vm->getTypeName(this);
+        outStr += vm->getTypeName(this);
     }
 }
 

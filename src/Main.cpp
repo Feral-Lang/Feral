@@ -22,6 +22,7 @@ int main(int argc, char **argv)
     args.addArg("dry").addOpts("--dry", "-d").setHelp("dry run - generate IR but don't run the VM");
     args.addArg("logerr").addOpts("--logerr", "-e").setHelp("show logs on stderr");
     args.addArg("verbose").addOpts("--verbose", "-V").setHelp("show verbose compiler output");
+    args.addArg("debug").addOpts("--debug", "-D").setHelp("show debug (more verbose) compiler output");
     args.addArg("trace").addOpts("--trace", "-T").setHelp("show trace (even more verbose) compiler output");
     args.addArg("source").setHelp("Source file to compile/run");
     args.setLastArg("source");
@@ -47,6 +48,7 @@ int main(int argc, char **argv)
     if(args.has("logerr")) logger.addSink(&std::cerr, true, false);
     if(args.has("verbose")) logger.setLevel(LogLevels::INFO);
     else if(args.has("trace")) logger.setLevel(LogLevels::TRACE);
+    else if(args.has("debug")) logger.setLevel(LogLevels::DEBUG);
 
     String srcFile(args.getValue("source"));
     if(srcFile.empty()) {

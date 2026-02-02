@@ -4,6 +4,7 @@ let vec = import('std/vec');
 
 let s = '12345';
 
+assert.eq('12445'.replace('445', '345'), '12345');
 assert.eq(s.len(), 5);
 assert.eq(!s.empty(), true);
 assert.eq(s.front(), '1');

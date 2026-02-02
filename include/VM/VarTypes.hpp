@@ -76,7 +76,7 @@ public:
     virtual size_t getSubType();
 
     void setDoc(MemoryManager &mem, VarStr *newDoc);
-    void dump(OStream &os, VirtualMachine *vm);
+    void dump(String &outStr, VirtualMachine *vm);
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const

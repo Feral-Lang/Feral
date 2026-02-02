@@ -107,6 +107,7 @@ public:
     inline Opcode getOpcode() const { return opcode; }
 
     void dump(OStream &os) const;
+    String dump() const;
 
     static bool readFromFile(FILE *f, Instruction &ins);
     void writeToFile(FILE *f) const;
