@@ -31,7 +31,7 @@ let dumps = fn(obj, indentation = false, indentChar = ' ') {
     if indentation { indent = 0; }
     let js = obj.jsonToStr(indent, indentChar);
     if js.empty() {
-        raise('type ' + feral.getTypeName(obj) + ' does not implement JSON serialization');
+        raise('type ' + obj._typeName_() + ' does not implement JSON serialization');
     }
     return js;
 };
@@ -54,8 +54,8 @@ If a field dosn't exist in `structInstance`, it is ignored.
 let bind = fn(structInst, jsonObj) {
     # TODO: maybe this loop should be on structInst.fields()?
     for f in jsonObj.each() {
-        if !feral.hasAttr(structInst, f.0) { raise('field name \'', f.0, '\' not found'); }
-        feral.setAttr(structInst, f.0, f.1);
+        if !structInst._hasAttr_(f.0) { raise('field name \'', f.0, '\' not found'); }
+        structInst._setAttr_(f.0, f.1);
     }
 };
 

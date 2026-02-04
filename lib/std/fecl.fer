@@ -23,7 +23,7 @@ Uses `indentLevel` and `indentWith` to format the string.
 let dumps = fn(obj, indentLevel = -1, indentWith = ' ') {
     let res = obj.feclString(indentLevel, indentWith, true);
     if res.empty() {
-        raise('type ' + feral.getTypeName(obj) + ' does not implement FeCL serialization');
+        raise('type ' + obj._typeName_() + ' does not implement FeCL serialization');
     }
     res.trim();
     return res;

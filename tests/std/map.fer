@@ -12,7 +12,7 @@ assert.eq(m.at(3), 'three');
 assert.eq(m[1], 'one');
 assert.eq(m[2], nil);
 assert.eq(m.find(1), true);
-assert.eq(feral.getAttrs(m).find('3'), true); # all keys are strings internally
+assert.eq(m._getAttrs_().find('3'), true); # all keys are strings internally
 
 let m2 = map.new();
 for e in m.each() {

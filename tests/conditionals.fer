@@ -11,4 +11,4 @@ if !''.empty() { assert.eq(false, true); }
 # empty vector/map = false
 if !vec.new().empty() { assert.eq(false, true); }
 if !map.new().empty() { assert.eq(false, true); }
-if feral.getType(5).bool() != true { assert.eq(false, true); }
+if 5._type_().bool() != true { assert.eq(false, true); }

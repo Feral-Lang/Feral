@@ -34,7 +34,7 @@ let new = fn(major = 0, minor = 0, patch = 0, build = buildTypes.Regular, metada
     if major == 0 && minor == 0 && patch == 0 {
         raise('Invalid semver encountered with major, minor, and patch numbers being zero');
     }
-    if feral.getType(metadata) != VecTy {
+    if !metadata._isType_(VecTy) {
         return SemVer(major, minor, patch, build, metadata.str().split('.'));
     }
     return SemVer(major, minor, patch, build, metadata);
@@ -91,8 +91,8 @@ let parse = fn(versionStr) {
 };
 
 let '==' in SemVer = fn(other) {
-    if feral.getTypeName(other) != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', feral.getTypeName(other));
+    if other._typeName_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
     }
     if self.major != other.major || self.minor != other.minor || self.patch != other.patch || self.build != other.build {
         return false;
@@ -102,8 +102,8 @@ let '==' in SemVer = fn(other) {
 let '!=' in SemVer = fn(other) { return !(self == other); };
 
 let '>' in SemVer = fn(other) {
-    if feral.getTypeName(other) != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', feral.getTypeName(other));
+    if other._typeName_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
     }
     if self.major > other.major { return true; }
     if self.major < other.major { return false; }
@@ -136,8 +136,8 @@ let '>' in SemVer = fn(other) {
 let '>=' in SemVer = fn(other) { return self > other || self == other; };
 
 let '<' in SemVer = fn(other) {
-    if feral.getTypeName(other) != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', feral.getTypeName(other));
+    if other._typeName_() != 'SemVer' {
+        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
     }
     if self.major > other.major { return false; }
     if self.major < other.major { return true; }

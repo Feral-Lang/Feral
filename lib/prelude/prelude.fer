@@ -106,7 +106,7 @@ let getUTF8CharFromHexString in StrTy = fn() {
 Returns `true` if the vectors `var` and `other` have the same length and equal elements.
 "
 let '==' in VecTy = fn(other) {
-    if getType(self) != getType(other) { return false; }
+    if self._type_() != other._type_() { return false; }
     if self.len() != other.len() { return false; }
     let len = self.len();
     for let i = 0; i < len; ++i {
@@ -256,7 +256,7 @@ let str in VecTy = fn() {
 Returns `true` if the maps `var` and `other` have the same length and equal elements.
 "
 let '==' in MapTy = fn(other) {
-    if getType(self) != getType(other) { return false; }
+    if self._type_() != other._type_() { return false; }
     if self.len() != other.len() { return false; }
     for e in self.each() {
         if other[e.0] != e.1 { return false; }

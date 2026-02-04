@@ -34,8 +34,8 @@
 namespace fer
 {
 
-FERAL_FUNC(getDoc, 1, false,
-           "  fn(var) -> Str | Nil\n"
+FERAL_FUNC(allGetDoc, 0, false,
+           "  var.fn() -> Str | Nil\n"
            "Returns the doc string for `var` "
            "(can be function) if one is defined, `nil` otherwise.")
 {
@@ -43,39 +43,55 @@ FERAL_FUNC(getDoc, 1, false,
     return args[1]->getDoc();
 }
 
-FERAL_FUNC(hasAttr, 2, false,
-           "  fn(var, name) -> Var\n"
+FERAL_FUNC(allSetDoc, 1, false,
+           "  var.fn(docStr) -> Nil\n"
+           "Sets the doc string for `var` as `docStr`. If `docStr` is `nil`, empties out the doc "
+           "string for `var`.")
+{
+    if(!args[1]->is<VarStr>() && !args[1]->is<VarNil>()) {
+        vm.fail(loc,
+                "expected argument to be of type string or nil, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    auto &mem = vm.getMemoryManager();
+    if(args[1]->is<VarNil>()) args[0]->setDoc(mem, nullptr);
+    else args[0]->setDoc(mem, as<VarStr>(vm.copyVar(loc, args[1])));
+    return vm.getNil();
+}
+
+FERAL_FUNC(allHasAttr, 1, false,
+           "  var.fn(name) -> Var\n"
            "Given the attribute `name`, returns the respective value contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[1];
+    Var *in = args[0];
     if(!in->isAttrBased()) {
         vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
         return nullptr;
     }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[2]));
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
-    StringRef attr = as<VarStr>(args[2])->getVal();
+    StringRef attr = as<VarStr>(args[1])->getVal();
     return in->existsAttr(attr) ? vm.getTrue() : vm.getFalse();
 }
 
-FERAL_FUNC(getAttr, 2, false,
-           "  fn(var, name) -> Var\n"
+FERAL_FUNC(allGetAttr, 1, false,
+           "  var.fn(name) -> Var\n"
            "Given the attribute `name`, returns the respective value contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[1];
+    Var *in = args[0];
     if(!in->isAttrBased()) {
         vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
         return nullptr;
     }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[2]));
+    if(!args[1]->is<VarStr>()) {
+        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
-    StringRef attr = as<VarStr>(args[2])->getVal();
+    StringRef attr = as<VarStr>(args[1])->getVal();
     Var *res       = in->getAttr(attr);
     if(!res) {
         vm.fail(loc, "attribute `", attr, "` not found");
@@ -84,12 +100,12 @@ FERAL_FUNC(getAttr, 2, false,
     return res;
 }
 
-FERAL_FUNC(getAttrs, 1, false,
-           "  fn(var) -> Var\n"
+FERAL_FUNC(allGetAttrs, 0, false,
+           "  var.fn() -> Var\n"
            "Returns all the attribute names contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[1];
+    Var *in = args[0];
     if(!in->isAttrBased()) {
         vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
         return nullptr;
@@ -99,46 +115,68 @@ FERAL_FUNC(getAttrs, 1, false,
     return res;
 }
 
-FERAL_FUNC(setAttr, 3, false,
-           "  fn(var, name, value) -> value\n"
+FERAL_FUNC(allSetAttr, 2, false,
+           "  var.fn(name, value) -> value\n"
            "Given the attribute `name`, sets the associated `value` in container `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).\n"
            "Returns the provided `value`.")
 {
-    Var *in = args[1];
+    Var *in = args[0];
     if(!in->isAttrBased()) {
         vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
         return nullptr;
     }
-    if(!args[2]->is<VarStr>()) {
+    if(!args[1]->is<VarStr>()) {
         vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
-    StringRef attr = as<VarStr>(args[2])->getVal();
-    in->setAttr(vm.getMemoryManager(), attr, args[3], true);
-    return args[3];
+    StringRef attr = as<VarStr>(args[1])->getVal();
+    in->setAttr(vm.getMemoryManager(), attr, args[2], true);
+    return args[2];
 }
 
-FERAL_FUNC(getType, 1, false,
-           "  fn(var) -> TypeID\n"
+FERAL_FUNC(allGetType, 0, false,
+           "  var.fn() -> TypeID\n"
            "Returns the type ID of `var`.")
 {
-    return vm.makeVar<VarTypeID>(loc, args[1]->getType());
+    return vm.makeVar<VarTypeID>(loc, args[0]->getType());
 }
 
-FERAL_FUNC(getSubType, 1, false,
-           "  fn(var) -> TypeID\n"
+FERAL_FUNC(allGetSubType, 0, false,
+           "  var.fn() -> TypeID\n"
            "Returns the subtype ID of `var`.\n"
            "For example, a struct instance's definition's type.")
 {
-    return vm.makeVar<VarTypeID>(loc, args[1]->getSubType());
+    return vm.makeVar<VarTypeID>(loc, args[0]->getSubType());
 }
 
-FERAL_FUNC(getTypeName, 1, false,
-           "  fn(var) -> Str\n"
+FERAL_FUNC(allIsType, 1, false,
+           "  var.fn(type) -> Bool\n"
+           "Returns `true` if `var` is a `type`.")
+{
+    if(!args[1]->is<VarTypeID>()) {
+        vm.fail(loc, "expected argument to be a Type, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    return args[0]->getType() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(allIsSubType, 1, false,
+           "  var.fn(subType) -> Bool\n"
+           "Returns `true` if the subtype of `var` is `subType`.")
+{
+    if(!args[1]->is<VarTypeID>()) {
+        vm.fail(loc, "expected argument to be a Type, found: ", vm.getTypeName(args[1]));
+        return nullptr;
+    }
+    return args[0]->getSubType() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(allGetTypeName, 0, false,
+           "  var.fn() -> Str\n"
            "Returns the name of the type of `var`.")
 {
-    return vm.makeVar<VarStr>(loc, vm.getTypeName(args[1]));
+    return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
 }
 
 FERAL_FUNC(allEq, 1, false,
@@ -480,14 +518,6 @@ INIT_MODULE(Prelude)
     mod->addNativeFn(vm, "getCurrModule", getCurrModule);
     mod->addNativeFn(vm, "getOSName", getOSName);
     mod->addNativeFn(vm, "getOSDistro", getOSDistro);
-    mod->addNativeFn(vm, "getDoc", getDoc);
-    mod->addNativeFn(vm, "hasAttr", hasAttr);
-    mod->addNativeFn(vm, "getAttr", getAttr);
-    mod->addNativeFn(vm, "getAttrs", getAttrs);
-    mod->addNativeFn(vm, "setAttr", setAttr);
-    mod->addNativeFn(vm, "getType", getType);
-    mod->addNativeFn(vm, "getSubType", getSubType);
-    mod->addNativeFn(vm, "getTypeName", getTypeName);
     // variadic as there can be no proxy for this function (to make args[2] (VarModule) optional)
     mod->addNativeFn(vm, "varExists", varExists);
     mod->addNativeFn(vm, "vecNew", vecNew);
@@ -534,6 +564,17 @@ INIT_MODULE(Prelude)
     vm.addNativeTypeFn<VarAll>(loc, "!=", allNe);
     vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce);
     vm.addNativeTypeFn<VarAll>(loc, "copy", allCopy);
+    vm.addNativeTypeFn<VarAll>(loc, "_getDoc_", allGetDoc);
+    vm.addNativeTypeFn<VarAll>(loc, "_setDoc_", allSetDoc);
+    vm.addNativeTypeFn<VarAll>(loc, "_hasAttr_", allHasAttr);
+    vm.addNativeTypeFn<VarAll>(loc, "_getAttr_", allGetAttr);
+    vm.addNativeTypeFn<VarAll>(loc, "_getAttrs_", allGetAttrs);
+    vm.addNativeTypeFn<VarAll>(loc, "_setAttr_", allSetAttr);
+    vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetType);
+    vm.addNativeTypeFn<VarAll>(loc, "_subType_", allGetSubType);
+    vm.addNativeTypeFn<VarAll>(loc, "_isType_", allIsType);
+    vm.addNativeTypeFn<VarAll>(loc, "_isSubType_", allIsSubType);
+    vm.addNativeTypeFn<VarAll>(loc, "_typeName_", allGetTypeName);
 
     // to bool
     vm.addNativeTypeFn<VarAll>(loc, "bool", allToBool);
