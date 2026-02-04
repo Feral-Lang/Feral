@@ -31,7 +31,13 @@ void remDLLDirectories();
 Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn)
     : vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
       managedAllocator(mem, "VM::ManagedAllocator"), globals(VarFrame::create(mem)),
-      prelude("prelude/prelude"), binaryPath(env::getProcPath()),
+      prelude("prelude/prelude"),
+      binaryPath(makeVarWithRef<VarStr>(ModuleLoc(), env::getProcPath())),
+      installPath(makeVarWithRef<VarStr>(ModuleLoc(),
+                                         fs::parentDir((fs::parentDir(binaryPath->getVal()))))),
+      tempPath(makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp")),
+      libPath(makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral")),
+      globalModulesPath(makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths")),
       basicErrHandler(genNativeFn({}, "basicErrorHandler", basicErrorHandler)),
       moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
       moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -54,10 +60,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
         cmdargs->push(makeVarWithRef<VarStr>(ModuleLoc(), a));
     }
 
-    VarStr *moduleLoc =
-        makeVarWithRef<VarStr>(ModuleLoc(), fs::parentDir(fs::parentDir(binaryPath)));
-    moduleLoc->getVal() += "/lib/feral";
-    moduleDirs->insert(moduleDirs->begin(), moduleLoc);
+    moduleDirs->insert(moduleDirs->begin(), incVarRef(libPath));
 
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
     String feralPaths = env::get("FERAL_PATHS");
@@ -69,7 +72,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     // Global .modulePaths file.
     // The path of a package is added to it when it's installed from command line via package
     // manager.
-    tryAddModulePathsFromFile(getGlobalModulePathsFile());
+    tryAddModulePathsFromFile(globalModulesPath->getVal().c_str());
 
 #if defined(CORE_OS_WINDOWS)
     for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
@@ -387,7 +390,7 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
 {
     static ModuleId moduleIdCtr = 0;
     StringRef bcFilePath(f->getPath());
-    String bcPath(TEMP_PATH);
+    String bcPath(getTempPath()->getVal());
     bcPath += "/cache";
 #if defined(CORE_OS_WINDOWS)
     bcPath += "/";

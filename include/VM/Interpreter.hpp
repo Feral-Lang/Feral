@@ -36,13 +36,17 @@ class Interpreter
     Map<size_t, VarFrame *> typefns;
     // Prelude must be imported before any program is executed
     String prelude;
-    // Path where feral binary exists (used by <prelude>.binaryPath)
-    String binaryPath;
     Mutex globalMutex;
     // Default error handler
     VarFn *basicErrHandler;
     // Default dirs to search for modules. Used by basic{Import,Module}Finder()
     VarVec *moduleDirs;
+    // Various paths used by Feral and are provided as <prelude>.<pathVar>.
+    VarStr *binaryPath;        // where feral exists
+    VarStr *installPath;       // <binaryPath>/..
+    VarStr *tempPath;          // <binaryPath>/../tmp
+    VarStr *libPath;           // <binaryPath>/../lib/feral
+    VarStr *globalModulesPath; // <libPath>/.modulePaths
     // Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is
     // attempted.
     // Signature is: fn(moduleToResolve: str, isImport: bool): nil/str
@@ -106,7 +110,6 @@ public:
     inline void stopExecution() { stopExec.store(true, std::memory_order_release); }
     inline bool shouldStopExecution() { return stopExec.load(std::memory_order_relaxed); }
 
-    inline const char *getGlobalModulePathsFile() { return GLOBAL_MODULE_PATHS_FILE_PATH; }
     inline StringRef getFeralImportExtension() { return ".fer"; }
     inline StringRef getNativeModuleExtension()
     {
@@ -274,7 +277,11 @@ public:
     inline MemoryManager &getMemoryManager() { return ip.mem; }
     inline VarVec *getModuleDirs() { return ip.moduleDirs; }
     inline VarVec *getModuleFinders() { return ip.moduleFinders; }
-    inline StringRef getBinaryPath() { return ip.binaryPath; }
+    inline VarStr *getBinaryPath() { return ip.binaryPath; }
+    inline VarStr *getInstallPath() { return ip.installPath; }
+    inline VarStr *getTempPath() { return ip.tempPath; }
+    inline VarStr *getLibPath() { return ip.libPath; }
+    inline VarStr *getGlobalModulePathsFile() { return ip.globalModulesPath; }
     inline VarBool *getTrue() { return ip.tru; }
     inline VarBool *getFalse() { return ip.fals; }
     inline VarNil *getNil() { return ip.nil; }
@@ -285,7 +292,6 @@ public:
     inline bool hasModule(StringRef path) { return ip.hasModule(path); }
     inline VarModule *getModule(StringRef path) { return ip.getModule(path); }
     inline StringRef getTypeName(Var *var) { return ip.getTypeName(var->getSubType()); }
-    inline const char *getGlobalModulePathsFile() { return ip.getGlobalModulePathsFile(); }
     inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
     inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }
 

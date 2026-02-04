@@ -429,16 +429,15 @@ FERAL_FUNC(
             return nullptr;
         }
     }
-    if(!fs::exists(vm.getGlobalModulePathsFile())) {
-        FILE *f = fopen(vm.getGlobalModulePathsFile(), "w");
+    const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
+    if(!fs::exists(modulePathsFile)) {
+        FILE *f = fopen(modulePathsFile, "w");
         fclose(f);
     }
     String data;
     Vector<StringRef> existingData;
-    if(fs::read(vm.getGlobalModulePathsFile(), data).getCode()) {
-        existingData = utils::stringDelim(data, "\n");
-    }
-    FILE *f      = fopen(vm.getGlobalModulePathsFile(), "a+");
+    if(fs::read(modulePathsFile, data).getCode()) { existingData = utils::stringDelim(data, "\n"); }
+    FILE *f      = fopen(modulePathsFile, "a+");
     size_t added = 0;
     for(size_t i = 1; i < args.size(); ++i) {
         VarStr *arg = as<VarStr>(args[i]);
@@ -468,15 +467,14 @@ FERAL_FUNC(
             return nullptr;
         }
     }
-    if(!fs::exists(vm.getGlobalModulePathsFile())) {
-        FILE *f = fopen(vm.getGlobalModulePathsFile(), "w");
+    const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
+    if(!fs::exists(modulePathsFile)) {
+        FILE *f = fopen(modulePathsFile, "w");
         fclose(f);
     }
     String data;
     Vector<StringRef> existingData;
-    if(fs::read(vm.getGlobalModulePathsFile(), data).getCode()) {
-        existingData = utils::stringDelim(data, "\n");
-    }
+    if(fs::read(modulePathsFile, data).getCode()) { existingData = utils::stringDelim(data, "\n"); }
     size_t removed = 0;
     for(size_t i = 1; i < args.size(); ++i) {
         VarStr *arg = as<VarStr>(args[i]);
@@ -486,7 +484,7 @@ FERAL_FUNC(
         ++removed;
         --i;
     }
-    FILE *f = fopen(vm.getGlobalModulePathsFile(), "w+");
+    FILE *f = fopen(modulePathsFile, "w+");
     for(auto &data : existingData) {
         fwrite(data.data(), sizeof(char), data.size(), f);
         fwrite("\n", sizeof(char), 1, f);
@@ -545,7 +543,10 @@ INIT_MODULE(Prelude)
     mod->addNativeVar(vm, "moduleDirs", "", vm.getModuleDirs());
     mod->addNativeVar(vm, "moduleFinders", "", vm.getModuleFinders());
     mod->addNativeVar(vm, "args", "", vm.getCLIArgs());
-    mod->addNativeVar(vm, "binaryPath", "", vm.makeVar<VarStr>(loc, vm.getBinaryPath()));
+    mod->addNativeVar(vm, "binaryPath", "", vm.getBinaryPath());
+    mod->addNativeVar(vm, "installPath", "", vm.getInstallPath());
+    mod->addNativeVar(vm, "tempPath", "", vm.getTempPath());
+    mod->addNativeVar(vm, "libPath", "", vm.getLibPath());
     mod->addNativeVar(vm, "versionMajor", "", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
     mod->addNativeVar(vm, "versionMinor", "", vm.makeVar<VarInt>(loc, PROJECT_MINOR));
     mod->addNativeVar(vm, "versionPatch", "", vm.makeVar<VarInt>(loc, PROJECT_PATCH));
@@ -553,9 +554,7 @@ INIT_MODULE(Prelude)
     mod->addNativeVar(vm, "buildCompiler", "", vm.makeVar<VarStr>(loc, BUILD_COMPILER));
     mod->addNativeVar(vm, "buildType", "", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
     mod->addNativeVar(vm, "minCmakeVersion", "", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
-    mod->addNativeVar(vm, "cmakeVersion", "", vm.makeVar<VarStr>(loc, CMAKE_VERSION));
-    mod->addNativeVar(vm, "installPath", "", vm.makeVar<VarStr>(loc, INSTALL_PATH));
-    mod->addNativeVar(vm, "tempPath", "", vm.makeVar<VarStr>(loc, TEMP_PATH));
+    mod->addNativeVar(vm, "usedCmakeVersion", "", vm.makeVar<VarStr>(loc, USED_CMAKE_VERSION));
     mod->addNativeVar(vm, "DEFAULT_MAX_RECURSION", "",
                       vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
 
