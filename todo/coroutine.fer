@@ -1,0 +1,57 @@
+let io = import('std/io');
+let async = import('std/async');
+
+let tasks = vec.new(refs = true);
+
+let netSender = co(conn) {
+    while conn.isConnected() {
+        await sendDataOnConnection(conn);
+    }
+    # ...
+    # let result = await sendDataOnConnection(conn); # await == yield from
+    # ...
+    # return result;
+};
+
+/*
+A coroutine (for example, netSender) will be internally transformed as:
+let netSender = fn(__cohandle__, conn) { # the handle is the same as a promise
+    while conn.isConnected() {
+        let res = 
+        __cohandle__.
+        await sendDataOnConnection(conn);
+    }
+    __cohandle__.setFinished(true);
+};
+*/
+
+let netReceiver = co(conn) {
+    while conn.isConnected() {
+        await receiveDataFromConnection(conn);
+    }
+};
+
+let netAccepter = co() {
+    # Logic to accept network and assigning it to netSender and netReceiver
+    while true {
+        let conn = await someoneAttemptingConnection();
+        if !conn.isConnected() { continue; }
+        tasks.push(async.newTask(netSender, conn));
+        tasks.push(async.newTask(netReceiver, conn));
+    }
+};
+
+let scheduler = fn(taskList) {
+    while !taskList.empty() {
+        for let i = 0; i < taskList.len(); ++i {
+            if taskList[i].isReady() { taskList[i].send(); }
+            if !taskList[i].isFinished() { continue; }
+            taskList.erase(i--);
+        }
+    }
+};
+
+tasks.push(async.newTask(netAccepter));
+
+# There should be a default scheduler as well - an (OS specific) event monitoring scheduler perhaps?
+async.run(tasks, scheduler);
