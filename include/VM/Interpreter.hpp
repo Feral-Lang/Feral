@@ -17,6 +17,77 @@ typedef void (*ModDeinitFn)(Interpreter &ip);
 #define INIT_MODULE(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
 #define DEINIT_MODULE(name) extern "C" void Deinit##name(Interpreter &ip)
 
+// Perform expressions in variadic before returning nullptr.
+#define EXPECT_AND(type, var, expectStr, ...)                         \
+    if(!var->is<type>()) {                                            \
+        vm.fail(loc, "expected `", vm.getTypeName(typeID<type>()),    \
+                "` for " expectStr ", found: ", vm.getTypeName(var)); \
+        __VA_ARGS__;                                                  \
+        return nullptr;                                               \
+    }
+
+#define EXPECT2_AND(type1, type2, var, expectStr, ...)                        \
+    if(!var->is<type1>() && !var->is<type2>()) {                              \
+        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `", \
+                vm.getTypeName(typeID<type2>()),                              \
+                "` for " expectStr ", found: ", vm.getTypeName(var));         \
+        __VA_ARGS__;                                                          \
+        return nullptr;                                                       \
+    }
+
+#define EXPECT3_AND(type1, type2, type3, var, expectStr, ...)                               \
+    if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>()) {                       \
+        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+                vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
+                "` for " expectStr ", found: ", vm.getTypeName(var));                       \
+        __VA_ARGS__;                                                                        \
+        return nullptr;                                                                     \
+    }
+
+#define EXPECT4_AND(type1, type2, type3, type4, var, expectStr, ...)                        \
+    if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>() && !var->is<type4>()) {  \
+        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+                vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
+                "` or `", vm.getTypeName(typeID<type4>()),                                  \
+                "` for " expectStr ", found: ", vm.getTypeName(var));                       \
+        __VA_ARGS__;                                                                        \
+        return nullptr;                                                                     \
+    }
+
+#define EXPECT5_AND(type1, type2, type3, type4, type5, var, expectStr, ...)                 \
+    if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>() && !var->is<type4>() &&  \
+       !var->is<type5>())                                                                   \
+    {                                                                                       \
+        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+                vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
+                "` or `", vm.getTypeName(typeID<type4>()), "` or `",                        \
+                vm.getTypeName(typeID<type5>()),                                            \
+                "` for " expectStr ", found: ", vm.getTypeName(var));                       \
+        __VA_ARGS__;                                                                        \
+        return nullptr;                                                                     \
+    }
+
+#define EXPECT(type, var, expectStr) EXPECT_AND(type, var, expectStr)
+#define EXPECT2(type1, type2, var, expectStr) EXPECT2_AND(type1, type2, var, expectStr)
+#define EXPECT3(type1, type2, type3, var, expectStr) \
+    EXPECT3_AND(type1, type2, type3, var, expectStr)
+#define EXPECT4(type1, type2, type3, type4, var, expectStr) \
+    EXPECT4_AND(type1, type2, type3, type4, var, expectStr)
+#define EXPECT5(type1, type2, type3, type4, type5, var, expectStr) \
+    EXPECT5_AND(type1, type2, type3, type4, type5, var, expectStr)
+
+#define EXPECT_NO_CONST(var, name)                    \
+    if(var->isConst()) {                              \
+        vm.fail(loc, "`" name "` cannot be a const"); \
+        return nullptr;                               \
+    }
+
+#define EXPECT_ATTR_BASED(var, name)                                                      \
+    if(!var->isAttrBased()) {                                                             \
+        vm.fail(loc, "`" name "` must be attribute based, found: ", vm.getTypeName(var)); \
+        return nullptr;                                                                   \
+    }
+
 class Interpreter
 {
     Atomic<size_t> vmCount;
@@ -170,6 +241,7 @@ public:
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
+        tyvar->setConst();
         name += "Ty";
         if(!module) addGlobal(name, doc, tyvar, false);
         else module->addNativeVar(mem, name, doc, tyvar, false);
@@ -257,6 +329,7 @@ public:
 
     inline void setTypeName(size_t _typeid, StringRef name) { ip.setTypeName(_typeid, name); }
     inline StringRef getTypeName(size_t _typeid) { return ip.getTypeName(_typeid); }
+    inline StringRef getTypeName(Var *var) { return getTypeName(var->getSubType()); }
 
     // supposed to call the overloaded delete operator in Var
     inline Var *getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
@@ -291,7 +364,6 @@ public:
 
     inline bool hasModule(StringRef path) { return ip.hasModule(path); }
     inline VarModule *getModule(StringRef path) { return ip.getModule(path); }
-    inline StringRef getTypeName(Var *var) { return ip.getTypeName(var->getSubType()); }
     inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
     inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }
 

@@ -42,14 +42,11 @@ FERAL_FUNC(fltToInt, 0, false,
 
 FERAL_FUNC(strToIntNative, 1, false, "")
 {
+    EXPECT(VarInt, args[1], "base");
     StringRef num = as<VarStr>(args[0])->getVal();
     for(auto c : num) {
         if(c == '-' || (c >= '0' && c <= '9')) continue;
         vm.fail(loc, "string '", num, "' is not a number");
-        return nullptr;
-    }
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected base to be an integer, found: ", vm.getTypeName(args[1]));
         return nullptr;
     }
     int64_t base = as<VarInt>(args[1])->getVal();

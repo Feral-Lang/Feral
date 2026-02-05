@@ -5,21 +5,18 @@
 namespace fer
 {
 
-#define ARITHI_FUNC(fn, oper)                                                                    \
-    FERAL_FUNC(int##fn, 1, false,                                                                \
-               "  var.fn(other) -> Int\n"                                                        \
-               "Int operation " STRINGIFY(fn) " between `var` and `other`.")                     \
-    {                                                                                            \
-        if(args[1]->is<VarInt>()) {                                                              \
-            return vm.makeVar<VarInt>(                                                           \
-                loc, as<VarInt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());          \
-        } else if(args[1]->is<VarFlt>()) {                                                       \
-            return vm.makeVar<VarInt>(                                                           \
-                loc, as<VarInt>(args[0])->getVal() oper(int64_t) as<VarFlt>(args[1])->getVal()); \
-        }                                                                                        \
-        vm.fail(loc, "expected int or flt argument for int " STRINGIFY(fn) ", found: ",          \
-                vm.getTypeName(args[1]));                                                        \
-        return nullptr;                                                                          \
+#define ARITHI_FUNC(fn, oper)                                                                \
+    FERAL_FUNC(int##fn, 1, false,                                                            \
+               "  var.fn(other) -> Int\n"                                                    \
+               "Int operation " STRINGIFY(fn) " between `var` and `other`.")                 \
+    {                                                                                        \
+        EXPECT2(VarInt, VarFlt, args[1], "int " STRINGIFY(fn));                              \
+        if(args[1]->is<VarInt>()) {                                                          \
+            return vm.makeVar<VarInt>(                                                       \
+                loc, as<VarInt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());      \
+        }                                                                                    \
+        return vm.makeVar<VarInt>(                                                           \
+            loc, as<VarInt>(args[0])->getVal() oper(int64_t) as<VarFlt>(args[1])->getVal()); \
     }
 
 #define ARITHI_ASSN_FUNC(fn, oper)                                                              \
@@ -28,70 +25,54 @@ namespace fer
         "  var.fn(other) -> var\n"                                                              \
         "Int assignment operation " STRINGIFY(fn) " between `var` and `other`, returns `var`.") \
     {                                                                                           \
+        EXPECT2(VarInt, VarFlt, args[1], "int " STRINGIFY(fn) "-assn");                         \
+        EXPECT_NO_CONST(args[0], "var");                                                        \
         if(args[1]->is<VarInt>()) {                                                             \
             as<VarInt>(args[0])->setVal(                                                        \
                 as<VarInt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());              \
             return args[0];                                                                     \
-        } else if(args[1]->is<VarFlt>()) {                                                      \
-            as<VarInt>(args[0])->setVal(                                                        \
-                as<VarInt>(args[0])->getVal() oper(int64_t) as<VarFlt>(args[1])->getVal());     \
-            return args[0];                                                                     \
         }                                                                                       \
-        vm.fail(loc, "expected int or flt argument for int " STRINGIFY(fn) "-assn, found: ",    \
-                vm.getTypeName(args[1]));                                                       \
-        return nullptr;                                                                         \
+        as<VarInt>(args[0])->setVal(                                                            \
+            as<VarInt>(args[0])->getVal() oper(int64_t) as<VarFlt>(args[1])->getVal());         \
+        return args[0];                                                                         \
     }
 
-#define LOGICI_FUNC(fn, sym)                                                            \
-    FERAL_FUNC(int##fn, 1, false,                                                       \
-               "  var.fn(other) -> Bool\n"                                              \
-               "Int logical operation " STRINGIFY(name) " between `var` and `other`.")  \
-    {                                                                                   \
-        if(args[1]->is<VarInt>()) {                                                     \
-            return as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal()      \
-                       ? vm.getTrue()                                                   \
-                       : vm.getFalse();                                                 \
-        }                                                                               \
-        if(args[1]->is<VarFlt>()) {                                                     \
-            return as<VarInt>(args[0])->getVal() sym as<VarFlt>(args[1])->getVal()      \
-                       ? vm.getTrue()                                                   \
-                       : vm.getFalse();                                                 \
-        }                                                                               \
-        vm.fail(loc, "expected int or flt argument for int " STRINGIFY(fn) ", found: ", \
-                vm.getTypeName(args[1]));                                               \
-        return nullptr;                                                                 \
+#define LOGICI_FUNC(fn, sym)                                                                    \
+    FERAL_FUNC(int##fn, 1, false,                                                               \
+               "  var.fn(other) -> Bool\n"                                                      \
+               "Int logical operation " STRINGIFY(name) " between `var` and `other`.")          \
+    {                                                                                           \
+        EXPECT2(VarInt, VarFlt, args[1], "int logical " STRINGIFY(fn));                         \
+        if(args[1]->is<VarInt>()) {                                                             \
+            return as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal()              \
+                       ? vm.getTrue()                                                           \
+                       : vm.getFalse();                                                         \
+        }                                                                                       \
+        return as<VarInt>(args[0])->getVal() sym as<VarFlt>(args[1])->getVal() ? vm.getTrue()   \
+                                                                               : vm.getFalse(); \
     }
 
-#define BITWISE_FUNC(fn, sym)                                                            \
-    FERAL_FUNC(intB##fn, 1, false,                                                       \
-               "  var.fn(other) -> Int\n"                                                \
-               "Int bitwise operation " STRINGIFY(fn) " between `var` and `other`.")     \
-    {                                                                                    \
-        if(args[1]->is<VarInt>()) {                                                      \
-            return vm.makeVar<VarInt>(                                                   \
-                loc, as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal());   \
-        }                                                                                \
-        vm.fail(loc, "expected int argument for int bitwise " STRINGIFY(fn) ", found: ", \
-                vm.getTypeName(args[1]));                                                \
-        return nullptr;                                                                  \
+#define BITWISE_FUNC(fn, sym)                                                        \
+    FERAL_FUNC(intB##fn, 1, false,                                                   \
+               "  var.fn(other) -> Int\n"                                            \
+               "Int bitwise operation " STRINGIFY(fn) " between `var` and `other`.") \
+    {                                                                                \
+        EXPECT(VarInt, args[1], "int bitwise " STRINGIFY(fn));                       \
+        return vm.makeVar<VarInt>(                                                   \
+            loc, as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal());   \
     }
 
-#define BITWISE_ASSN_FUNC(fn, sym)                                                \
-    FERAL_FUNC(intAssnB##fn, 1, false,                                            \
-               "  var.fn(other) -> var\n"                                         \
-               "Int bitwise-assignment operation " STRINGIFY(                     \
-                   fn) " between `var` and `other`, returns `var`.")              \
-    {                                                                             \
-        if(args[1]->is<VarInt>()) {                                               \
-            as<VarInt>(args[0])->setVal(                                          \
-                as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal()); \
-            return args[0];                                                       \
-        }                                                                         \
-        vm.fail(loc,                                                              \
-                "expected int argument for int "                                  \
-                "bitwise " STRINGIFY(fn) "-assn, found: ",                        \
-                vm.getTypeName(args[1]));                                         \
-        return nullptr;                                                           \
+#define BITWISE_ASSN_FUNC(fn, sym)                                            \
+    FERAL_FUNC(intAssnB##fn, 1, false,                                        \
+               "  var.fn(other) -> var\n"                                     \
+               "Int bitwise-assignment operation " STRINGIFY(                 \
+                   fn) " between `var` and `other`, returns `var`.")          \
+    {                                                                         \
+        EXPECT(VarInt, args[1], "int bitwise " STRINGIFY(fn) "-assn");        \
+        EXPECT_NO_CONST(args[0], "var");                                      \
+        as<VarInt>(args[0])->setVal(                                          \
+            as<VarInt>(args[0])->getVal() sym as<VarInt>(args[1])->getVal()); \
+        return args[0];                                                       \
     }
 
 ARITHI_FUNC(Add, +)
@@ -139,6 +120,7 @@ FERAL_FUNC(intDiv, 1, false,
            "  var.fn(other) -> Int\n"
            "Divides `var` by `other` and returns the integral value.")
 {
+    EXPECT2(VarInt, VarFlt, args[1], "int division");
     if(args[1]->is<VarInt>()) {
         // rhs == 0
         if(as<VarInt>(args[1])->getVal() == 0) {
@@ -147,23 +129,21 @@ FERAL_FUNC(intDiv, 1, false,
         }
         return vm.makeVar<VarInt>(loc,
                                   as<VarInt>(args[0])->getVal() / as<VarInt>(args[1])->getVal());
-    } else if(args[1]->is<VarFlt>()) {
-        // rhs == 0
-        if(as<VarFlt>(args[1])->getVal() == 0.0) {
-            vm.fail(loc, "division by zero");
-            return nullptr;
-        }
-        return vm.makeVar<VarInt>(loc,
-                                  as<VarInt>(args[0])->getVal() / as<VarInt>(args[1])->getVal());
     }
-    vm.fail(loc, "expected int or flt argument for int Div, found: ", vm.getTypeName(args[1]));
-    return nullptr;
+    // rhs == 0
+    if(as<VarFlt>(args[1])->getVal() == 0.0) {
+        vm.fail(loc, "division by zero");
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal() / as<VarInt>(args[1])->getVal());
 }
 
 FERAL_FUNC(intAssnDiv, 1, false,
            "  var.fn(other) -> var\n"
            "Divides `var` by `other` and returns the updated `var`.")
 {
+    EXPECT2(VarInt, VarFlt, args[1], "int division-assn");
+    EXPECT_NO_CONST(args[0], "var");
     if(args[1]->is<VarInt>()) {
         // rhs == 0
         if(as<VarInt>(args[1])->getVal() == 0) {
@@ -172,17 +152,14 @@ FERAL_FUNC(intAssnDiv, 1, false,
         }
         as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() / as<VarInt>(args[1])->getVal());
         return args[0];
-    } else if(args[1]->is<VarFlt>()) {
-        // rhs == 0
-        if(as<VarFlt>(args[1])->getVal() == 0.0) {
-            vm.fail(loc, "division by zero");
-            return nullptr;
-        }
-        as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() / as<VarFlt>(args[1])->getVal());
-        return args[0];
     }
-    vm.fail(loc, "expected int or flt argument for int Div-assn, found: ", vm.getTypeName(args[1]));
-    return nullptr;
+    // rhs == 0
+    if(as<VarFlt>(args[1])->getVal() == 0.0) {
+        vm.fail(loc, "division by zero");
+        return nullptr;
+    }
+    as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() / as<VarFlt>(args[1])->getVal());
+    return args[0];
 }
 
 FERAL_FUNC(intBNot, 0, false,
@@ -211,66 +188,43 @@ FERAL_FUNC(intLShift, 1, false,
            "  var.fn(other) -> Int\n"
            "Left shifts the bits in `var`, `other` times and returns the value.")
 {
-    if(args[1]->is<VarInt>()) {
-        return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal()
-                                           << as<VarInt>(args[1])->getVal());
-    }
-    vm.fail(loc,
-            "expected int argument "
-            "for int leftshift, found: ",
-            vm.getTypeName(args[1]));
-    return nullptr;
+    EXPECT(VarInt, args[1], "int left-shift");
+    return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal() << as<VarInt>(args[1])->getVal());
 }
 
 FERAL_FUNC(intRShift, 1, false,
            "  var.fn(other) -> Int\n"
            "Right shifts the bits in `var`, `other` times and returns the value.")
 {
-    if(args[1]->is<VarInt>()) {
-        return vm.makeVar<VarInt>(loc,
-                                  as<VarInt>(args[0])->getVal() >> as<VarInt>(args[1])->getVal());
-    }
-    vm.fail(loc,
-            "expected int argument "
-            "for int rightshift, found: ",
-            vm.getTypeName(args[1]));
-    return nullptr;
+    EXPECT(VarInt, args[1], "int right-shift");
+    return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal() >> as<VarInt>(args[1])->getVal());
 }
 
 FERAL_FUNC(intAssnLShift, 1, false,
            "  var.fn(other) -> Int\n"
            "Left shifts the bits in `var`, `other` times and returns the updated `var`.")
 {
-    if(args[1]->is<VarInt>()) {
-        as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() << as<VarInt>(args[1])->getVal());
-        return args[0];
-    }
-    vm.fail(loc,
-            "expected int argument for int leftshift-assign, found: ", vm.getTypeName(args[1]));
-    return nullptr;
+    EXPECT(VarInt, args[1], "int left-shift-assn");
+    EXPECT_NO_CONST(args[0], "var");
+    as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() << as<VarInt>(args[1])->getVal());
+    return args[0];
 }
 
 FERAL_FUNC(intAssnRShift, 1, false,
            "  var.fn(other) -> Int\n"
            "Right shifts the bits in `var`, `other` times and returns the updated `var`.")
 {
-    if(args[1]->is<VarInt>()) {
-        as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() >> as<VarInt>(args[1])->getVal());
-        return args[0];
-    }
-    vm.fail(loc,
-            "expected int argument for int rightshift-assign, found: ", vm.getTypeName(args[1]));
-    return nullptr;
+    EXPECT(VarInt, args[1], "int right-shift-assn");
+    EXPECT_NO_CONST(args[0], "var");
+    as<VarInt>(args[0])->setVal(as<VarInt>(args[0])->getVal() >> as<VarInt>(args[1])->getVal());
+    return args[0];
 }
 
 FERAL_FUNC(intPow, 1, false,
            "  var.fn(exponent) -> Int\n"
            "Returns the value of `var` raised to the power of `exponent`.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for int power, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "int power");
     int64_t base = as<VarInt>(args[0])->getVal();
     int64_t exp  = as<VarInt>(args[1])->getVal();
     int64_t res  = 1;
@@ -341,21 +295,9 @@ FERAL_FUNC(intRange, 1, true,
     Var *rhsBase  = args.size() > 2 ? args[2] : nullptr;
     Var *stepBase = args.size() > 3 ? args[3] : nullptr;
 
-    if(!lhsBase->is<VarInt>()) {
-        vm.fail(lhsBase->getLoc(),
-                "expected argument 1 to be of type int, found: ", vm.getTypeName(lhsBase));
-        return nullptr;
-    }
-    if(rhsBase && !rhsBase->is<VarInt>()) {
-        vm.fail(rhsBase->getLoc(),
-                "expected argument 2 to be of type int, found: ", vm.getTypeName(rhsBase));
-        return nullptr;
-    }
-    if(stepBase && !stepBase->is<VarInt>()) {
-        vm.fail(stepBase->getLoc(),
-                "expected argument 3 to be of type int, found: ", vm.getTypeName(stepBase));
-        return nullptr;
-    }
+    EXPECT(VarInt, lhsBase, "int range start");
+    if(rhsBase) { EXPECT(VarInt, rhsBase, "int range end"); }
+    if(stepBase) { EXPECT(VarInt, stepBase, "int range step"); }
 
     int64_t begin, end, step;
     if(args.size() > 2) begin = as<VarInt>(lhsBase)->getVal();

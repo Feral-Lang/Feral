@@ -48,11 +48,7 @@ FERAL_FUNC(allSetDoc, 1, false,
            "Sets the doc string for `var` as `docStr`. If `docStr` is `nil`, empties out the doc "
            "string for `var`.")
 {
-    if(!args[1]->is<VarStr>() && !args[1]->is<VarNil>()) {
-        vm.fail(loc,
-                "expected argument to be of type string or nil, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT2(VarStr, VarNil, args[1], "doc string");
     auto &mem = vm.getMemoryManager();
     if(args[1]->is<VarNil>()) args[0]->setDoc(mem, nullptr);
     else args[0]->setDoc(mem, as<VarStr>(vm.copyVar(loc, args[1])));
@@ -64,15 +60,9 @@ FERAL_FUNC(allHasAttr, 1, false,
            "Given the attribute `name`, returns the respective value contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[0];
-    if(!in->isAttrBased()) {
-        vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
-        return nullptr;
-    }
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_ATTR_BASED(args[0], "var");
+    EXPECT(VarStr, args[1], "doc string");
+    Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     return in->existsAttr(attr) ? vm.getTrue() : vm.getFalse();
 }
@@ -82,15 +72,9 @@ FERAL_FUNC(allGetAttr, 1, false,
            "Given the attribute `name`, returns the respective value contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[0];
-    if(!in->isAttrBased()) {
-        vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
-        return nullptr;
-    }
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_ATTR_BASED(args[0], "var");
+    EXPECT(VarStr, args[1], "doc string");
+    Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     Var *res       = in->getAttr(attr);
     if(!res) {
@@ -105,11 +89,8 @@ FERAL_FUNC(allGetAttrs, 0, false,
            "Returns all the attribute names contained in `var`.\n"
            "Requires `var` to be attribute based (like Module / Struct).")
 {
-    Var *in = args[0];
-    if(!in->isAttrBased()) {
-        vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
-        return nullptr;
-    }
+    EXPECT_ATTR_BASED(args[0], "var");
+    Var *in     = args[0];
     VarVec *res = vm.makeVar<VarVec>(loc, in->getAttrCount(), true);
     in->getAttrList(vm.getMemoryManager(), res);
     return res;
@@ -121,15 +102,9 @@ FERAL_FUNC(allSetAttr, 2, false,
            "Requires `var` to be attribute based (like Module / Struct).\n"
            "Returns the provided `value`.")
 {
-    Var *in = args[0];
-    if(!in->isAttrBased()) {
-        vm.fail(loc, "expected an attribute based variable, found: ", vm.getTypeName(in));
-        return nullptr;
-    }
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_ATTR_BASED(args[0], "var");
+    EXPECT(VarStr, args[1], "doc string");
+    Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     in->setAttr(vm.getMemoryManager(), attr, args[2], true);
     return args[2];
@@ -154,10 +129,7 @@ FERAL_FUNC(allIsType, 1, false,
            "  var.fn(type) -> Bool\n"
            "Returns `true` if `var` is a `type`.")
 {
-    if(!args[1]->is<VarTypeID>()) {
-        vm.fail(loc, "expected argument to be a Type, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarTypeID, args[1], "type ID");
     return args[0]->getType() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue() : vm.getFalse();
 }
 
@@ -165,10 +137,7 @@ FERAL_FUNC(allIsSubType, 1, false,
            "  var.fn(subType) -> Bool\n"
            "Returns `true` if the subtype of `var` is `subType`.")
 {
-    if(!args[1]->is<VarTypeID>()) {
-        vm.fail(loc, "expected argument to be a Type, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarTypeID, args[1], "type ID");
     return args[0]->getSubType() == as<VarTypeID>(args[1])->getVal() ? vm.getTrue() : vm.getFalse();
 }
 
@@ -233,6 +202,23 @@ FERAL_FUNC(unreference, 1, false,
     args[1]->unsetLoadAsRef();
     return args[1];
 }
+FERAL_FUNC(constant, 1, false,
+           "  fn(var) -> var\n"
+           "Returns the argument itself, but with const internal flag set as `true`.\n"
+           "This ensures that the next time a new object is created "
+           "using `var` as the value, `var` is not copied.")
+{
+    args[1]->setConst();
+    return args[1];
+}
+
+FERAL_FUNC(deconstant, 1, false,
+           "  fn(var) -> var\n"
+           "Returns the argument itself, but with const internal flag set as `false`.")
+{
+    args[1]->unsetConst();
+    return args[1];
+}
 
 FERAL_FUNC(raise, 1, true,
            "  fn(data...) -> var\n"
@@ -247,7 +233,7 @@ FERAL_FUNC(raise, 1, true,
         res += as<VarStr>(v)->getVal();
         vm.decVarRef(v);
     }
-    vm.fail(loc, "raised: ", res);
+    vm.fail(loc, "Raised: ", res);
     return nullptr;
 }
 
@@ -255,10 +241,7 @@ FERAL_FUNC(evalCode, 1, false,
            "  fn(code:str) -> var\n"
            "Evaluates the given code and returns the result.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "code");
     StringRef code = as<VarStr>(args[1])->getVal();
     Var *res       = vm.eval(loc, code, false);
     if(!res) {
@@ -273,10 +256,7 @@ FERAL_FUNC(evalExpr, 1, false,
            "Evaluates the given code as an expression and returns the result.\n"
            "Unlike `eval()`, this just expects an expression and doesn't need a return statement.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "code");
     StringRef expr = as<VarStr>(args[1])->getVal();
     Var *res       = vm.eval(loc, expr, true);
     if(!res) {
@@ -364,10 +344,7 @@ FERAL_FUNC(getOSDistro, 0, false,
 
 FERAL_FUNC(exitNative, 1, false, "")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected integer for exit code, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "exit code");
     vm.setExitCalled(true);
     vm.setExitCode(as<VarInt>(args[1])->getVal());
     return vm.getNil();
@@ -378,11 +355,7 @@ FERAL_FUNC(varExists, 1, true,
            "Returns `true` if the given variable `varName` exists.\n"
            "If `varModule` is an instance of Module, checks within that too.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for variable name, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "variable name");
     StringRef varName = as<VarStr>(args[1])->getVal();
     VarModule *mod    = vm.getCurrModule();
     bool providedMod  = false;
@@ -397,11 +370,7 @@ FERAL_FUNC(varExists, 1, true,
 
 FERAL_FUNC(setMaxRecursionNative, 1, false, "")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument for max recursion count, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "max recursion count");
     vm.setRecurseMax(as<VarInt>(args[1])->getVal());
     return vm.getNil();
 }
@@ -424,10 +393,7 @@ FERAL_FUNC(
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];
-        if(!arg->is<VarStr>()) {
-            vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(arg));
-            return nullptr;
-        }
+        EXPECT(VarStr, arg, "path");
     }
     const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
     if(!fs::exists(modulePathsFile)) {
@@ -462,10 +428,7 @@ FERAL_FUNC(
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];
-        if(!arg->is<VarStr>()) {
-            vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(arg));
-            return nullptr;
-        }
+        EXPECT(VarStr, arg, "path");
     }
     const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
     if(!fs::exists(modulePathsFile)) {
@@ -500,6 +463,8 @@ INIT_MODULE(Prelude)
     // global functions
     vm.addNativeFn(loc, "ref", reference);
     vm.addNativeFn(loc, "unref", unreference);
+    vm.addNativeFn(loc, "const", constant);
+    vm.addNativeFn(loc, "deconst", deconstant);
     vm.addNativeFn(loc, "raise", raise);
     vm.addNativeFn(loc, "evalCode", evalCode);
     vm.addNativeFn(loc, "evalExpr", evalExpr);

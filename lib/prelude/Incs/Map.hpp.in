@@ -23,24 +23,12 @@ FERAL_FUNC(mapNew, 0, true,
     bool refs      = false;
     if(refloc != assnArgs.end()) {
         Var *refsv = refloc->second.val;
-        if(!refsv->is<VarBool>()) {
-            vm.fail(loc,
-                    "expected 'refs' named argument to be"
-                    " of type bool for vec.new(), found: ",
-                    vm.getTypeName(refsv));
-            return nullptr;
-        }
+        EXPECT(VarBool, refsv, "'refs' named argument in map.new()");
         refs = as<VarBool>(refsv)->getVal();
     }
     if(caploc != assnArgs.end()) {
         Var *capv = caploc->second.val;
-        if(!capv->is<VarBool>()) {
-            vm.fail(loc,
-                    "expected 'cap' named argument to be"
-                    " of type int for vec.new(), found: ",
-                    vm.getTypeName(capv));
-            return nullptr;
-        }
+        EXPECT(VarInt, capv, "'cap' named argument in map.new()");
         resvcap = as<VarInt>(capv)->getVal();
     }
     StringMap<Var *> mapval;

@@ -14,7 +14,7 @@ let div = fn(x, y) {
 let x = div(5, 0) or e {
     let p = 0; # to prevent const folding
     return 10 / p or e2 {
-        assert.eq(e.str(), 'raised: div by zero');
+        assert.eq(e.str(), 'Raised: div by zero');
         assert.eq(e2.str(), 'division by zero');
         return 20; # set 20 as the value
     };

@@ -48,7 +48,7 @@ f() or err {
 
 fx() or err {
     assert.eq(err.str(), expectErr1) or err {
-        assert.eq(err.str(), 'raised: assertion `variable \'fx\' does not exist` == `stack overflow, current max: ' + feral.getMaxRecursion().str() + '` failed');
+        assert.eq(err.str(), 'Raised: assertion `variable \'fx\' does not exist` == `stack overflow, current max: ' + feral.getMaxRecursion().str() + '` failed');
     };
 };
 

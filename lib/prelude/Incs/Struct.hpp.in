@@ -22,10 +22,7 @@ FERAL_FUNC(structDefSetTypeName, 1, false,
            "This is used mainly to provide better error messages but its always best to set it for "
            "any Struct.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected typename to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "struct name");
     VarStructDef *def  = as<VarStructDef>(args[0]);
     const String &name = as<VarStr>(args[1])->getVal();
     vm.setTypeName(def->getID(), name);

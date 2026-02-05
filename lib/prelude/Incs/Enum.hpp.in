@@ -12,23 +12,12 @@ FERAL_FUNC(createEnum, 1, true,
 
     for(size_t i = 1; i < args.size(); ++i) {
         auto &a = args[i];
-        if(!a->is<VarStr>()) {
-            vm.fail(a->getLoc(), "expected strings for enums (use strings or atoms), found: ",
-                    vm.getTypeName(a));
-            vm.decVarRef(res);
-            return nullptr;
-        }
+        EXPECT_AND(VarStr, a, "enums (use string / atom)", vm.decVarRef(res));
         res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVarWithRef<VarInt>(loc, i - 1), false);
     }
 
     for(auto &a : assnArgs) {
-        if(!a.second.val->is<VarInt>()) {
-            vm.fail(a.second.val->getLoc(),
-                    "expected argument value to be of type integer for enums, found: ",
-                    vm.getTypeName(a.second.val));
-            vm.decVarRef(res);
-            return nullptr;
-        }
+        EXPECT_AND(VarInt, a.second.val, "enum field value", vm.decVarRef(res));
         res->setAttr(mem, a.first, vm.copyVar(loc, a.second.val), false);
     }
 

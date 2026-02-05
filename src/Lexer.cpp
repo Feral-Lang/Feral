@@ -31,7 +31,6 @@ const char *TokStrs[_LAST] = {
     "false",
     "nil",
     "or",
-    "const",
     "defer",
     "inline",
 
@@ -211,9 +210,8 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
         }
         if(CURR == '*' && NEXT == '/') {
             if(!commentBlock) {
-                err.fail(ModuleLoc(moduleId, i, i + 1),
-                         "encountered multi line comment "
-                         "terminator '*/' in non comment block");
+                err.fail(ModuleLoc(moduleId, i, i + 1), "encountered multi line comment "
+                                                        "terminator '*/' in non comment block");
                 return false;
             }
             i += 2;
@@ -257,13 +255,13 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
             if(strClass == STR || strClass == IDEN) {
                 // place either the data itself (type = STR, IDEN)
                 if(tmpstr.empty())
-                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass, str);
+                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i - 1), strClass, str);
                 else
-                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass,
+                    toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i - 1), strClass,
                                        std::move(tmpstr));
             } else {
                 // or the type
-                toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i), strClass);
+                toks.alloc<Lexeme>(ModuleLoc(moduleId, startPos, i - 1), strClass);
             }
             continue;
         }
@@ -347,7 +345,6 @@ TokType classifyStr(StringRef str)
     if(str == TokStrs[FFALSE]) return FFALSE;
     if(str == TokStrs[NIL]) return NIL;
     if(str == TokStrs[OR]) return OR;
-    if(str == TokStrs[FCONST]) return FCONST;
     if(str == TokStrs[DEFER]) return DEFER;
     if(str == TokStrs[INLINE]) return INLINE;
 

@@ -1,0 +1,14 @@
+let assert = import('std/assert');
+
+feral.binaryPath += 'hello' or e {
+    assert.eq(e.str(), '`var` cannot be a const');
+};
+
+let i = const(5);
+let s = const('hello world');
+i += 5 or e {
+    assert.eq(e.str(), '`var` cannot be a const');
+};
+s.append('hello') or e {
+    assert.eq(e.str(), '`var` cannot be a const');
+};

@@ -18,24 +18,12 @@ FERAL_FUNC(vecNew, 0, true,
     bool refs      = false;
     if(refloc != assnArgs.end()) {
         Var *refsv = refloc->second.val;
-        if(!refsv->is<VarBool>()) {
-            vm.fail(loc,
-                    "expected 'refs' named argument to be"
-                    " of type bool for vec.new(), found: ",
-                    vm.getTypeName(refsv));
-            return nullptr;
-        }
+        EXPECT(VarBool, refsv, "'refs' named argument in vec.new()");
         refs = as<VarBool>(refsv)->getVal();
     }
     if(caploc != assnArgs.end()) {
         Var *capv = caploc->second.val;
-        if(!capv->is<VarInt>()) {
-            vm.fail(loc,
-                    "expected 'cap' named argument to be"
-                    " of type int for vec.new(), found: ",
-                    vm.getTypeName(capv));
-            return nullptr;
-        }
+        EXPECT(VarInt, capv, "'cap' named argument in vec.new()");
         resvcap = as<VarInt>(capv)->getVal();
     }
     VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
@@ -96,6 +84,7 @@ FERAL_FUNC(vecPush, 1, true,
            "  var.fn(args...) -> var\n"
            "Pushes all the given `args` in the vector `var` and returns `var` itself.")
 {
+    EXPECT_NO_CONST(args[0], "var");
     VarVec *res = as<VarVec>(args[0]);
     for(size_t i = 1; i < args.size(); ++i) {
         if(res->isRefVec()) {
@@ -112,6 +101,7 @@ FERAL_FUNC(vecPop, 0, false,
            "  var.fn() -> var\n"
            "Pops the last element in the vector `var` and returns `var` itself.")
 {
+    EXPECT_NO_CONST(args[0], "var");
     VarVec *res = as<VarVec>(args[0]);
     if(res->isEmpty()) {
         vm.fail(loc, "called pop() on an empty vector");
@@ -126,6 +116,7 @@ FERAL_FUNC(vecClear, 0, false,
            "  var.fn() -> var\n"
            "Removes all elements from the vector `var` and returns `var` itself.")
 {
+    EXPECT_NO_CONST(args[0], "var");
     VarVec *v = as<VarVec>(args[0]);
     for(auto &e : v->getVal()) { vm.decVarRef(e); }
     v->clear();
@@ -136,13 +127,8 @@ FERAL_FUNC(vecInsert, 2, false,
            "  var.fn(position, item) -> Nil\n"
            "Inserts `item` at the index `position` in the vector `var` and returns `var` itself.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected first argument to be of"
-                " type integer for vec.insert(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_NO_CONST(args[0], "var");
+    EXPECT(VarInt, args[1], "insert position");
     VarVec *res = as<VarVec>(args[0]);
     size_t pos  = as<VarInt>(args[1])->getVal();
     if(pos >= res->size()) {
@@ -164,13 +150,8 @@ FERAL_FUNC(vecSetAt, 2, false,
            "Sets (replaces) the `item` at the index `position` in the vector `var` and returns "
            "`var` itself.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected first argument to be of "
-                "type integer for vec.set(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_NO_CONST(args[0], "var");
+    EXPECT(VarInt, args[1], "set position");
     VarVec *res = as<VarVec>(args[0]);
     size_t pos  = as<VarInt>(args[1])->getVal();
     if(pos >= res->size()) {
@@ -192,11 +173,8 @@ FERAL_FUNC(vecErase, 1, false,
            "  var.fn(position) -> var\n"
            "Deletes the item located at index `position` and returns `var` itself.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected argument to be of type integer for vec.erase(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT_NO_CONST(args[0], "var");
+    EXPECT(VarInt, args[1], "erase position");
     VarVec *res = as<VarVec>(args[0]);
     size_t pos  = as<VarInt>(args[1])->getVal();
     if(pos >= res->size()) {
@@ -211,21 +189,10 @@ FERAL_FUNC(vecErase, 1, false,
 
 FERAL_FUNC(vecAppendNative, 3, false, "")
 {
-    if(!args[1]->is<VarVec>()) {
-        vm.fail(loc, "expected source to be of type vector for vec.append(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected start index to be of type int for vec.append(), found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarInt>()) {
-        vm.fail(loc, "expected end index to be of type int for vec.append(), found: ",
-                vm.getTypeName(args[3]));
-        return nullptr;
-    }
+    EXPECT_NO_CONST(args[0], "var");
+    EXPECT(VarVec, args[1], "source");
+    EXPECT(VarInt, args[2], "start index");
+    EXPECT(VarInt, args[3], "end index");
     VarVec *dest = as<VarVec>(args[0]);
     VarVec *src  = as<VarVec>(args[1]);
     size_t start = as<VarInt>(args[2])->getVal();
@@ -254,16 +221,9 @@ FERAL_FUNC(vecSwap, 2, false,
            "Swaps the elements at `positionA` and `positionB` in the vector `var` and returns "
            "`var` itself.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected index to be of type int for vec.swap(), found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT_NO_CONST(args[0], "var");
+    EXPECT(VarInt, args[1], "index A");
+    EXPECT(VarInt, args[2], "index B");
     as<VarVec>(args[0])->swap(as<VarInt>(args[1])->getVal(), as<VarInt>(args[2])->getVal());
     return args[0];
 }
@@ -272,6 +232,7 @@ FERAL_FUNC(vecReverse, 0, false,
            "  var.fn() -> var\n"
            "Reverses the vector `var` and returns `var` itself.")
 {
+    EXPECT_NO_CONST(args[0], "var");
     VarVec *res = as<VarVec>(args[0]);
     std::reverse(res->begin(), res->end());
     return args[0];
@@ -282,11 +243,7 @@ FERAL_FUNC(vecAt, 1, false,
            "Returns the value at index `position` in vector `var`, or `nil` if `position` is out "
            "of range in `var`.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected argument to be of type integer for vec.at(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "index");
     VarVec *res = as<VarVec>(args[0]);
     size_t pos  = as<VarInt>(args[1])->getVal();
     if(pos >= res->size()) return vm.getNil();
@@ -295,20 +252,8 @@ FERAL_FUNC(vecAt, 1, false,
 
 FERAL_FUNC(vecSubNative, 2, false, "")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected starting index to be of"
-                " type integer for vec.sub(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected ending index to be of"
-                " type integer for vec.sub(), found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "start index");
+    EXPECT(VarInt, args[2], "end index");
 
     VarVec *v  = as<VarVec>(args[0]);
     size_t beg = as<VarInt>(args[1])->getVal();
@@ -330,16 +275,8 @@ FERAL_FUNC(vecSubNative, 2, false, "")
 
 FERAL_FUNC(vecSliceNative, 2, false, "")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected starting index to be of type integer for vec.slice(), found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected ending index to be of type integer for vec.slice(), found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "start index");
+    EXPECT(VarInt, args[2], "end index");
 
     VarVec *v  = as<VarVec>(args[0]);
     size_t beg = as<VarInt>(args[1])->getVal();

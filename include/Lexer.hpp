@@ -30,7 +30,6 @@ enum TokType
     FFALSE, // FALSE but Windows APIs define a macro with that name
     NIL,
     OR,
-    FCONST, // CONST but Windows APIs define a macro with that name
     DEFER,
     INLINE,
 

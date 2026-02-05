@@ -10,16 +10,13 @@ namespace fer
                "  var.fn(other) -> Flt\n"                                               \
                "Float operation " STRINGIFY(fn) " between `var` and `other`.")          \
     {                                                                                   \
+        EXPECT2(VarInt, VarFlt, args[1], "float " STRINGIFY(fn));                       \
         if(args[1]->is<VarInt>()) {                                                     \
             return vm.makeVar<VarFlt>(                                                  \
                 loc, as<VarFlt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal()); \
-        } else if(args[1]->is<VarFlt>()) {                                              \
-            return vm.makeVar<VarFlt>(                                                  \
-                loc, as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal()); \
         }                                                                               \
-        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) ", found: ",      \
-                vm.getTypeName(args[1]));                                               \
-        return nullptr;                                                                 \
+        return vm.makeVar<VarFlt>(                                                      \
+            loc, as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal());     \
     }
 
 #define ARITHF_ASSN_FUNC(fn, oper)                                                                \
@@ -28,18 +25,16 @@ namespace fer
         "  var.fn(other) -> var\n"                                                                \
         "Float assignment operation " STRINGIFY(fn) " between `var` and `other`, returns `var`.") \
     {                                                                                             \
+        EXPECT2(VarInt, VarFlt, args[1], "float " STRINGIFY(fn) "-assn");                         \
+        EXPECT_NO_CONST(args[0], "var");                                                          \
         if(args[1]->is<VarInt>()) {                                                               \
             as<VarFlt>(args[0])->setVal(                                                          \
                 as<VarFlt>(args[0])->getVal() oper as<VarInt>(args[1])->getVal());                \
             return args[0];                                                                       \
-        } else if(args[1]->is<VarFlt>()) {                                                        \
-            as<VarFlt>(args[0])->setVal(                                                          \
-                as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal());                \
-            return args[0];                                                                       \
         }                                                                                         \
-        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) "-assn, found: ",           \
-                vm.getTypeName(args[1]));                                                         \
-        return nullptr;                                                                           \
+        as<VarFlt>(args[0])->setVal(                                                              \
+            as<VarFlt>(args[0])->getVal() oper as<VarFlt>(args[1])->getVal());                    \
+        return args[0];                                                                           \
     }
 
 #define LOGICF_FUNC(fn, checksym)                                                       \
@@ -47,19 +42,15 @@ namespace fer
                "  var.fn(other) -> Bool\n"                                              \
                "Float logical operation " STRINGIFY(fn) " between `var` and `other`.")  \
     {                                                                                   \
+        EXPECT2(VarInt, VarFlt, args[1], "float logical " STRINGIFY(fn));               \
         if(args[1]->is<VarFlt>()) {                                                     \
             return as<VarFlt>(args[0])->getVal() checksym as<VarFlt>(args[1])->getVal() \
                        ? vm.getTrue()                                                   \
                        : vm.getFalse();                                                 \
         }                                                                               \
-        if(args[1]->is<VarInt>()) {                                                     \
-            return as<VarFlt>(args[0])->getVal() checksym as<VarInt>(args[1])->getVal() \
-                       ? vm.getTrue()                                                   \
-                       : vm.getFalse();                                                 \
-        }                                                                               \
-        vm.fail(loc, "expected int or flt arg for flt " STRINGIFY(fn) ", found: ",      \
-                vm.getTypeName(args[1]));                                               \
-        return nullptr;                                                                 \
+        return as<VarFlt>(args[0])->getVal() checksym as<VarInt>(args[1])->getVal()     \
+                   ? vm.getTrue()                                                       \
+                   : vm.getFalse();                                                     \
     }
 
 ARITHF_FUNC(Add, +)
@@ -149,10 +140,7 @@ FERAL_FUNC(fltPow, 1, false,
            "  var.fn(exponent) -> Flt\n"
            "Returns the value of `var` raised to the power of `exponent`.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "power must be an integer, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "power");
     return vm.makeVar<VarFlt>(
         loc, std::pow(as<VarFlt>(args[0])->getVal(), as<VarInt>(args[1])->getVal()));
 }

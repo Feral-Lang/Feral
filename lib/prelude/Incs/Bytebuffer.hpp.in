@@ -7,10 +7,7 @@ FERAL_FUNC(bytebufferNew, 1, false,
            "  fn(size) -> Bytebuffer\n"
            "Creates and returns a Bytebuffer with `size` bytes reserved.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for bytebuffer size, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "bytebuffer size");
     return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 

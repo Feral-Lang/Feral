@@ -45,11 +45,7 @@ FERAL_FUNC(atomicBoolNew, 1, false,
            "  fn(value) -> AtomicBool\n"
            "Creates a new atomic boolean with `value` and returns it.")
 {
-    if(!args[1]->is<VarBool>()) {
-        vm.fail(loc, "expected bool argument for creating an atomic bool, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarBool, args[1], "creating an atomic bool");
     return vm.makeVar<VarAtomicBool>(loc, as<VarBool>(args[1])->getVal());
 }
 
@@ -57,13 +53,7 @@ FERAL_FUNC(atomicBoolSet, 1, false,
            "  var.fn(value) -> Nil\n"
            "Sets the value of atomic bool `var` to be `value`.")
 {
-    if(!args[1]->is<VarBool>()) {
-        vm.fail(loc,
-                "expected bool argument for setting"
-                " an atomic bool, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarBool, args[1], "setting an atomic bool");
     as<VarAtomicBool>(args[0])->setVal(as<VarBool>(args[1])->getVal());
     return vm.getNil();
 }
@@ -83,13 +73,7 @@ FERAL_FUNC(atomicIntNew, 1, false,
            "  fn(value) -> AtomicInt\n"
            "Creates a new atomic integer with `value` and returns it.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument for creating:"
-                " an atomic int, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "creating an atomic int");
     return vm.makeVar<VarAtomicInt>(loc, as<VarInt>(args[1])->getVal());
 }
 
@@ -97,13 +81,7 @@ FERAL_FUNC(atomicIntSet, 1, false,
            "  var.fn(value) -> Nil\n"
            "Sets the value of atomic bool `var` to be `value`.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument for setting"
-                " an atomic int, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "setting an atomic int");
     as<VarAtomicInt>(args[0])->setVal(as<VarInt>(args[1])->getVal());
     return vm.getNil();
 }

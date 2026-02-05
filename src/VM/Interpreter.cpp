@@ -52,6 +52,16 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
 #endif
     initTypeNames();
 
+    binaryPath->setConst();
+    installPath->setConst();
+    tempPath->setConst();
+    libPath->setConst();
+    globalModulesPath->setConst();
+    basicErrHandler->setConst();
+    tru->setConst();
+    fals->setConst();
+    nil->setConst();
+
     Span<StringRef> vmArgs = argparser.getPassthrough();
 
     cmdargs = makeVarWithRef<VarVec>(ModuleLoc(), vmArgs.size(), false);
@@ -59,6 +69,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
         auto &a = vmArgs[i];
         cmdargs->push(makeVarWithRef<VarStr>(ModuleLoc(), a));
     }
+    cmdargs->setConst();
 
     moduleDirs->insert(moduleDirs->begin(), incVarRef(libPath));
 

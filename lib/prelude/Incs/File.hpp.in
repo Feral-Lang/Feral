@@ -46,20 +46,10 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr,
 
 FERAL_FUNC(fsFopen, 3, false, "")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for file open mode, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarBool>()) {
-        vm.fail(loc, "expected bool argument for file should be closed, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "file path");
+    EXPECT(VarStr, args[2], "file open mode");
+    EXPECT(VarBool, args[3], "if file should be closed");
+
     const String &filename = as<VarStr>(args[1])->getVal();
     const String &mode     = as<VarStr>(args[2])->getVal();
     bool mustClose         = as<VarBool>(args[3])->getVal();
@@ -73,29 +63,17 @@ FERAL_FUNC(fsFopen, 3, false, "")
 
 FERAL_FUNC(fsWalkDir, 3, false, "")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for directory name, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument "
-                "for walk mode, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for file regex, found: ", vm.getTypeName(args[3]));
-        return nullptr;
-    }
-    String dirstr = as<VarStr>(args[1])->getVal();
-    size_t flags  = as<VarInt>(args[2])->getVal();
+    EXPECT(VarStr, args[1], "directory name");
+    EXPECT(VarInt, args[2], "walk mode");
+    EXPECT(VarStr, args[3], "path regex");
 
+    String dirstr = as<VarStr>(args[1])->getVal();
     if(dirstr.empty()) {
         vm.fail(loc, "empty directory path provided");
         return nullptr;
     }
+
+    size_t flags = as<VarInt>(args[2])->getVal();
 
     const String &regexstr = as<VarStr>(args[3])->getVal();
     Regex regex(regexstr);
@@ -109,10 +87,7 @@ FERAL_FUNC(fsAbsPath, 1, false,
            "  fn(path) -> str\n"
            "Get the absolute path from the given (relative) path.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "path");
     const String &path = as<VarStr>(args[1])->getVal();
     return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
 }
@@ -122,15 +97,9 @@ FERAL_FUNC(fileReopenNative, 2, false, "")
     VarFile *filev = as<VarFile>(args[0]);
     if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
 
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for file open mode, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "file path");
+    EXPECT(VarStr, args[2], "file open mode");
+
     const String &filename = as<VarStr>(args[1])->getVal();
     const String &mode     = as<VarStr>(args[2])->getVal();
     filev->getFile()       = fopen(filename.c_str(), mode.c_str());
@@ -172,19 +141,11 @@ FERAL_FUNC(fileSeek, 2, false,
            "Move the position of File `var` from `origin` by `offset` bytes.\n"
            "`origin` can be one of SEEK_SET / SEEK_CURR / SEEK_END.")
 {
+    EXPECT(VarInt, args[1], "file seek offset");
+    EXPECT(VarInt, args[2], "file seek origin");
     FILE *const file = as<VarFile>(args[0])->getFile();
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument for file seek offset, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc,
-                "expected int argument for file seek origin, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
-    long offset = as<VarInt>(args[1])->getVal();
-    int origin  = as<VarInt>(args[2])->getVal();
+    long offset      = as<VarInt>(args[1])->getVal();
+    int origin       = as<VarInt>(args[2])->getVal();
     return vm.makeVar<VarInt>(loc, fseek(file, offset, origin));
 }
 
@@ -235,19 +196,10 @@ FERAL_FUNC(fileReadBlocks, 2, false,
            "  var.fn(blockBegin, blockEnd) -> Vec<Str>\n"
            "Retrieve a list of lines between `blockBegin` and `blockEnd` in File `var`.")
 {
-    FILE *const file = as<VarFile>(args[0])->getFile();
+    EXPECT(VarStr, args[1], "block begin location");
+    EXPECT(VarStr, args[2], "block end location");
 
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for block begin location, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for block end location, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
-
+    FILE *const file  = as<VarFile>(args[0])->getFile();
     const String &beg = as<VarStr>(args[1])->getVal();
     const String &end = as<VarStr>(args[2])->getVal();
 
@@ -309,14 +261,8 @@ FERAL_FUNC(fdCreate, 2, false,
            "  fn(path, mode = 'r') -> Int\n"
            "Create and return a file descriptor using the `path` and `mode` strings.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for mode, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "path");
+    EXPECT(VarInt, args[2], "mode");
     const String &path = as<VarStr>(args[1])->getVal();
     int res            = creat(path.c_str(), as<VarInt>(args[2])->getVal());
     if(res < 0) {
@@ -328,14 +274,8 @@ FERAL_FUNC(fdCreate, 2, false,
 
 FERAL_FUNC(fdOpen, 2, false, "")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for open flags, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "path");
+    EXPECT(VarInt, args[2], "open flags");
     const String &path = as<VarStr>(args[1])->getVal();
     int res            = open(path.c_str(), as<VarInt>(args[2])->getVal());
     if(res < 0) {
@@ -350,15 +290,8 @@ FERAL_FUNC(fdRead, 2, false,
            "Given a `fileDescriptor`, read up to capacity of `bytebufferData` bytes from it.\n"
            "Returns number of read bytes.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarBytebuffer>()) {
-        vm.fail(loc,
-                "expected bytebuffer containing data to write, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "file descriptor");
+    EXPECT(VarBytebuffer, args[2], "the data to write");
     VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
     errno             = 0;
     ssize_t res       = read(as<VarInt>(args[1])->getVal(), bb->getBuf(), bb->capacity());
@@ -375,15 +308,8 @@ FERAL_FUNC(fdWrite, 2, false,
            "  fn(fileDescriptor, bytebufferData | str) -> Int\n"
            "Given a `fileDescriptor`, write `bytebufferData` / `str` to it.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarBytebuffer>() && !args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected bytebuffer/string containing data to write, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "file descriptor");
+    EXPECT2(VarBytebuffer, VarStr, args[2], "the data to write");
     const void *data = nullptr;
     size_t count     = 0;
     errno            = 0;
@@ -409,10 +335,7 @@ FERAL_FUNC(fdClose, 1, false,
            "  fn(fileDescriptor) -> Int\n"
            "Close the given `fileDescriptor` and return the status.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected int argument for file descriptor, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "file descriptor");
     int res = close(as<VarInt>(args[1])->getVal());
     if(res < 0) {
         vm.fail(loc, "failed to close the file descriptor: '",
@@ -426,10 +349,7 @@ FERAL_FUNC(fsExists, 1, false,
            "  fn(path) -> Bool\n"
            "Returns if the given `path` exists or not.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for path, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "path");
     return fs::exists(as<VarStr>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
 }
 
@@ -438,14 +358,9 @@ FERAL_FUNC(fsInstall, 2, false,
            "Copy the `source` file to `destination`.\n"
            "Creates parent directories for `desination` as needed.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for source, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for destination, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "source");
+    EXPECT(VarStr, args[2], "destination");
+
     const String &src  = as<VarStr>(args[1])->getVal();
     const String &dest = as<VarStr>(args[2])->getVal();
     if(src.empty() || dest.empty()) return vm.getNil();
@@ -492,16 +407,8 @@ FERAL_FUNC(fsMklink, 2, false,
            "  fn(source, destination) -> Nil\n"
            "Creates a symbolic link at `destination` from `source`.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for mklink source, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for mklink destination argument, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "source");
+    EXPECT(VarStr, args[2], "destination");
     StringRef src  = as<VarStr>(args[1])->getVal();
     StringRef dest = as<VarStr>(args[2])->getVal();
     std::error_code ec;
@@ -517,11 +424,7 @@ FERAL_FUNC(fsRemove, 1, true,
            "Removes all the given `paths`, will also delete any subfolders/files if present.")
 {
     for(size_t i = 1; i < args.size(); ++i) {
-        if(!args[i]->is<VarStr>()) {
-            vm.fail(loc, "expected string argument for path to delete, found: ",
-                    vm.getTypeName(args[i]));
-            return nullptr;
-        }
+        EXPECT(VarStr, args[i], "path to delete");
         const String &path = as<VarStr>(args[i])->getVal();
         if(path.empty()) continue;
         std::error_code ec;
@@ -538,24 +441,11 @@ FERAL_FUNC(fsCopy, 2, true,
            "Copies all `sources` to `destination`.")
 {
     // args must have: nullptr, [src]+, dest
-    if(args.size() < 3) {
-        vm.fail(loc,
-                "Expected at least 2 arguments - source and destination, found: ", args.size());
-        return nullptr;
-    }
     Var *destArg = args[args.size() - 1];
-    if(!destArg->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for copy destination argument, found: ",
-                vm.getTypeName(destArg));
-        return nullptr;
-    }
+    EXPECT(VarStr, destArg, "copy destination");
     const String &dest = as<VarStr>(destArg)->getVal();
     for(size_t i = 1; i < args.size() - 1; ++i) {
-        if(!args[i]->is<VarStr>()) {
-            vm.fail(loc,
-                    "expected string argument for copy argument, found: ", vm.getTypeName(args[i]));
-            return nullptr;
-        }
+        EXPECT(VarStr, args[i], "path to copy");
         const String &src = as<VarStr>(args[i])->getVal();
         if(src.empty()) continue;
         std::error_code ec;
@@ -571,14 +461,8 @@ FERAL_FUNC(fsMove, 2, false,
            "  fn(source, destination) -> Nil\n"
            "Move the file/directory from `source` to `destination`.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for from, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for to, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "source");
+    EXPECT(VarStr, args[2], "destination");
     const String &from = as<VarStr>(args[1])->getVal().c_str();
     const String &to   = as<VarStr>(args[2])->getVal().c_str();
     std::error_code ec;

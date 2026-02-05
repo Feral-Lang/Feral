@@ -10,6 +10,7 @@ enum class VarInfo
     CALLABLE    = 1 << 0,
     ATTR_BASED  = 1 << 1,
     LOAD_AS_REF = 1 << 2,
+    CONST       = 1 << 3,
 };
 
 struct AssnArgData;
@@ -98,9 +99,13 @@ public:
 
     inline bool isCallable() const { return info & (size_t)VarInfo::CALLABLE; }
     inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
+    inline bool isConst() const { return info & (size_t)VarInfo::CONST; }
 
     inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
     inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
+
+    inline void setConst() { info |= (size_t)VarInfo::CONST; }
+    inline void unsetConst() { info &= ~(size_t)VarInfo::CONST; }
 
     // used in native function calls
     template<typename T, typename... Args>
