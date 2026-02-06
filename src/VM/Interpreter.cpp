@@ -35,9 +35,6 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
       binaryPath(makeVarWithRef<VarStr>(ModuleLoc(), env::getProcPath())),
       installPath(makeVarWithRef<VarStr>(ModuleLoc(),
                                          fs::parentDir((fs::parentDir(binaryPath->getVal()))))),
-      tempPath(makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp")),
-      libPath(makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral")),
-      globalModulesPath(makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths")),
       basicErrHandler(genNativeFn({}, "basicErrorHandler", basicErrorHandler)),
       moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
       moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
@@ -51,6 +48,20 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
                              LOAD_LIBRARY_SEARCH_USER_DIRS);
 #endif
     initTypeNames();
+
+    if(installPath->getVal().ends_with(".feral")) {
+        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp");
+        libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
+        globalModulesPath =
+            makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
+    } else {
+        // to make sure if user installs Feral in, say, `/usr`, Feral doesn't attempt using
+        // `/usr/tmp` as the temp path.
+        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), "/tmp/feral");
+        libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
+        globalModulesPath =
+            makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
+    }
 
     binaryPath->setConst();
     installPath->setConst();
