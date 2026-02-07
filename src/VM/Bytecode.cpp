@@ -107,9 +107,10 @@ String Instruction::dump() const
     return outStr;
 }
 
-bool Instruction::readFromFile(FILE *f, Instruction &ins)
+bool Instruction::readFromFile(FILE *f, size_t moduleId, Instruction &ins)
 {
     fread(&ins.loc, sizeof(ins.loc), 1, f);
+    ins.loc.id = moduleId;
     fread(&ins.opcode, sizeof(ins.opcode), 1, f);
     fread(&ins.dtype, sizeof(ins.dtype), 1, f);
     if(ins.isDataInt()) {
@@ -185,14 +186,14 @@ void Bytecode::dump(OStream &os) const
     }
 }
 
-bool Bytecode::readFromFile(FILE *f, Bytecode &bc)
+bool Bytecode::readFromFile(FILE *f, size_t moduleId, Bytecode &bc)
 {
     size_t count;
     fread(&count, sizeof(count), 1, f);
     bc.code.reserve(count);
     for(size_t i = 0; i < count; ++i) {
         bc.addInstrNil(Opcode::LAST, {});
-        if(!Instruction::readFromFile(f, bc.getInstrAt(i))) return false;
+        if(!Instruction::readFromFile(f, moduleId, bc.getInstrAt(i))) return false;
     }
     return true;
 }

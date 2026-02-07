@@ -34,9 +34,9 @@ Returns the string representation of the Error `var`.
 "
 let str in Error = fn() {
     let s = 'Error<';
-    s += self.val.str();
+    s += self.code.str();
     s += ':';
-    s += msg;
+    s += self.msg;
     s += '>';
     return ref(s);
 };

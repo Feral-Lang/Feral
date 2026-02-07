@@ -427,7 +427,7 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
         if(!f->isVirtual()) {
             logger.info("Reading bytecode file: ", bcPath);
             FILE *f = fopen(bcPath.c_str(), "rb");
-            Bytecode::readFromFile(f, bc);
+            Bytecode::readFromFile(f, moduleIdCtr, bc);
             fclose(f);
             logger.info("- Read bytecodes: ", bc.size());
         }

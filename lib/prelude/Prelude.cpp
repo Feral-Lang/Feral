@@ -768,6 +768,7 @@ INIT_MODULE(Prelude)
     vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen);
     vm.addNativeTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity);
     vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
+
     // file
 
     vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopenNative);

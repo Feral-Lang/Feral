@@ -109,7 +109,7 @@ public:
     void dump(OStream &os) const;
     String dump() const;
 
-    static bool readFromFile(FILE *f, Instruction &ins);
+    static bool readFromFile(FILE *f, size_t moduleId, Instruction &ins);
     void writeToFile(FILE *f) const;
 };
 
@@ -156,7 +156,7 @@ public:
 
     void dump(OStream &os) const;
 
-    static bool readFromFile(FILE *f, Bytecode &bc);
+    static bool readFromFile(FILE *f, size_t moduleId, Bytecode &bc);
     void writeToFile(FILE *f) const;
 };
 
