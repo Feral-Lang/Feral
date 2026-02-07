@@ -45,7 +45,7 @@ Returns a string representation of the Result `var`.
 "
 let str in Result = fn() {
     let s = 'Result<';
-    s += val.str();
+    s += self.val.str();
     s += '>';
     return ref(s);
 };
