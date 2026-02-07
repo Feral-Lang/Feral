@@ -7,10 +7,10 @@ let Result = struct(
 Result.setTypeName('Result');
 
 "
-  fn(value) -> Result
+  fn(value = nil) -> Result
 Creates and returns an okay-representing Result containing `value`.
 "
-let ok = fn(val) {
+let ok = fn(val = nil) {
     return Result(ref(val), true);
 };
 
