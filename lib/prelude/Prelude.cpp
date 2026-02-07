@@ -581,6 +581,7 @@ INIT_MODULE(Prelude)
     // nil
     vm.addNativeTypeFn<VarNil>(loc, "==", nilEQ);
     vm.addNativeTypeFn<VarNil>(loc, "!=", nilNE);
+    vm.addNativeTypeFn<VarNil>(loc, "!", nilNot);
 
     // typeID
     vm.addNativeTypeFn<VarTypeID>(loc, "==", typeIDEq);

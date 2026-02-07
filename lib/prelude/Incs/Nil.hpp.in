@@ -17,4 +17,11 @@ FERAL_FUNC(nilNE, 1, false,
     return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
+FERAL_FUNC(nilNot, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns `true` for Nil.")
+{
+    return vm.getTrue();
+}
+
 } // namespace fer

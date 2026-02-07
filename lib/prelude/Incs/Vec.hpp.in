@@ -259,14 +259,8 @@ FERAL_FUNC(vecSubNative, 2, false, "")
     size_t beg = as<VarInt>(args[1])->getVal();
     size_t end = as<VarInt>(args[2])->getVal();
 
-    if(beg >= v->size()) {
-        vm.fail(loc, "starting index is greater than vector size");
-        return nullptr;
-    }
-    if(end > v->size()) {
-        vm.fail(loc, "ending index is greater than vector size");
-        return nullptr;
-    }
+    if(beg >= v->size() || end > v->size()) return vm.getNil();
+
     VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
     if(end <= beg) return res;
     for(size_t i = beg; i < end; ++i) { res->push(vm.copyVar(loc, v->at(i))); }
@@ -282,14 +276,8 @@ FERAL_FUNC(vecSliceNative, 2, false, "")
     size_t beg = as<VarInt>(args[1])->getVal();
     size_t end = as<VarInt>(args[2])->getVal();
 
-    if(beg >= v->size()) {
-        vm.fail(loc, "starting index is greater than vector size");
-        return nullptr;
-    }
-    if(end > v->size()) {
-        vm.fail(loc, "ending index is greater than vector size");
-        return nullptr;
-    }
+    if(beg >= v->size() || end > v->size()) return vm.getNil();
+
     VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, true);
     if(end <= beg) return res;
     for(size_t i = beg; i < end; ++i) {
