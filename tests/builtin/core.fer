@@ -31,7 +31,7 @@ assert.eq(feral.varExists('feral'), true);
 feral.args;
 feral.installPath;
 feral.binaryPath;
-feral.installPath;
+feral.libPath;
 
 feral.versionMajor;
 feral.versionMinor;

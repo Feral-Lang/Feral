@@ -140,8 +140,8 @@ FERAL_FUNC(
     auto envVarLoc = assnArgs.find("env");
     if(envVarLoc != assnArgs.end()) envVar = envVarLoc->second.val;
 
-    if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>())) {
-        vm.fail(loc, "expected out variable to be a string/vector, or not used, found: ",
+    if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>() || outVar->is<VarNil>())) {
+        vm.fail(loc, "expected out variable to be a string/vector/nil, or not used, found: ",
                 vm.getTypeName(outVar));
         return nullptr;
     }
@@ -179,7 +179,7 @@ FERAL_FUNC(
     size_t len   = 0;
     ssize_t nread;
 
-    if(!outVar) {
+    if(!outVar || outVar->is<VarNil>()) {
         while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
     } else if(outVar->is<VarVec>()) {
         Vector<Var *> &resvec = as<VarVec>(outVar)->getVal();

@@ -132,7 +132,8 @@ const char *dlerror(void)
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL, var.lasterror, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char *)&msg, 0, NULL);
     static char errstr[1024];
-    sprintf(errstr, "%s error #%ld: %s", var.err_rutin, var.lasterror, (char *)msg);
+    snprintf(errstr, sizeof(errstr) / sizeof(errstr[0]), "%s error #%ld: %s", var.err_rutin,
+             var.lasterror, (char *)msg);
     return errstr;
 }
 #endif

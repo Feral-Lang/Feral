@@ -14,7 +14,7 @@ FERAL_FUNC(allToStr, 0, false,
     res->getVal() += vm.getTypeName(args[0]);
     res->getVal() += " at ";
     char tmp[24];
-    sprintf(tmp, "%p", args[0]);
+    snprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), "%p", args[0]);
     res->getVal() += tmp;
     return res;
 }

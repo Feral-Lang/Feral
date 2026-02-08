@@ -58,13 +58,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    Interpreter ip(args, ParseSource);
     if(!fs::exists(srcFile)) {
-        String binFile(fs::parentDir(env::getProcPath()));
-#if defined(CORE_OS_WINDOWS)
-        binFile += "\\";
-#else
-        binFile += "/";
-#endif
+        String binFile(ip.getLibPath());
+        binFile += "/bin/";
         binFile += srcFile;
         binFile += ".fer";
         if(!fs::exists(binFile)) {
@@ -73,8 +70,6 @@ int main(int argc, char **argv)
         }
         srcFile = binFile;
     }
-
-    Interpreter ip(args, ParseSource);
     return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str(), "Main");
 }
 

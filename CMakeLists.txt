@@ -249,7 +249,7 @@ endif()
 
 # Utility Scripts
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/utils/"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/feral/bin"
     USE_SOURCE_PERMISSIONS
     PATTERN "*"
 )

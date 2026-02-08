@@ -49,15 +49,15 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
 #endif
     initTypeNames();
 
+    // To make sure if user installs Feral in, say, `/usr`,
+    // Feral doesn't attempt using `/usr/tmp` as the temp path.
     if(installPath->getVal().ends_with(".feral")) {
         tempPath = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp");
         libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
         globalModulesPath =
             makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
     } else {
-        // to make sure if user installs Feral in, say, `/usr`, Feral doesn't attempt using
-        // `/usr/tmp` as the temp path.
-        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), "/tmp/feral");
+        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), "/tmp/feral." + env::get("USERNAME"));
         libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
         globalModulesPath =
             makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
@@ -416,11 +416,12 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
     bcPath += "/cache";
 #if defined(CORE_OS_WINDOWS)
     bcPath += "/";
-    auto colonLoc = bcFilePath.find(':');
-    if(colonLoc != StringRef::npos) bcFilePath = bcFilePath.substr(colonLoc + 1);
 #endif
     bcPath += bcFilePath;
     bcPath += ".bc";
+#if defined(CORE_OS_WINDOWS)
+    utils::stringReplace(bcPath, ":", "/");
+#endif
     bool bcFileExists = fs::isFileNewer(bcPath.c_str(), f->getPathCStr());
     Bytecode bc;
     if(bcFileExists) {

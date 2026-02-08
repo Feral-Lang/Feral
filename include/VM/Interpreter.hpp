@@ -181,6 +181,11 @@ public:
     inline void stopExecution() { stopExec.store(true, std::memory_order_release); }
     inline bool shouldStopExecution() { return stopExec.load(std::memory_order_relaxed); }
 
+    inline StringRef getBinaryPath() { return binaryPath->getVal(); }
+    inline StringRef getInstallPath() { return installPath->getVal(); }
+    inline StringRef getTempPath() { return tempPath->getVal(); }
+    inline StringRef getLibPath() { return libPath->getVal(); }
+
     inline StringRef getFeralImportExtension() { return ".fer"; }
     inline StringRef getNativeModuleExtension()
     {

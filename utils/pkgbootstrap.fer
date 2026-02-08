@@ -7,7 +7,7 @@ let logging = import('std/logging');
 let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
 let pkgVersion = '0.0.4';
 
-let pkgExePath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
+let pkgExePath = fs.pathFrom(feral.libPath, 'bin', 'pkg.fer');
 
 if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
 
@@ -58,7 +58,7 @@ logging.info('Git repository successfully retrieved');
 
 # Install Pkg
 
-let pkgBasePath = fs.pathFrom(feral.installPath, 'lib', 'feral', 'pkg');
+let pkgBasePath = fs.pathFrom(feral.libPath, 'pkg');
 if fs.dirExists(pkgBasePath) { fs.remove(pkgBasePath); }
 
 let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', pkgVersion);
@@ -79,7 +79,7 @@ fs.copy(srcIncPath, destIncPath);
 # Don't setup configs - let pkg itself take care of that when it's run for the first time.
 # Create the binary hook
 let pkgBinaryPath = fs.pathFrom(destBinPath, 'pkg.fer');
-let pkgBinaryLinkPath = fs.pathFrom(feral.installPath, 'bin', 'pkg.fer');
+let pkgBinaryLinkPath = fs.pathFrom(feral.libPath, 'bin', 'pkg.fer');
 logging.trace('Generating symlink for binary: ', pkgBinaryPath, ' -> ', pkgBinaryLinkPath);
 fs.mklink(pkgBinaryPath, pkgBinaryLinkPath);
 logging.trace('Adding Pkg path to the global module paths file ...');
