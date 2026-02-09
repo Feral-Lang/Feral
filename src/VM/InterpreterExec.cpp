@@ -122,8 +122,15 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             // TODO: check if this works for assigning one struct instance of type X to
             // another struct instance of type Y
             if(var->getType() != val->getType()) {
-                fail(var->getLoc(), "type mismatch for assignment: ", getTypeName(val),
+                fail(ins.getLoc(), "type mismatch for assignment: ", getTypeName(val),
                      " cannot be assigned to variable of type: ", getTypeName(var));
+                decVarRef(val);
+                decVarRef(var);
+                goto handleErr;
+            }
+            if(var->isConst()) {
+                fail(ins.getLoc(),
+                     "cannot assign to a const marked variable of type: ", getTypeName(var));
                 decVarRef(val);
                 decVarRef(var);
                 goto handleErr;
