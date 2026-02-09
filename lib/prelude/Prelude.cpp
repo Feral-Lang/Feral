@@ -190,7 +190,8 @@ FERAL_FUNC(reference, 1, false,
            "This ensures that the next time a new object is created "
            "using `var` as the value, `var` is not copied.")
 {
-    args[1]->setLoadAsRef();
+    // any const marked variable cannot be marked with loadAsRef()
+    if(!args[1]->isConst()) args[1]->setLoadAsRef();
     return args[1];
 }
 
