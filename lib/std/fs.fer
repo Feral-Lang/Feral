@@ -3,6 +3,7 @@ let stat = import('std/stat');
 ################################# Some definitions #################################
 
 let absPath = feral.fsAbsPath;
+let normPath = feral.fsNormPath;
 
 let fdRead = feral.fsFdRead;
 let fdWrite = feral.fsFdWrite;
