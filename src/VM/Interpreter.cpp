@@ -502,7 +502,7 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext)
             strcat(testpath, name.c_str());
             if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
             if(fs::exists(testpath)) {
-                name = fs::absPath(testpath);
+                name = fs::normPath(fs::absPath(testpath));
                 return true;
             }
         }
@@ -521,15 +521,13 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext)
             assert(modulestack.size() > 0 &&
                    "dot based module search cannot be done on empty modulestack");
             StringRef dir = fs::parentDir(modulestack.back()->getPath());
-            name.erase(name.begin());
-            name.erase(name.begin());
-            StringRef parentdir = fs::parentDir(dir);
-            name.insert(name.begin(), parentdir.begin(), parentdir.end());
+            name.insert(name.begin(), '/');
+            name.insert(name.begin(), dir.begin(), dir.end());
         }
         strcpy(testpath, name.c_str());
         if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
         if(fs::exists(testpath)) {
-            name = fs::absPath(testpath);
+            name = fs::normPath(fs::absPath(testpath));
             return true;
         }
     }

@@ -491,6 +491,7 @@ INIT_MODULE(Prelude)
     mod->addNativeFn(vm, "fsFopen", fsFopen);
     mod->addNativeFn(vm, "fsWalkDir", fsWalkDir);
     mod->addNativeFn(vm, "fsAbsPath", fsAbsPath);
+    mod->addNativeFn(vm, "fsNormPath", fsNormPath);
     // file descriptor
     mod->addNativeFn(vm, "fsFdOpen", fdOpen);
     mod->addNativeFn(vm, "fsFdRead", fdRead);

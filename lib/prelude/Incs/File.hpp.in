@@ -88,8 +88,17 @@ FERAL_FUNC(fsAbsPath, 1, false,
            "Get the absolute path from the given (relative) path.")
 {
     EXPECT(VarStr, args[1], "path");
-    const String &path = as<VarStr>(args[1])->getVal();
-    return vm.makeVar<VarStr>(loc, fs::absPath(path.c_str()));
+    StringRef path = as<VarStr>(args[1])->getVal();
+    return vm.makeVar<VarStr>(loc, fs::absPath(path));
+}
+
+FERAL_FUNC(fsNormPath, 1, false,
+           "  fn(path) -> str\n"
+           "Get the normalized path from the given path.")
+{
+    EXPECT(VarStr, args[1], "path");
+    StringRef path = as<VarStr>(args[1])->getVal();
+    return vm.makeVar<VarStr>(loc, fs::normPath(path));
 }
 
 FERAL_FUNC(fileReopenNative, 2, false, "")
