@@ -34,6 +34,10 @@ void Var::destroy(MemoryManager &mem)
 }
 Var *Var::copy(MemoryManager &mem, ModuleLoc loc)
 {
+    if(isLoadAsRef()) {
+        unsetLoadAsRef();
+        return incVarRef(this);
+    }
     Var *res = onCopy(mem, loc);
     if(doc) res->setDoc(mem, doc);
     return res;

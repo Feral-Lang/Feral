@@ -101,7 +101,11 @@ public:
     inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
     inline bool isConst() const { return info & (size_t)VarInfo::CONST; }
 
-    inline void setLoadAsRef() { info |= (size_t)VarInfo::LOAD_AS_REF; }
+    inline void setLoadAsRef()
+    {
+        // any const marked variable cannot be marked with loadAsRef()
+        if(!isConst()) info |= (size_t)VarInfo::LOAD_AS_REF;
+    }
     inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
 
     inline void setConst() { info |= (size_t)VarInfo::CONST; }
@@ -156,11 +160,6 @@ public:
     static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     copyVar(MemoryManager &mem, ModuleLoc loc, T *var)
     {
-        if(var->isLoadAsRef()) {
-            var->unsetLoadAsRef();
-            incVarRef(var);
-            return var;
-        }
         return var->copy(mem, loc);
     }
     template<typename T>
