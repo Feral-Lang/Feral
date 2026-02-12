@@ -69,6 +69,16 @@ class Var : public IAllocated
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                         const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
 
+    // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
+    // being used elsewhere.
+    template<typename T>
+    static typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    unmakeVar(MemoryManager &mem, T *var)
+    {
+        var->destroy(mem);
+        mem.freeDeinit(var);
+    }
+
 protected:
     Var(ModuleLoc loc, size_t infoFlags);
     // No need to override the destructor. Override onDestroy() instead.
@@ -128,15 +138,6 @@ public:
         T *res = new(mem.allocRaw(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
         res->create(mem);
         return res;
-    }
-    // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
-    // being used elsewhere.
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    unmakeVar(MemoryManager &mem, T *var)
-    {
-        var->destroy(mem);
-        mem.freeDeinit(var);
     }
     template<typename T>
     static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
