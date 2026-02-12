@@ -9,8 +9,7 @@ class VarAtomicBool : public Var
 {
     Atomic<bool> val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarAtomicBool(ModuleLoc loc, bool _val);
@@ -23,8 +22,7 @@ class VarAtomicInt : public Var
 {
     Atomic<int64_t> val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarAtomicInt(ModuleLoc loc, int64_t _val);

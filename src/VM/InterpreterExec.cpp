@@ -77,7 +77,9 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             if(val->getRef() == 1) {
                 vars.add(name, val, true);
             } else {
-                vars.add(name, copyVar(ins.getLoc(), val), false);
+                Var *cp = copyVar(ins.getLoc(), val);
+                if(!cp) goto handleErr;
+                vars.add(name, cp, false);
             }
             decVarRef(val);
             break;
@@ -86,22 +88,23 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             StringRef name = ins.getDataStr();
             Var *in        = popExecStack(false);
             Var *val       = popExecStack(false);
-            if(in->isAttrBased()) {
+            if(val->isCallable()) {
+                addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->getVal() : in->getSubType(),
+                          name, val, true);
+            } else if(in->isAttrBased()) {
                 // only copy if reference count > 1 (no point in copying unique
                 // values) or if loadAsRef() of value is false
                 if(val->getRef() == 1) {
                     in->setAttr(mem, name, val, true);
                 } else {
-                    in->setAttr(mem, name, copyVar(ins.getLoc(), val), false);
+                    Var *cp = copyVar(ins.getLoc(), val);
+                    if(!cp) goto createFail;
+                    in->setAttr(mem, name, cp, false);
                 }
             } else {
-                if(!val->isCallable()) {
-                    fail(ins.getLoc(), "only callables can be added to non "
-                                       "attribute based types");
-                    goto createFail;
-                }
-                addTypeFn(in->is<VarTypeID>() ? as<VarTypeID>(in)->getVal() : in->getType(), name,
-                          val, true);
+                fail(ins.getLoc(),
+                     "cannot add a non-callable to a non attribute based type: ", getTypeName(in));
+                goto createFail;
             }
             decVarRef(in);
             decVarRef(val);
@@ -135,7 +138,13 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 decVarRef(var);
                 goto handleErr;
             }
-            setVar(var, val);
+            if(!var->set(*this, val)) {
+                fail(ins.getLoc(), "failed to assign: ", getTypeName(val),
+                     " to: ", getTypeName(var));
+                decVarRef(val);
+                decVarRef(var);
+                goto handleErr;
+            }
             pushExecStack(var, false);
             decVarRef(val);
             break;

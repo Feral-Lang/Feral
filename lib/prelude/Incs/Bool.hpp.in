@@ -3,6 +3,13 @@
 namespace fer
 {
 
+FERAL_FUNC(boolCopy, 0, false,
+           "  var.fn() -> Bool\n"
+           "Copies the boolean data and returns it.")
+{
+    return vm.makeVar<VarBool>(loc, as<VarBool>(args[0])->getVal());
+}
+
 FERAL_FUNC(boolEQ, 1, false,
            "  var.fn(other) -> Bool\n"
            "Returns `true` if both `var` and `other` are equal.")

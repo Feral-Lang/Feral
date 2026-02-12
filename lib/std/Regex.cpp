@@ -9,11 +9,11 @@ VarRegex::VarRegex(ModuleLoc loc, StringRef exprStr, std::regex::flag_type opts)
     : Var(loc, 0), expr(exprStr.begin(), exprStr.end(), opts)
 {}
 VarRegex::VarRegex(ModuleLoc loc, const std::regex &expr) : Var(loc, 0), expr(expr) {}
-Var *VarRegex::onCopy(MemoryManager &mem, ModuleLoc loc)
+bool VarRegex::onSet(VirtualMachine &vm, Var *from)
 {
-    return incVarRef(makeVar<VarRegex>(mem, loc, expr));
+    expr = as<VarRegex>(from)->expr;
+    return true;
 }
-void VarRegex::onSet(MemoryManager &mem, Var *from) { expr = as<VarRegex>(from)->expr; }
 bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *captures,
                      bool ignoreMatch)
 {

@@ -50,8 +50,13 @@ FERAL_FUNC(allSetDoc, 1, false,
 {
     EXPECT2(VarStr, VarNil, args[1], "doc string");
     auto &mem = vm.getMemoryManager();
-    if(args[1]->is<VarNil>()) args[0]->setDoc(mem, nullptr);
-    else args[0]->setDoc(mem, as<VarStr>(vm.copyVar(loc, args[1])));
+    if(args[1]->is<VarNil>()) {
+        args[0]->setDoc(mem, nullptr);
+    } else {
+        VarStr *cp = as<VarStr>(vm.copyVar(loc, args[1]));
+        if(!cp) return nullptr;
+        args[0]->setDoc(mem, cp);
+    }
     return vm.getNil();
 }
 
@@ -167,15 +172,6 @@ FERAL_FUNC(allNilCoalesce, 1, false,
            "If `var` is nil, return `other`, otherwise return `var`.")
 {
     return !args[0]->is<VarNil>() ? args[0] : args[1];
-}
-
-FERAL_FUNC(allCopy, 0, false,
-           "  var.fn() -> var\n"
-           "Returns a copy of `var`.")
-{
-    Var *copy = vm.copyVar(loc, args[0]);
-    // decreased because system internally will increment it again
-    return vm.decVarRef(copy, false);
 }
 
 // This is useful when a new (struct) instance is created and inserted into a container,
@@ -468,8 +464,8 @@ INIT_MODULE(Prelude)
     vm.addNativeFn(loc, "raise", raise);
     vm.addNativeFn(loc, "evalCode", evalCode);
     vm.addNativeFn(loc, "evalExpr", evalExpr);
-    vm.addNativeFn(loc, "enum", createEnum);
-    vm.addNativeFn(loc, "struct", createStruct);
+    vm.addNativeFn(loc, "enum", enumNew);
+    vm.addNativeFn(loc, "struct", structNew);
     vm.addNativeFn(loc, "irange", intRange);
 
     // module functions
@@ -528,7 +524,6 @@ INIT_MODULE(Prelude)
     vm.addNativeTypeFn<VarAll>(loc, "==", allEq);
     vm.addNativeTypeFn<VarAll>(loc, "!=", allNe);
     vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce);
-    vm.addNativeTypeFn<VarAll>(loc, "copy", allCopy);
     vm.addNativeTypeFn<VarAll>(loc, "_getDoc_", allGetDoc);
     vm.addNativeTypeFn<VarAll>(loc, "_setDoc_", allSetDoc);
     vm.addNativeTypeFn<VarAll>(loc, "_hasAttr_", allHasAttr);
@@ -540,6 +535,15 @@ INIT_MODULE(Prelude)
     vm.addNativeTypeFn<VarAll>(loc, "_isType_", allIsType);
     vm.addNativeTypeFn<VarAll>(loc, "_isSubType_", allIsSubType);
     vm.addNativeTypeFn<VarAll>(loc, "_typeName_", allGetTypeName);
+
+    // copy
+    vm.addNativeTypeFn<VarBool>(loc, "_copy_", boolCopy);
+    vm.addNativeTypeFn<VarInt>(loc, "_copy_", intCopy);
+    vm.addNativeTypeFn<VarFlt>(loc, "_copy_", fltCopy);
+    vm.addNativeTypeFn<VarStr>(loc, "_copy_", strCopy);
+    vm.addNativeTypeFn<VarVec>(loc, "_copy_", vecCopy);
+    vm.addNativeTypeFn<VarMap>(loc, "_copy_", mapCopy);
+    vm.addNativeTypeFn<VarBytebuffer>(loc, "_copy_", bytebufferCopy);
 
     // to bool
     vm.addNativeTypeFn<VarAll>(loc, "bool", allToBool);
@@ -772,7 +776,6 @@ INIT_MODULE(Prelude)
 
     // file
 
-    vm.addNativeTypeFn<VarFile>(loc, "reopenNative", fileReopenNative);
     vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines);
     vm.addNativeTypeFn<VarFile>(loc, "seek", fileSeek);
     vm.addNativeTypeFn<VarFile>(loc, "eachLine", fileEachLine);

@@ -98,6 +98,13 @@ BITWISE_ASSN_FUNC(And, &)
 BITWISE_ASSN_FUNC(Or, |)
 BITWISE_ASSN_FUNC(XOr, ^)
 
+FERAL_FUNC(intCopy, 0, false,
+           "  var.fn() -> Int\n"
+           "Copies the integer data and returns it.")
+{
+    return vm.makeVar<VarInt>(loc, as<VarInt>(args[0])->getVal());
+}
+
 FERAL_FUNC(intEQ, 1, false,
            "  var.fn(other) -> Bool\n"
            "Returns `true` if `var` and `other` are equal.")

@@ -3,7 +3,7 @@
 namespace fer
 {
 
-FERAL_FUNC(createEnum, 1, true,
+FERAL_FUNC(enumNew, 1, true,
            " fn(values...) -> Enum\n"
            "Creates and returns an Enum using the given values")
 {
@@ -18,7 +18,12 @@ FERAL_FUNC(createEnum, 1, true,
 
     for(auto &a : assnArgs) {
         EXPECT_AND(VarInt, a.second.val, "enum field value", vm.decVarRef(res));
-        res->setAttr(mem, a.first, vm.copyVar(loc, a.second.val), false);
+        Var *cp = vm.copyVar(loc, a.second.val);
+        if(!cp) {
+            vm.decVarRef(res);
+            return nullptr;
+        }
+        res->setAttr(mem, a.first, cp, false);
     }
 
     return res;

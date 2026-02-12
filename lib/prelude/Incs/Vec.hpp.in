@@ -30,8 +30,25 @@ FERAL_FUNC(vecNew, 0, true,
     if(refs) {
         for(size_t i = 1; i < args.size(); ++i) { res->push(args[i], true); }
     } else {
-        for(size_t i = 1; i < args.size(); ++i) { res->push(vm.copyVar(loc, args[i]), false); }
+        for(size_t i = 1; i < args.size(); ++i) {
+            Var *cp = vm.copyVar(loc, args[i]);
+            if(!cp) {
+                vm.decVarRef(res);
+                return nullptr;
+            }
+            res->push(cp, false);
+        }
     }
+    return res;
+}
+
+FERAL_FUNC(vecCopy, 0, false,
+           "  var.fn() -> Vec\n"
+           "Copies the vector data and returns it")
+{
+    VarVec *v   = as<VarVec>(args[0]);
+    VarVec *res = vm.makeVar<VarVec>(loc, v->size(), v->isRefVec());
+    if(!res->setVal(vm, v->getVal())) vm.decVarRef(res);
     return res;
 }
 
@@ -87,7 +104,9 @@ FERAL_FUNC(vecPush, 1, true,
         if(res->isRefVec()) {
             res->push(args[i], true);
         } else {
-            res->push(vm.copyVar(loc, args[i]), false);
+            Var *cp = vm.copyVar(loc, args[i]);
+            if(!cp) { return nullptr; }
+            res->push(cp, false);
         }
     }
     return args[0];
@@ -131,10 +150,11 @@ FERAL_FUNC(vecInsert, 2, false,
         return nullptr;
     }
     if(res->isRefVec()) {
-        vm.incVarRef(args[2]);
-        res->insert(res->begin() + pos, args[2]);
+        res->insert(res->begin() + pos, vm.incVarRef(args[2]));
     } else {
-        res->insert(res->begin() + pos, vm.copyVar(loc, args[2]));
+        Var *cp = vm.copyVar(loc, args[2]);
+        if(!cp) { return nullptr; }
+        res->insert(res->begin() + pos, cp);
     }
     return args[0];
 }
@@ -155,10 +175,11 @@ FERAL_FUNC(vecSetAt, 2, false,
     }
     vm.decVarRef(res->at(pos));
     if(res->isRefVec()) {
-        vm.incVarRef(args[2]);
-        res->at(pos) = args[2];
+        res->at(pos) = vm.incVarRef(args[2]);
     } else {
-        res->at(pos) = vm.copyVar(loc, args[2]);
+        Var *cp = vm.copyVar(loc, args[2]);
+        if(!cp) { return nullptr; }
+        res->at(pos) = cp;
     }
     return args[0];
 }
@@ -199,8 +220,9 @@ FERAL_FUNC(vecAppendNative, 3, false, "")
         for(size_t i = start; i < end; ++i) { dest->push(src->at(i), true); }
     } else {
         for(size_t i = start; i < end; ++i) {
-            Var *e = src->at(i);
-            dest->push(vm.copyVar(loc, e), false);
+            Var *cp = vm.copyVar(loc, src->at(i));
+            if(!cp) { return nullptr; }
+            dest->push(cp, false);
         }
     }
     return dest;
@@ -253,7 +275,14 @@ FERAL_FUNC(vecSubNative, 2, false, "")
 
     VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, false);
     if(end <= beg) return res;
-    for(size_t i = beg; i < end; ++i) { res->push(vm.copyVar(loc, v->at(i)), false); }
+    for(size_t i = beg; i < end; ++i) {
+        Var *cp = vm.copyVar(loc, v->at(i));
+        if(!cp) {
+            vm.decVarRef(res);
+            return nullptr;
+        }
+        res->push(cp, false);
+    }
     return res;
 }
 

@@ -1,4 +1,4 @@
-# Using bitcode
+# Using bitcode, 4 core VM, release build
 
 ## Command
 
@@ -9,5 +9,5 @@ feral testdir tests --runs 100
 ## Output
 
 ```sh
-total: 6500, passed: 6500, failed: 0, time: 7219 ms
+total: 6600, passed: 6600, failed: 0, time: 6752 ms
 ```

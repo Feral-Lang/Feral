@@ -11,6 +11,14 @@ FERAL_FUNC(bytebufferNew, 1, false,
     return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 
+FERAL_FUNC(bytebufferCopy, 0, false,
+           "  var.fn() -> Bytebuffer\n"
+           "Copies the bytebuffer data and returns it.")
+{
+    VarBytebuffer *b = as<VarBytebuffer>(args[0]);
+    return vm.makeVar<VarBytebuffer>(loc, b->capacity(), b->size(), b->getVal());
+}
+
 FERAL_FUNC(bytebufferCapacity, 0, false,
            "  var.fn() -> Int\n"
            "Returns the capacity in bytes of the Bytebuffer `var`.")
@@ -22,7 +30,7 @@ FERAL_FUNC(bytebufferLen, 0, false,
            "  var.fn() -> Int\n"
            "Returns the number of bytes contained within the Bytebuffer `var`.")
 {
-    return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->getLen());
+    return vm.makeVar<VarInt>(loc, as<VarBytebuffer>(args[0])->size());
 }
 
 } // namespace fer

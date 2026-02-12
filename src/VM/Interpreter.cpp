@@ -281,10 +281,6 @@ void Interpreter::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
     } else {
         f = loc->second;
     }
-    if(f->exists(name)) {
-        err.fail({}, "type function: ", name, " already exists");
-        assert(false);
-    }
     f->add(name, fn, iref);
 }
 Var *Interpreter::getTypeFn(Var *var, StringRef name)
@@ -294,12 +290,11 @@ Var *Interpreter::getTypeFn(Var *var, StringRef name)
     if(loc != typefns.end()) {
         res = loc->second->get(name);
         if(res) return res;
-    } else if(var->isAttrBased()) {
-        loc = typefns.find(var->getType());
-        if(loc != typefns.end()) {
-            res = loc->second->get(name);
-            if(res) return res;
-        }
+    }
+    loc = typefns.find(var->getType());
+    if(loc != typefns.end()) {
+        res = loc->second->get(name);
+        if(res) return res;
     }
     return typefns[typeID<VarAll>()]->get(name);
 }

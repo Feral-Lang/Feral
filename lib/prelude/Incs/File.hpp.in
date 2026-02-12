@@ -101,26 +101,6 @@ FERAL_FUNC(fsNormPath, 1, false,
     return vm.makeVar<VarStr>(loc, fs::normPath(path));
 }
 
-FERAL_FUNC(fileReopenNative, 2, false, "")
-{
-    VarFile *filev = as<VarFile>(args[0]);
-    if(filev->getFile() && filev->isOwner()) fclose(filev->getFile());
-
-    EXPECT(VarStr, args[1], "file path");
-    EXPECT(VarStr, args[2], "file open mode");
-
-    const String &filename = as<VarStr>(args[1])->getVal();
-    const String &mode     = as<VarStr>(args[2])->getVal();
-    filev->getFile()       = fopen(filename.c_str(), mode.c_str());
-    if(!filev->getFile()) {
-        vm.fail(loc, "failed to open file '", filename, "' with mode: ", mode);
-        filev->setMode("");
-        filev->setOwner(true);
-        return nullptr;
-    }
-    return args[0];
-}
-
 FERAL_FUNC(fileLines, 0, false,
            "  var.fn() -> Vec<str>\n"
            "Read all lines in the File `var`, and return them as a list separated by newlines.")
@@ -303,7 +283,7 @@ FERAL_FUNC(fdRead, 2, false,
     EXPECT(VarBytebuffer, args[2], "the data to write");
     VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
     errno             = 0;
-    ssize_t res       = read(as<VarInt>(args[1])->getVal(), bb->getBuf(), bb->capacity());
+    ssize_t res       = read(as<VarInt>(args[1])->getVal(), bb->getVal(), bb->capacity());
     if(res < 0 || errno != 0) {
         vm.fail(loc, "failed to read from the file descriptor: '",
                 std::to_string(as<VarInt>(args[1])->getVal()), "', error: ", strerror(errno));
@@ -324,8 +304,8 @@ FERAL_FUNC(fdWrite, 2, false,
     errno            = 0;
     if(args[2]->is<VarBytebuffer>()) {
         VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
-        data              = bb->getBuf();
-        count             = bb->getLen();
+        data              = bb->getVal();
+        count             = bb->size();
     } else if(args[2]->is<VarStr>()) {
         VarStr *s = as<VarStr>(args[2]);
         data      = s->getVal().data();

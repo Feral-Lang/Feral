@@ -11,13 +11,12 @@ class VarPtr : public Var
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarPtr(ModuleLoc loc, Var *val);
 
-    void setVal(MemoryManager &mem, Var *newval);
+    bool setVal(VirtualMachine &vm, Var *newval);
 
     inline Var *getVal() { return val; }
 };

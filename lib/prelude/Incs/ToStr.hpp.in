@@ -25,7 +25,7 @@ FERAL_FUNC(bytebufferToStr, 0, false,
 {
     VarBytebuffer *self = as<VarBytebuffer>(args[0]);
     if(self->capacity() == 0) return vm.makeVar<VarStr>(loc, "");
-    return vm.makeVar<VarStr>(loc, self->getBuf(), self->getLen());
+    return vm.makeVar<VarStr>(loc, self->getVal(), self->size());
 }
 
 FERAL_FUNC(nilToStr, 0, false,
