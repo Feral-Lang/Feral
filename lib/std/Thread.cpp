@@ -26,8 +26,7 @@ size_t ThreadIdToNum(Thread::id id)
 
 VarThread::VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable,
                      Span<Var *> _args, const StringMap<AssnArgData> &_assnArgs)
-    : Var(loc, false, false), name(name), res(nullptr), thread(nullptr), ip(_ip),
-      callable(_callable)
+    : Var(loc, 0), name(name), res(nullptr), thread(nullptr), ip(_ip), callable(_callable)
 {
     args.reserve(_args.size() + 1); // +1 for self/nullptr
     auto selfArgLoc = _assnArgs.find("selfVar");

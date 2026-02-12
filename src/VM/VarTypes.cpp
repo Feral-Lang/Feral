@@ -19,11 +19,7 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, bool callable, bool attrBased) : loc(loc), ref(0), info(0), doc(nullptr)
-{
-    if(callable) info |= (size_t)VarInfo::CALLABLE;
-    if(attrBased) info |= (size_t)VarInfo::ATTR_BASED;
-}
+Var::Var(ModuleLoc loc, size_t infoFlags) : loc(loc), ref(0), info(infoFlags), doc(nullptr) {}
 Var::~Var() {}
 
 void Var::create(MemoryManager &mem) { onCreate(mem); }
@@ -103,19 +99,19 @@ void Var::dump(String &outStr, VirtualMachine *vm)
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarAll::VarAll(ModuleLoc loc) : Var(loc, false, false) {}
+VarAll::VarAll(ModuleLoc loc) : Var(loc, 0) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarNil ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarNil::VarNil(ModuleLoc loc) : Var(loc, false, false) {}
+VarNil::VarNil(ModuleLoc loc) : Var(loc, 0) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// VarTypeID //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarTypeID::VarTypeID(ModuleLoc loc, size_t val) : Var(loc, false, false), val(val) {}
+VarTypeID::VarTypeID(ModuleLoc loc, size_t val) : Var(loc, 0), val(val) {}
 Var *VarTypeID::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return makeVarWithRef<VarTypeID>(mem, loc, val);
@@ -126,7 +122,7 @@ void VarTypeID::onSet(MemoryManager &mem, Var *from) { val = as<VarTypeID>(from)
 ////////////////////////////////////////// VarBool ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBool::VarBool(ModuleLoc loc, bool val) : Var(loc, false, false), val(val) {}
+VarBool::VarBool(ModuleLoc loc, bool val) : Var(loc, 0), val(val) {}
 Var *VarBool::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return makeVarWithRef<VarBool>(mem, loc, val);
@@ -137,8 +133,8 @@ void VarBool::onSet(MemoryManager &mem, Var *from) { val = as<VarBool>(from)->ge
 ////////////////////////////////////////// VarInt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarInt::VarInt(ModuleLoc loc, int64_t _val) : Var(loc, false, false), val(_val) {}
-VarInt::VarInt(ModuleLoc loc, const char *_val) : Var(loc, false, false), val(std::stoll(_val)) {}
+VarInt::VarInt(ModuleLoc loc, int64_t _val) : Var(loc, 0), val(_val) {}
+VarInt::VarInt(ModuleLoc loc, const char *_val) : Var(loc, 0), val(std::stoll(_val)) {}
 Var *VarInt::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return makeVarWithRef<VarInt>(mem, loc, val);
@@ -150,11 +146,11 @@ void VarInt::onSet(MemoryManager &mem, Var *from) { val = as<VarInt>(from)->getV
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarIntIterator::VarIntIterator(ModuleLoc loc)
-    : Var(loc, false, false), started(false), reversed(false), begin(0), end(0), step(0), curr(0)
+    : Var(loc, 0), started(false), reversed(false), begin(0), end(0), step(0), curr(0)
 {}
 VarIntIterator::VarIntIterator(ModuleLoc loc, int64_t _begin, int64_t _end, int64_t _step)
-    : Var(loc, false, false), started(false), reversed(_step < 0), begin(_begin), end(_end),
-      step(_step), curr(_begin)
+    : Var(loc, 0), started(false), reversed(_step < 0), begin(_begin), end(_end), step(_step),
+      curr(_begin)
 {}
 
 Var *VarIntIterator::onCopy(MemoryManager &mem, ModuleLoc loc)
@@ -200,8 +196,8 @@ bool VarIntIterator::next(int64_t &val)
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFlt::VarFlt(ModuleLoc loc, double _val) : Var(loc, false, false), val(_val) {}
-VarFlt::VarFlt(ModuleLoc loc, const char *_val) : Var(loc, false, false), val(std::stold(_val)) {}
+VarFlt::VarFlt(ModuleLoc loc, double _val) : Var(loc, 0), val(_val) {}
+VarFlt::VarFlt(ModuleLoc loc, const char *_val) : Var(loc, 0), val(std::stold(_val)) {}
 Var *VarFlt::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return makeVarWithRef<VarFlt>(mem, loc, val);
@@ -212,17 +208,15 @@ void VarFlt::onSet(MemoryManager &mem, Var *from) { val = as<VarFlt>(from)->getV
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStr::VarStr(ModuleLoc loc, char val) : Var(loc, false, false), val(1, val) {}
-VarStr::VarStr(ModuleLoc loc, String &&val) : Var(loc, false, false), val(std::move(val)) {}
-VarStr::VarStr(ModuleLoc loc, StringRef val) : Var(loc, false, false), val(val) {}
-VarStr::VarStr(ModuleLoc loc, const char *val) : Var(loc, false, false), val(val) {}
-VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val) : Var(loc, false, false)
+VarStr::VarStr(ModuleLoc loc, char val) : Var(loc, 0), val(1, val) {}
+VarStr::VarStr(ModuleLoc loc, String &&val) : Var(loc, 0), val(std::move(val)) {}
+VarStr::VarStr(ModuleLoc loc, StringRef val) : Var(loc, 0), val(val) {}
+VarStr::VarStr(ModuleLoc loc, const char *val) : Var(loc, 0), val(val) {}
+VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val) : Var(loc, 0)
 {
     for(auto &e : _val) val += e;
 }
-VarStr::VarStr(ModuleLoc loc, const char *val, size_t count)
-    : Var(loc, false, false), val(val, count)
-{}
+VarStr::VarStr(ModuleLoc loc, const char *val, size_t count) : Var(loc, 0), val(val, count) {}
 Var *VarStr::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return makeVarWithRef<VarStr>(mem, loc, val);
@@ -233,13 +227,12 @@ void VarStr::onSet(MemoryManager &mem, Var *from) { val = as<VarStr>(from)->getV
 ////////////////////////////////////////// VarVec ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarVec::VarVec(ModuleLoc loc, size_t reservesz, bool asrefs)
-    : Var(loc, false, false), asrefs(asrefs)
+VarVec::VarVec(ModuleLoc loc, size_t reservesz, bool asrefs) : Var(loc, 0), asrefs(asrefs)
 {
     val.reserve(reservesz);
 }
 VarVec::VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs)
-    : Var(loc, false, false), val(std::move(val)), asrefs(asrefs)
+    : Var(loc, 0), val(std::move(val)), asrefs(asrefs)
 {}
 void VarVec::onDestroy(MemoryManager &mem)
 {
@@ -268,9 +261,7 @@ void VarVec::setVal(MemoryManager &mem, Span<Var *> newval)
 ////////////////////////////////////// VarVecIterator ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarVecIterator::VarVecIterator(ModuleLoc loc, VarVec *vec)
-    : Var(loc, false, false), vec(vec), curr(0)
-{}
+VarVecIterator::VarVecIterator(ModuleLoc loc, VarVec *vec) : Var(loc, 0), vec(vec), curr(0) {}
 void VarVecIterator::onCreate(MemoryManager &mem) { incVarRef(vec); }
 void VarVecIterator::onDestroy(MemoryManager &mem) { decVarRef(mem, vec); }
 Var *VarVecIterator::onCopy(MemoryManager &mem, ModuleLoc loc)
@@ -297,12 +288,13 @@ bool VarVecIterator::next(Var *&val)
 ////////////////////////////////////////// VarMap ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarMap::VarMap(ModuleLoc loc, size_t reservesz, bool asrefs) : Var(loc, false, true), asrefs(asrefs)
+VarMap::VarMap(ModuleLoc loc, size_t reservesz, bool asrefs)
+    : Var(loc, VarInfo::ATTR_BASED), asrefs(asrefs)
 {
     val.reserve(reservesz);
 }
 VarMap::VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs)
-    : Var(loc, false, true), val(std::move(val)), asrefs(asrefs)
+    : Var(loc, VarInfo::ATTR_BASED), val(std::move(val)), asrefs(asrefs)
 {}
 void VarMap::onDestroy(MemoryManager &mem) { clear(mem); }
 Var *VarMap::onCopy(MemoryManager &mem, ModuleLoc loc)
@@ -355,7 +347,7 @@ void VarMap::getAttrList(MemoryManager &mem, VarVec *dest)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarMapIterator::VarMapIterator(ModuleLoc loc, VarMap *map)
-    : Var(loc, false, false), map(map), curr(map->getVal().begin())
+    : Var(loc, 0), map(map), curr(map->getVal().begin())
 {}
 void VarMapIterator::onCreate(MemoryManager &mem) { incVarRef(map); }
 void VarMapIterator::onDestroy(MemoryManager &mem) { decVarRef(mem, map); }
@@ -389,7 +381,7 @@ bool VarMapIterator::next(MemoryManager &mem, ModuleLoc loc, Var *&val)
 
 VarFn::VarFn(ModuleLoc loc, ModuleId moduleId, const String &kwArg, const String &varArg,
              size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative)
-    : Var(loc, true, false), moduleId(moduleId), kwArg(kwArg), varArg(varArg), body(body),
+    : Var(loc, VarInfo::CALLABLE), moduleId(moduleId), kwArg(kwArg), varArg(varArg), body(body),
       isnative(isnative)
 {
     params.reserve(paramcount);
@@ -470,8 +462,8 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
 
 VarModule::VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
                      VarStack *varStack)
-    : Var(loc, false, true), path(path), bc(std::move(bc)), moduleId(moduleId), varStack(varStack),
-      ownsVars(varStack == nullptr)
+    : Var(loc, VarInfo::ATTR_BASED), path(path), bc(std::move(bc)), moduleId(moduleId),
+      varStack(varStack), ownsVars(varStack == nullptr)
 {}
 void VarModule::onCreate(MemoryManager &mem)
 {
@@ -528,12 +520,13 @@ void VarModule::addNativeVar(MemoryManager &mem, StringRef name, StringRef doc, 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarStructDef::VarStructDef(ModuleLoc loc, size_t attrscount)
-    : Var(loc, true, true), attrorder(attrscount, ""), id(genStructEnumID())
+    : Var(loc, VarInfo::CALLABLE | VarInfo::ATTR_BASED), attrorder(attrscount, ""),
+      id(genStructEnumID())
 {
     attrs.reserve(attrscount);
 }
 VarStructDef::VarStructDef(ModuleLoc loc, size_t attrscount, size_t id)
-    : Var(loc, true, true), attrorder(attrscount, ""), id(id)
+    : Var(loc, VarInfo::CALLABLE | VarInfo::ATTR_BASED), attrorder(attrscount, ""), id(id)
 {
     attrs.reserve(attrscount);
 }
@@ -618,12 +611,12 @@ void VarStructDef::getAttrList(MemoryManager &mem, VarVec *dest)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarStruct::VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount)
-    : Var(loc, false, true), base(base), id(genStructEnumID())
+    : Var(loc, VarInfo::ATTR_BASED), base(base), id(genStructEnumID())
 {
     attrs.reserve(attrscount);
 }
 VarStruct::VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount, size_t id)
-    : Var(loc, false, true), base(base), id(id)
+    : Var(loc, VarInfo::ATTR_BASED), base(base), id(id)
 {
     attrs.reserve(attrscount);
 }
@@ -686,8 +679,7 @@ void VarStruct::getAttrList(MemoryManager &mem, VarVec *dest)
 
 VarFailure::VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount,
                        bool irefHandler)
-    : Var(loc, false, false), handler(handler), popLoc(popLoc), recurseCount(recurseCount),
-      handling(false)
+    : Var(loc, 0), handler(handler), popLoc(popLoc), recurseCount(recurseCount), handling(false)
 {
     if(irefHandler) incVarRef(this->handler);
 }
@@ -714,7 +706,7 @@ void VarFailure::reset()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFile::VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool owner)
-    : Var(loc, false, false), file(file), mode(mode), owner(owner)
+    : Var(loc, 0), file(file), mode(mode), owner(owner)
 {}
 void VarFile::onDestroy(MemoryManager &mem)
 {
@@ -737,8 +729,7 @@ void VarFile::onSet(MemoryManager &mem, Var *from)
 /////////////////////////////////////////// VarFileIterator //////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFileIterator::VarFileIterator(ModuleLoc loc, VarFile *file) : Var(loc, false, false), file(file)
-{}
+VarFileIterator::VarFileIterator(ModuleLoc loc, VarFile *file) : Var(loc, 0), file(file) {}
 void VarFileIterator::onCreate(MemoryManager &mem) { incVarRef(file); }
 void VarFileIterator::onDestroy(MemoryManager &mem) { decVarRef(mem, file); }
 
@@ -776,7 +767,7 @@ bool VarFileIterator::next(VarStr *&val)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const char *buf)
-    : Var(loc, false, false), buffer(nullptr), bufsz(bufsz), buflen(buflen)
+    : Var(loc, 0), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
     if(bufsz > 0) buffer = (char *)malloc(bufsz);
     if(buflen > 0) memcpy(buffer, buf, buflen);

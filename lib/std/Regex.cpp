@@ -6,9 +6,9 @@ namespace fer
 {
 
 VarRegex::VarRegex(ModuleLoc loc, StringRef exprStr, std::regex::flag_type opts)
-    : Var(loc, false, false), expr(exprStr.begin(), exprStr.end(), opts)
+    : Var(loc, 0), expr(exprStr.begin(), exprStr.end(), opts)
 {}
-VarRegex::VarRegex(ModuleLoc loc, const std::regex &expr) : Var(loc, false, false), expr(expr) {}
+VarRegex::VarRegex(ModuleLoc loc, const std::regex &expr) : Var(loc, 0), expr(expr) {}
 Var *VarRegex::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
     return Var::makeVarWithRef<VarRegex>(mem, loc, expr);

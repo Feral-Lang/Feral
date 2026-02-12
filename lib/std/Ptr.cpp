@@ -5,7 +5,7 @@
 namespace fer
 {
 
-VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, false, false), val(val) {}
+VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, 0), val(val) {}
 void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
 void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
 Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)

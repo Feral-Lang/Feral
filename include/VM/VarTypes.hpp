@@ -5,13 +5,20 @@
 namespace fer
 {
 
-enum class VarInfo
+namespace VarInfo
 {
-    CALLABLE    = 1 << 0,
-    ATTR_BASED  = 1 << 1,
-    LOAD_AS_REF = 1 << 2,
-    CONST       = 1 << 3,
+enum
+{
+    // main attributes
+    BASIC      = 1 << 0, // no init()/deinit() can exist for this Var
+    CALLABLE   = 1 << 1,
+    ATTR_BASED = 1 << 2,
+
+    // runtime attributes
+    LOAD_AS_REF = 1 << 3,
+    CONST       = 1 << 4,
 };
+} // namespace VarInfo
 
 struct AssnArgData;
 class VirtualMachine;
@@ -30,7 +37,8 @@ class Var : public IAllocated
 
     friend class VirtualMachine;
 
-    inline bool isLoadAsRef() const { return info & (size_t)VarInfo::LOAD_AS_REF; }
+    inline bool isLoadAsRef() const { return info & VarInfo::LOAD_AS_REF; }
+    inline bool isBasic() const { return info & VarInfo::BASIC; }
 
     inline void iref() { ++ref; }
     inline ssize_t dref() { return --ref; }
@@ -62,7 +70,7 @@ class Var : public IAllocated
                         const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
 
 protected:
-    Var(ModuleLoc loc, bool callable, bool attrBased);
+    Var(ModuleLoc loc, size_t infoFlags);
     // No need to override the destructor. Override onDestroy() instead.
     virtual ~Var();
 
@@ -97,19 +105,19 @@ public:
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 
-    inline bool isCallable() const { return info & (size_t)VarInfo::CALLABLE; }
-    inline bool isAttrBased() const { return info & (size_t)VarInfo::ATTR_BASED; }
-    inline bool isConst() const { return info & (size_t)VarInfo::CONST; }
+    inline bool isCallable() const { return info & VarInfo::CALLABLE; }
+    inline bool isAttrBased() const { return info & VarInfo::ATTR_BASED; }
+    inline bool isConst() const { return info & VarInfo::CONST; }
 
     inline void setLoadAsRef()
     {
         // any const marked variable cannot be marked with loadAsRef()
-        if(!isConst()) info |= (size_t)VarInfo::LOAD_AS_REF;
+        if(!isConst()) info |= VarInfo::LOAD_AS_REF;
     }
-    inline void unsetLoadAsRef() { info &= ~(size_t)VarInfo::LOAD_AS_REF; }
+    inline void unsetLoadAsRef() { info &= ~VarInfo::LOAD_AS_REF; }
 
-    inline void setConst() { info |= (size_t)VarInfo::CONST; }
-    inline void unsetConst() { info &= ~(size_t)VarInfo::CONST; }
+    inline void setConst() { info |= VarInfo::CONST; }
+    inline void unsetConst() { info &= ~VarInfo::CONST; }
 
     // used in native function calls
     template<typename T, typename... Args>
