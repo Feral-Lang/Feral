@@ -14,3 +14,15 @@ p = 10;
 
 assert.eq(p, 10);
 assert.eq(i, 10);
+
+let copyCtr = 0;
+
+let _copy_ in IntTy = fn() {
+    ++copyCtr;
+    let res = 0;
+    res = self;
+    return res;
+};
+
+let b = p;
+assert.eq(copyCtr, 1);

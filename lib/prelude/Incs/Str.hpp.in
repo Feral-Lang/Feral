@@ -3,6 +3,13 @@
 namespace fer
 {
 
+FERAL_FUNC(strCopy, 0, false,
+           "  var.fn() -> Str\n"
+           "Copies the string data and returns it.")
+{
+    return vm.makeVar<VarStr>(loc, as<VarStr>(args[0])->getVal());
+}
+
 FERAL_FUNC(strAdd, 1, false,
            "  var.fn(other) -> Str\n"
            "Concatenates the strings `var` and `other` and returns the result.")

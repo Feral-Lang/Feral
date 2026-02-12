@@ -8,16 +8,13 @@ namespace fer
 VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, 0), val(val) {}
 void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
 void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
-Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)
+bool VarPtr::onSet(VirtualMachine &vm, Var *from) { return setVal(vm, as<VarPtr>(from)->val); }
+bool VarPtr::setVal(VirtualMachine &vm, Var *newval)
 {
-    return incVarRef(makeVar<VarPtr>(mem, loc, val));
-}
-void VarPtr::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarPtr>(from)->val); }
-void VarPtr::setVal(MemoryManager &mem, Var *newval)
-{
-    Var::decVarRef(mem, val);
+    Var::incVarRef(newval);
+    Var::decVarRef(vm.getMemoryManager(), val);
     val = newval;
-    Var::incVarRef(val);
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,12 +28,19 @@ FERAL_FUNC(ptrNewNative, 1, false,
     return vm.makeVar<VarPtr>(loc, args[1]);
 }
 
+FERAL_FUNC(ptrCopy, 0, false,
+           "  var.fn() -> Ptr\n"
+           "Copies the pointer data and returns it.")
+{
+    return vm.makeVar<VarPtr>(loc, as<VarPtr>(args[0])->getVal());
+}
+
 FERAL_FUNC(ptrSet, 1, false,
            "  var.fn(data) -> var\n"
            "Sets the Ptr `var` to contain `data` and returns `var` itself.")
 {
     VarPtr *self = as<VarPtr>(args[0]);
-    self->setVal(vm.getMemoryManager(), args[1]);
+    if(!self->setVal(vm, args[1])) return nullptr;
     return args[0];
 }
 
@@ -56,6 +60,7 @@ INIT_MODULE(Ptr)
 
     mod->addNativeFn(vm, "new", ptrNewNative);
 
+    vm.addNativeTypeFn<VarPtr>(loc, "_copy_", ptrCopy);
     vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet);
     vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet);
     return true;

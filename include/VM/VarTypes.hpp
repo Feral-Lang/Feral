@@ -47,8 +47,12 @@ class Var : public IAllocated
     // Proxy functions to use the functions to be implemented by the Var's.
     void create(MemoryManager &mem);
     void destroy(MemoryManager &mem);
-    Var *copy(MemoryManager &mem, ModuleLoc loc);
-    void set(MemoryManager &mem, Var *from);
+    // Copy this variable.
+    // By default - if a custom `copy()` member function is not implemented,
+    // it just increments ref and returns `this`.
+    Var *copy(VirtualMachine &vm, ModuleLoc loc);
+    // Set `this` variable using `from`, which is guaranteed to be of the same type as `this`.
+    bool set(VirtualMachine &vm, Var *from);
 
     // Following functions are to be implemented by the Var's as needed.
 
@@ -58,13 +62,10 @@ class Var : public IAllocated
     // Called by vm.unmakeVar() before Var's destructor.
     // By default, it does nothing.
     virtual void onDestroy(MemoryManager &mem);
-    // Copy this variable.
-    // By default (if not overriden), it just increments ref and returns `this`.
-    virtual Var *onCopy(MemoryManager &mem, ModuleLoc loc);
     // Set value(s) in this variable using a different variable of the same type.
     // As such, no type checking is required to cast `from` to the class in which
     // this function is implemented.
-    virtual void onSet(MemoryManager &mem, Var *from);
+    virtual bool onSet(VirtualMachine &vm, Var *from);
     // Perform a call using this variable.
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                         const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
@@ -157,19 +158,6 @@ public:
         }
         return var;
     }
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    copyVar(MemoryManager &mem, ModuleLoc loc, T *var)
-    {
-        return var->copy(mem, loc);
-    }
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    setVar(MemoryManager &mem, T *var, Var *from)
-    {
-        var->set(mem, from);
-        return var;
-    }
 };
 
 template<typename T> T *as(Var *data) { return static_cast<T *>(data); }
@@ -199,9 +187,6 @@ class VarTypeID : public Var
 {
     size_t val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
-
 public:
     VarTypeID(ModuleLoc loc, size_t val);
 
@@ -213,8 +198,7 @@ class VarBool : public Var
 {
     bool val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarBool(ModuleLoc loc, bool val);
@@ -227,8 +211,7 @@ class VarInt : public Var
 {
     int64_t val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarInt(ModuleLoc loc, int64_t _val);
@@ -243,9 +226,6 @@ class VarIntIterator : public Var
     int64_t begin, end, step, curr;
     bool started;
     bool reversed;
-
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
 
 public:
     VarIntIterator(ModuleLoc loc);
@@ -264,8 +244,7 @@ class VarFlt : public Var
 {
     double val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarFlt(ModuleLoc loc, double _val);
@@ -279,8 +258,7 @@ class VarStr : public Var
 {
     String val;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarStr(ModuleLoc loc, char val);
@@ -303,14 +281,13 @@ class VarVec : public Var
     using ConstIterator = Vector<Var *>::const_iterator;
 
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarVec(ModuleLoc loc, size_t reservesz, bool asrefs);
     VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs);
 
-    void setVal(MemoryManager &mem, Span<Var *> newval);
+    bool setVal(VirtualMachine &vm, Span<Var *> newval);
     void clear(MemoryManager &mem);
     Iterator insert(ConstIterator iter, Var *data, bool iref);
     Iterator erase(MemoryManager &mem, ConstIterator iter, Var *data, bool dref);
@@ -350,8 +327,6 @@ class VarVecIterator : public Var
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
 
 public:
     VarVecIterator(ModuleLoc loc, VarVec *vec);
@@ -366,14 +341,13 @@ class VarMap : public Var
     bool asrefs;
 
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarMap(ModuleLoc loc, size_t reservesz, bool asrefs);
     VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs);
 
-    void setVal(MemoryManager &mem, const StringMap<Var *> &newval);
+    bool setVal(VirtualMachine &vm, const StringMap<Var *> &newval);
     void clear(MemoryManager &mem);
 
     // not inline because Var is incomplete type
@@ -383,6 +357,7 @@ public:
     void getAttrList(MemoryManager &mem, VarVec *dest) override;
     inline size_t getAttrCount() override { return val.size(); }
 
+    inline size_t size() { return val.size(); }
     inline StringMap<Var *> &getVal() { return val; }
     inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }
     // Make sure to initializePos() first.
@@ -399,8 +374,6 @@ class VarMapIterator : public Var
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
 
 public:
     VarMapIterator(ModuleLoc loc, VarMap *map);
@@ -561,6 +534,8 @@ public:
     void getAttrList(MemoryManager &mem, VarVec *dest) override;
     inline size_t getAttrCount() override { return attrs.size(); }
 
+    inline size_t getSubType() override { return id; }
+
     inline void pushAttrOrder(StringRef attr) { attrorder.emplace_back(attr); }
     inline void setAttrOrderAt(size_t idx, StringRef attr) { attrorder[idx] = attr; }
     inline void setAttrOrder(Span<StringRef> neworder)
@@ -580,8 +555,7 @@ class VarStruct : public Var
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     // base can be nullptr (as is the case for enums)
@@ -644,21 +618,17 @@ class VarFile : public Var
 {
     FILE *file;
     String mode;
-    bool owner;
+    bool requiresClosing;
 
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
-    VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool owner = true);
-
-    inline void setMode(StringRef newmode) { mode = newmode; }
-    inline void setOwner(bool isowner) { owner = isowner; }
+    VarFile(ModuleLoc loc, FILE *const file, const String &mode, bool requiresClosing = true);
 
     inline FILE *&getFile() { return file; }
     inline StringRef getMode() { return mode; }
-    inline bool isOwner() { return owner; }
+    inline bool mustClose() { return requiresClosing; }
 };
 
 class VarFileIterator : public Var
@@ -667,8 +637,6 @@ class VarFileIterator : public Var
 
     void onCreate(MemoryManager &mem) override;
     void onDestroy(MemoryManager &mem) override;
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
 
 public:
     VarFileIterator(ModuleLoc loc, VarFile *file);
@@ -682,8 +650,7 @@ class VarBytebuffer : public Var
     size_t bufsz;
     size_t buflen;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, const char *buf = nullptr);
@@ -692,8 +659,8 @@ public:
     void setData(const char *newbuf, size_t newlen);
 
     inline void setLen(size_t len) { buflen = len; }
-    inline char *&getBuf() { return buffer; }
-    inline size_t getLen() { return buflen; }
+    inline char *&getVal() { return buffer; }
+    inline size_t size() { return buflen; }
     inline size_t capacity() { return bufsz; }
 };
 

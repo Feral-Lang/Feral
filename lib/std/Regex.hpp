@@ -12,8 +12,7 @@ class VarRegex : public Var
     using svmatch    = std::match_results<StringRef::const_iterator>;
     using svsubmatch = std::sub_match<StringRef::const_iterator>;
 
-    Var *onCopy(MemoryManager &mem, ModuleLoc loc) override;
-    void onSet(MemoryManager &mem, Var *from) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
     VarRegex(ModuleLoc loc, StringRef exprStr,

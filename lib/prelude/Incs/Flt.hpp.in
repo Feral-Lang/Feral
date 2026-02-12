@@ -68,6 +68,13 @@ LOGICF_FUNC(GT, >)
 LOGICF_FUNC(LE, <=)
 LOGICF_FUNC(GE, >=)
 
+FERAL_FUNC(fltCopy, 0, false,
+           "  var.fn() -> Flt\n"
+           "Copies the float data and returns it.")
+{
+    return vm.makeVar<VarFlt>(loc, as<VarFlt>(args[0])->getVal());
+}
+
 FERAL_FUNC(fltEQ, 1, false,
            "  var.fn(other) -> Bool\n"
            "Returns `true` if `var` and `other` are equal.")

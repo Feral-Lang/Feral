@@ -3,7 +3,7 @@
 namespace fer
 {
 
-FERAL_FUNC(createStruct, 0, false,
+FERAL_FUNC(structNew, 0, false,
            "  fn(assnArgs...) -> Struct\n"
            "Creates a structure definition with fields defined by `assnArgs` and returns it.")
 {

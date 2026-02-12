@@ -216,12 +216,6 @@ public:
         return Var::decVarRef<T>(mem, var, del);
     }
     template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
-                                                                               T *var)
-    {
-        return Var::copyVar<T>(mem, loc, var);
-    }
-    template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
     registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
     {
@@ -374,12 +368,7 @@ public:
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
                                                                                T *var)
     {
-        return ip.copyVar(loc, var);
-    }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
-    {
-        return Var::setVar(getMemoryManager(), var, from);
+        return var->copy(*this, loc);
     }
 
     template<typename T>

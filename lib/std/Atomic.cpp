@@ -10,13 +10,10 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarAtomicBool::VarAtomicBool(ModuleLoc loc, bool _val) : Var(loc, 0), val(_val) {}
-Var *VarAtomicBool::onCopy(MemoryManager &mem, ModuleLoc loc)
-{
-    return incVarRef(makeVar<VarAtomicBool>(mem, loc, val));
-}
-void VarAtomicBool::onSet(MemoryManager &mem, Var *from)
+bool VarAtomicBool::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarAtomicBool>(from)->getVal();
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,11 +22,11 @@ void VarAtomicBool::onSet(MemoryManager &mem, Var *from)
 
 VarAtomicInt::VarAtomicInt(ModuleLoc loc, int64_t _val) : Var(loc, 0), val(_val) {}
 VarAtomicInt::VarAtomicInt(ModuleLoc loc, const char *_val) : Var(loc, 0), val(std::stoll(_val)) {}
-Var *VarAtomicInt::onCopy(MemoryManager &mem, ModuleLoc loc)
+bool VarAtomicInt::onSet(VirtualMachine &vm, Var *from)
 {
-    return incVarRef(makeVar<VarAtomicInt>(mem, loc, val));
+    val = as<VarAtomicInt>(from)->getVal();
+    return true;
 }
-void VarAtomicInt::onSet(MemoryManager &mem, Var *from) { val = as<VarAtomicInt>(from)->getVal(); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
@@ -45,6 +42,13 @@ FERAL_FUNC(atomicBoolNew, 1, false,
 {
     EXPECT(VarBool, args[1], "creating an atomic bool");
     return vm.makeVar<VarAtomicBool>(loc, as<VarBool>(args[1])->getVal());
+}
+
+FERAL_FUNC(atomicBoolCopy, 0, false,
+           "  var.fn() -> AtomicBool\n"
+           "Copies the atomic boolean data and returns it.")
+{
+    return vm.makeVar<VarAtomicBool>(loc, as<VarAtomicBool>(args[0])->getVal());
 }
 
 FERAL_FUNC(atomicBoolSet, 1, false,
@@ -75,6 +79,13 @@ FERAL_FUNC(atomicIntNew, 1, false,
     return vm.makeVar<VarAtomicInt>(loc, as<VarInt>(args[1])->getVal());
 }
 
+FERAL_FUNC(atomicIntCopy, 0, false,
+           "  var.fn() -> AtomicInt\n"
+           "Copies the atomic integer data and returns it.")
+{
+    return vm.makeVar<VarAtomicInt>(loc, as<VarAtomicInt>(args[0])->getVal());
+}
+
 FERAL_FUNC(atomicIntSet, 1, false,
            "  var.fn(value) -> Nil\n"
            "Sets the value of atomic bool `var` to be `value`.")
@@ -101,8 +112,10 @@ INIT_MODULE(Atomic)
     mod->addNativeFn(vm, "newBool", atomicBoolNew);
     mod->addNativeFn(vm, "newInt", atomicIntNew);
 
+    vm.addNativeTypeFn<VarAtomicBool>(loc, "_copy_", atomicBoolCopy);
     vm.addNativeTypeFn<VarAtomicBool>(loc, "set", atomicBoolSet);
     vm.addNativeTypeFn<VarAtomicBool>(loc, "get", atomicBoolGet);
+    vm.addNativeTypeFn<VarAtomicInt>(loc, "_copy_", atomicIntCopy);
     vm.addNativeTypeFn<VarAtomicInt>(loc, "set", atomicIntSet);
     vm.addNativeTypeFn<VarAtomicInt>(loc, "get", atomicIntGet);
     return true;

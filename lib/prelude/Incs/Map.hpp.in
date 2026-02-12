@@ -37,18 +37,32 @@ FERAL_FUNC(mapNew, 0, true,
         Var *v = nullptr;
         Array<Var *, 1> tmp{args[i]};
         if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-        const String &key = as<VarStr>(v)->getVal();
-        auto maploc       = mapval.find(key);
+        String key(std::move(as<VarStr>(v)->getVal()));
+        auto maploc = mapval.find(key);
         if(maploc != mapval.end()) vm.decVarRef(maploc->second);
         if(refs) {
             vm.incVarRef(args[++i]);
             mapval[key] = args[i];
         } else {
-            mapval[key] = vm.copyVar(loc, args[++i]);
+            Var *val = vm.copyVar(loc, args[++i]);
+            if(!val) {
+                for(auto &e : mapval) vm.decVarRef(e.second);
+                return nullptr;
+            }
+            mapval[key] = val;
         }
-        vm.decVarRef(v);
     }
     return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
+}
+
+FERAL_FUNC(mapCopy, 0, false,
+           "  var.fn() -> Map\n"
+           "Copies the map data and returns it.")
+{
+    VarMap *m   = as<VarMap>(args[0]);
+    VarMap *res = vm.makeVar<VarMap>(loc, m->size(), m->isRefMap());
+    if(!res->setVal(vm, m->getVal())) vm.decVarRef(res);
+    return res;
 }
 
 FERAL_FUNC(mapSize, 0, false,
@@ -82,13 +96,15 @@ FERAL_FUNC(mapInsert, 2, false,
     Var *v             = nullptr;
     Array<Var *, 1> tmp{args[1]};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-    StringRef key = as<VarStr>(v)->getVal();
+    String key = std::move(as<VarStr>(v)->getVal());
+    vm.decVarRef(v);
     if(map->isRefMap()) {
         map->setAttr(mem, key, args[2], true);
     } else {
-        map->setAttr(mem, key, vm.copyVar(loc, args[2]), false);
+        Var *val = vm.copyVar(loc, args[2]);
+        if(!val) { return nullptr; }
+        map->setAttr(mem, key, val, false);
     }
-    vm.decVarRef(v);
     return args[0];
 }
 
