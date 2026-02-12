@@ -32,15 +32,15 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     : vmCount(0), argparser(argparser), parseSourceFn(parseSourceFn), mem("VM::Main"),
       managedAllocator(mem, "VM::ManagedAllocator"), globals(VarFrame::create(mem)),
       prelude("prelude/prelude"),
-      binaryPath(makeVarWithRef<VarStr>(ModuleLoc(), env::getProcPath())),
-      installPath(makeVarWithRef<VarStr>(ModuleLoc(),
-                                         fs::parentDir((fs::parentDir(binaryPath->getVal()))))),
-      basicErrHandler(genNativeFn({}, "basicErrorHandler", basicErrorHandler)),
-      moduleDirs(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
-      moduleFinders(makeVarWithRef<VarVec>(ModuleLoc(), 2, false)),
-      tru(makeVarWithRef<VarBool>(ModuleLoc(), true)),
-      fals(makeVarWithRef<VarBool>(ModuleLoc(), false)), nil(makeVarWithRef<VarNil>(ModuleLoc())),
-      recurseMax(DEFAULT_MAX_RECURSE_COUNT)
+      binaryPath(incVarRef(makeVar<VarStr>(ModuleLoc(), env::getProcPath()))),
+      installPath(incVarRef(
+          makeVar<VarStr>(ModuleLoc(), fs::parentDir((fs::parentDir(binaryPath->getVal())))))),
+      basicErrHandler(incVarRef(genNativeFn({}, "basicErrorHandler", basicErrorHandler))),
+      moduleDirs(incVarRef(makeVar<VarVec>(ModuleLoc(), 2, false))),
+      moduleFinders(incVarRef(makeVar<VarVec>(ModuleLoc(), 2, false))),
+      tru(incVarRef(makeVar<VarBool>(ModuleLoc(), true))),
+      fals(incVarRef(makeVar<VarBool>(ModuleLoc(), false))),
+      nil(incVarRef(makeVar<VarNil>(ModuleLoc()))), recurseMax(DEFAULT_MAX_RECURSE_COUNT)
 {
 #if defined(CORE_OS_WINDOWS)
     SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
@@ -52,15 +52,15 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     // To make sure if user installs Feral in, say, `/usr`,
     // Feral doesn't attempt using `/usr/tmp` as the temp path.
     if(installPath->getVal().ends_with(".feral")) {
-        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp");
-        libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
+        tempPath = incVarRef(makeVar<VarStr>(ModuleLoc(), installPath->getVal() + "/tmp"));
+        libPath  = incVarRef(makeVar<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral"));
         globalModulesPath =
-            makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
+            incVarRef(makeVar<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths"));
     } else {
-        tempPath = makeVarWithRef<VarStr>(ModuleLoc(), "/tmp/feral." + env::get("USERNAME"));
-        libPath  = makeVarWithRef<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral");
+        tempPath = incVarRef(makeVar<VarStr>(ModuleLoc(), "/tmp/feral." + env::get("USERNAME")));
+        libPath  = incVarRef(makeVar<VarStr>(ModuleLoc(), installPath->getVal() + "/lib/feral"));
         globalModulesPath =
-            makeVarWithRef<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths");
+            incVarRef(makeVar<VarStr>(ModuleLoc(), libPath->getVal() + "/.modulePaths"));
     }
 
     binaryPath->setConst();
@@ -75,10 +75,10 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
 
     Span<StringRef> vmArgs = argparser.getPassthrough();
 
-    cmdargs = makeVarWithRef<VarVec>(ModuleLoc(), vmArgs.size(), false);
+    cmdargs = incVarRef(makeVar<VarVec>(ModuleLoc(), vmArgs.size(), false));
     for(size_t i = 0; i < vmArgs.size(); ++i) {
         auto &a = vmArgs[i];
-        cmdargs->push(makeVarWithRef<VarStr>(ModuleLoc(), a));
+        cmdargs->push(makeVar<VarStr>(ModuleLoc(), a), true);
     }
     cmdargs->setConst();
 
@@ -87,7 +87,7 @@ Interpreter::Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
     String feralPaths = env::get("FERAL_PATHS");
     for(auto &_path : utils::stringDelim(feralPaths, ";")) {
-        VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
+        VarStr *moduleLoc = incVarRef(makeVar<VarStr>(ModuleLoc(), _path));
         moduleDirs->insert(moduleDirs->begin(), moduleLoc);
     }
 
@@ -108,13 +108,18 @@ Interpreter::~Interpreter()
     stopExecution();
     while(vmCount.load() > 0) { std::this_thread::sleep_for(1ms); }
     for(auto &mod : modules) { decVarRef(mod.second); }
+    decVarRef(cmdargs);
+    decVarRef(globalModulesPath);
+    decVarRef(libPath);
+    decVarRef(tempPath);
     decVarRef(nil);
     decVarRef(fals);
     decVarRef(tru);
-    decVarRef(cmdargs);
     decVarRef(moduleFinders);
     decVarRef(moduleDirs);
     decVarRef(basicErrHandler);
+    decVarRef(installPath);
+    decVarRef(binaryPath);
     for(auto &typefn : typefns) { VarFrame::destroy(mem, typefn.second); }
     VarFrame::destroy(mem, globals);
     for(auto &deinitfn : dlldeinitfns) { deinitfn.second(*this); }
@@ -127,7 +132,7 @@ Interpreter::~Interpreter()
 bool Interpreter::loadPrelude()
 {
     VarFn *bmfFn = genNativeFn({}, "basicModuleFinder", basicModuleFinder);
-    moduleFinders->push(bmfFn);
+    moduleFinders->push(bmfFn, true);
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
     setupCoreFuncs(*this, {});
@@ -184,7 +189,7 @@ void Interpreter::tryAddModulePathsFromFile(const char *file)
     if(!fs::read(file, modulePaths).getCode()) return;
     for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
         if(_path.empty()) continue;
-        VarStr *moduleLoc = makeVarWithRef<VarStr>(ModuleLoc(), _path);
+        VarStr *moduleLoc = incVarRef(makeVar<VarStr>(ModuleLoc(), _path));
         moduleDirs->insert(moduleDirs->begin(), moduleLoc);
     }
 }
@@ -256,12 +261,12 @@ Var *Interpreter::getGlobal(StringRef name) { return globals->get(name); }
 
 void Interpreter::addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
 {
-    addGlobal(name, "", genNativeFn(loc, name, fnObj), false);
+    addGlobal(name, "", genNativeFn(loc, name, fnObj));
 }
 VarFn *Interpreter::genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
 {
-    VarFn *f = makeVarWithRef<VarFn>(loc, -1, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
-                                     FnBody{.native = fnObj.fn}, true);
+    VarFn *f = makeVar<VarFn>(loc, -1, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
+                              FnBody{.native = fnObj.fn}, true);
     if(!fnObj.doc.empty()) f->setDoc(mem, makeVar<VarStr>(loc, fnObj.doc));
     for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
     return f;
@@ -458,8 +463,8 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
         }
     }
     err.addFile(moduleIdCtr, f);
-    VarModule *mod = makeVarWithRef<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
-                                               moduleIdCtr, existingVarStack);
+    VarModule *mod = incVarRef(makeVar<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
+                                                  moduleIdCtr, existingVarStack));
     LockGuard<Mutex> globalGuard(ip.globalMutex);
     ip.modules.insert_or_assign(moduleIdCtr, mod);
     return moduleIdCtr++;

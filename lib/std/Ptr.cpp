@@ -10,7 +10,7 @@ void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
 void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
 Var *VarPtr::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-    return Var::makeVarWithRef<VarPtr>(mem, loc, val);
+    return incVarRef(makeVar<VarPtr>(mem, loc, val));
 }
 void VarPtr::onSet(MemoryManager &mem, Var *from) { setVal(mem, as<VarPtr>(from)->val); }
 void VarPtr::setVal(MemoryManager &mem, Var *newval)

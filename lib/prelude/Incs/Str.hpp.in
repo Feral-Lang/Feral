@@ -352,19 +352,19 @@ FERAL_FUNC(strSplitNative, 2, false, "")
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
     if(str.empty()) return res;
-    VarStr *temp       = vm.makeVarWithRef<VarStr>(loc, "");
+    VarStr *temp       = vm.makeVar<VarStr>(loc, "");
     int64_t delimCount = 0;
     for(auto c : str) {
         if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
             ++delimCount;
             if(temp->getVal().empty()) continue;
-            res->push(temp);
-            temp = vm.makeVarWithRef<VarStr>(loc, "");
+            res->push(temp, true);
+            temp = vm.makeVar<VarStr>(loc, "");
             continue;
         }
         temp->getVal() += c;
     }
-    if(!temp->getVal().empty()) res->push(temp);
+    if(!temp->getVal().empty()) res->push(temp, true);
     return res;
 }
 

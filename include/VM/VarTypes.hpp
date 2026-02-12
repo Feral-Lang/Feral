@@ -120,21 +120,13 @@ public:
     inline void unsetConst() { info &= ~VarInfo::CONST; }
 
     // used in native function calls
+    // supposed to call the overloaded new operator in Var
     template<typename T, typename... Args>
     static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
     makeVar(MemoryManager &mem, Args &&...args)
     {
         T *res = new(mem.allocRaw(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
         res->create(mem);
-        return res;
-    }
-    // supposed to call the overloaded new operator in Var - sets ref to one
-    template<typename T, typename... Args>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    makeVarWithRef(MemoryManager &mem, Args &&...args)
-    {
-        T *res = makeVar<T>(mem, std::forward<Args>(args)...);
-        res->iref();
         return res;
     }
     // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
@@ -318,13 +310,23 @@ public:
     VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs);
 
     void setVal(MemoryManager &mem, Span<Var *> newval);
+    void clear(MemoryManager &mem);
+    Iterator insert(ConstIterator iter, Var *data, bool iref);
+    Iterator erase(MemoryManager &mem, ConstIterator iter, Var *data, bool dref);
 
     inline Iterator insert(ConstIterator iter, Var *data) { return val.insert(iter, data); }
     inline Iterator erase(ConstIterator iter) { return val.erase(iter); }
-    inline void push(Var *v) { val.push_back(v); }
-    inline void pop() { val.pop_back(); }
+    inline void push(Var *v, bool iref)
+    {
+        if(iref) incVarRef(v);
+        val.push_back(v);
+    }
+    inline void pop(MemoryManager &mem, bool dref)
+    {
+        if(dref) decVarRef(mem, val.back());
+        val.pop_back();
+    }
     inline void swap(size_t a, size_t b) { std::iter_swap(val.begin() + a, val.begin() + b); }
-    inline void clear() { val.clear(); }
     inline bool isEmpty() { return val.empty(); }
     inline bool isRefVec() { return asrefs; }
 

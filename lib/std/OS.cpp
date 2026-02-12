@@ -182,14 +182,14 @@ FERAL_FUNC(
     if(!outVar || outVar->is<VarNil>()) {
         while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
     } else if(outVar->is<VarVec>()) {
-        Vector<Var *> &resvec = as<VarVec>(outVar)->getVal();
+        VarVec *resvec = as<VarVec>(outVar);
         String line;
         while((nread = getline(&csline, &len, pipe)) != -1) {
             line = csline;
             while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
                 line.pop_back();
             }
-            resvec.push_back(vm.makeVarWithRef<VarStr>(loc, line));
+            resvec->push(vm.makeVar<VarStr>(loc, line), true);
         }
     } else if(outVar->is<VarStr>()) {
         String &resstr = as<VarStr>(outVar)->getVal();
