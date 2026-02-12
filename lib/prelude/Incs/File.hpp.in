@@ -30,12 +30,12 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const String &dirstr,
             if(flags & WalkEntry::RECURSE) {
                 getEntriesInternal(vm, loc, entry, v, regex, flags);
             } else if(flags & WalkEntry::DIRS) {
-                v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+                v->push(vm.makeVar<VarStr>(loc, entry), true);
             }
             continue;
         }
         if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
-            v->push(vm.makeVarWithRef<VarStr>(loc, entry));
+            v->push(vm.makeVar<VarStr>(loc, entry), true);
         }
     }
 }
@@ -132,11 +132,11 @@ FERAL_FUNC(fileLines, 0, false,
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
     while((read = getline(&lineptr, &len, file)) != -1) {
-        VarStr *s = vm.makeVarWithRef<VarStr>(loc, lineptr);
+        VarStr *s = vm.makeVar<VarStr>(loc, lineptr);
         while(!s->getVal().empty() && (s->getVal().back() == '\n' || s->getVal().back() == '\r')) {
             s->getVal().pop_back();
         }
-        res->push(s);
+        res->push(s, true);
         free(lineptr);
         lineptr = NULL;
     }
@@ -241,7 +241,7 @@ FERAL_FUNC(fileReadBlocks, 2, false,
         if(pos + end.size() <= line.size()) line = line.substr(pos + end.size());
         else line = "";
         insideBlock = false;
-        res->push(vm.makeVarWithRef<VarStr>(loc, blockContent));
+        res->push(vm.makeVar<VarStr>(loc, blockContent), true);
         blockContent.clear();
         goto beginFetch;
     }

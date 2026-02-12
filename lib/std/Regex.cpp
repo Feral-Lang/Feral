@@ -11,7 +11,7 @@ VarRegex::VarRegex(ModuleLoc loc, StringRef exprStr, std::regex::flag_type opts)
 VarRegex::VarRegex(ModuleLoc loc, const std::regex &expr) : Var(loc, 0), expr(expr) {}
 Var *VarRegex::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-    return Var::makeVarWithRef<VarRegex>(mem, loc, expr);
+    return incVarRef(makeVar<VarRegex>(mem, loc, expr));
 }
 void VarRegex::onSet(MemoryManager &mem, Var *from) { expr = as<VarRegex>(from)->expr; }
 bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *captures,
@@ -24,7 +24,7 @@ bool VarRegex::match(VirtualMachine &vm, StringRef data, ModuleLoc loc, Var *cap
     if(captures->is<VarVec>()) {
         VarVec *caps = as<VarVec>(captures);
         for(size_t i = ignoreMatch; i < resCount; ++i) {
-            caps->push(vm.makeVarWithRef<VarStr>(loc, results[i].str()));
+            caps->push(vm.makeVar<VarStr>(loc, results[i].str()), true);
         }
     } else if(captures->is<VarStr>()) {
         VarStr *caps = as<VarStr>(captures);

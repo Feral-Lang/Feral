@@ -212,8 +212,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 if(arginfo[i] == '1') ++assnArgCount;
                 else ++argCount;
             }
-            VarFn *fn = makeVarWithRef<VarFn>(ins.getLoc(), varmod->getModuleId(), kw, va, argCount,
-                                              assnArgCount, FnBody{.feral = bodies.back()}, false);
+            VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod->getModuleId(), kw, va, argCount,
+                                       assnArgCount, FnBody{.feral = bodies.back()}, false);
             bodies.pop_back();
             for(size_t i = 2; i < arginfo.size(); ++i) {
                 String name = as<VarStr>(execstack.back())->getVal();
@@ -225,7 +225,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 }
                 fn->pushParam(name);
             }
-            pushExecStack(fn, false);
+            pushExecStack(fn);
             break;
         }
         case Opcode::MEM_CALL: // fallthrough

@@ -12,7 +12,7 @@ namespace fer
 VarAtomicBool::VarAtomicBool(ModuleLoc loc, bool _val) : Var(loc, 0), val(_val) {}
 Var *VarAtomicBool::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-    return makeVarWithRef<VarAtomicBool>(mem, loc, val);
+    return incVarRef(makeVar<VarAtomicBool>(mem, loc, val));
 }
 void VarAtomicBool::onSet(MemoryManager &mem, Var *from)
 {
@@ -27,7 +27,7 @@ VarAtomicInt::VarAtomicInt(ModuleLoc loc, int64_t _val) : Var(loc, 0), val(_val)
 VarAtomicInt::VarAtomicInt(ModuleLoc loc, const char *_val) : Var(loc, 0), val(std::stoll(_val)) {}
 Var *VarAtomicInt::onCopy(MemoryManager &mem, ModuleLoc loc)
 {
-    return makeVarWithRef<VarAtomicInt>(mem, loc, val);
+    return incVarRef(makeVar<VarAtomicInt>(mem, loc, val));
 }
 void VarAtomicInt::onSet(MemoryManager &mem, Var *from) { val = as<VarAtomicInt>(from)->getVal(); }
 

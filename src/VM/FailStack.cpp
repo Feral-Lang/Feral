@@ -14,9 +14,9 @@ FailStack::~FailStack()
 
 void FailStack::pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler)
 {
-    VarFailure *failure = Var::makeVarWithRef<VarFailure>(mem, handler->getLoc(), handler, popLoc,
-                                                          recurseCount, irefHandler);
-    stack.push_back(failure);
+    VarFailure *failure = Var::makeVar<VarFailure>(mem, handler->getLoc(), handler, popLoc,
+                                                   recurseCount, irefHandler);
+    stack.push_back(Var::incVarRef(failure));
 }
 
 void FailStack::popHandler()

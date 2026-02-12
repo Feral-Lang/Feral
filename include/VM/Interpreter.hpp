@@ -204,13 +204,6 @@ public:
     {
         return Var::makeVar<T>(mem, std::forward<Args>(args)...);
     }
-    // supposed to call the overloaded new operator in Var - sets ref to one
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    makeVarWithRef(Args &&...args)
-    {
-        return Var::makeVarWithRef<T>(mem, std::forward<Args>(args)...);
-    }
     // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
     // being used elsewhere.
     template<typename T>
@@ -245,11 +238,11 @@ public:
     registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
     {
         setTypeName(typeID<T>(), name);
-        VarTypeID *tyvar = makeVarWithRef<VarTypeID>(loc, typeID<T>());
+        VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
         tyvar->setConst();
         name += "Ty";
-        if(!module) addGlobal(name, doc, tyvar, false);
-        else module->addNativeVar(mem, name, doc, tyvar, false);
+        if(!module) addGlobal(name, doc, tyvar);
+        else module->addNativeVar(mem, name, doc, tyvar);
     }
 };
 
@@ -378,13 +371,6 @@ public:
     {
         return ip.makeVar<T>(std::forward<Args>(args)...);
     }
-    // supposed to call the overloaded new operator in Var - sets ref to one
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    makeVarWithRef(Args &&...args)
-    {
-        return ip.makeVarWithRef<T>(std::forward<Args>(args)...);
-    }
     // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
     // being used elsewhere.
     template<typename T>
@@ -427,12 +413,12 @@ public:
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
     addNativeTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
-        VarFn *f = makeVarWithRef<VarFn>(loc, modulestack.back()->getModuleId(), "",
-                                         fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
-                                         FnBody{.native = fnObj.fn}, true);
+        VarFn *f =
+            makeVar<VarFn>(loc, modulestack.back()->getModuleId(), "", fnObj.isVariadic ? "." : "",
+                           fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
         f->setDoc(getMemoryManager(), makeVar<VarStr>(loc, fnObj.doc));
         for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
-        addTypeFn(typeID<T>(), name, f, false);
+        addTypeFn(typeID<T>(), name, f, true);
     }
 
     template<typename T>
