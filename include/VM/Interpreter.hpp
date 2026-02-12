@@ -204,13 +204,6 @@ public:
     {
         return Var::makeVar<T>(mem, std::forward<Args>(args)...);
     }
-    // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
-    // being used elsewhere.
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type unmakeVar(T *var)
-    {
-        return Var::unmakeVar<T>(mem, var);
-    }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
     {
@@ -227,11 +220,6 @@ public:
                                                                                T *var)
     {
         return Var::copyVar<T>(mem, loc, var);
-    }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
-    {
-        return Var::setVar<T>(mem, var, from);
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
@@ -371,13 +359,6 @@ public:
     {
         return ip.makeVar<T>(std::forward<Args>(args)...);
     }
-    // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
-    // being used elsewhere.
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type unmakeVar(T *var)
-    {
-        return ip.unmakeVar(var);
-    }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
     {
@@ -398,7 +379,7 @@ public:
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type setVar(T *var, Var *from)
     {
-        return ip.setVar(var, from);
+        return Var::setVar(getMemoryManager(), var, from);
     }
 
     template<typename T>
