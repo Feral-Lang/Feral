@@ -5,7 +5,7 @@
 namespace fer
 {
 
-class ExecStack
+class ExecStack : public IAllocated
 {
     Vector<Var *> stack;
     MemoryManager &mem;

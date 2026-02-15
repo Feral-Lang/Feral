@@ -10,18 +10,17 @@ namespace VarInfo
 enum
 {
     // main attributes
-    BASIC      = 1 << 0, // no init()/deinit() can exist for this Var
     CALLABLE   = 1 << 1,
     ATTR_BASED = 1 << 2,
 
     // runtime attributes
     LOAD_AS_REF = 1 << 3,
     CONST       = 1 << 4,
+    INITIALIZED = 1 << 5,
 };
 } // namespace VarInfo
 
 struct AssnArgData;
-class Interpreter;
 class VirtualMachine;
 
 class VarStr;
@@ -44,7 +43,7 @@ class Var : public IAllocated
     friend class VirtualMachine;
 
     inline bool isLoadAsRef() const { return info & VarInfo::LOAD_AS_REF; }
-    inline bool isBasic() const { return info & VarInfo::BASIC; }
+    inline bool isInitialized() const { return info & VarInfo::INITIALIZED; }
 
     inline void iref() { ++ref; }
     inline ssize_t dref() { return --ref; }

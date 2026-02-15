@@ -2,15 +2,11 @@
 
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
+#include "GlobalState.hpp"
 #include "Vars.hpp"
 
 namespace fer
 {
-
-class Interpreter;
-
-typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
-                              StringRef data, bool exprOnly);
 
 // Perform expressions in variadic before returning nullptr.
 #define EXPECT_AND(type, var, expectStr, ...)                         \
@@ -83,70 +79,48 @@ typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleI
         return nullptr;                                                                   \
     }
 
-class Interpreter
+// Each execution thread. Can spawn more if needed.
+class VirtualMachine : public IAllocated
 {
-    Atomic<size_t> vmCount;
+    GlobalState *gs;
+    String name;
+    Vars vars;
+    Vector<VarModule *> modulestack;
+    FailStack *failstack;
+    ExecStack *execstack;
+    size_t recurseCount; // how many times execute() has been called by itself
+    size_t exitcode;
+    bool recurseExceeded;
+    bool exitcalled;
+    bool ownsGlobalState;
 
-    args::ArgParser &argparser;
-    ParseSourceFn parseSourceFn;
-    MemoryManager mem;
-    ManagedList managedAllocator;
-    Map<ModuleId, VarModule *> modules;
-    // Global vars/objects that are required
-    VarFrame *globals;
-    // Names of types (optional)
-    Map<size_t, String> typenames;
-    // Functions for all C++ types
-    Map<size_t, VarFrame *> typefns;
-    // Prelude must be imported before any program is executed
-    String prelude;
-    Mutex globalMutex;
-    // Default error handler
-    VarFn *basicErrHandler;
-    // Default dirs to search for modules. Used by basic{Import,Module}Finder()
-    VarVec *moduleDirs;
-    // Various paths used by Feral and are provided as <prelude>.<pathVar>.
-    VarStr *binaryPath;        // where feral exists
-    VarStr *installPath;       // <binaryPath>/..
-    VarStr *tempPath;          // <binaryPath>/../tmp
-    VarStr *libPath;           // <binaryPath>/../lib/feral
-    VarStr *globalModulesPath; // <libPath>/.modulePaths
-    // Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is
-    // attempted.
-    // Signature is: fn(moduleToResolve: str, isImport: bool): nil/str
-    VarVec *moduleFinders;
-    // Args provided to feral command line
-    VarVec *cmdargs;
-    VarBool *tru;
-    VarBool *fals;
-    VarNil *nil;
-    // This is the one that's used for checking, and it can be modified by Feral program
-    size_t recurseMax;
-    Atomic<bool> stopExec;
-
-    friend class VirtualMachine;
+    friend class core::MemoryManager;
 
     bool loadPrelude();
 
-    VirtualMachine *createVM(StringRef name, VarFn *errHandler = nullptr, bool iref = true);
+    VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandler);
+
+    VirtualMachine *createVM(StringRef name, VarFn *errHandler = nullptr);
     void destroyVM(VirtualMachine *vm);
 
 public:
-    Interpreter(args::ArgParser &argparser, ParseSourceFn parseSourceFn);
-    ~Interpreter();
+    VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSourceFn, StringRef name);
+    ~VirtualMachine();
 
     int runFile(ModuleLoc loc, const char *file, StringRef threadName);
     Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
                      const StringMap<AssnArgData> &assnArgs);
 
-    // Must be used with full path of directory
-    void tryAddModulePathsFromDir(String dir);
-    void tryAddModulePathsFromFile(const char *file);
+    int compileAndRun(ModuleLoc loc, const char *file);
+    // Must pushModule before calling this function, and popModule after calling it.
+    int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
+                size_t end = 0);
 
-    bool findImportModuleIn(VarVec *dirs, String &name, StringRef srcDir);
-    bool findNativeModuleIn(VarVec *dirs, String &name, StringRef srcDir);
-    // ext can be empty
-    bool findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir);
+    ModuleId addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
+                       VarStack *existingVarStack = nullptr);
+    void removeModule(ModuleId moduleId);
+    void pushModule(ModuleId moduleId);
+    void popModule();
 
     void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true);
     Var *getGlobal(StringRef name);
@@ -166,94 +140,15 @@ public:
     bool hasModule(StringRef path);
     VarModule *getModule(StringRef path);
 
-    void initTypeNames();
+    // Must be used with full path of directory
+    void tryAddModulePathsFromDir(String dir);
+    void tryAddModulePathsFromFile(const char *file);
 
-    inline void incVMCount() { ++vmCount; }
-    inline void decVMCount() { --vmCount; }
+    bool findImportIn(VarVec *dirs, String &name, StringRef srcDir = "");
+    bool findDllIn(VarVec *dirs, String &name, StringRef srcDir = "");
 
-    inline void stopExecution() { stopExec.store(true, std::memory_order_release); }
-    inline bool shouldStopExecution() { return stopExec.load(std::memory_order_relaxed); }
-
-    inline StringRef getBinaryPath() { return binaryPath->getVal(); }
-    inline StringRef getInstallPath() { return installPath->getVal(); }
-    inline StringRef getTempPath() { return tempPath->getVal(); }
-    inline StringRef getLibPath() { return libPath->getVal(); }
-
-    inline StringRef getFeralImportExtension() { return ".fer"; }
-    inline StringRef getNativeModuleExtension()
-    {
-#if defined(CORE_OS_WINDOWS)
-        return ".dll";
-#elif defined(CORE_OS_APPLE)
-        return ".dylib";
-#else
-        return ".so";
-#endif
-    }
-
-    // used in native function calls
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
-    {
-        return Var::makeVar<T>(mem, std::forward<Args>(args)...);
-    }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
-    {
-        return Var::incVarRef<T>(var);
-    }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
-                                                                                 bool del = true)
-    {
-        return Var::decVarRef<T>(mem, var, del);
-    }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
-    {
-        setTypeName(typeID<T>(), name);
-        VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
-        tyvar->setConst();
-        name += "Ty";
-        if(!module) addGlobal(name, doc, tyvar);
-        else module->addNativeVar(mem, name, doc, tyvar);
-    }
-};
-
-// Each thread in Interpreter
-class VirtualMachine : public IAllocated
-{
-    Interpreter &ip;
-    String name;
-    Vars vars;
-    Vector<VarModule *> modulestack;
-    FailStack failstack;
-    ExecStack execstack;
-    size_t recurseCount; // how many times execute() has been called by itself
-    size_t exitcode;
-    bool recurseExceeded;
-    bool exitcalled;
-
-public:
-    VirtualMachine(Interpreter &ip, StringRef name, VarFn *errHandler, bool iref);
-    ~VirtualMachine();
-
-    int compileAndRun(ModuleLoc loc, const char *file);
-    // Must pushModule before calling this function, and popModule after calling it.
-    int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
-                size_t end = 0);
-
-    ModuleId addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
-                       VarStack *existingVarStack = nullptr);
-    void removeModule(ModuleId moduleId);
-    void pushModule(ModuleId moduleId);
-    void popModule();
-
-    bool findImportModuleIn(VarVec *dirs, String &name);
-    bool findNativeModuleIn(VarVec *dirs, String &name);
     // ext can be empty
-    bool findFileIn(VarVec *dirs, String &name, StringRef ext);
+    bool findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir);
 
     // Here, dllpath is the fully resolved dll file path
     // dllStr is the string provided as the argument to loadlib()
@@ -272,90 +167,64 @@ public:
 
     inline StringRef getName() { return name; }
 
-    inline void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
-    {
-        return ip.addTypeFn(_typeid, name, fn, iref);
-    }
-    inline Var *getTypeFn(Var *var, StringRef name) { return ip.getTypeFn(var, name); }
-
-    // Must be used with full path of directory
-    inline void tryAddModulePathsFromDir(String dir) { return ip.tryAddModulePathsFromDir(dir); }
-    inline void tryAddModulePathsFromFile(const char *file)
-    {
-        return ip.tryAddModulePathsFromFile(file);
-    }
-
-    inline void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true)
-    {
-        return ip.addGlobal(name, doc, val, iref);
-    }
-    inline Var *getGlobal(StringRef name) { return ip.getGlobal(name); }
-
-    inline void addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
-    {
-        return ip.addNativeFn(loc, name, fnObj);
-    }
-    inline VarFn *genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
-    {
-        return ip.genNativeFn(loc, name, fnObj);
-    }
-
-    inline void setTypeName(size_t _typeid, StringRef name) { ip.setTypeName(_typeid, name); }
-    inline StringRef getTypeName(size_t _typeid) { return ip.getTypeName(_typeid); }
-    inline StringRef getTypeName(Var *var) { return getTypeName(var->getSubType()); }
-
-    // supposed to call the overloaded delete operator in Var
-    inline Var *getConst(ModuleLoc loc, const Instruction::Data &d, DataType dataty)
-    {
-        return ip.getConst(loc, d, dataty);
-    }
-
     inline Vars &getVars() { return vars; }
-    inline void pushExecStack(Var *var, bool iref = true) { execstack.push(var, iref); }
-    inline Var *popExecStack(bool dref = true) { return execstack.pop(dref); }
+    inline void pushExecStack(Var *var, bool iref = true) { execstack->push(var, iref); }
+    inline Var *popExecStack(bool dref = true) { return execstack->pop(dref); }
     inline VarModule *getCurrModule() { return modulestack.back(); }
     inline bool isExitCalled() { return exitcalled; }
     inline void setExitCalled(bool called) { exitcalled = called; }
     inline void setExitCode(int code) { exitcode = code; }
 
-    inline Interpreter &getInterpreter() { return ip; }
-    inline args::ArgParser &getArgParser() { return ip.argparser; }
-    inline MemoryManager &getMemoryManager() { return ip.mem; }
-    inline VarVec *getModuleDirs() { return ip.moduleDirs; }
-    inline VarVec *getModuleFinders() { return ip.moduleFinders; }
-    inline VarStr *getBinaryPath() { return ip.binaryPath; }
-    inline VarStr *getInstallPath() { return ip.installPath; }
-    inline VarStr *getTempPath() { return ip.tempPath; }
-    inline VarStr *getLibPath() { return ip.libPath; }
-    inline VarStr *getGlobalModulePathsFile() { return ip.globalModulesPath; }
-    inline VarBool *getTrue() { return ip.tru; }
-    inline VarBool *getFalse() { return ip.fals; }
-    inline VarNil *getNil() { return ip.nil; }
-    inline void setRecurseMax(size_t count) { ip.recurseMax = count; }
-    inline size_t getRecurseMax() { return ip.recurseMax; }
-    inline VarVec *getCLIArgs() { return ip.cmdargs; }
+    inline GlobalState *getGlobalState() { return gs; }
+    inline args::ArgParser &getArgParser() { return gs->argparser; }
+    inline MemoryManager &getMemoryManager() { return gs->mem; }
+    inline VarVec *getModuleDirs() { return gs->moduleDirs; }
+    inline VarVec *getModuleFinders() { return gs->moduleFinders; }
+    inline VarStr *getBinaryPath() { return gs->binaryPath; }
+    inline VarStr *getInstallPath() { return gs->installPath; }
+    inline VarStr *getTempPath() { return gs->tempPath; }
+    inline VarStr *getLibPath() { return gs->libPath; }
+    inline VarStr *getGlobalModulePathsFile() { return gs->globalModulesPath; }
+    inline VarBool *getTrue() { return gs->tru; }
+    inline VarBool *getFalse() { return gs->fals; }
+    inline VarNil *getNil() { return gs->nil; }
+    inline void setRecurseMax(size_t count) { gs->recurseMax = count; }
+    inline size_t getRecurseMax() { return gs->recurseMax; }
+    inline VarVec *getCLIArgs() { return gs->cmdargs; }
 
-    inline bool hasModule(StringRef path) { return ip.hasModule(path); }
-    inline VarModule *getModule(StringRef path) { return ip.getModule(path); }
-    inline StringRef getFeralImportExtension() { return ip.getFeralImportExtension(); }
-    inline StringRef getNativeModuleExtension() { return ip.getNativeModuleExtension(); }
+    inline StringRef getTypeName(Var *var) { return getTypeName(var->getSubType()); }
 
-    // used in native function calls
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(Args &&...args)
+    inline void stopExecution() { gs->stopExec.store(true, std::memory_order_release); }
+    inline bool shouldStopExecution() { return gs->stopExec.load(std::memory_order_relaxed); }
+
+    inline StringRef getFeralImportExtension() { return ".fer"; }
+    inline StringRef getNativeModuleExtension()
     {
-        return ip.makeVar<T>(std::forward<Args>(args)...);
+#if defined(CORE_OS_WINDOWS)
+        return ".dll";
+#elif defined(CORE_OS_APPLE)
+        return ".dylib";
+#else
+        return ".so";
+#endif
+    }
+
+    template<typename T, typename... Args>
+    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(ModuleLoc loc,
+                                                                               Args &&...args)
+    {
+        return Var::makeVar<T>(gs->mem, loc, std::forward<Args>(args)...);
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
     {
-        return ip.incVarRef(var);
+        return Var::incVarRef<T>(var);
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
                                                                                  bool del = true)
     {
-        return ip.decVarRef(var, del);
+        return Var::decVarRef<T>(gs->mem, var, del);
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
@@ -366,10 +235,14 @@ public:
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, StringRef name, StringRef doc)
+    registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
     {
-        return ip.registerType<T>(loc, String(name), doc,
-                                  modulestack.empty() ? nullptr : modulestack.back());
+        setTypeName(typeID<T>(), name);
+        VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
+        tyvar->setConst();
+        name += "Ty";
+        if(!module) addGlobal(name, doc, tyvar);
+        else module->addNativeVar(gs->mem, name, doc, tyvar);
     }
 
     template<typename T>
@@ -418,7 +291,7 @@ public:
 
     template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
     {
-        return failstack.fail(loc, recurseCount, std::forward<Args>(args)...);
+        return failstack->fail(loc, recurseCount, std::forward<Args>(args)...);
     }
 };
 

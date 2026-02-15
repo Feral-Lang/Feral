@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 namespace fer
 {
@@ -10,7 +10,7 @@ class VarThread : public Var
     String name;
     SharedFuture<Var *> *res;
     JThread *thread;
-    Interpreter &ip;
+    VirtualMachine &vm;
     Var *callable;
     Vector<Var *> args;
     StringMap<AssnArgData> assnArgs;
@@ -19,7 +19,7 @@ class VarThread : public Var
     void onDestroy(MemoryManager &mem) override;
 
 public:
-    VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable, Span<Var *> _args,
+    VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable, Span<Var *> _args,
               const StringMap<AssnArgData> &_assnArgs);
     ~VarThread();
 

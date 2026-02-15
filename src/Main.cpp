@@ -1,7 +1,7 @@
 #include "AST/Parser.hpp"
 #include "AST/Passes/Codegen.hpp"
 #include "AST/Passes/Simplify.hpp"
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 using namespace fer;
 
@@ -58,9 +58,9 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    Interpreter ip(args, ParseSource);
+    VirtualMachine vm(args, ParseSource, "Main");
     if(!fs::exists(srcFile)) {
-        String binFile(ip.getLibPath());
+        String binFile(vm.getLibPath()->getVal());
         binFile += "/bin/";
         binFile += srcFile;
         binFile += ".fer";
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         }
         srcFile = binFile;
     }
-    return ip.runFile({}, fs::absPath(srcFile.c_str()).c_str(), "Main");
+    return vm.compileAndRun({}, fs::absPath(srcFile.c_str()).c_str());
 }
 
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,

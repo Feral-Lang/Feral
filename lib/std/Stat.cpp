@@ -1,6 +1,6 @@
 #include <sys/stat.h> // stat()
 
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 #if defined(CORE_OS_WINDOWS)
 #include <errno.h> // errno
