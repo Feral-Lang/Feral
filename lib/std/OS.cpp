@@ -6,7 +6,7 @@
 
 #include "Env.hpp"
 #include "FS.hpp"
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 #if defined(CORE_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!

@@ -1,6 +1,6 @@
 #include "Atomic.hpp"
 
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 namespace fer
 {

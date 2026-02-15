@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 #if defined(CORE_OS_WINDOWS)
 #include <io.h>

@@ -3,7 +3,7 @@
 #include <functional>
 #include <sstream>
 
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 namespace fer
 {
@@ -24,9 +24,9 @@ size_t ThreadIdToNum(Thread::id id)
 ///////////////////////////////////////////// VarThread //////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarThread::VarThread(ModuleLoc loc, StringRef name, Interpreter &_ip, Var *_callable,
+VarThread::VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable,
                      Span<Var *> _args, const StringMap<AssnArgData> &_assnArgs)
-    : Var(loc, 0), name(name), res(nullptr), thread(nullptr), ip(_ip), callable(_callable)
+    : Var(loc, 0), name(name), res(nullptr), thread(nullptr), vm(_vm), callable(_callable)
 {
     args.reserve(_args.size() + 1); // +1 for self/nullptr
     auto selfArgLoc = _assnArgs.find("selfVar");
@@ -51,7 +51,7 @@ void VarThread::onCreate(MemoryManager &mem)
     }
     for(auto &aa : assnArgs) Var::incVarRef(aa.second.val);
     PackagedTask<Var *()> task(
-        std::bind(&Interpreter::runCallable, &ip, getLoc(), name, callable, args, assnArgs));
+        std::bind(&VirtualMachine::runCallable, &vm, getLoc(), name, callable, args, assnArgs));
     res    = new SharedFuture<Var *>(task.get_future());
     thread = new JThread(std::move(task));
 }
@@ -134,8 +134,7 @@ FERAL_FUNC(threadNew, 1, true,
     }
     Var *callable = args[1];
     Span<Var *> passArgs(args.begin() + 2, args.end());
-    VarThread *t =
-        vm.makeVar<VarThread>(loc, name, vm.getInterpreter(), callable, passArgs, assnArgs);
+    VarThread *t = vm.makeVar<VarThread>(loc, name, vm, callable, passArgs, assnArgs);
     return t;
 }
 

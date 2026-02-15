@@ -1,11 +1,11 @@
-#include "Interpreter.hpp"
+#include "VM.hpp"
 
 namespace fer
 {
 
-void setupCoreFuncs(Interpreter &ip, ModuleLoc loc);
+void setupCoreFuncs(VirtualMachine &vm, ModuleLoc loc);
 
-// This one is setup in Interpreter.cpp since it is required to be appended to moduleFinders before
+// This one is setup in VM.cpp since it is required to be appended to moduleFinders before
 // any module (feral/native) can be loaded.
 FERAL_FUNC_DECL(
     basicModuleFinder, 2, false,

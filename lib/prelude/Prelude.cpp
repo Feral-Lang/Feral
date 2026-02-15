@@ -1,5 +1,5 @@
 #include "FS.hpp" // used by File.hpp.in
-#include "VM/Interpreter.hpp"
+#include "VM/VM.hpp"
 
 // These headers are below the Feral headers (above), because CORE_OS_WINDOWS is defined in them.
 #if defined(CORE_OS_WINDOWS)

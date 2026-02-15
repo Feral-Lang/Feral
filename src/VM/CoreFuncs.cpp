@@ -75,10 +75,10 @@ FERAL_FUNC(loadLibrary, 1, false,
     return vm.getNil();
 }
 
-void setupCoreFuncs(Interpreter &ip, ModuleLoc loc)
+void setupCoreFuncs(VirtualMachine &vm, ModuleLoc loc)
 {
-    ip.addNativeFn(loc, "import", loadFile);
-    ip.addNativeFn(loc, "loadlib", loadLibrary);
+    vm.addNativeFn(loc, "import", loadFile);
+    vm.addNativeFn(loc, "loadlib", loadLibrary);
 }
 
 FERAL_FUNC_DEF(basicModuleFinder)
@@ -94,9 +94,9 @@ FERAL_FUNC_DEF(basicModuleFinder)
     String modfile = as<VarStr>(args[1])->getVal();
     bool isImport  = as<VarBool>(args[2])->getVal();
     if(isImport) {
-        if(!vm.findImportModuleIn(vm.getModuleDirs(), modfile)) return vm.getNil();
+        if(!vm.findImportIn(vm.getModuleDirs(), modfile)) return vm.getNil();
     } else {
-        if(!vm.findNativeModuleIn(vm.getModuleDirs(), modfile)) return vm.getNil();
+        if(!vm.findDllIn(vm.getModuleDirs(), modfile)) return vm.getNil();
     }
     return vm.makeVar<VarStr>(loc, modfile);
 }
