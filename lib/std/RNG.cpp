@@ -35,7 +35,7 @@ FERAL_FUNC(rngGet, 1, false,
     return vm.makeVar<VarInt>(loc, dist(rng));
 }
 
-INIT_MODULE(RNG)
+INIT_DLL(RNG)
 {
     VarModule *mod = vm.getCurrModule();
     mod->addNativeFn(vm, "seed", rngSeed);

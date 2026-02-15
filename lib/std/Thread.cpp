@@ -186,7 +186,7 @@ FERAL_FUNC(threadGetRes, 0, false,
     return fut->get();
 }
 
-INIT_MODULE(Thread)
+INIT_DLL(Thread)
 {
     VarModule *mod = vm.getCurrModule();
 

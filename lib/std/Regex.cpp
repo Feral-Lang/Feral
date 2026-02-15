@@ -85,7 +85,7 @@ FERAL_FUNC(regexMatch, 3, false,
                                                                                : vm.getFalse();
 }
 
-INIT_MODULE(Regex)
+INIT_DLL(Regex)
 {
     VarModule *mod = vm.getCurrModule();
 

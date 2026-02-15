@@ -452,7 +452,7 @@ FERAL_FUNC(
     return vm.makeVar<VarInt>(loc, removed);
 }
 
-INIT_MODULE(Prelude)
+INIT_DLL(Prelude)
 {
     VarModule *mod = vm.getCurrModule(); // prelude module
 

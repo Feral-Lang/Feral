@@ -105,7 +105,7 @@ FERAL_FUNC(lockguardNew, 1, false,
     return vm.makeVar<VarLockGuard>(loc, as<VarMutexBase>(args[1]));
 }
 
-INIT_MODULE(Mutex)
+INIT_DLL(Mutex)
 {
     VarModule *mod = vm.getCurrModule();
 

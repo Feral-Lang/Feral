@@ -12,11 +12,6 @@ class Interpreter;
 typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
                               StringRef data, bool exprOnly);
 
-typedef bool (*ModInitFn)(VirtualMachine &vm, ModuleLoc loc);
-typedef void (*ModDeinitFn)(Interpreter &ip);
-#define INIT_MODULE(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
-#define DEINIT_MODULE(name) extern "C" void Deinit##name(Interpreter &ip)
-
 // Perform expressions in variadic before returning nullptr.
 #define EXPECT_AND(type, var, expectStr, ...)                         \
     if(!var->is<type>()) {                                            \
@@ -97,8 +92,6 @@ class Interpreter
     MemoryManager mem;
     ManagedList managedAllocator;
     Map<ModuleId, VarModule *> modules;
-    // All functions to call before unloading dlls
-    StringMap<ModDeinitFn> dlldeinitfns;
     // Global vars/objects that are required
     VarFrame *globals;
     // Names of types (optional)
@@ -262,9 +255,9 @@ public:
     // ext can be empty
     bool findFileIn(VarVec *dirs, String &name, StringRef ext);
 
-    // Here, modpath is the fully resolved module file path
-    // moduleStr is the string provided as the argument to loadlib()
-    bool loadNativeModule(ModuleLoc loc, const String &modpath, StringRef moduleStr);
+    // Here, dllpath is the fully resolved dll file path
+    // dllStr is the string provided as the argument to loadlib()
+    Var *loadDll(ModuleLoc loc, const String &dllpath, StringRef dllStr);
 
     // Used primarily within libraries & by toStr, toBool
     // first arg must ALWAYS be self for memcall, nullptr otherwise
