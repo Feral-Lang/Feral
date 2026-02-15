@@ -122,7 +122,6 @@ Interpreter::~Interpreter()
     decVarRef(binaryPath);
     for(auto &typefn : typefns) { VarFrame::destroy(mem, typefn.second); }
     VarFrame::destroy(mem, globals);
-    for(auto &deinitfn : dlldeinitfns) { deinitfn.second(*this); }
 
 #if defined(CORE_OS_WINDOWS)
     remDLLDirectories();
@@ -534,7 +533,7 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext)
     return false;
 }
 
-bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, StringRef moduleStr)
+Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dllStr)
 {
 #if defined(CORE_OS_WINDOWS)
     // append the parent dir to dll search paths
@@ -542,39 +541,38 @@ bool VirtualMachine::loadNativeModule(ModuleLoc loc, const String &modpath, Stri
     if(!addDLLDirectory(parentdir)) {
         fail(loc, "unable to add dir: ", parentdir,
              " as a DLL directory while loading module: ", modpath);
-        return false;
+        return nullptr;
     }
 #endif
 
     DynLib &dlibs = DynLib::getInstance();
-    if(dlibs.exists(modpath)) return true;
+    if(dlibs.exists(dllpath)) return getNil();
 
-    if(!dlibs.load(modpath.c_str())) {
-        fail(loc, "unable to load module file: ", modpath);
-        return false;
+    if(!dlibs.load(dllpath.c_str())) {
+        fail(loc, "unable to load module file: ", dllpath);
+        return nullptr;
     }
 
-    StringRef moduleName = moduleStr.substr(moduleStr.find_last_of('/') + 1);
+    StringRef dllName = dllStr.substr(dllStr.find_last_of('/') + 1);
 
     String tmp = "Init";
-    tmp += moduleName;
-    ModInitFn initfn = (ModInitFn)dlibs.get(modpath, tmp.c_str());
+    tmp += dllName;
+    DllInitFn initfn = (DllInitFn)dlibs.get(dllpath, tmp.c_str());
     if(initfn == nullptr) {
-        fail(loc, "unable to load init function '", tmp, "' from module file: ", modpath);
-        dlibs.unload(modpath);
-        return false;
+        fail(loc, "unable to load init function '", tmp, "' from module file: ", dllpath);
+        dlibs.unload(dllpath);
+        return nullptr;
     }
     if(!initfn(*this, loc)) {
-        fail(loc, "init function in module: ", modpath, " failed to execute");
-        dlibs.unload(modpath);
-        return false;
+        fail(loc, "init function in module: ", dllpath, " failed to execute");
+        dlibs.unload(dllpath);
+        return nullptr;
     }
     // set deinit function if available
     tmp = "Deinit";
-    tmp += moduleName;
-    ModDeinitFn deinitfn = (ModDeinitFn)dlibs.get(modpath, tmp.c_str());
-    if(deinitfn) ip.dlldeinitfns[modpath] = deinitfn;
-    return true;
+    tmp += dllName;
+    DllDeinitFn deinitfn = (DllDeinitFn)dlibs.get(dllpath, tmp.c_str());
+    return makeVar<VarDll>(loc, initfn, deinitfn);
 }
 
 Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,

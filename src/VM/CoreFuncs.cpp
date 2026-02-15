@@ -66,10 +66,12 @@ FERAL_FUNC(loadLibrary, 1, false,
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
     if(!loadCommon(vm, loc, args[1], false, file)) return nullptr;
-    if(!vm.loadNativeModule(loc, file, as<VarStr>(args[1])->getVal())) {
+    Var *dll = vm.loadDll(loc, file, as<VarStr>(args[1])->getVal());
+    if(!dll) {
         vm.fail(loc, "failed to load module: ", as<VarStr>(args[1])->getVal());
         return nullptr;
     }
+    if(dll->is<VarDll>()) vm.addGlobal(file, "", dll);
     return vm.getNil();
 }
 

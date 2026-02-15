@@ -43,7 +43,7 @@ FERAL_FUNC(formatTime, 2, false,
     return vm.getNil();
 }
 
-INIT_MODULE(Time)
+INIT_DLL(Time)
 {
     VarModule *mod = vm.getCurrModule();
     mod->addNativeFn(vm, "systemClockNowNative", sysClockNow);

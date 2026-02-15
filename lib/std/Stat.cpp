@@ -172,7 +172,7 @@ FERAL_FUNC(statIsSock, 1, false,
 }
 #endif
 
-INIT_MODULE(Stat)
+INIT_DLL(Stat)
 {
     VarModule *mod = vm.getCurrModule();
 

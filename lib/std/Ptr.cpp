@@ -51,7 +51,7 @@ FERAL_FUNC(ptrGet, 0, false,
     return as<VarPtr>(args[0])->getVal();
 }
 
-INIT_MODULE(Ptr)
+INIT_DLL(Ptr)
 {
     VarModule *mod = vm.getCurrModule();
 

@@ -102,7 +102,7 @@ FERAL_FUNC(atomicIntGet, 0, false,
     return vm.makeVar<VarInt>(loc, as<VarAtomicInt>(args[0])->getVal());
 }
 
-INIT_MODULE(Atomic)
+INIT_DLL(Atomic)
 {
     VarModule *mod = vm.getCurrModule();
 

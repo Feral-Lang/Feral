@@ -313,7 +313,7 @@ FERAL_FUNC(
 }
 #endif
 
-INIT_MODULE(OS)
+INIT_DLL(OS)
 {
     VarModule *mod = vm.getCurrModule();
 

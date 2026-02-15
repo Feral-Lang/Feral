@@ -293,7 +293,7 @@ FERAL_FUNC(readChar, 1, false,
     return vm.makeVar<VarStr>(loc, c);
 }
 
-INIT_MODULE(IO)
+INIT_DLL(IO)
 {
     VarModule *mod = vm.getCurrModule();
 

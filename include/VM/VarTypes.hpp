@@ -21,10 +21,16 @@ enum
 } // namespace VarInfo
 
 struct AssnArgData;
+class Interpreter;
 class VirtualMachine;
 
 class VarStr;
 class VarVec;
+
+typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
+#define INIT_DLL(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
+typedef void (*DllDeinitFn)(MemoryManager &mem);
+#define DEINIT_DLL(name) extern "C" void Deinit##name(MemoryManager &mem)
 
 class Var : public IAllocated
 {
@@ -509,6 +515,17 @@ public:
     inline const Bytecode &getBytecode() { return bc; }
     inline ModuleId getModuleId() { return moduleId; }
     inline VarStack *getVarStack() { return varStack; }
+};
+
+class VarDll : public Var
+{
+    DllInitFn initfn;
+    DllDeinitFn deinitfn;
+
+    void onDestroy(MemoryManager &mem) override;
+
+public:
+    VarDll(ModuleLoc loc, DllInitFn initfn, DllDeinitFn deinitfn);
 };
 
 class VarStructDef : public Var
