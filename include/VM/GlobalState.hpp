@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vars.hpp"
+#include "VarTypes.hpp"
 
 namespace fer
 {
@@ -23,9 +23,9 @@ class GlobalState
     // Default error handler
     VarFn *basicErrHandler;
     // Global vars/objects that are required
-    VarFrame *globals;
+    VarMap *globals;
     // Functions for all C++ types
-    Map<size_t, VarFrame *> typefns;
+    Map<size_t, VarMap *> typefns;
     // Default dirs to search for modules. Used by basic{Import,Module}Finder()
     VarVec *moduleDirs;
     // Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is

@@ -8,10 +8,10 @@ namespace fer
 class ExecStack : public IAllocated
 {
     Vector<Var *> stack;
-    MemoryManager &mem;
+    VirtualMachine &vm;
 
 public:
-    ExecStack(MemoryManager &mem);
+    ExecStack(VirtualMachine &vm);
     ~ExecStack();
 
     void push(Var *val, bool iref = true);

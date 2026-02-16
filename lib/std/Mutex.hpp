@@ -50,8 +50,8 @@ class VarLockGuard : public Var
 {
     VarMutexBase *mtx;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarLockGuard(ModuleLoc loc, VarMutexBase *mtx);

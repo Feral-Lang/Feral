@@ -28,8 +28,8 @@ class VarVec;
 
 typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
 #define INIT_DLL(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
-typedef void (*DllDeinitFn)(MemoryManager &mem);
-#define DEINIT_DLL(name) extern "C" void Deinit##name(MemoryManager &mem)
+typedef void (*DllDeinitFn)(VirtualMachine &vm);
+#define DEINIT_DLL(name) extern "C" void Deinit##name(VirtualMachine &vm)
 
 class Var : public IAllocated
 {
@@ -50,8 +50,8 @@ class Var : public IAllocated
     inline ssize_t getRef() const { return ref; }
 
     // Proxy functions to use the functions to be implemented by the Var's.
-    void create(MemoryManager &mem);
-    void destroy(MemoryManager &mem);
+    void create(VirtualMachine &vm);
+    void destroy(VirtualMachine &vm);
     // Copy this variable.
     // By default - if a custom `copy()` member function is not implemented,
     // it just increments ref and returns `this`.
@@ -63,10 +63,10 @@ class Var : public IAllocated
 
     // Called by vm.makeVar*() after Var's constructor.
     // By default, it does nothing.
-    virtual void onCreate(MemoryManager &mem);
+    virtual void onCreate(VirtualMachine &vm);
     // Called by vm.unmakeVar() before Var's destructor.
     // By default, it does nothing.
-    virtual void onDestroy(MemoryManager &mem);
+    virtual void onDestroy(VirtualMachine &vm);
     // Set value(s) in this variable using a different variable of the same type.
     // As such, no type checking is required to cast `from` to the class in which
     // this function is implemented.
@@ -74,16 +74,6 @@ class Var : public IAllocated
     // Perform a call using this variable.
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                         const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
-
-    // Generally should be called only by vm.decVarRef(), unless you are sure that var is not
-    // being used elsewhere.
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    unmakeVar(MemoryManager &mem, T *var)
-    {
-        var->destroy(mem);
-        mem.freeDeinit(var);
-    }
 
 protected:
     Var(ModuleLoc loc, size_t infoFlags);
@@ -93,14 +83,17 @@ protected:
 public:
     Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
               const StringMap<AssnArgData> &assnArgs, bool addFunc = true, bool addBlk = false);
-    virtual void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref);
+    virtual void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
+    virtual void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref);
     virtual bool existsAttr(StringRef name);
     virtual Var *getAttr(StringRef name);
-    virtual void getAttrList(MemoryManager &mem, VarVec *dest);
+    virtual void getAttrList(VirtualMachine &vm, VarVec *dest);
     virtual size_t getAttrCount();
     virtual size_t getSubType();
 
-    void setDoc(MemoryManager &mem, VarStr *newDoc);
+    void setDoc(VirtualMachine &vm, VarStr *newDoc);
+    void setDoc(VirtualMachine &vm, ModuleLoc loc, StringRef newDoc);
+
     void dump(String &outStr, VirtualMachine *vm);
 
     template<typename T>
@@ -134,35 +127,6 @@ public:
 
     inline void setConst() { info |= VarInfo::CONST; }
     inline void unsetConst() { info &= ~VarInfo::CONST; }
-
-    // used in native function calls
-    // supposed to call the overloaded new operator in Var
-    template<typename T, typename... Args>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    makeVar(MemoryManager &mem, Args &&...args)
-    {
-        T *res = new(mem.allocRaw(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
-        res->create(mem);
-        return res;
-    }
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
-    {
-        if(var == nullptr) return nullptr;
-        var->iref();
-        return var;
-    }
-    template<typename T>
-    static typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type
-    decVarRef(MemoryManager &mem, T *&var, bool del = true)
-    {
-        if(var == nullptr) return nullptr;
-        if(var->dref() <= 0 && del) {
-            unmakeVar(mem, var);
-            var = nullptr;
-        }
-        return var;
-    }
 };
 
 template<typename T> T *as(Var *data) { return static_cast<T *>(data); }
@@ -282,10 +246,7 @@ class VarVec : public Var
     Vector<Var *> val;
     bool asrefs;
 
-    using Iterator      = Vector<Var *>::iterator;
-    using ConstIterator = Vector<Var *>::const_iterator;
-
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
@@ -293,24 +254,14 @@ public:
     VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs);
 
     bool setVal(VirtualMachine &vm, Span<Var *> newval);
-    void clear(MemoryManager &mem);
-    Iterator insert(ConstIterator iter, Var *data, bool iref);
-    Iterator erase(MemoryManager &mem, ConstIterator iter, Var *data, bool dref);
+    void clear(VirtualMachine &vm);
+    void insert(VirtualMachine &vm, size_t idx, Var *data, bool iref);
+    void erase(VirtualMachine &vm, size_t idx, bool dref);
+    void push(VirtualMachine &vm, Var *data, bool iref);
+    void pop(VirtualMachine &vm, bool dref);
 
-    inline Iterator insert(ConstIterator iter, Var *data) { return val.insert(iter, data); }
-    inline Iterator erase(ConstIterator iter) { return val.erase(iter); }
-    inline void push(Var *v, bool iref)
-    {
-        if(iref) incVarRef(v);
-        val.push_back(v);
-    }
-    inline void pop(MemoryManager &mem, bool dref)
-    {
-        if(dref) decVarRef(mem, val.back());
-        val.pop_back();
-    }
     inline void swap(size_t a, size_t b) { std::iter_swap(val.begin() + a, val.begin() + b); }
-    inline bool isEmpty() { return val.empty(); }
+    inline bool empty() { return val.empty(); }
     inline bool isRefVec() { return asrefs; }
 
     inline Vector<Var *> &getVal() { return val; }
@@ -319,10 +270,6 @@ public:
     inline Var *&front() { return val.front(); }
     inline size_t size() { return val.size(); }
     inline size_t capacity() { return val.capacity(); }
-    inline Iterator begin() { return val.begin(); }
-    inline ConstIterator begin() const { return val.begin(); }
-    inline Iterator end() { return val.end(); }
-    inline ConstIterator end() const { return val.end(); }
 };
 
 class VarVecIterator : public Var
@@ -330,8 +277,8 @@ class VarVecIterator : public Var
     VarVec *vec;
     size_t curr;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarVecIterator(ModuleLoc loc, VarVec *vec);
@@ -345,7 +292,7 @@ class VarMap : public Var
     Vector<String> pos; // Only used by kwargs.
     bool asrefs;
 
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
@@ -353,13 +300,14 @@ public:
     VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs);
 
     bool setVal(VirtualMachine &vm, const StringMap<Var *> &newval);
-    void clear(MemoryManager &mem);
+    void clear(VirtualMachine &vm);
 
     // not inline because Var is incomplete type
-    void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
+    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
+    void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
-    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     inline size_t getAttrCount() override { return val.size(); }
 
     inline size_t size() { return val.size(); }
@@ -367,7 +315,6 @@ public:
     inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }
     // Make sure to initializePos() first.
     inline void setPos(size_t idx, StringRef data) { pos[idx] = data; }
-    inline void insert(StringRef key, Var *value) { val.insert({String(key), value}); }
     inline Span<const String> getPositions() const { return pos; }
     inline bool isRefMap() { return asrefs; }
 };
@@ -377,13 +324,13 @@ class VarMapIterator : public Var
     VarMap *map;
     StringMap<Var *>::iterator curr;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarMapIterator(ModuleLoc loc, VarMap *map);
 
-    bool next(MemoryManager &mem, ModuleLoc loc, Var *&val);
+    bool next(VirtualMachine &vm, ModuleLoc loc, Var *&val);
 };
 
 // used in native function calls
@@ -445,7 +392,7 @@ class VarFn : public Var
     FnBody body;
     bool isnative;
 
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                 const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk) override;
@@ -479,7 +426,51 @@ public:
     inline bool isNative() { return isnative; }
 };
 
-class VarStack;
+class VarStack : public Var
+{
+    RecursiveMutex mtx;
+    Vector<size_t> loopsFrom;
+    // each VarFrame is a stack frame
+    // Vector is not used here as VarFrame has to be stored as a pointer.
+    // This is so because otherwise, on vector resize, it will cause the VarFrame object to
+    // delete and reconstruct, therefore incorrectly calling the dref() calls
+    VarVec *stack; // VarVec<VarMap>
+
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
+
+public:
+    VarStack(ModuleLoc loc);
+
+    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
+    void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override;
+    inline bool existsAttr(StringRef name) override { return stack->back()->existsAttr(name); }
+    Var *getAttr(StringRef name) override;
+
+    // use this instead of exists() if the Var* retrieval is actually required
+    Var *get(StringRef name);
+
+    void pushStack(VirtualMachine &vm, ModuleLoc loc, size_t count);
+    void popStack(VirtualMachine &vm, size_t count);
+
+    void pushLoop(VirtualMachine &vm, ModuleLoc loc);
+    // 'break' also uses this
+    void popLoop(VirtualMachine &vm);
+    void continueLoop(VirtualMachine &vm);
+
+    inline void resizeTo(VirtualMachine &vm, size_t count)
+    {
+        if(stack->size() > count) return popStack(vm, stack->size() - count);
+    }
+
+    inline VarMap *getFrameAt(size_t index)
+    {
+        return index < stack->size() ? as<VarMap>(stack->at(index)) : nullptr;
+    }
+
+    inline size_t size() { return stack->size(); }
+};
+
 // A VarModule cannot be copied. It will always return self when a copy is attempted.
 class VarModule : public Var
 {
@@ -489,25 +480,22 @@ class VarModule : public Var
     VarStack *varStack;
     bool ownsVars;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
               VarStack *varStack = nullptr);
 
     // not inline because Vars is incomplete type
-    void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
+    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
-    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     size_t getAttrCount() override;
 
     void addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj);
-    void addNativeFn(MemoryManager &mem, StringRef name, const FeralNativeFnDesc &fnObj);
     void addNativeVar(VirtualMachine &vm, StringRef name, StringRef doc, Var *val,
-                      bool iref = true);
-    void addNativeVar(MemoryManager &mem, StringRef name, StringRef doc, Var *val,
                       bool iref = true);
 
     inline StringRef getPath() { return path; }
@@ -521,7 +509,7 @@ class VarDll : public Var
     DllInitFn initfn;
     DllDeinitFn deinitfn;
 
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarDll(ModuleLoc loc, DllInitFn initfn, DllDeinitFn deinitfn);
@@ -534,7 +522,7 @@ class VarStructDef : public Var
     // type id of struct (struct id) which will be used as typeID for struct objects
     size_t id;
 
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
 
     // returns VarStruct
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
@@ -544,10 +532,10 @@ public:
     VarStructDef(ModuleLoc loc, size_t attrscount);
     VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
 
-    void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
+    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
     Var *getAttr(StringRef name) override;
-    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     inline size_t getAttrCount() override { return attrs.size(); }
 
     inline size_t getSubType() override { return id; }
@@ -569,8 +557,8 @@ class VarStruct : public Var
     VarStructDef *base;
     size_t id;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
@@ -579,11 +567,11 @@ public:
     // base can be nullptr (as is the case for enums)
     VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount, size_t id);
 
-    void setAttr(MemoryManager &mem, StringRef name, Var *val, bool iref) override;
+    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
 
     inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
     Var *getAttr(StringRef name) override;
-    void getAttrList(MemoryManager &mem, VarVec *dest) override;
+    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     inline size_t getAttrCount() override { return attrs.size(); }
 
     inline size_t getSubType() override { return id; }
@@ -601,13 +589,13 @@ class VarFailure : public Var
     size_t recurseCount;
     bool handling; // is this failure currently being handled
 
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
     void reset();
 
 public:
-    VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount,
-               bool irefHandler = true);
+    VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount);
 
     Var *callHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args);
 
@@ -636,7 +624,7 @@ class VarFile : public Var
     String mode;
     bool requiresClosing;
 
-    void onDestroy(MemoryManager &mem) override;
+    void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
@@ -651,8 +639,8 @@ class VarFileIterator : public Var
 {
     VarFile *file;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarFileIterator(ModuleLoc loc, VarFile *file);
@@ -678,6 +666,77 @@ public:
     inline char *&getVal() { return buffer; }
     inline size_t size() { return buflen; }
     inline size_t capacity() { return bufsz; }
+};
+
+class VarVars : public Var
+{
+    // maps function ids to VarStack
+    // 0 is the id for global (module) scope
+    Map<size_t, VarStack *> fnvars;
+    VarMap *stashed;
+    VarVec *modScopeStack; // VarVec<VarStack>
+    size_t fnstack;
+
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
+
+public:
+    VarVars(ModuleLoc loc);
+
+    inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return fnvars[fnstack]->setAttr(vm, name, val, iref);
+    }
+    inline void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override
+    {
+        return fnvars[fnstack]->remAttr(vm, name, found, dref);
+    }
+    // checks if variable exists in current scope ONLY
+    inline bool existsAttr(StringRef name) override { return fnvars[fnstack]->existsAttr(name); }
+    // use this instead of exists() if the Var* retrieval is actually required
+    // and current scope requirement is not present
+    Var *getAttr(StringRef name) override;
+
+    void pushBlk(VirtualMachine &vm, ModuleLoc loc, size_t count);
+
+    void pushModScope(VirtualMachine &vm, VarStack *modScope);
+    void popModScope(VirtualMachine &vm);
+    void pushFn(VirtualMachine &vm, ModuleLoc loc);
+    void popFn(VirtualMachine &vm);
+    void stash(VirtualMachine &vm, StringRef name, Var *val, bool iref = true);
+    void unstash(VirtualMachine &vm);
+
+    inline void popBlk(VirtualMachine &vm, size_t count)
+    {
+        return fnvars[fnstack]->popStack(vm, count);
+    }
+    inline size_t getBlkSize() { return fnvars[fnstack]->size(); }
+    inline void resizeBlkTo(VirtualMachine &vm, size_t count)
+    {
+        return fnvars[fnstack]->resizeTo(vm, count);
+    }
+
+    inline VarStack *getCurrModScope()
+    {
+        return modScopeStack->empty() ? nullptr : as<VarStack>(modScopeStack->back());
+    }
+
+    inline void pushLoop(VirtualMachine &vm, ModuleLoc loc)
+    {
+        return fnvars[fnstack]->pushLoop(vm, loc);
+    }
+    inline void popLoop(VirtualMachine &vm) { return fnvars[fnstack]->popLoop(vm); }
+    inline void continueLoop(VirtualMachine &vm) { return fnvars[fnstack]->continueLoop(vm); }
+
+    class ScopedModScope
+    {
+        VarVars *vars;
+        VirtualMachine &vm;
+
+    public:
+        ScopedModScope(VirtualMachine &vm, VarVars *vars, VarStack *modScope);
+        ~ScopedModScope();
+    };
 };
 
 } // namespace fer

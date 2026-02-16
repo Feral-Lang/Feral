@@ -3,7 +3,6 @@
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
 #include "GlobalState.hpp"
-#include "Vars.hpp"
 
 namespace fer
 {
@@ -84,14 +83,14 @@ class VirtualMachine : public IAllocated
 {
     GlobalState *gs;
     String name;
-    Vars vars;
     Vector<VarModule *> modulestack;
+    VarVars *vars;
     FailStack *failstack;
     ExecStack *execstack;
     size_t recurseCount; // how many times execute() has been called by itself
     size_t exitcode;
     bool recurseExceeded;
-    bool exitcalled;
+    bool exitCalled;
     bool ownsGlobalState;
 
     friend class core::MemoryManager;
@@ -167,12 +166,12 @@ public:
 
     inline StringRef getName() { return name; }
 
-    inline Vars &getVars() { return vars; }
+    inline VarVars *getVars() { return vars; }
     inline void pushExecStack(Var *var, bool iref = true) { execstack->push(var, iref); }
     inline Var *popExecStack(bool dref = true) { return execstack->pop(dref); }
     inline VarModule *getCurrModule() { return modulestack.back(); }
-    inline bool isExitCalled() { return exitcalled; }
-    inline void setExitCalled(bool called) { exitcalled = called; }
+    inline bool isExitCalled() { return exitCalled; }
+    inline void setExitCalled(bool called) { exitCalled = called; }
     inline void setExitCode(int code) { exitcode = code; }
 
     inline GlobalState *getGlobalState() { return gs; }
@@ -213,18 +212,28 @@ public:
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(ModuleLoc loc,
                                                                                Args &&...args)
     {
-        return Var::makeVar<T>(gs->mem, loc, std::forward<Args>(args)...);
+        T *res = new(gs->mem.allocRaw(sizeof(T), alignof(T))) T(loc, std::forward<Args>(args)...);
+        res->create(*this);
+        return res;
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
     {
-        return Var::incVarRef<T>(var);
+        if(var == nullptr) return nullptr;
+        var->iref();
+        return var;
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
                                                                                  bool del = true)
     {
-        return Var::decVarRef<T>(gs->mem, var, del);
+        if(var == nullptr) return nullptr;
+        if(var->dref() <= 0 && del) {
+            var->destroy(*this);
+            gs->mem.freeDeinit(var);
+            var = nullptr;
+        }
+        return var;
     }
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
@@ -242,7 +251,7 @@ public:
         tyvar->setConst();
         name += "Ty";
         if(!module) addGlobal(name, doc, tyvar);
-        else module->addNativeVar(gs->mem, name, doc, tyvar);
+        else module->addNativeVar(*this, name, doc, tyvar);
     }
 
     template<typename T>
@@ -252,7 +261,7 @@ public:
         VarFn *f =
             makeVar<VarFn>(loc, modulestack.back()->getModuleId(), "", fnObj.isVariadic ? "." : "",
                            fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
-        f->setDoc(getMemoryManager(), makeVar<VarStr>(loc, fnObj.doc));
+        f->setDoc(*this, loc, fnObj.doc);
         for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
         addTypeFn(typeID<T>(), name, f, true);
     }

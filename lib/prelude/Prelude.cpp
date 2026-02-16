@@ -51,11 +51,11 @@ FERAL_FUNC(allSetDoc, 1, false,
     EXPECT2(VarStr, VarNil, args[1], "doc string");
     auto &mem = vm.getMemoryManager();
     if(args[1]->is<VarNil>()) {
-        args[0]->setDoc(mem, nullptr);
+        args[0]->setDoc(vm, nullptr);
     } else {
         VarStr *cp = as<VarStr>(vm.copyVar(loc, args[1]));
         if(!cp) return nullptr;
-        args[0]->setDoc(mem, cp);
+        args[0]->setDoc(vm, cp);
     }
     return vm.getNil();
 }
@@ -97,7 +97,7 @@ FERAL_FUNC(allGetAttrs, 0, false,
     EXPECT_ATTR_BASED(args[0], "var");
     Var *in     = args[0];
     VarVec *res = vm.makeVar<VarVec>(loc, in->getAttrCount(), true);
-    in->getAttrList(vm.getMemoryManager(), res);
+    in->getAttrList(vm, res);
     return res;
 }
 
@@ -111,7 +111,7 @@ FERAL_FUNC(allSetAttr, 2, false,
     EXPECT(VarStr, args[1], "doc string");
     Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
-    in->setAttr(vm.getMemoryManager(), attr, args[2], true);
+    in->setAttr(vm, attr, args[2], true);
     return args[2];
 }
 
@@ -360,8 +360,8 @@ FERAL_FUNC(varExists, 1, true,
         providedMod = true;
         return mod->getAttr(varName) ? vm.getTrue() : vm.getFalse();
     }
-    Vars &moduleVars = vm.getVars();
-    return moduleVars.get(varName) || vm.getGlobal(varName) ? vm.getTrue() : vm.getFalse();
+    VarVars *moduleVars = vm.getVars();
+    return moduleVars->getAttr(varName) || vm.getGlobal(varName) ? vm.getTrue() : vm.getFalse();
 }
 
 FERAL_FUNC(setMaxRecursionNative, 1, false, "")

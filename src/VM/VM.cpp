@@ -29,28 +29,29 @@ void remDLLDirectories();
 
 VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSourceFn,
                                StringRef name)
-    : gs(new GlobalState(argparser, parseSourceFn)), name(name), vars(gs->mem), recurseCount(0),
-      exitcode(0), recurseExceeded(false), exitcalled(false), ownsGlobalState(true)
+    : gs(new GlobalState(argparser, parseSourceFn)), name(name), recurseCount(0), exitcode(0),
+      recurseExceeded(false), exitCalled(false), ownsGlobalState(true)
 {
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
-    // init vars
+    vars = makeVar<VarVars>({});
     // set vm is ready
-    failstack = gs->mem.allocInit<FailStack>(gs->mem);
-    execstack = gs->mem.allocInit<ExecStack>(gs->mem);
+    failstack = gs->mem.allocInit<FailStack>(*this);
+    execstack = gs->mem.allocInit<ExecStack>(*this);
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
-    failstack->pushHandler(gs->basicErrHandler, -1, 1, true);
+    failstack->pushHandler(gs->basicErrHandler, -1, 1);
     if(ownsGlobalState && !loadPrelude()) throw "Failed to load prelude module";
     ++gs->vmCount;
 }
 VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandler)
-    : gs(gs), name(name), vars(gs->mem), recurseCount(0), exitcode(0), recurseExceeded(false),
-      exitcalled(false), ownsGlobalState(false)
+    : gs(gs), name(name), recurseCount(0), exitcode(0), recurseExceeded(false), exitCalled(false),
+      ownsGlobalState(false)
 {
-    execstack = gs->mem.allocInit<ExecStack>(gs->mem);
-    failstack = gs->mem.allocInit<FailStack>(gs->mem);
+    vars      = makeVar<VarVars>({});
+    failstack = gs->mem.allocInit<FailStack>(*this);
+    execstack = gs->mem.allocInit<ExecStack>(*this);
     if(!errHandler) errHandler = gs->basicErrHandler;
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
-    failstack->pushHandler(errHandler, -1, 1, true);
+    failstack->pushHandler(errHandler, -1, 1);
     ++gs->vmCount;
 }
 VirtualMachine::~VirtualMachine()
@@ -58,6 +59,7 @@ VirtualMachine::~VirtualMachine()
     if(failstack->size() > 0) failstack->popHandler();
     gs->mem.freeDeinit(execstack);
     gs->mem.freeDeinit(failstack);
+    decVarRef(vars);
     --gs->vmCount;
     if(ownsGlobalState) {
         gs->deinit(*this);
@@ -115,7 +117,7 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 bool VirtualMachine::loadPrelude()
 {
     VarFn *bmfFn = genNativeFn({}, "basicModuleFinder", basicModuleFinder);
-    gs->moduleFinders->push(bmfFn, true);
+    gs->moduleFinders->push(*this, bmfFn, true);
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
     setupCoreFuncs(*this, {});
@@ -207,11 +209,11 @@ void VirtualMachine::popModule() { modulestack.pop_back(); }
 
 void VirtualMachine::addGlobal(StringRef name, StringRef doc, Var *val, bool iref)
 {
-    if(gs->globals->exists(name)) return;
-    if(!doc.empty()) val->setDoc(gs->mem, makeVar<VarStr>(val->getLoc(), doc));
-    gs->globals->add(name, val, iref);
+    if(gs->globals->existsAttr(name)) return;
+    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
+    gs->globals->setAttr(*this, name, val, iref);
 }
-Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->get(name); }
+Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->getAttr(name); }
 
 void VirtualMachine::addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
 {
@@ -221,36 +223,36 @@ VarFn *VirtualMachine::genNativeFn(ModuleLoc loc, StringRef name, const FeralNat
 {
     VarFn *f = makeVar<VarFn>(loc, -1, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
                               FnBody{.native = fnObj.fn}, true);
-    if(!fnObj.doc.empty()) f->setDoc(gs->mem, makeVar<VarStr>(loc, fnObj.doc));
+    if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
     for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
     return f;
 }
 
 void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
 {
-    auto loc    = gs->typefns.find(_typeid);
-    VarFrame *f = nullptr;
+    auto loc  = gs->typefns.find(_typeid);
+    VarMap *f = nullptr;
     if(loc == gs->typefns.end()) {
-        gs->typefns[_typeid] = f = VarFrame::create(gs->mem);
+        gs->typefns[_typeid] = f = incVarRef(makeVar<VarMap>({}, 0, false));
     } else {
         f = loc->second;
     }
-    f->add(name, fn, iref);
+    f->setAttr(*this, name, fn, iref);
 }
 Var *VirtualMachine::getTypeFn(Var *var, StringRef name)
 {
     auto loc = gs->typefns.find(var->getSubType());
     Var *res = nullptr;
     if(loc != gs->typefns.end()) {
-        res = loc->second->get(name);
+        res = loc->second->getAttr(name);
         if(res) return res;
     }
     loc = gs->typefns.find(var->getType());
     if(loc != gs->typefns.end()) {
-        res = loc->second->get(name);
+        res = loc->second->getAttr(name);
         if(res) return res;
     }
-    return gs->typefns[typeID<VarAll>()]->get(name);
+    return gs->typefns[typeID<VarAll>()]->getAttr(name);
 }
 
 void VirtualMachine::setTypeName(size_t _typeid, StringRef name) { gs->typenames[_typeid] = name; }
@@ -310,8 +312,8 @@ void VirtualMachine::tryAddModulePathsFromFile(const char *file)
     if(!fs::read(file, modulePaths).getCode()) return;
     for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
         if(_path.empty()) continue;
-        VarStr *moduleLoc = incVarRef(makeVar<VarStr>({}, _path));
-        gs->moduleDirs->insert(gs->moduleDirs->begin(), moduleLoc);
+        VarStr *moduleLoc = makeVar<VarStr>({}, _path);
+        gs->moduleDirs->insert(*this, 0, moduleLoc, true);
     }
 }
 
@@ -434,7 +436,7 @@ Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
         if(args[0]->isAttrBased()) fn = args[0]->getAttr(name);
         if(!fn) fn = getTypeFn(args[0], name);
     } else {
-        fn = getVars().get(name);
+        fn = getVars()->getAttr(name);
         if(!fn) fn = getGlobal(name);
     }
     if(!fn) {
@@ -478,7 +480,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 
     fs::File *f = gs->managedAllocator.alloc<fs::File>(path.c_str(), true);
     f->append(code);
-    ModuleId moduleId = addModule(loc, f, isExpr, getVars().getCurrModScope());
+    ModuleId moduleId = addModule(loc, f, isExpr, getVars()->getCurrModScope());
     if(moduleId == (ModuleId)-1) {
         fail(loc, "Failed to parse eval code: ", code);
         return nullptr;

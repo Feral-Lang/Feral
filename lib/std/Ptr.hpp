@@ -9,8 +9,8 @@ class VarPtr : public Var
 {
     Var *val;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:

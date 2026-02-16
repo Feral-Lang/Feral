@@ -44,7 +44,7 @@ bool GlobalState::init(VirtualMachine &vm)
     prelude = "prelude/prelude";
 
     basicErrHandler = vm.incVarRef(vm.genNativeFn({}, "basicErrorHandler", basicErrorHandler));
-    globals         = VarFrame::create(mem);
+    globals         = vm.incVarRef(vm.makeVar<VarMap>({}, 0, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     binaryPath      = vm.incVarRef(vm.makeVar<VarStr>({}, env::getProcPath()));
@@ -82,17 +82,17 @@ bool GlobalState::init(VirtualMachine &vm)
     cmdargs = vm.incVarRef(vm.makeVar<VarVec>({}, vmArgs.size(), false));
     for(size_t i = 0; i < vmArgs.size(); ++i) {
         auto &a = vmArgs[i];
-        cmdargs->push(vm.makeVar<VarStr>({}, a), true);
+        cmdargs->push(vm, vm.makeVar<VarStr>({}, a), true);
     }
     cmdargs->setConst();
 
-    moduleDirs->insert(moduleDirs->begin(), vm.incVarRef(libPath));
+    moduleDirs->insert(vm, 0, libPath, true);
 
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
     String feralPaths = env::get("FERAL_PATHS");
     for(auto &_path : utils::stringDelim(feralPaths, ";")) {
-        VarStr *moduleLoc = vm.incVarRef(vm.makeVar<VarStr>({}, _path));
-        moduleDirs->insert(moduleDirs->begin(), moduleLoc);
+        VarStr *moduleLoc = vm.makeVar<VarStr>({}, _path);
+        moduleDirs->insert(vm, 0, moduleLoc, true);
     }
 
     // Global .modulePaths file.
@@ -144,9 +144,9 @@ bool GlobalState::deinit(VirtualMachine &vm)
     vm.decVarRef(binaryPath);
     vm.decVarRef(moduleFinders);
     vm.decVarRef(moduleDirs);
-    VarFrame::destroy(mem, globals);
+    vm.decVarRef(globals);
     vm.decVarRef(basicErrHandler);
-    for(auto &typefn : typefns) { VarFrame::destroy(mem, typefn.second); }
+    for(auto &typefn : typefns) { vm.decVarRef(typefn.second); }
 
 #if defined(CORE_OS_WINDOWS)
     remDLLDirectories();
