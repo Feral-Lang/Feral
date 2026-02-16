@@ -15,8 +15,8 @@ class VarThread : public Var
     Vector<Var *> args;
     StringMap<AssnArgData> assnArgs;
 
-    void onCreate(MemoryManager &mem) override;
-    void onDestroy(MemoryManager &mem) override;
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
 
 public:
     VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable, Span<Var *> _args,

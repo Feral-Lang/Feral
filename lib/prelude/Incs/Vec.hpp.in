@@ -28,7 +28,7 @@ FERAL_FUNC(vecNew, 0, true,
     }
     VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);
     if(refs) {
-        for(size_t i = 1; i < args.size(); ++i) { res->push(args[i], true); }
+        for(size_t i = 1; i < args.size(); ++i) { res->push(vm, args[i], true); }
     } else {
         for(size_t i = 1; i < args.size(); ++i) {
             Var *cp = vm.copyVar(loc, args[i]);
@@ -36,7 +36,7 @@ FERAL_FUNC(vecNew, 0, true,
                 vm.decVarRef(res);
                 return nullptr;
             }
-            res->push(cp, false);
+            res->push(vm, cp, false);
         }
     }
     return res;
@@ -77,21 +77,21 @@ FERAL_FUNC(vecEmpty, 0, false,
            "  var.fn() -> Bool\n"
            "Returns `true` if the vector `var` is empty.")
 {
-    return as<VarVec>(args[0])->isEmpty() ? vm.getTrue() : vm.getFalse();
+    return as<VarVec>(args[0])->empty() ? vm.getTrue() : vm.getFalse();
 }
 
 FERAL_FUNC(vecFront, 0, false,
            "  var.fn() -> Var\n"
            "Returns the first element in the vector `var`, or `nil` if the vector is empty.")
 {
-    return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->front();
+    return as<VarVec>(args[0])->empty() ? vm.getNil() : as<VarVec>(args[0])->front();
 }
 
 FERAL_FUNC(vecBack, 0, false,
            "  var.fn() -> Var\n"
            "Returns the last element in the vector `var`, or `nil` if the vector is empty.")
 {
-    return as<VarVec>(args[0])->isEmpty() ? vm.getNil() : as<VarVec>(args[0])->back();
+    return as<VarVec>(args[0])->empty() ? vm.getNil() : as<VarVec>(args[0])->back();
 }
 
 FERAL_FUNC(vecPush, 1, true,
@@ -102,11 +102,11 @@ FERAL_FUNC(vecPush, 1, true,
     VarVec *res = as<VarVec>(args[0]);
     for(size_t i = 1; i < args.size(); ++i) {
         if(res->isRefVec()) {
-            res->push(args[i], true);
+            res->push(vm, args[i], true);
         } else {
             Var *cp = vm.copyVar(loc, args[i]);
             if(!cp) { return nullptr; }
-            res->push(cp, false);
+            res->push(vm, cp, false);
         }
     }
     return args[0];
@@ -118,11 +118,11 @@ FERAL_FUNC(vecPop, 0, false,
 {
     EXPECT_NO_CONST(args[0], "var");
     VarVec *res = as<VarVec>(args[0]);
-    if(res->isEmpty()) {
+    if(res->empty()) {
         vm.fail(loc, "called pop() on an empty vector");
         return nullptr;
     }
-    res->pop(vm.getMemoryManager(), true);
+    res->pop(vm, true);
     return args[0];
 }
 
@@ -132,7 +132,7 @@ FERAL_FUNC(vecClear, 0, false,
 {
     EXPECT_NO_CONST(args[0], "var");
     VarVec *v = as<VarVec>(args[0]);
-    v->clear(vm.getMemoryManager());
+    v->clear(vm);
     return args[0];
 }
 
@@ -150,11 +150,11 @@ FERAL_FUNC(vecInsert, 2, false,
         return nullptr;
     }
     if(res->isRefVec()) {
-        res->insert(res->begin() + pos, vm.incVarRef(args[2]));
+        res->insert(vm, pos, args[2], true);
     } else {
         Var *cp = vm.copyVar(loc, args[2]);
         if(!cp) { return nullptr; }
-        res->insert(res->begin() + pos, cp);
+        res->insert(vm, pos, cp, false);
     }
     return args[0];
 }
@@ -197,8 +197,7 @@ FERAL_FUNC(vecErase, 1, false,
                 std::to_string(res->size()));
         return nullptr;
     }
-    vm.decVarRef(res->at(pos));
-    res->erase(res->begin() + pos);
+    res->erase(vm, pos, true);
     return args[0];
 }
 
@@ -217,12 +216,12 @@ FERAL_FUNC(vecAppendNative, 3, false, "")
         // for the loop, we are not using iterator format because self append will fail in
         // that case
         // ie. v.append(v) will fail if iterator format is used.
-        for(size_t i = start; i < end; ++i) { dest->push(src->at(i), true); }
+        for(size_t i = start; i < end; ++i) { dest->push(vm, src->at(i), true); }
     } else {
         for(size_t i = start; i < end; ++i) {
             Var *cp = vm.copyVar(loc, src->at(i));
             if(!cp) { return nullptr; }
-            dest->push(cp, false);
+            dest->push(vm, cp, false);
         }
     }
     return dest;
@@ -246,7 +245,7 @@ FERAL_FUNC(vecReverse, 0, false,
 {
     EXPECT_NO_CONST(args[0], "var");
     VarVec *res = as<VarVec>(args[0]);
-    std::reverse(res->begin(), res->end());
+    std::reverse(res->getVal().begin(), res->getVal().end());
     return args[0];
 }
 
@@ -281,7 +280,7 @@ FERAL_FUNC(vecSubNative, 2, false, "")
             vm.decVarRef(res);
             return nullptr;
         }
-        res->push(cp, false);
+        res->push(vm, cp, false);
     }
     return res;
 }
@@ -299,7 +298,7 @@ FERAL_FUNC(vecSliceNative, 2, false, "")
 
     VarVec *res = vm.makeVar<VarVec>(loc, end - beg > 0 ? end - beg : 0, true);
     if(end <= beg) return res;
-    for(size_t i = beg; i < end; ++i) { res->push(v->at(i), true); }
+    for(size_t i = beg; i < end; ++i) { res->push(vm, v->at(i), true); }
     return res;
 }
 

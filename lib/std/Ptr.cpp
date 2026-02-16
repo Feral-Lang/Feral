@@ -6,13 +6,13 @@ namespace fer
 {
 
 VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, 0), val(val) {}
-void VarPtr::onCreate(MemoryManager &mem) { Var::incVarRef(val); }
-void VarPtr::onDestroy(MemoryManager &mem) { Var::decVarRef(mem, val); }
+void VarPtr::onCreate(VirtualMachine &vm) { vm.incVarRef(val); }
+void VarPtr::onDestroy(VirtualMachine &vm) { vm.decVarRef(val); }
 bool VarPtr::onSet(VirtualMachine &vm, Var *from) { return setVal(vm, as<VarPtr>(from)->val); }
 bool VarPtr::setVal(VirtualMachine &vm, Var *newval)
 {
-    Var::incVarRef(newval);
-    Var::decVarRef(vm.getMemoryManager(), val);
+    vm.incVarRef(newval);
+    vm.decVarRef(val);
     val = newval;
     return true;
 }

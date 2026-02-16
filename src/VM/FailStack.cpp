@@ -5,23 +5,22 @@
 namespace fer
 {
 
-FailStack::FailStack(MemoryManager &mem) : mem(mem) {}
+FailStack::FailStack(VirtualMachine &vm) : vm(vm) {}
 FailStack::~FailStack()
 {
     assert(size() <= 1 && "Failstack must have <= 1 items before it is destroyed");
-    for(auto &s : stack) { Var::decVarRef(mem, s); }
+    for(auto &s : stack) { vm.decVarRef(s); }
 }
 
-void FailStack::pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler)
+void FailStack::pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount)
 {
-    VarFailure *failure = Var::makeVar<VarFailure>(mem, handler->getLoc(), handler, popLoc,
-                                                   recurseCount, irefHandler);
-    stack.push_back(Var::incVarRef(failure));
+    VarFailure *failure = vm.makeVar<VarFailure>(handler->getLoc(), handler, popLoc, recurseCount);
+    stack.push_back(vm.incVarRef(failure));
 }
 
 void FailStack::popHandler()
 {
-    Var::decVarRef(mem, stack.back());
+    vm.decVarRef(stack.back());
     stack.pop_back();
 }
 
@@ -29,11 +28,11 @@ Var *FailStack::handle(VirtualMachine &vm, ModuleLoc loc, size_t &popLoc)
 {
     if(stack.empty() || stack.back()->isHandling()) return nullptr;
     VarFailure *f = stack.back();
-    Var::incVarRef(f);
+    vm.incVarRef(f);
     Array<Var *, 2> args{nullptr, f};
     Var *res = f->callHandler(vm, loc, args);
     popLoc   = f->getPopLoc();
-    Var::decVarRef(mem, f);
+    vm.decVarRef(f);
     if(!res) popHandler();
     return res;
 }

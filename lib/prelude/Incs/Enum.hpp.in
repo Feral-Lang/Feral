@@ -13,7 +13,7 @@ FERAL_FUNC(enumNew, 1, true,
     for(size_t i = 1; i < args.size(); ++i) {
         auto &a = args[i];
         EXPECT_AND(VarStr, a, "enums (use string / atom)", vm.decVarRef(res));
-        res->setAttr(mem, as<VarStr>(a)->getVal(), vm.makeVar<VarInt>(loc, i - 1), true);
+        res->setAttr(vm, as<VarStr>(a)->getVal(), vm.makeVar<VarInt>(loc, i - 1), true);
     }
 
     for(auto &a : assnArgs) {
@@ -23,7 +23,7 @@ FERAL_FUNC(enumNew, 1, true,
             vm.decVarRef(res);
             return nullptr;
         }
-        res->setAttr(mem, a.first, cp, false);
+        res->setAttr(vm, a.first, cp, false);
     }
 
     return res;

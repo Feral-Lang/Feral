@@ -365,13 +365,13 @@ FERAL_FUNC(strSplitNative, 2, false, "")
         if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
             ++delimCount;
             if(temp->getVal().empty()) continue;
-            res->push(temp, true);
+            res->push(vm, temp, true);
             temp = vm.makeVar<VarStr>(loc, "");
             continue;
         }
         temp->getVal() += c;
     }
-    if(!temp->getVal().empty()) res->push(temp, true);
+    if(!temp->getVal().empty()) res->push(vm, temp, true);
     return res;
 }
 

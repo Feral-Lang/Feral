@@ -99,11 +99,11 @@ FERAL_FUNC(mapInsert, 2, false,
     String key = std::move(as<VarStr>(v)->getVal());
     vm.decVarRef(v);
     if(map->isRefMap()) {
-        map->setAttr(mem, key, args[2], true);
+        map->setAttr(vm, key, args[2], true);
     } else {
         Var *val = vm.copyVar(loc, args[2]);
         if(!val) { return nullptr; }
-        map->setAttr(mem, key, val, false);
+        map->setAttr(vm, key, val, false);
     }
     return args[0];
 }
@@ -130,7 +130,7 @@ FERAL_FUNC(mapClear, 0, false,
            "  var.fn() -> Nil\n"
            "Removes all key-value pairs from the map `var`.")
 {
-    as<VarMap>(args[0])->clear(vm.getMemoryManager());
+    as<VarMap>(args[0])->clear(vm);
     return vm.getNil();
 }
 
@@ -175,7 +175,7 @@ FERAL_FUNC(mapIteratorNext, 0, false,
 {
     VarMapIterator *it = as<VarMapIterator>(args[0]);
     Var *res           = nullptr;
-    if(!it->next(vm.getMemoryManager(), loc, res)) return vm.getNil();
+    if(!it->next(vm, loc, res)) return vm.getNil();
     res->setLoadAsRef();
     return res;
 }

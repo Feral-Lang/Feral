@@ -43,30 +43,30 @@ VarThread::VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_c
 }
 VarThread::~VarThread() {}
 
-void VarThread::onCreate(MemoryManager &mem)
+void VarThread::onCreate(VirtualMachine &vm)
 {
-    Var::incVarRef(callable);
+    vm.incVarRef(callable);
     for(auto &a : args) {
-        if(a) Var::incVarRef(a);
+        if(a) vm.incVarRef(a);
     }
-    for(auto &aa : assnArgs) Var::incVarRef(aa.second.val);
+    for(auto &aa : assnArgs) vm.incVarRef(aa.second.val);
     PackagedTask<Var *()> task(
         std::bind(&VirtualMachine::runCallable, &vm, getLoc(), name, callable, args, assnArgs));
     res    = new SharedFuture<Var *>(task.get_future());
     thread = new JThread(std::move(task));
 }
-void VarThread::onDestroy(MemoryManager &mem)
+void VarThread::onDestroy(VirtualMachine &vm)
 {
     if(res) {
         res->wait();
         delete res;
         delete thread; // no need to join as we are using JThread
     }
-    for(auto &aa : assnArgs) Var::decVarRef(mem, aa.second.val);
+    for(auto &aa : assnArgs) vm.decVarRef(aa.second.val);
     for(auto &a : args) {
-        if(a) Var::decVarRef(mem, a);
+        if(a) vm.decVarRef(a);
     }
-    Var::decVarRef(mem, callable);
+    vm.decVarRef(callable);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

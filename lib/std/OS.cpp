@@ -189,7 +189,7 @@ FERAL_FUNC(
             while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
                 line.pop_back();
             }
-            resvec->push(vm.makeVar<VarStr>(loc, line), true);
+            resvec->push(vm, vm.makeVar<VarStr>(loc, line), true);
         }
     } else if(outVar->is<VarStr>()) {
         String &resstr = as<VarStr>(outVar)->getVal();

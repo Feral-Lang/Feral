@@ -8,15 +8,15 @@ namespace fer
 class FailStack : public IAllocated
 {
     Vector<VarFailure *> stack;
-    MemoryManager &mem;
+    VirtualMachine &vm;
 
     void failStr(ModuleLoc loc, size_t recurseCount, String &&msg);
 
 public:
-    FailStack(MemoryManager &mem);
+    FailStack(VirtualMachine &vm);
     ~FailStack();
 
-    void pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount, bool irefHandler);
+    void pushHandler(VarFn *handler, size_t popLoc, size_t recurseCount);
     void popHandler();
 
     Var *handle(VirtualMachine &vm, ModuleLoc loc, size_t &popLoc);

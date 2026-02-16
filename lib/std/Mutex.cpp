@@ -33,15 +33,15 @@ VarRecursiveMutex::~VarRecursiveMutex() {}
 VarLockGuard::VarLockGuard(ModuleLoc loc, VarMutexBase *mtx) : Var(loc, 0), mtx(mtx) {}
 VarLockGuard::~VarLockGuard() {}
 
-void VarLockGuard::onCreate(MemoryManager &mem)
+void VarLockGuard::onCreate(VirtualMachine &vm)
 {
-    incVarRef(mtx);
+    vm.incVarRef(mtx);
     mtx->lock();
 }
-void VarLockGuard::onDestroy(MemoryManager &mem)
+void VarLockGuard::onDestroy(VirtualMachine &vm)
 {
     mtx->unlock();
-    decVarRef(mem, mtx);
+    vm.decVarRef(mtx);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
