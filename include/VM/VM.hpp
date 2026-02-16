@@ -170,8 +170,6 @@ public:
     inline StringRef getName() { return name; }
 
     inline VarVars *getVars() { return vars; }
-    inline void pushExecStack(Var *var, bool iref = true) { execstack->push(var, iref); }
-    inline Var *popExecStack(bool dref = true) { return execstack->pop(dref); }
     inline VarModule *getCurrModule() { return modulestack.back(); }
     inline bool isExitCalled() { return exitCalled; }
     inline void setExitCalled(bool called) { exitCalled = called; }

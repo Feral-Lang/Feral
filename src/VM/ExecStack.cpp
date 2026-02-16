@@ -5,7 +5,7 @@
 namespace fer
 {
 
-ExecStack::ExecStack(VirtualMachine &vm) : vm(vm) {}
+ExecStack::ExecStack(VirtualMachine &vm) : vm(vm) { stack.reserve(10); }
 ExecStack::~ExecStack()
 {
     for(auto &e : stack) vm.decVarRef(e);
