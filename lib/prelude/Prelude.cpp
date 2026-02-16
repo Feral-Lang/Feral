@@ -454,372 +454,372 @@ FERAL_FUNC(
 
 INIT_DLL(Prelude)
 {
-    VarModule *mod = vm.getCurrModule(); // prelude module
-
     // global functions
-    vm.addNativeFn(loc, "ref", reference);
-    vm.addNativeFn(loc, "unref", unreference);
-    vm.addNativeFn(loc, "const", constant);
-    vm.addNativeFn(loc, "deconst", deconstant);
-    vm.addNativeFn(loc, "raise", raise);
-    vm.addNativeFn(loc, "evalCode", evalCode);
-    vm.addNativeFn(loc, "evalExpr", evalExpr);
-    vm.addNativeFn(loc, "enum", enumNew);
-    vm.addNativeFn(loc, "struct", structNew);
-    vm.addNativeFn(loc, "irange", intRange);
+    vm.addGlobal(loc, "ref", reference);
+    vm.addGlobal(loc, "unref", unreference);
+    vm.addGlobal(loc, "const", constant);
+    vm.addGlobal(loc, "deconst", deconstant);
+    vm.addGlobal(loc, "raise", raise);
+    vm.addGlobal(loc, "evalCode", evalCode);
+    vm.addGlobal(loc, "evalExpr", evalExpr);
+    vm.addGlobal(loc, "enum", enumNew);
+    vm.addGlobal(loc, "struct", structNew);
+    vm.addGlobal(loc, "irange", intRange);
 
     // module functions
-    mod->addNativeFn(vm, "addGlobalModulePaths", addGlobalModulePaths);
-    mod->addNativeFn(vm, "removeGlobalModulePaths", removeGlobalModulePaths);
-    mod->addNativeFn(vm, "exitNative", exitNative);
-    mod->addNativeFn(vm, "setMaxRecursionNative", setMaxRecursionNative);
-    mod->addNativeFn(vm, "getMaxRecursion", getMaxRecursion);
-    mod->addNativeFn(vm, "getCurrModule", getCurrModule);
-    mod->addNativeFn(vm, "getOSName", getOSName);
-    mod->addNativeFn(vm, "getOSDistro", getOSDistro);
+
+    vm.addLocal(loc, "addGlobalModulePaths", addGlobalModulePaths);
+    vm.addLocal(loc, "removeGlobalModulePaths", removeGlobalModulePaths);
+    vm.addLocal(loc, "exitNative", exitNative);
+    vm.addLocal(loc, "setMaxRecursionNative", setMaxRecursionNative);
+    vm.addLocal(loc, "getMaxRecursion", getMaxRecursion);
+    vm.addLocal(loc, "getCurrModule", getCurrModule);
+    vm.addLocal(loc, "getOSName", getOSName);
+    vm.addLocal(loc, "getOSDistro", getOSDistro);
     // variadic as there can be no proxy for this function (to make args[2] (VarModule) optional)
-    mod->addNativeFn(vm, "varExists", varExists);
-    mod->addNativeFn(vm, "vecNew", vecNew);
-    mod->addNativeFn(vm, "mapNew", mapNew);
-    mod->addNativeFn(vm, "bytebufferNew", bytebufferNew);
+    vm.addLocal(loc, "varExists", varExists);
+    vm.addLocal(loc, "vecNew", vecNew);
+    vm.addLocal(loc, "mapNew", mapNew);
+    vm.addLocal(loc, "bytebufferNew", bytebufferNew);
     // file/filesystem
-    mod->addNativeFn(vm, "fsFopen", fsFopen);
-    mod->addNativeFn(vm, "fsWalkDir", fsWalkDir);
-    mod->addNativeFn(vm, "fsAbsPath", fsAbsPath);
-    mod->addNativeFn(vm, "fsNormPath", fsNormPath);
+    vm.addLocal(loc, "fsFopen", fsFopen);
+    vm.addLocal(loc, "fsWalkDir", fsWalkDir);
+    vm.addLocal(loc, "fsAbsPath", fsAbsPath);
+    vm.addLocal(loc, "fsNormPath", fsNormPath);
     // file descriptor
-    mod->addNativeFn(vm, "fsFdOpen", fdOpen);
-    mod->addNativeFn(vm, "fsFdRead", fdRead);
-    mod->addNativeFn(vm, "fsFdWrite", fdWrite);
-    mod->addNativeFn(vm, "fsFdClose", fdClose);
+    vm.addLocal(loc, "fsFdOpen", fdOpen);
+    vm.addLocal(loc, "fsFdRead", fdRead);
+    vm.addLocal(loc, "fsFdWrite", fdWrite);
+    vm.addLocal(loc, "fsFdClose", fdClose);
     // files and dirs
-    mod->addNativeFn(vm, "fsExists", fsExists);
-    mod->addNativeFn(vm, "fsInstall", fsInstall);
-    mod->addNativeFn(vm, "fsMklink", fsMklink);
-    mod->addNativeFn(vm, "fsMove", fsMove);
-    mod->addNativeFn(vm, "fsMkdir", fsMkdir);
-    mod->addNativeFn(vm, "fsRemove", fsRemove);
-    mod->addNativeFn(vm, "fsCopy", fsCopy);
+    vm.addLocal(loc, "fsExists", fsExists);
+    vm.addLocal(loc, "fsInstall", fsInstall);
+    vm.addLocal(loc, "fsMklink", fsMklink);
+    vm.addLocal(loc, "fsMove", fsMove);
+    vm.addLocal(loc, "fsMkdir", fsMkdir);
+    vm.addLocal(loc, "fsRemove", fsRemove);
+    vm.addLocal(loc, "fsCopy", fsCopy);
 
     // VM altering variables
-    mod->addNativeVar(vm, "moduleDirs", "", vm.getModuleDirs());
-    mod->addNativeVar(vm, "moduleFinders", "", vm.getModuleFinders());
-    mod->addNativeVar(vm, "args", "", vm.getCLIArgs());
-    mod->addNativeVar(vm, "binaryPath", "", vm.getBinaryPath());
-    mod->addNativeVar(vm, "installPath", "", vm.getInstallPath());
-    mod->addNativeVar(vm, "tempPath", "", vm.getTempPath());
-    mod->addNativeVar(vm, "libPath", "", vm.getLibPath());
-    mod->addNativeVar(vm, "versionMajor", "", vm.makeVar<VarInt>(loc, PROJECT_MAJOR));
-    mod->addNativeVar(vm, "versionMinor", "", vm.makeVar<VarInt>(loc, PROJECT_MINOR));
-    mod->addNativeVar(vm, "versionPatch", "", vm.makeVar<VarInt>(loc, PROJECT_PATCH));
-    mod->addNativeVar(vm, "buildDate", "", vm.makeVar<VarStr>(loc, BUILD_DATE));
-    mod->addNativeVar(vm, "buildCompiler", "", vm.makeVar<VarStr>(loc, BUILD_COMPILER));
-    mod->addNativeVar(vm, "buildType", "", vm.makeVar<VarStr>(loc, CMAKE_BUILD_TYPE));
-    mod->addNativeVar(vm, "minCmakeVersion", "", vm.makeVar<VarStr>(loc, MIN_CMAKE_VERSION));
-    mod->addNativeVar(vm, "usedCmakeVersion", "", vm.makeVar<VarStr>(loc, USED_CMAKE_VERSION));
-    mod->addNativeVar(vm, "DEFAULT_MAX_RECURSION", "",
-                      vm.makeVar<VarInt>(loc, DEFAULT_MAX_RECURSE_COUNT));
+    vm.addLocal("moduleDirs", "", vm.getModuleDirs());
+    vm.addLocal("moduleFinders", "", vm.getModuleFinders());
+    vm.addLocal("args", "", vm.getCLIArgs());
+    vm.addLocal("binaryPath", "", vm.getBinaryPath());
+    vm.addLocal("installPath", "", vm.getInstallPath());
+    vm.addLocal("tempPath", "", vm.getTempPath());
+    vm.addLocal("libPath", "", vm.getLibPath());
+
+    vm.makeLocal<VarInt>(loc, "versionMajor", "", PROJECT_MAJOR);
+    vm.makeLocal<VarInt>(loc, "versionMinor", "", PROJECT_MINOR);
+    vm.makeLocal<VarInt>(loc, "versionPatch", "", PROJECT_PATCH);
+    vm.makeLocal<VarStr>(loc, "buildDate", "", BUILD_DATE);
+    vm.makeLocal<VarStr>(loc, "buildCompiler", "", BUILD_COMPILER);
+    vm.makeLocal<VarStr>(loc, "buildType", "", CMAKE_BUILD_TYPE);
+    vm.makeLocal<VarStr>(loc, "minCmakeVersion", "", MIN_CMAKE_VERSION);
+    vm.makeLocal<VarStr>(loc, "usedCmakeVersion", "", USED_CMAKE_VERSION);
+    vm.makeLocal<VarInt>(loc, "DEFAULT_MAX_RECURSION", "", DEFAULT_MAX_RECURSE_COUNT);
 
     // fundamental functions for builtin types
-    vm.addNativeTypeFn<VarAll>(loc, "==", allEq);
-    vm.addNativeTypeFn<VarAll>(loc, "!=", allNe);
-    vm.addNativeTypeFn<VarAll>(loc, "\?\?", allNilCoalesce);
-    vm.addNativeTypeFn<VarAll>(loc, "_getDoc_", allGetDoc);
-    vm.addNativeTypeFn<VarAll>(loc, "_setDoc_", allSetDoc);
-    vm.addNativeTypeFn<VarAll>(loc, "_hasAttr_", allHasAttr);
-    vm.addNativeTypeFn<VarAll>(loc, "_getAttr_", allGetAttr);
-    vm.addNativeTypeFn<VarAll>(loc, "_getAttrs_", allGetAttrs);
-    vm.addNativeTypeFn<VarAll>(loc, "_setAttr_", allSetAttr);
-    vm.addNativeTypeFn<VarAll>(loc, "_type_", allGetType);
-    vm.addNativeTypeFn<VarAll>(loc, "_subType_", allGetSubType);
-    vm.addNativeTypeFn<VarAll>(loc, "_isType_", allIsType);
-    vm.addNativeTypeFn<VarAll>(loc, "_isSubType_", allIsSubType);
-    vm.addNativeTypeFn<VarAll>(loc, "_typeName_", allGetTypeName);
+    vm.addTypeFn<VarAll>(loc, "==", allEq);
+    vm.addTypeFn<VarAll>(loc, "==", allEq);
+    vm.addTypeFn<VarAll>(loc, "!=", allNe);
+    vm.addTypeFn<VarAll>(loc, "\?\?", allNilCoalesce);
+    vm.addTypeFn<VarAll>(loc, "_getDoc_", allGetDoc);
+    vm.addTypeFn<VarAll>(loc, "_setDoc_", allSetDoc);
+    vm.addTypeFn<VarAll>(loc, "_hasAttr_", allHasAttr);
+    vm.addTypeFn<VarAll>(loc, "_getAttr_", allGetAttr);
+    vm.addTypeFn<VarAll>(loc, "_getAttrs_", allGetAttrs);
+    vm.addTypeFn<VarAll>(loc, "_setAttr_", allSetAttr);
+    vm.addTypeFn<VarAll>(loc, "_type_", allGetType);
+    vm.addTypeFn<VarAll>(loc, "_subType_", allGetSubType);
+    vm.addTypeFn<VarAll>(loc, "_isType_", allIsType);
+    vm.addTypeFn<VarAll>(loc, "_isSubType_", allIsSubType);
+    vm.addTypeFn<VarAll>(loc, "_typeName_", allGetTypeName);
 
     // copy
-    vm.addNativeTypeFn<VarBool>(loc, "_copy_", boolCopy);
-    vm.addNativeTypeFn<VarInt>(loc, "_copy_", intCopy);
-    vm.addNativeTypeFn<VarFlt>(loc, "_copy_", fltCopy);
-    vm.addNativeTypeFn<VarStr>(loc, "_copy_", strCopy);
-    vm.addNativeTypeFn<VarVec>(loc, "_copy_", vecCopy);
-    vm.addNativeTypeFn<VarMap>(loc, "_copy_", mapCopy);
-    vm.addNativeTypeFn<VarBytebuffer>(loc, "_copy_", bytebufferCopy);
+    vm.addTypeFn<VarBool>(loc, "_copy_", boolCopy);
+    vm.addTypeFn<VarInt>(loc, "_copy_", intCopy);
+    vm.addTypeFn<VarFlt>(loc, "_copy_", fltCopy);
+    vm.addTypeFn<VarStr>(loc, "_copy_", strCopy);
+    vm.addTypeFn<VarVec>(loc, "_copy_", vecCopy);
+    vm.addTypeFn<VarMap>(loc, "_copy_", mapCopy);
+    vm.addTypeFn<VarBytebuffer>(loc, "_copy_", bytebufferCopy);
 
     // to bool
-    vm.addNativeTypeFn<VarAll>(loc, "bool", allToBool);
-    vm.addNativeTypeFn<VarNil>(loc, "bool", nilToBool);
-    vm.addNativeTypeFn<VarBool>(loc, "bool", boolToBool);
-    vm.addNativeTypeFn<VarInt>(loc, "bool", intToBool);
-    vm.addNativeTypeFn<VarFlt>(loc, "bool", fltToBool);
-    vm.addNativeTypeFn<VarStr>(loc, "bool", strToBool);
-    vm.addNativeTypeFn<VarVec>(loc, "bool", vecToBool);
-    vm.addNativeTypeFn<VarMap>(loc, "bool", mapToBool);
-    vm.addNativeTypeFn<VarTypeID>(loc, "bool", typeIDToBool);
+    vm.addTypeFn<VarAll>(loc, "bool", allToBool);
+    vm.addTypeFn<VarNil>(loc, "bool", nilToBool);
+    vm.addTypeFn<VarBool>(loc, "bool", boolToBool);
+    vm.addTypeFn<VarInt>(loc, "bool", intToBool);
+    vm.addTypeFn<VarFlt>(loc, "bool", fltToBool);
+    vm.addTypeFn<VarStr>(loc, "bool", strToBool);
+    vm.addTypeFn<VarVec>(loc, "bool", vecToBool);
+    vm.addTypeFn<VarMap>(loc, "bool", mapToBool);
+    vm.addTypeFn<VarTypeID>(loc, "bool", typeIDToBool);
 
     // to int
-    vm.addNativeTypeFn<VarNil>(loc, "int", nilToInt);
-    vm.addNativeTypeFn<VarBool>(loc, "int", boolToInt);
-    vm.addNativeTypeFn<VarInt>(loc, "int", intToInt);
-    vm.addNativeTypeFn<VarFlt>(loc, "int", fltToInt);
-    vm.addNativeTypeFn<VarStr>(loc, "intNative", strToIntNative);
-    vm.addNativeTypeFn<VarTypeID>(loc, "int", typeIDToInt);
+    vm.addTypeFn<VarNil>(loc, "int", nilToInt);
+    vm.addTypeFn<VarBool>(loc, "int", boolToInt);
+    vm.addTypeFn<VarInt>(loc, "int", intToInt);
+    vm.addTypeFn<VarFlt>(loc, "int", fltToInt);
+    vm.addTypeFn<VarStr>(loc, "intNative", strToIntNative);
+    vm.addTypeFn<VarTypeID>(loc, "int", typeIDToInt);
 
     // to float
-    vm.addNativeTypeFn<VarNil>(loc, "flt", nilToFlt);
-    vm.addNativeTypeFn<VarBool>(loc, "flt", boolToFlt);
-    vm.addNativeTypeFn<VarInt>(loc, "flt", intToFlt);
-    vm.addNativeTypeFn<VarFlt>(loc, "flt", fltToFlt);
-    vm.addNativeTypeFn<VarStr>(loc, "flt", strToFlt);
+    vm.addTypeFn<VarNil>(loc, "flt", nilToFlt);
+    vm.addTypeFn<VarBool>(loc, "flt", boolToFlt);
+    vm.addTypeFn<VarInt>(loc, "flt", intToFlt);
+    vm.addTypeFn<VarFlt>(loc, "flt", fltToFlt);
+    vm.addTypeFn<VarStr>(loc, "flt", strToFlt);
 
     // to string
-    vm.addNativeTypeFn<VarAll>(loc, "str", allToStr);
-    vm.addNativeTypeFn<VarNil>(loc, "str", nilToStr);
-    vm.addNativeTypeFn<VarBool>(loc, "str", boolToStr);
-    vm.addNativeTypeFn<VarInt>(loc, "str", intToStr);
-    vm.addNativeTypeFn<VarFlt>(loc, "str", fltToStr);
-    vm.addNativeTypeFn<VarStr>(loc, "str", strToStr);
-    vm.addNativeTypeFn<VarTypeID>(loc, "str", typeIDToStr);
-    vm.addNativeTypeFn<VarFailure>(loc, "str", failureToStr);
+    vm.addTypeFn<VarAll>(loc, "str", allToStr);
+    vm.addTypeFn<VarNil>(loc, "str", nilToStr);
+    vm.addTypeFn<VarBool>(loc, "str", boolToStr);
+    vm.addTypeFn<VarInt>(loc, "str", intToStr);
+    vm.addTypeFn<VarFlt>(loc, "str", fltToStr);
+    vm.addTypeFn<VarStr>(loc, "str", strToStr);
+    vm.addTypeFn<VarTypeID>(loc, "str", typeIDToStr);
+    vm.addTypeFn<VarFailure>(loc, "str", failureToStr);
 
     // core type functions
 
     // nil
-    vm.addNativeTypeFn<VarNil>(loc, "==", nilEQ);
-    vm.addNativeTypeFn<VarNil>(loc, "!=", nilNE);
-    vm.addNativeTypeFn<VarNil>(loc, "!", nilNot);
+    vm.addTypeFn<VarNil>(loc, "==", nilEQ);
+    vm.addTypeFn<VarNil>(loc, "!=", nilNE);
+    vm.addTypeFn<VarNil>(loc, "!", nilNot);
 
     // typeID
-    vm.addNativeTypeFn<VarTypeID>(loc, "==", typeIDEq);
-    vm.addNativeTypeFn<VarTypeID>(loc, "!=", typeIDNe);
+    vm.addTypeFn<VarTypeID>(loc, "==", typeIDEq);
+    vm.addTypeFn<VarTypeID>(loc, "!=", typeIDNe);
 
     // bool
-    vm.addNativeTypeFn<VarBool>(loc, "==", boolEQ);
-    vm.addNativeTypeFn<VarBool>(loc, "!=", boolNE);
+    vm.addTypeFn<VarBool>(loc, "==", boolEQ);
+    vm.addTypeFn<VarBool>(loc, "!=", boolNE);
 
-    vm.addNativeTypeFn<VarBool>(loc, "!", boolNot);
+    vm.addTypeFn<VarBool>(loc, "!", boolNot);
 
     // int
-    vm.addNativeTypeFn<VarInt>(loc, "+", intAdd);
-    vm.addNativeTypeFn<VarInt>(loc, "-", intSub);
-    vm.addNativeTypeFn<VarInt>(loc, "*", intMul);
-    vm.addNativeTypeFn<VarInt>(loc, "/", intDiv);
-    vm.addNativeTypeFn<VarInt>(loc, "%", intMod);
-    vm.addNativeTypeFn<VarInt>(loc, "<<", intLShift);
-    vm.addNativeTypeFn<VarInt>(loc, ">>", intRShift);
+    vm.addTypeFn<VarInt>(loc, "+", intAdd);
+    vm.addTypeFn<VarInt>(loc, "-", intSub);
+    vm.addTypeFn<VarInt>(loc, "*", intMul);
+    vm.addTypeFn<VarInt>(loc, "/", intDiv);
+    vm.addTypeFn<VarInt>(loc, "%", intMod);
+    vm.addTypeFn<VarInt>(loc, "<<", intLShift);
+    vm.addTypeFn<VarInt>(loc, ">>", intRShift);
 
-    vm.addNativeTypeFn<VarInt>(loc, "+=", intAssnAdd);
-    vm.addNativeTypeFn<VarInt>(loc, "-=", intAssnSub);
-    vm.addNativeTypeFn<VarInt>(loc, "*=", intAssnMul);
-    vm.addNativeTypeFn<VarInt>(loc, "/=", intAssnDiv);
-    vm.addNativeTypeFn<VarInt>(loc, "%=", intAssnMod);
-    vm.addNativeTypeFn<VarInt>(loc, "<<=", intAssnLShift);
-    vm.addNativeTypeFn<VarInt>(loc, ">>=", intAssnRShift);
+    vm.addTypeFn<VarInt>(loc, "+=", intAssnAdd);
+    vm.addTypeFn<VarInt>(loc, "-=", intAssnSub);
+    vm.addTypeFn<VarInt>(loc, "*=", intAssnMul);
+    vm.addTypeFn<VarInt>(loc, "/=", intAssnDiv);
+    vm.addTypeFn<VarInt>(loc, "%=", intAssnMod);
+    vm.addTypeFn<VarInt>(loc, "<<=", intAssnLShift);
+    vm.addTypeFn<VarInt>(loc, ">>=", intAssnRShift);
 
-    vm.addNativeTypeFn<VarInt>(loc, "**", intPow);
-    vm.addNativeTypeFn<VarInt>(loc, "++x", intPreInc);
-    vm.addNativeTypeFn<VarInt>(loc, "x++", intPostInc);
-    vm.addNativeTypeFn<VarInt>(loc, "--x", intPreDec);
-    vm.addNativeTypeFn<VarInt>(loc, "x--", intPostDec);
+    vm.addTypeFn<VarInt>(loc, "**", intPow);
+    vm.addTypeFn<VarInt>(loc, "++x", intPreInc);
+    vm.addTypeFn<VarInt>(loc, "x++", intPostInc);
+    vm.addTypeFn<VarInt>(loc, "--x", intPreDec);
+    vm.addTypeFn<VarInt>(loc, "x--", intPostDec);
 
-    vm.addNativeTypeFn<VarInt>(loc, "u-", intUSub);
+    vm.addTypeFn<VarInt>(loc, "u-", intUSub);
 
-    vm.addNativeTypeFn<VarInt>(loc, "<", intLT);
-    vm.addNativeTypeFn<VarInt>(loc, ">", intGT);
-    vm.addNativeTypeFn<VarInt>(loc, "<=", intLE);
-    vm.addNativeTypeFn<VarInt>(loc, ">=", intGE);
-    vm.addNativeTypeFn<VarInt>(loc, "==", intEQ);
-    vm.addNativeTypeFn<VarInt>(loc, "!=", intNE);
+    vm.addTypeFn<VarInt>(loc, "<", intLT);
+    vm.addTypeFn<VarInt>(loc, ">", intGT);
+    vm.addTypeFn<VarInt>(loc, "<=", intLE);
+    vm.addTypeFn<VarInt>(loc, ">=", intGE);
+    vm.addTypeFn<VarInt>(loc, "==", intEQ);
+    vm.addTypeFn<VarInt>(loc, "!=", intNE);
 
-    vm.addNativeTypeFn<VarInt>(loc, "&", intBAnd);
-    vm.addNativeTypeFn<VarInt>(loc, "|", intBOr);
-    vm.addNativeTypeFn<VarInt>(loc, "^", intBXOr);
-    vm.addNativeTypeFn<VarInt>(loc, "~", intBNot);
+    vm.addTypeFn<VarInt>(loc, "&", intBAnd);
+    vm.addTypeFn<VarInt>(loc, "|", intBOr);
+    vm.addTypeFn<VarInt>(loc, "^", intBXOr);
+    vm.addTypeFn<VarInt>(loc, "~", intBNot);
 
-    vm.addNativeTypeFn<VarInt>(loc, "&=", intAssnBAnd);
-    vm.addNativeTypeFn<VarInt>(loc, "|=", intAssnBOr);
-    vm.addNativeTypeFn<VarInt>(loc, "^=", intAssnBXOr);
+    vm.addTypeFn<VarInt>(loc, "&=", intAssnBAnd);
+    vm.addTypeFn<VarInt>(loc, "|=", intAssnBOr);
+    vm.addTypeFn<VarInt>(loc, "^=", intAssnBXOr);
 
-    vm.addNativeTypeFn<VarInt>(loc, "sqrt", intSqRoot);
-    vm.addNativeTypeFn<VarInt>(loc, "popcnt", intPopCnt);
+    vm.addTypeFn<VarInt>(loc, "sqrt", intSqRoot);
+    vm.addTypeFn<VarInt>(loc, "popcnt", intPopCnt);
 
     // int iterator
-    vm.addNativeTypeFn<VarIntIterator>(loc, "next", getIntIteratorNext);
+    vm.addTypeFn<VarIntIterator>(loc, "next", getIntIteratorNext);
 
     // flt
-    vm.addNativeTypeFn<VarFlt>(loc, "+", fltAdd);
-    vm.addNativeTypeFn<VarFlt>(loc, "-", fltSub);
-    vm.addNativeTypeFn<VarFlt>(loc, "*", fltMul);
-    vm.addNativeTypeFn<VarFlt>(loc, "/", fltDiv);
+    vm.addTypeFn<VarFlt>(loc, "+", fltAdd);
+    vm.addTypeFn<VarFlt>(loc, "-", fltSub);
+    vm.addTypeFn<VarFlt>(loc, "*", fltMul);
+    vm.addTypeFn<VarFlt>(loc, "/", fltDiv);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "+=", fltAssnAdd);
-    vm.addNativeTypeFn<VarFlt>(loc, "-=", fltAssnSub);
-    vm.addNativeTypeFn<VarFlt>(loc, "*=", fltAssnMul);
-    vm.addNativeTypeFn<VarFlt>(loc, "/=", fltAssnDiv);
+    vm.addTypeFn<VarFlt>(loc, "+=", fltAssnAdd);
+    vm.addTypeFn<VarFlt>(loc, "-=", fltAssnSub);
+    vm.addTypeFn<VarFlt>(loc, "*=", fltAssnMul);
+    vm.addTypeFn<VarFlt>(loc, "/=", fltAssnDiv);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "++x", fltPreInc);
-    vm.addNativeTypeFn<VarFlt>(loc, "x++", fltPostInc);
-    vm.addNativeTypeFn<VarFlt>(loc, "--x", fltPreDec);
-    vm.addNativeTypeFn<VarFlt>(loc, "x--", fltPostDec);
+    vm.addTypeFn<VarFlt>(loc, "++x", fltPreInc);
+    vm.addTypeFn<VarFlt>(loc, "x++", fltPostInc);
+    vm.addTypeFn<VarFlt>(loc, "--x", fltPreDec);
+    vm.addTypeFn<VarFlt>(loc, "x--", fltPostDec);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "u-", fltUSub);
+    vm.addTypeFn<VarFlt>(loc, "u-", fltUSub);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "**", fltPow);
+    vm.addTypeFn<VarFlt>(loc, "**", fltPow);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "<", fltLT);
-    vm.addNativeTypeFn<VarFlt>(loc, ">", fltGT);
-    vm.addNativeTypeFn<VarFlt>(loc, "<=", fltLE);
-    vm.addNativeTypeFn<VarFlt>(loc, ">=", fltGE);
-    vm.addNativeTypeFn<VarFlt>(loc, "==", fltEQ);
-    vm.addNativeTypeFn<VarFlt>(loc, "!=", fltNE);
+    vm.addTypeFn<VarFlt>(loc, "<", fltLT);
+    vm.addTypeFn<VarFlt>(loc, ">", fltGT);
+    vm.addTypeFn<VarFlt>(loc, "<=", fltLE);
+    vm.addTypeFn<VarFlt>(loc, ">=", fltGE);
+    vm.addTypeFn<VarFlt>(loc, "==", fltEQ);
+    vm.addTypeFn<VarFlt>(loc, "!=", fltNE);
 
-    vm.addNativeTypeFn<VarFlt>(loc, "round", fltRound);
-    vm.addNativeTypeFn<VarFlt>(loc, "sqrt", fltSqRoot);
+    vm.addTypeFn<VarFlt>(loc, "round", fltRound);
+    vm.addTypeFn<VarFlt>(loc, "sqrt", fltSqRoot);
 
     // string
-    vm.addNativeTypeFn<VarStr>(loc, "+", strAdd);
-    vm.addNativeTypeFn<VarStr>(loc, "*", strMul);
+    vm.addTypeFn<VarStr>(loc, "+", strAdd);
+    vm.addTypeFn<VarStr>(loc, "*", strMul);
 
-    vm.addNativeTypeFn<VarStr>(loc, "+=", strAssnAdd);
-    vm.addNativeTypeFn<VarStr>(loc, "*=", strAssnMul);
+    vm.addTypeFn<VarStr>(loc, "+=", strAssnAdd);
+    vm.addTypeFn<VarStr>(loc, "*=", strAssnMul);
 
-    vm.addNativeTypeFn<VarStr>(loc, "<", strLT);
-    vm.addNativeTypeFn<VarStr>(loc, ">", strGT);
-    vm.addNativeTypeFn<VarStr>(loc, "<=", strLE);
-    vm.addNativeTypeFn<VarStr>(loc, ">=", strGE);
-    vm.addNativeTypeFn<VarStr>(loc, "==", strEQ);
-    vm.addNativeTypeFn<VarStr>(loc, "!=", strNE);
+    vm.addTypeFn<VarStr>(loc, "<", strLT);
+    vm.addTypeFn<VarStr>(loc, ">", strGT);
+    vm.addTypeFn<VarStr>(loc, "<=", strLE);
+    vm.addTypeFn<VarStr>(loc, ">=", strGE);
+    vm.addTypeFn<VarStr>(loc, "==", strEQ);
+    vm.addTypeFn<VarStr>(loc, "!=", strNE);
 
-    vm.addNativeTypeFn<VarStr>(loc, "at", strAt);
-    vm.addNativeTypeFn<VarStr>(loc, "[]", strAt);
+    vm.addTypeFn<VarStr>(loc, "at", strAt);
+    vm.addTypeFn<VarStr>(loc, "[]", strAt);
 
-    vm.addNativeTypeFn<VarStr>(loc, "len", strSize);
-    vm.addNativeTypeFn<VarStr>(loc, "clear", strClear);
-    vm.addNativeTypeFn<VarStr>(loc, "empty", strEmpty);
-    vm.addNativeTypeFn<VarStr>(loc, "front", strFront);
-    vm.addNativeTypeFn<VarStr>(loc, "back", strBack);
-    vm.addNativeTypeFn<VarStr>(loc, "push", strPush);
-    vm.addNativeTypeFn<VarStr>(loc, "pop", strPop);
-    vm.addNativeTypeFn<VarStr>(loc, "isChAt", strIsChAt);
-    vm.addNativeTypeFn<VarStr>(loc, "set", strSetAt);
-    vm.addNativeTypeFn<VarStr>(loc, "insert", strInsert);
-    vm.addNativeTypeFn<VarStr>(loc, "erase", strErase);
-    vm.addNativeTypeFn<VarStr>(loc, "find", strFind);
-    vm.addNativeTypeFn<VarStr>(loc, "rfind", strRFind);
-    vm.addNativeTypeFn<VarStr>(loc, "substrNative", strSubstrNative);
-    vm.addNativeTypeFn<VarStr>(loc, "trim", strTrim);
-    vm.addNativeTypeFn<VarStr>(loc, "lower", strLower);
-    vm.addNativeTypeFn<VarStr>(loc, "upper", strUpper);
-    vm.addNativeTypeFn<VarStr>(loc, "replace", strReplace);
-    vm.addNativeTypeFn<VarStr>(loc, "splitNative", strSplitNative);
-    vm.addNativeTypeFn<VarStr>(loc, "startsWith", strStartsWith);
-    vm.addNativeTypeFn<VarStr>(loc, "endsWith", strEndsWith);
-    vm.addNativeTypeFn<VarStr>(loc, "fmt", strFormat);
-    vm.addNativeTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr);
-    vm.addNativeTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr);
+    vm.addTypeFn<VarStr>(loc, "len", strSize);
+    vm.addTypeFn<VarStr>(loc, "clear", strClear);
+    vm.addTypeFn<VarStr>(loc, "empty", strEmpty);
+    vm.addTypeFn<VarStr>(loc, "front", strFront);
+    vm.addTypeFn<VarStr>(loc, "back", strBack);
+    vm.addTypeFn<VarStr>(loc, "push", strPush);
+    vm.addTypeFn<VarStr>(loc, "pop", strPop);
+    vm.addTypeFn<VarStr>(loc, "isChAt", strIsChAt);
+    vm.addTypeFn<VarStr>(loc, "set", strSetAt);
+    vm.addTypeFn<VarStr>(loc, "insert", strInsert);
+    vm.addTypeFn<VarStr>(loc, "erase", strErase);
+    vm.addTypeFn<VarStr>(loc, "find", strFind);
+    vm.addTypeFn<VarStr>(loc, "rfind", strRFind);
+    vm.addTypeFn<VarStr>(loc, "substrNative", strSubstrNative);
+    vm.addTypeFn<VarStr>(loc, "trim", strTrim);
+    vm.addTypeFn<VarStr>(loc, "lower", strLower);
+    vm.addTypeFn<VarStr>(loc, "upper", strUpper);
+    vm.addTypeFn<VarStr>(loc, "replace", strReplace);
+    vm.addTypeFn<VarStr>(loc, "splitNative", strSplitNative);
+    vm.addTypeFn<VarStr>(loc, "startsWith", strStartsWith);
+    vm.addTypeFn<VarStr>(loc, "endsWith", strEndsWith);
+    vm.addTypeFn<VarStr>(loc, "fmt", strFormat);
+    vm.addTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr);
+    vm.addTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr);
 
-    vm.addNativeTypeFn<VarStr>(loc, "byt", byt);
-    vm.addNativeTypeFn<VarInt>(loc, "chr", chr);
+    vm.addTypeFn<VarStr>(loc, "byt", byt);
+    vm.addTypeFn<VarInt>(loc, "chr", chr);
 
     // vec
 
-    vm.addNativeTypeFn<VarVec>(loc, "len", vecSize);
-    vm.addNativeTypeFn<VarVec>(loc, "capacity", vecCapacity);
-    vm.addNativeTypeFn<VarVec>(loc, "isRef", vecIsRef);
-    vm.addNativeTypeFn<VarVec>(loc, "empty", vecEmpty);
-    vm.addNativeTypeFn<VarVec>(loc, "front", vecFront);
-    vm.addNativeTypeFn<VarVec>(loc, "back", vecBack);
-    vm.addNativeTypeFn<VarVec>(loc, "push", vecPush);
-    vm.addNativeTypeFn<VarVec>(loc, "pop", vecPop);
-    vm.addNativeTypeFn<VarVec>(loc, "clear", vecClear);
-    vm.addNativeTypeFn<VarVec>(loc, "erase", vecErase);
-    vm.addNativeTypeFn<VarVec>(loc, "insert", vecInsert);
-    vm.addNativeTypeFn<VarVec>(loc, "appendNative", vecAppendNative);
-    vm.addNativeTypeFn<VarVec>(loc, "swap", vecSwap);
-    vm.addNativeTypeFn<VarVec>(loc, "reverse", vecReverse);
-    vm.addNativeTypeFn<VarVec>(loc, "set", vecSetAt);
-    vm.addNativeTypeFn<VarVec>(loc, "at", vecAt);
-    vm.addNativeTypeFn<VarVec>(loc, "[]", vecAt);
+    vm.addTypeFn<VarVec>(loc, "len", vecSize);
+    vm.addTypeFn<VarVec>(loc, "capacity", vecCapacity);
+    vm.addTypeFn<VarVec>(loc, "isRef", vecIsRef);
+    vm.addTypeFn<VarVec>(loc, "empty", vecEmpty);
+    vm.addTypeFn<VarVec>(loc, "front", vecFront);
+    vm.addTypeFn<VarVec>(loc, "back", vecBack);
+    vm.addTypeFn<VarVec>(loc, "push", vecPush);
+    vm.addTypeFn<VarVec>(loc, "pop", vecPop);
+    vm.addTypeFn<VarVec>(loc, "clear", vecClear);
+    vm.addTypeFn<VarVec>(loc, "erase", vecErase);
+    vm.addTypeFn<VarVec>(loc, "insert", vecInsert);
+    vm.addTypeFn<VarVec>(loc, "appendNative", vecAppendNative);
+    vm.addTypeFn<VarVec>(loc, "swap", vecSwap);
+    vm.addTypeFn<VarVec>(loc, "reverse", vecReverse);
+    vm.addTypeFn<VarVec>(loc, "set", vecSetAt);
+    vm.addTypeFn<VarVec>(loc, "at", vecAt);
+    vm.addTypeFn<VarVec>(loc, "[]", vecAt);
 
-    vm.addNativeTypeFn<VarVec>(loc, "subNative", vecSubNative);
-    vm.addNativeTypeFn<VarVec>(loc, "sliceNative", vecSliceNative);
+    vm.addTypeFn<VarVec>(loc, "subNative", vecSubNative);
+    vm.addTypeFn<VarVec>(loc, "sliceNative", vecSliceNative);
 
-    vm.addNativeTypeFn<VarVec>(loc, "each", vecEach);
-    vm.addNativeTypeFn<VarVecIterator>(loc, "next", vecIteratorNext);
+    vm.addTypeFn<VarVec>(loc, "each", vecEach);
+    vm.addTypeFn<VarVecIterator>(loc, "next", vecIteratorNext);
 
     // map
 
-    vm.addNativeTypeFn<VarMap>(loc, "len", mapSize);
-    vm.addNativeTypeFn<VarMap>(loc, "isRef", mapIsRef);
-    vm.addNativeTypeFn<VarMap>(loc, "empty", mapEmpty);
-    vm.addNativeTypeFn<VarMap>(loc, "insert", mapInsert);
-    vm.addNativeTypeFn<VarMap>(loc, "erase", mapErase);
-    vm.addNativeTypeFn<VarMap>(loc, "clear", mapClear);
-    vm.addNativeTypeFn<VarMap>(loc, "find", mapFind);
-    vm.addNativeTypeFn<VarMap>(loc, "at", mapAt);
-    vm.addNativeTypeFn<VarMap>(loc, "[]", mapAt);
+    vm.addTypeFn<VarMap>(loc, "len", mapSize);
+    vm.addTypeFn<VarMap>(loc, "isRef", mapIsRef);
+    vm.addTypeFn<VarMap>(loc, "empty", mapEmpty);
+    vm.addTypeFn<VarMap>(loc, "insert", mapInsert);
+    vm.addTypeFn<VarMap>(loc, "erase", mapErase);
+    vm.addTypeFn<VarMap>(loc, "clear", mapClear);
+    vm.addTypeFn<VarMap>(loc, "find", mapFind);
+    vm.addTypeFn<VarMap>(loc, "at", mapAt);
+    vm.addTypeFn<VarMap>(loc, "[]", mapAt);
 
-    vm.addNativeTypeFn<VarMap>(loc, "each", mapEach);
-    vm.addNativeTypeFn<VarMapIterator>(loc, "next", mapIteratorNext);
+    vm.addTypeFn<VarMap>(loc, "each", mapEach);
+    vm.addTypeFn<VarMapIterator>(loc, "next", mapIteratorNext);
 
     // struct
-    vm.addNativeTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName);
-    vm.addNativeTypeFn<VarStructDef>(loc, "len", structDefLen);
+    vm.addTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName);
+    vm.addTypeFn<VarStructDef>(loc, "len", structDefLen);
 
-    vm.addNativeTypeFn<VarStruct>(loc, "str", structToStr);
-    vm.addNativeTypeFn<VarStruct>(loc, "len", structLen);
+    vm.addTypeFn<VarStruct>(loc, "str", structToStr);
+    vm.addTypeFn<VarStruct>(loc, "len", structLen);
 
     // bytebuffer
 
-    vm.addNativeTypeFn<VarBytebuffer>(loc, "len", bytebufferLen);
-    vm.addNativeTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity);
-    vm.addNativeTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
+    vm.addTypeFn<VarBytebuffer>(loc, "len", bytebufferLen);
+    vm.addTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity);
+    vm.addTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
 
     // file
 
-    vm.addNativeTypeFn<VarFile>(loc, "lines", fileLines);
-    vm.addNativeTypeFn<VarFile>(loc, "seek", fileSeek);
-    vm.addNativeTypeFn<VarFile>(loc, "eachLine", fileEachLine);
-    vm.addNativeTypeFn<VarFile>(loc, "readAll", fileReadAll);
-    vm.addNativeTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks);
+    vm.addTypeFn<VarFile>(loc, "lines", fileLines);
+    vm.addTypeFn<VarFile>(loc, "seek", fileSeek);
+    vm.addTypeFn<VarFile>(loc, "eachLine", fileEachLine);
+    vm.addTypeFn<VarFile>(loc, "readAll", fileReadAll);
+    vm.addTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks);
 
-    vm.addNativeTypeFn<VarFileIterator>(loc, "next", fileIteratorNext);
+    vm.addTypeFn<VarFileIterator>(loc, "next", fileIteratorNext);
 
     // module
 
-    vm.addNativeTypeFn<VarModule>(loc, "_path_", moduleGetPath);
+    vm.addTypeFn<VarModule>(loc, "_path_", moduleGetPath);
 
     // constants (for file/filesystem)
     // stdin, stdout, stderr file descriptors
-    mod->addNativeVar(vm, "fsStdin", "", vm.makeVar<VarInt>(loc, STDIN_FILENO));
-    mod->addNativeVar(vm, "fsStdout", "", vm.makeVar<VarInt>(loc, STDOUT_FILENO));
-    mod->addNativeVar(vm, "fsStderr", "", vm.makeVar<VarInt>(loc, STDERR_FILENO));
+    vm.makeLocal<VarInt>(loc, "fsStdin", "", STDIN_FILENO);
+    vm.makeLocal<VarInt>(loc, "fsStdout", "", STDOUT_FILENO);
+    vm.makeLocal<VarInt>(loc, "fsStderr", "", STDERR_FILENO);
     // fs.walkdir()
-    mod->addNativeVar(vm, "FS_WALK_FILES", "", vm.makeVar<VarInt>(loc, WalkEntry::FILES));
-    mod->addNativeVar(vm, "FS_WALK_DIRS", "", vm.makeVar<VarInt>(loc, WalkEntry::DIRS));
-    mod->addNativeVar(vm, "FS_WALK_RECURSE", "", vm.makeVar<VarInt>(loc, WalkEntry::RECURSE));
+    vm.makeLocal<VarInt>(loc, "FS_WALK_FILES", "", WalkEntry::FILES);
+    vm.makeLocal<VarInt>(loc, "FS_WALK_DIRS", "", WalkEntry::DIRS);
+    vm.makeLocal<VarInt>(loc, "FS_WALK_RECURSE", "", WalkEntry::RECURSE);
     // <file>.seek()
-    mod->addNativeVar(vm, "FS_SEEK_SET", "", vm.makeVar<VarInt>(loc, SEEK_SET));
-    mod->addNativeVar(vm, "FS_SEEK_CUR", "", vm.makeVar<VarInt>(loc, SEEK_CUR));
-    mod->addNativeVar(vm, "FS_SEEK_END", "", vm.makeVar<VarInt>(loc, SEEK_END));
+    vm.makeLocal<VarInt>(loc, "FS_SEEK_SET", "", SEEK_SET);
+    vm.makeLocal<VarInt>(loc, "FS_SEEK_CUR", "", SEEK_CUR);
+    vm.makeLocal<VarInt>(loc, "FS_SEEK_END", "", SEEK_END);
     // file descriptor flags
-    mod->addNativeVar(vm, "FS_O_RDONLY", "", vm.makeVar<VarInt>(loc, O_RDONLY));
-    mod->addNativeVar(vm, "FS_O_WRONLY", "", vm.makeVar<VarInt>(loc, O_WRONLY));
-    mod->addNativeVar(vm, "FS_O_RDWR", "", vm.makeVar<VarInt>(loc, O_RDWR));
-    mod->addNativeVar(vm, "FS_O_APPEND", "", vm.makeVar<VarInt>(loc, O_APPEND));
-    mod->addNativeVar(vm, "FS_O_CREAT", "", vm.makeVar<VarInt>(loc, O_CREAT));
+    vm.makeLocal<VarInt>(loc, "FS_O_RDONLY", "", O_RDONLY);
+    vm.makeLocal<VarInt>(loc, "FS_O_WRONLY", "", O_WRONLY);
+    vm.makeLocal<VarInt>(loc, "FS_O_RDWR", "", O_RDWR);
+    vm.makeLocal<VarInt>(loc, "FS_O_APPEND", "", O_APPEND);
+    vm.makeLocal<VarInt>(loc, "FS_O_CREAT", "", O_CREAT);
 #if defined(CORE_OS_LINUX) || defined(CORE_OS_APPLE)
-    mod->addNativeVar(vm, "FS_O_DSYNC", "", vm.makeVar<VarInt>(loc, O_DSYNC));
+    vm.makeLocal<VarInt>(loc, "FS_O_DSYNC", "", O_DSYNC);
 #endif
-    mod->addNativeVar(vm, "FS_O_EXCL", "", vm.makeVar<VarInt>(loc, O_EXCL));
+    vm.makeLocal<VarInt>(loc, "FS_O_EXCL", "", O_EXCL);
 #if !defined(CORE_OS_WINDOWS)
-    mod->addNativeVar(vm, "FS_O_NOCTTY", "", vm.makeVar<VarInt>(loc, O_NOCTTY));
-    mod->addNativeVar(vm, "FS_O_NONBLOCK", "", vm.makeVar<VarInt>(loc, O_NONBLOCK));
-    mod->addNativeVar(vm, "FS_O_SYNC", "", vm.makeVar<VarInt>(loc, O_SYNC));
+    vm.makeLocal<VarInt>(loc, "FS_O_NOCTTY", "", O_NOCTTY);
+    vm.makeLocal<VarInt>(loc, "FS_O_NONBLOCK", "", O_NONBLOCK);
+    vm.makeLocal<VarInt>(loc, "FS_O_SYNC", "", O_SYNC);
 #endif
 #if defined(CORE_OS_LINUX)
-    mod->addNativeVar(vm, "FS_O_RSYNC", "", vm.makeVar<VarInt>(loc, O_RSYNC));
+    vm.makeLocal<VarInt>(loc, "FS_O_RSYNC", "", O_RSYNC);
 #endif
-    mod->addNativeVar(vm, "FS_O_TRUNC", "", vm.makeVar<VarInt>(loc, O_TRUNC));
+    vm.makeLocal<VarInt>(loc, "FS_O_TRUNC", "", O_TRUNC);
 
     return true;
 }

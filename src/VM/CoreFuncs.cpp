@@ -1,5 +1,7 @@
 #include "VM/CoreFuncs.hpp"
 
+#include "VM/VM.hpp"
+
 namespace fer
 {
 
@@ -41,9 +43,7 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
     return true;
 }
 
-FERAL_FUNC(loadFile, 1, false,
-           "  fn(file) -> Module\n"
-           "Imports a feral script `file` and returns the imported Module.")
+FERAL_FUNC_DEF(loadFile)
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -59,9 +59,7 @@ FERAL_FUNC(loadFile, 1, false,
     return vm.getModule(file);
 }
 
-FERAL_FUNC(loadLibrary, 1, false,
-           "  fn(file) -> Nil\n"
-           "Loads a native (C/C++) object `file`.")
+FERAL_FUNC_DEF(loadLibrary)
 {
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
@@ -73,12 +71,6 @@ FERAL_FUNC(loadLibrary, 1, false,
     }
     if(dll->is<VarDll>()) vm.addGlobal(file, "", dll);
     return vm.getNil();
-}
-
-void setupCoreFuncs(VirtualMachine &vm, ModuleLoc loc)
-{
-    vm.addNativeFn(loc, "import", loadFile);
-    vm.addNativeFn(loc, "loadlib", loadLibrary);
 }
 
 FERAL_FUNC_DEF(basicModuleFinder)

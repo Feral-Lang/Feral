@@ -187,23 +187,21 @@ FERAL_FUNC(threadGetRes, 0, false,
 
 INIT_DLL(Thread)
 {
-    VarModule *mod = vm.getCurrModule();
-
-    vm.registerType<VarThread>(
+    vm.addLocalType<VarThread>(
         loc, "Thread", "Thread type - building block for multithreading / concurrent programming.");
 
-    mod->addNativeFn(vm, "getConcurrency", getConcurrency);
-    mod->addNativeFn(vm, "getCurrentId", getCurrentThreadId);
-    mod->addNativeFn(vm, "getCurrentName", getCurrentThreadName);
-    mod->addNativeFn(vm, "yield", yieldCurrentThread);
+    vm.addLocal(loc, "getConcurrency", getConcurrency);
+    vm.addLocal(loc, "getCurrentId", getCurrentThreadId);
+    vm.addLocal(loc, "getCurrentName", getCurrentThreadName);
+    vm.addLocal(loc, "yield", yieldCurrentThread);
 
-    mod->addNativeFn(vm, "new", threadNew);
+    vm.addLocal(loc, "new", threadNew);
 
-    vm.addNativeTypeFn<VarThread>(loc, "getId", threadGetId);
-    vm.addNativeTypeFn<VarThread>(loc, "getName", threadGetName);
-    vm.addNativeTypeFn<VarThread>(loc, "isDone", threadIsDone);
-    vm.addNativeTypeFn<VarThread>(loc, "join", threadJoin);
-    vm.addNativeTypeFn<VarThread>(loc, "getResult", threadGetRes);
+    vm.addTypeFn<VarThread>(loc, "getId", threadGetId);
+    vm.addTypeFn<VarThread>(loc, "getName", threadGetName);
+    vm.addTypeFn<VarThread>(loc, "isDone", threadIsDone);
+    vm.addTypeFn<VarThread>(loc, "join", threadJoin);
+    vm.addTypeFn<VarThread>(loc, "getResult", threadGetRes);
     return true;
 }
 

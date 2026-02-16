@@ -174,17 +174,15 @@ FERAL_FUNC(statIsSock, 1, false,
 
 INIT_DLL(Stat)
 {
-    VarModule *mod = vm.getCurrModule();
-
-    mod->addNativeFn(vm, "statNative", statNative);
-    mod->addNativeFn(vm, "isRegNative", statIsReg);
-    mod->addNativeFn(vm, "isDirNative", statIsDir);
-    mod->addNativeFn(vm, "isChrNative", statIsChr);
+    vm.addLocal(loc, "statNative", statNative);
+    vm.addLocal(loc, "isRegNative", statIsReg);
+    vm.addLocal(loc, "isDirNative", statIsDir);
+    vm.addLocal(loc, "isChrNative", statIsChr);
 #if !defined(CORE_OS_WINDOWS)
-    mod->addNativeFn(vm, "isBlkNative", statIsBlk);
-    mod->addNativeFn(vm, "isFifoNative", statIsFifo);
-    mod->addNativeFn(vm, "isLnkNative", statIsLnk);
-    mod->addNativeFn(vm, "isSockNative", statIsSock);
+    vm.addLocal(loc, "isBlkNative", statIsBlk);
+    vm.addLocal(loc, "isFifoNative", statIsFifo);
+    vm.addLocal(loc, "isLnkNative", statIsLnk);
+    vm.addLocal(loc, "isSockNative", statIsSock);
 #endif
     return true;
 }

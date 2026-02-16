@@ -107,26 +107,24 @@ FERAL_FUNC(lockguardNew, 1, false,
 
 INIT_DLL(Mutex)
 {
-    VarModule *mod = vm.getCurrModule();
-
-    vm.registerType<VarMutex>(loc, "Mutex", "Mutex to use for multithreading.");
-    vm.registerType<VarRecursiveMutex>(
+    vm.addLocalType<VarMutex>(loc, "Mutex", "Mutex to use for multithreading.");
+    vm.addLocalType<VarRecursiveMutex>(
         loc, "RecursiveMutex",
         "Unlike Mutex, this allows one thread to lock it over and over again.");
-    vm.registerType<VarLockGuard>(
+    vm.addLocalType<VarLockGuard>(
         loc, "LockGuard",
         "An object that blocks a mutex and releases it when the object goes out of scope.");
 
-    mod->addNativeFn(vm, "new", mutexNew);
-    mod->addNativeFn(vm, "newRecursive", recursiveMutexNew);
-    mod->addNativeFn(vm, "newGuard", lockguardNew);
+    vm.addLocal(loc, "new", mutexNew);
+    vm.addLocal(loc, "newRecursive", recursiveMutexNew);
+    vm.addLocal(loc, "newGuard", lockguardNew);
 
-    vm.addNativeTypeFn<VarMutex>(loc, "lock", mutexLock);
-    vm.addNativeTypeFn<VarMutex>(loc, "tryLock", mutexTryLock);
-    vm.addNativeTypeFn<VarMutex>(loc, "unlock", mutexUnlock);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "lock", mutexLock);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "tryLock", mutexTryLock);
-    vm.addNativeTypeFn<VarRecursiveMutex>(loc, "unlock", mutexUnlock);
+    vm.addTypeFn<VarMutex>(loc, "lock", mutexLock);
+    vm.addTypeFn<VarMutex>(loc, "tryLock", mutexTryLock);
+    vm.addTypeFn<VarMutex>(loc, "unlock", mutexUnlock);
+    vm.addTypeFn<VarRecursiveMutex>(loc, "lock", mutexLock);
+    vm.addTypeFn<VarRecursiveMutex>(loc, "tryLock", mutexTryLock);
+    vm.addTypeFn<VarRecursiveMutex>(loc, "unlock", mutexUnlock);
     return true;
 }
 

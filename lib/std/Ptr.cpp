@@ -53,16 +53,14 @@ FERAL_FUNC(ptrGet, 0, false,
 
 INIT_DLL(Ptr)
 {
-    VarModule *mod = vm.getCurrModule();
-
-    vm.registerType<VarPtr>(loc, "Ptr",
+    vm.addLocalType<VarPtr>(loc, "Ptr",
                             "A reference container type which can contain and get other data.");
 
-    mod->addNativeFn(vm, "new", ptrNewNative);
+    vm.addLocal(loc, "new", ptrNewNative);
 
-    vm.addNativeTypeFn<VarPtr>(loc, "_copy_", ptrCopy);
-    vm.addNativeTypeFn<VarPtr>(loc, "set", ptrSet);
-    vm.addNativeTypeFn<VarPtr>(loc, "get", ptrGet);
+    vm.addTypeFn<VarPtr>(loc, "_copy_", ptrCopy);
+    vm.addTypeFn<VarPtr>(loc, "set", ptrSet);
+    vm.addTypeFn<VarPtr>(loc, "get", ptrGet);
     return true;
 }
 

@@ -494,10 +494,6 @@ public:
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     size_t getAttrCount() override;
 
-    void addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj);
-    void addNativeVar(VirtualMachine &vm, StringRef name, StringRef doc, Var *val,
-                      bool iref = true);
-
     inline StringRef getPath() { return path; }
     inline const Bytecode &getBytecode() { return bc; }
     inline ModuleId getModuleId() { return moduleId; }

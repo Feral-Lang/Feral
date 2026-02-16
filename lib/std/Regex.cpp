@@ -87,41 +87,35 @@ FERAL_FUNC(regexMatch, 3, false,
 
 INIT_DLL(Regex)
 {
-    VarModule *mod = vm.getCurrModule();
+    vm.addLocalType<VarRegex>(loc, "Regex", "The regex type for performing regex matching.");
 
-    vm.registerType<VarRegex>(loc, "Regex", "The regex type for performing regex matching.");
+    vm.addTypeFn<VarRegex>(loc, "matchNative", regexMatch);
 
-    vm.addNativeTypeFn<VarRegex>(loc, "matchNative", regexMatch);
+    vm.addLocal(loc, "newNative", regexNew);
 
-    mod->addNativeFn(vm, "newNative", regexNew);
-
-    mod->addNativeVar(vm, "icase", "Ignore case.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::icase));
-    mod->addNativeVar(vm, "nosubs",
-                      "When a regular expression is matched against a character "
-                      "container sequence, don't store sub-expression matches.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::nosubs));
-    mod->addNativeVar(vm, "optimize", "Optimize regex for matching speed.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::optimize));
-    mod->addNativeVar(vm, "collate", "Make the character ranges like [a-b] locale sensitive.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::collate));
-    mod->addNativeVar(vm, "ecmascript", "Use the ECMAScript regex format.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::ECMAScript));
-    mod->addNativeVar(vm, "basic", "Use the basic regex format.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::basic));
-    mod->addNativeVar(vm, "extended", "Use the extended regex format.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::extended));
-    mod->addNativeVar(vm, "awk", "Use `awk` grammer.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::awk));
-    mod->addNativeVar(vm, "grep", "Use `grep` grammer.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::grep));
-    mod->addNativeVar(vm, "egrep", "Use `grep -E` grammer - consider newlines as whitespace.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::egrep));
+    vm.makeLocal<VarInt>(loc, "icase", "Ignore case.", std::regex_constants::icase);
+    vm.makeLocal<VarInt>(loc, "nosubs",
+                         "When a regular expression is matched against a character "
+                         "container sequence, don't store sub-expression matches.",
+                         std::regex_constants::nosubs);
+    vm.makeLocal<VarInt>(loc, "optimize", "Optimize regex for matching speed.",
+                         std::regex_constants::optimize);
+    vm.makeLocal<VarInt>(loc, "collate", "Make the character ranges like [a-b] locale sensitive.",
+                         std::regex_constants::collate);
+    vm.makeLocal<VarInt>(loc, "ecmascript", "Use the ECMAScript regex format.",
+                         std::regex_constants::ECMAScript);
+    vm.makeLocal<VarInt>(loc, "basic", "Use the basic regex format.", std::regex_constants::basic);
+    vm.makeLocal<VarInt>(loc, "extended", "Use the extended regex format.",
+                         std::regex_constants::extended);
+    vm.makeLocal<VarInt>(loc, "awk", "Use `awk` grammer.", std::regex_constants::awk);
+    vm.makeLocal<VarInt>(loc, "grep", "Use `grep` grammer.", std::regex_constants::grep);
+    vm.makeLocal<VarInt>(loc, "egrep", "Use `grep -E` grammer - consider newlines as whitespace.",
+                         std::regex_constants::egrep);
     // Not sure why but multiline is undefined on Windows MSVC at the moment.
 #if !defined(CORE_OS_WINDOWS) && (__cplusplus >= 201703L || !defined __STRICT_ANSI__)
-    mod->addNativeVar(vm, "multiline",
-                      "Makes `^` and `$` work on each line and not the whole input.",
-                      vm.makeVar<VarInt>(loc, std::regex_constants::multiline));
+    vm.makeLocal<VarInt>(loc, "multiline",
+                         "Makes `^` and `$` work on each line and not the whole input.",
+                         std::regex_constants::multiline);
 #endif
     return true;
 }
