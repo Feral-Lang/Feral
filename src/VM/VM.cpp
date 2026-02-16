@@ -510,7 +510,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
         return nullptr;
     }
     if(ec) return nullptr;
-    return execstack->empty() ? incVarRef(getNil()) : popExecStack(false);
+    return execstack->empty() ? incVarRef(getNil()) : execstack->pop(false);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
