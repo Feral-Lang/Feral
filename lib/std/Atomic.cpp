@@ -104,20 +104,18 @@ FERAL_FUNC(atomicIntGet, 0, false,
 
 INIT_DLL(Atomic)
 {
-    VarModule *mod = vm.getCurrModule();
+    vm.addLocalType<VarAtomicBool>(loc, "AtomicBool", "An atomic boolean.");
+    vm.addLocalType<VarAtomicInt>(loc, "AtomicInt", "An atomic integer.");
 
-    vm.registerType<VarAtomicBool>(loc, "AtomicBool", "An atomic boolean.");
-    vm.registerType<VarAtomicInt>(loc, "AtomicInt", "An atomic integer.");
+    vm.addLocal(loc, "newBool", atomicBoolNew);
+    vm.addLocal(loc, "newInt", atomicIntNew);
 
-    mod->addNativeFn(vm, "newBool", atomicBoolNew);
-    mod->addNativeFn(vm, "newInt", atomicIntNew);
-
-    vm.addNativeTypeFn<VarAtomicBool>(loc, "_copy_", atomicBoolCopy);
-    vm.addNativeTypeFn<VarAtomicBool>(loc, "set", atomicBoolSet);
-    vm.addNativeTypeFn<VarAtomicBool>(loc, "get", atomicBoolGet);
-    vm.addNativeTypeFn<VarAtomicInt>(loc, "_copy_", atomicIntCopy);
-    vm.addNativeTypeFn<VarAtomicInt>(loc, "set", atomicIntSet);
-    vm.addNativeTypeFn<VarAtomicInt>(loc, "get", atomicIntGet);
+    vm.addTypeFn<VarAtomicBool>(loc, "_copy_", atomicBoolCopy);
+    vm.addTypeFn<VarAtomicBool>(loc, "set", atomicBoolSet);
+    vm.addTypeFn<VarAtomicBool>(loc, "get", atomicBoolGet);
+    vm.addTypeFn<VarAtomicInt>(loc, "_copy_", atomicIntCopy);
+    vm.addTypeFn<VarAtomicInt>(loc, "set", atomicIntSet);
+    vm.addTypeFn<VarAtomicInt>(loc, "get", atomicIntGet);
     return true;
 }
 

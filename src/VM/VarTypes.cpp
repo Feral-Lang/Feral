@@ -490,20 +490,6 @@ size_t VarModule::getAttrCount()
     return frame->size();
 }
 
-void VarModule::addNativeFn(VirtualMachine &vm, StringRef name, const FeralNativeFnDesc &fnObj)
-{
-    VarFn *res = vm.makeVar<VarFn>(getLoc(), moduleId, "", fnObj.isVariadic ? "." : "",
-                                   fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
-    if(!fnObj.doc.empty()) res->setDoc(vm, getLoc(), fnObj.doc);
-    for(size_t i = 0; i < fnObj.argCount; ++i) res->pushParam("");
-    varStack->setAttr(vm, name, res, true);
-}
-void VarModule::addNativeVar(VirtualMachine &vm, StringRef name, StringRef doc, Var *val, bool iref)
-{
-    if(!doc.empty()) val->setDoc(vm, getLoc(), doc);
-    varStack->setAttr(vm, name, val, iref);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// VarStack ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////

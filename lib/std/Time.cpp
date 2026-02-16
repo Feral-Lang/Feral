@@ -45,9 +45,8 @@ FERAL_FUNC(formatTime, 2, false,
 
 INIT_DLL(Time)
 {
-    VarModule *mod = vm.getCurrModule();
-    mod->addNativeFn(vm, "systemClockNowNative", sysClockNow);
-    mod->addNativeFn(vm, "formatNative", formatTime);
+    vm.addLocal(loc, "systemClockNowNative", sysClockNow);
+    vm.addLocal(loc, "formatNative", formatTime);
     return true;
 }
 

@@ -121,13 +121,16 @@ public:
     void pushModule(ModuleId moduleId);
     void popModule();
 
+    VarFn *makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj);
+
     void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true);
+    void addGlobal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
     Var *getGlobal(StringRef name);
 
-    void addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
-    VarFn *genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
+    void addLocal(StringRef name, StringRef doc, Var *val, bool iref = true);
+    void addLocal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
 
-    void addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref);
+    void addTypeFn(size_t _typeid, StringRef name, Var *callable, bool iref);
     Var *getTypeFn(Var *var, StringRef name);
 
     void setTypeName(size_t _typeid, StringRef name);
@@ -209,6 +212,26 @@ public:
     }
 
     template<typename T, typename... Args>
+    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+    makeGlobal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    {
+        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
+        if(!res) return false;
+        addGlobal(name, doc, res);
+        return true;
+    }
+
+    template<typename T, typename... Args>
+    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
+    makeLocal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    {
+        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
+        if(!res) return false;
+        addLocal(name, doc, res);
+        return true;
+    }
+
+    template<typename T, typename... Args>
     typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(ModuleLoc loc,
                                                                                Args &&...args)
     {
@@ -244,25 +267,31 @@ public:
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    registerType(ModuleLoc loc, String name, StringRef doc, VarModule *module = nullptr)
+    addGlobalType(ModuleLoc loc, String name, StringRef doc)
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
         tyvar->setConst();
         name += "Ty";
-        if(!module) addGlobal(name, doc, tyvar);
-        else module->addNativeVar(*this, name, doc, tyvar);
+        return addGlobal(name, doc, tyvar);
     }
 
     template<typename T>
     typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addNativeTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+    addLocalType(ModuleLoc loc, String name, StringRef doc)
     {
-        VarFn *f =
-            makeVar<VarFn>(loc, modulestack.back()->getModuleId(), "", fnObj.isVariadic ? "." : "",
-                           fnObj.argCount, 0, FnBody{.native = fnObj.fn}, true);
-        f->setDoc(*this, loc, fnObj.doc);
-        for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
+        setTypeName(typeID<T>(), name);
+        VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
+        tyvar->setConst();
+        name += "Ty";
+        return addLocal(name, doc, tyvar);
+    }
+
+    template<typename T>
+    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
+    addTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+    {
+        VarFn *f = makeFn(loc, fnObj);
         addTypeFn(typeID<T>(), name, f, true);
     }
 

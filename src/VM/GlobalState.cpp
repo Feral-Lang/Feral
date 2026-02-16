@@ -5,6 +5,7 @@
 #include "FS.hpp"
 #include "Utils.hpp"
 #include "VM/CoreFuncs.hpp"
+#include "VM/VM.hpp"
 
 #if defined(CORE_OS_WINDOWS)
 #include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
@@ -43,7 +44,7 @@ bool GlobalState::init(VirtualMachine &vm)
 
     prelude = "prelude/prelude";
 
-    basicErrHandler = vm.incVarRef(vm.genNativeFn({}, "basicErrorHandler", basicErrorHandler));
+    basicErrHandler = vm.incVarRef(vm.makeFn({}, basicErrorHandler));
     globals         = vm.incVarRef(vm.makeVar<VarMap>({}, 0, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
@@ -104,26 +105,26 @@ bool GlobalState::init(VirtualMachine &vm)
     for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
 #endif
 
-    vm.registerType<VarAll>({}, "All", "Base type for all types.");
-    vm.registerType<VarNil>({}, "Nil", "Builtin type.");
-    vm.registerType<VarBool>({}, "Bool", "Builtin type.");
-    vm.registerType<VarInt>({}, "Int", "Builtin type.");
-    vm.registerType<VarFlt>({}, "Flt", "Builtin type.");
-    vm.registerType<VarStr>({}, "Str", "Builtin type.");
-    vm.registerType<VarVec>({}, "Vec", "Builtin type.");
-    vm.registerType<VarMap>({}, "Map", "Builtin type.");
-    vm.registerType<VarFn>({}, "Func", "Builtin type.");
-    vm.registerType<VarModule>({}, "Module", "Builtin type.");
-    vm.registerType<VarTypeID>({}, "TypeID", "Builtin type.");
-    vm.registerType<VarStructDef>({}, "StructDef", "Builtin type.");
-    vm.registerType<VarStruct>({}, "Struct", "Builtin type.");
-    vm.registerType<VarFailure>({}, "Failure", "Builtin type.");
-    vm.registerType<VarFile>({}, "File", "Builtin type.");
-    vm.registerType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
-    vm.registerType<VarIntIterator>({}, "IntIterator", "Builtin type.");
-    vm.registerType<VarVecIterator>({}, "VecIterator", "Builtin type.");
-    vm.registerType<VarMapIterator>({}, "MapIterator", "Builtin type.");
-    vm.registerType<VarFileIterator>({}, "FileIterator", "Builtin type.");
+    vm.addGlobalType<VarAll>({}, "All", "Base type for all types.");
+    vm.addGlobalType<VarNil>({}, "Nil", "Builtin type.");
+    vm.addGlobalType<VarBool>({}, "Bool", "Builtin type.");
+    vm.addGlobalType<VarInt>({}, "Int", "Builtin type.");
+    vm.addGlobalType<VarFlt>({}, "Flt", "Builtin type.");
+    vm.addGlobalType<VarStr>({}, "Str", "Builtin type.");
+    vm.addGlobalType<VarVec>({}, "Vec", "Builtin type.");
+    vm.addGlobalType<VarMap>({}, "Map", "Builtin type.");
+    vm.addGlobalType<VarFn>({}, "Func", "Builtin type.");
+    vm.addGlobalType<VarModule>({}, "Module", "Builtin type.");
+    vm.addGlobalType<VarTypeID>({}, "TypeID", "Builtin type.");
+    vm.addGlobalType<VarStructDef>({}, "StructDef", "Builtin type.");
+    vm.addGlobalType<VarStruct>({}, "Struct", "Builtin type.");
+    vm.addGlobalType<VarFailure>({}, "Failure", "Builtin type.");
+    vm.addGlobalType<VarFile>({}, "File", "Builtin type.");
+    vm.addGlobalType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
+    vm.addGlobalType<VarIntIterator>({}, "IntIterator", "Builtin type.");
+    vm.addGlobalType<VarVecIterator>({}, "VecIterator", "Builtin type.");
+    vm.addGlobalType<VarMapIterator>({}, "MapIterator", "Builtin type.");
+    vm.addGlobalType<VarFileIterator>({}, "FileIterator", "Builtin type.");
 
     return true;
 }

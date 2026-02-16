@@ -116,11 +116,14 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
 
 bool VirtualMachine::loadPrelude()
 {
-    VarFn *bmfFn = genNativeFn({}, "basicModuleFinder", basicModuleFinder);
+    addGlobal({}, "import", loadFile);
+    addGlobal({}, "loadlib", loadLibrary);
+
+    VarFn *bmfFn = makeFn({}, basicModuleFinder);
     gs->moduleFinders->push(*this, bmfFn, true);
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
-    setupCoreFuncs(*this, {});
+
     if(!findImportIn(gs->moduleDirs, gs->prelude, fs::getCWD())) {
         err.fail({}, "Failed to find prelude: ", gs->prelude);
         return 1;
@@ -207,28 +210,39 @@ void VirtualMachine::pushModule(ModuleId moduleId)
 }
 void VirtualMachine::popModule() { modulestack.pop_back(); }
 
-void VirtualMachine::addGlobal(StringRef name, StringRef doc, Var *val, bool iref)
-{
-    if(gs->globals->existsAttr(name)) return;
-    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
-    gs->globals->setAttr(*this, name, val, iref);
-}
-Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->getAttr(name); }
-
-void VirtualMachine::addNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
-{
-    addGlobal(name, "", genNativeFn(loc, name, fnObj));
-}
-VarFn *VirtualMachine::genNativeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
 {
     VarFn *f = makeVar<VarFn>(loc, -1, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
                               FnBody{.native = fnObj.fn}, true);
+    if(!f) return nullptr;
     if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
     for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
     return f;
 }
 
-void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool iref)
+void VirtualMachine::addGlobal(StringRef name, StringRef doc, Var *val, bool iref)
+{
+    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
+    gs->globals->setAttr(*this, name, val, iref);
+}
+void VirtualMachine::addGlobal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+{
+    addGlobal(name, "", makeFn(loc, fnObj));
+}
+Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->getAttr(name); }
+
+void VirtualMachine::addLocal(StringRef name, StringRef doc, Var *val, bool iref)
+{
+    VarModule *mod = getCurrModule();
+    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
+    mod->setAttr(*this, name, val, iref);
+}
+void VirtualMachine::addLocal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+{
+    addLocal(name, "", makeFn(loc, fnObj));
+}
+
+void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *callable, bool iref)
 {
     auto loc  = gs->typefns.find(_typeid);
     VarMap *f = nullptr;
@@ -237,7 +251,7 @@ void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *fn, bool ire
     } else {
         f = loc->second;
     }
-    f->setAttr(*this, name, fn, iref);
+    f->setAttr(*this, name, callable, iref);
 }
 Var *VirtualMachine::getTypeFn(Var *var, StringRef name)
 {

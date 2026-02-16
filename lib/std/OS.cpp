@@ -315,22 +315,20 @@ FERAL_FUNC(
 
 INIT_DLL(OS)
 {
-    VarModule *mod = vm.getCurrModule();
+    vm.addLocal(loc, "sleep", sleepCustom);
 
-    mod->addNativeFn(vm, "sleep", sleepCustom);
+    vm.addLocal(loc, "getEnv", getEnv);
+    vm.addLocal(loc, "setEnvNative", setEnv);
 
-    mod->addNativeFn(vm, "getEnv", getEnv);
-    mod->addNativeFn(vm, "setEnvNative", setEnv);
+    vm.addLocal(loc, "exec", execCustom);
+    vm.addLocal(loc, "system", systemCustom);
+    vm.addLocal(loc, "strErr", osStrErr);
 
-    mod->addNativeFn(vm, "exec", execCustom);
-    mod->addNativeFn(vm, "system", systemCustom);
-    mod->addNativeFn(vm, "strErr", osStrErr);
-
-    mod->addNativeFn(vm, "getCWD", osGetCWD);
-    mod->addNativeFn(vm, "setCWD", osSetCWD);
+    vm.addLocal(loc, "getCWD", osGetCWD);
+    vm.addLocal(loc, "setCWD", osSetCWD);
 
 #if !defined(CORE_OS_WINDOWS)
-    mod->addNativeFn(vm, "chmodNative", osChmod);
+    vm.addLocal(loc, "chmodNative", osChmod);
 #endif
 
     return true;

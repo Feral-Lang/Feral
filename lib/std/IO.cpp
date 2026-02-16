@@ -295,32 +295,27 @@ FERAL_FUNC(readChar, 1, false,
 
 INIT_DLL(IO)
 {
-    VarModule *mod = vm.getCurrModule();
-
-    mod->addNativeFn(vm, "print", print);
-    mod->addNativeFn(vm, "println", println);
-    mod->addNativeFn(vm, "cprint", cprint);
-    mod->addNativeFn(vm, "cprintln", cprintln);
-    mod->addNativeFn(vm, "eprint", eprint);
-    mod->addNativeFn(vm, "eprintln", eprintln);
-    mod->addNativeFn(vm, "ecprint", ecprint);
-    mod->addNativeFn(vm, "ecprintln", ecprintln);
-    mod->addNativeFn(vm, "fprint", fprint);
-    mod->addNativeFn(vm, "fprintln", fprintln);
-    mod->addNativeFn(vm, "fcprint", fcprint);
-    mod->addNativeFn(vm, "fcprintln", fcprintln);
-    mod->addNativeFn(vm, "scan", scan);
-    mod->addNativeFn(vm, "scanEOF", scanEOF);
-    mod->addNativeFn(vm, "fflush", fflush);
-    mod->addNativeFn(vm, "readChar", readChar);
+    vm.addLocal(loc, "print", print);
+    vm.addLocal(loc, "println", println);
+    vm.addLocal(loc, "cprint", cprint);
+    vm.addLocal(loc, "cprintln", cprintln);
+    vm.addLocal(loc, "eprint", eprint);
+    vm.addLocal(loc, "eprintln", eprintln);
+    vm.addLocal(loc, "ecprint", ecprint);
+    vm.addLocal(loc, "ecprintln", ecprintln);
+    vm.addLocal(loc, "fprint", fprint);
+    vm.addLocal(loc, "fprintln", fprintln);
+    vm.addLocal(loc, "fcprint", fcprint);
+    vm.addLocal(loc, "fcprintln", fcprintln);
+    vm.addLocal(loc, "scan", scan);
+    vm.addLocal(loc, "scanEOF", scanEOF);
+    vm.addLocal(loc, "fflush", fflush);
+    vm.addLocal(loc, "readChar", readChar);
 
     // stdin, stdout, and stderr cannot be owned by a VarFile
-    mod->addNativeVar(vm, "stdin", "The standard input stream.",
-                      vm.makeVar<VarFile>(loc, stdin, "r", false));
-    mod->addNativeVar(vm, "stdout", "The standard output stream.",
-                      vm.makeVar<VarFile>(loc, stdout, "w", false));
-    mod->addNativeVar(vm, "stderr", "The standard error stream.",
-                      vm.makeVar<VarFile>(loc, stderr, "w", false));
+    vm.makeLocal<VarFile>(loc, "stdin", "The standard input stream.", stdin, "r", false);
+    vm.makeLocal<VarFile>(loc, "stdout", "The standard output stream.", stdout, "w", false);
+    vm.makeLocal<VarFile>(loc, "stderr", "The standard error stream.", stderr, "w", false);
     return true;
 }
 
