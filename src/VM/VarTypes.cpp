@@ -440,7 +440,6 @@ void VarFn::onDestroy(VirtualMachine &vm)
 Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                    const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
-    MemoryManager &mem = vm.getMemoryManager();
     // -1 for self
     if(args.size() - 1 < params.size() - assnParams.size() ||
        (args.size() - 1 > params.size() && varArg.empty()))
@@ -652,7 +651,6 @@ void VarStructDef::onDestroy(VirtualMachine &vm)
 Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
                           const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk)
 {
-    MemoryManager &mem = vm.getMemoryManager();
     for(auto &aa : assnArgs) {
         if(std::find(attrorder.begin(), attrorder.end(), aa.first) == attrorder.end()) {
             vm.fail(aa.second.val->getLoc(), "no attribute named '", aa.first,
@@ -747,8 +745,6 @@ void VarStruct::onDestroy(VirtualMachine &vm)
 bool VarStruct::onSet(VirtualMachine &vm, Var *from)
 {
     VarStruct *st = as<VarStruct>(from);
-
-    MemoryManager &mem = vm.getMemoryManager();
 
     for(auto &attr : attrs) { vm.decVarRef(attr.second); }
     for(auto &attr : st->attrs) {

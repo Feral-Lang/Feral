@@ -91,9 +91,8 @@ FERAL_FUNC(mapInsert, 2, false,
            "Stores the `value` at `key` in `var` and returns `var`.\n"
            "The key is always converted into a string using its `.str()` method.")
 {
-    MemoryManager &mem = vm.getMemoryManager();
-    VarMap *map        = as<VarMap>(args[0]);
-    Var *v             = nullptr;
+    VarMap *map = as<VarMap>(args[0]);
+    Var *v      = nullptr;
     Array<Var *, 1> tmp{args[1]};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
     String key = std::move(as<VarStr>(v)->getVal());

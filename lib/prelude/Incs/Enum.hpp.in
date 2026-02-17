@@ -7,8 +7,7 @@ FERAL_FUNC(enumNew, 1, true,
            " fn(values...) -> Enum\n"
            "Creates and returns an Enum using the given values")
 {
-    MemoryManager &mem = vm.getMemoryManager();
-    VarStruct *res     = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assnArgs.size() - 1);
+    VarStruct *res = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assnArgs.size() - 1);
 
     for(size_t i = 1; i < args.size(); ++i) {
         auto &a = args[i];
