@@ -92,6 +92,7 @@ class VirtualMachine : public IAllocated
     bool recurseExceeded;
     bool exitCalled;
     bool ownsGlobalState;
+    bool ready; // if not ready, _init_() and _deinit_() won't be called
 
     friend class core::MemoryManager;
 
@@ -172,6 +173,7 @@ public:
     inline VarVars *getVars() { return vars; }
     inline VarModule *getCurrModule() { return modulestack.back(); }
     inline bool isExitCalled() { return exitCalled; }
+    inline bool isReady() { return ready; }
     inline void setExitCalled(bool called) { exitCalled = called; }
     inline void setExitCode(int code) { exitcode = code; }
 
@@ -235,6 +237,7 @@ public:
     {
         T *res = new(gs->mem.allocRaw(sizeof(T), alignof(T))) T(loc, std::forward<Args>(args)...);
         res->create(*this);
+        res->init(*this);
         return res;
     }
     template<typename T>
@@ -250,6 +253,7 @@ public:
     {
         if(var == nullptr) return nullptr;
         if(var->dref() <= 0 && del) {
+            var->deinit(*this);
             var->destroy(*this);
             gs->mem.freeDeinit(var);
             var = nullptr;
@@ -327,6 +331,7 @@ public:
 
     template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
     {
+        ready = false;
         return failstack->fail(loc, recurseCount, std::forward<Args>(args)...);
     }
 };

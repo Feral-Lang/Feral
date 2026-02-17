@@ -10,6 +10,7 @@ namespace VarInfo
 enum
 {
     // main attributes
+    BASIC      = 1 << 0, // no _init_/_deinit_ functions
     CALLABLE   = 1 << 1,
     ATTR_BASED = 1 << 2,
 
@@ -52,6 +53,8 @@ class Var : public IAllocated
     // Proxy functions to use the functions to be implemented by the Var's.
     void create(VirtualMachine &vm);
     void destroy(VirtualMachine &vm);
+    void init(VirtualMachine &vm);
+    void deinit(VirtualMachine &vm);
     // Copy this variable.
     // By default - if a custom `copy()` member function is not implemented,
     // it just increments ref and returns `this`.
@@ -114,6 +117,7 @@ public:
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 
+    inline bool isBasic() const { return info & VarInfo::BASIC; }
     inline bool isCallable() const { return info & VarInfo::CALLABLE; }
     inline bool isAttrBased() const { return info & VarInfo::ATTR_BASED; }
     inline bool isConst() const { return info & VarInfo::CONST; }
