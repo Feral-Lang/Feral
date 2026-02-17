@@ -95,15 +95,18 @@ FERAL_FUNC(mapInsert, 2, false,
     Var *v      = nullptr;
     Array<Var *, 1> tmp{args[1]};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-    String key = std::move(as<VarStr>(v)->getVal());
-    vm.decVarRef(v);
+    StringRef key = as<VarStr>(v)->getVal();
     if(map->isRefMap()) {
         map->setAttr(vm, key, args[2], true);
     } else {
         Var *val = vm.copyVar(loc, args[2]);
-        if(!val) { return nullptr; }
+        if(!val) {
+            vm.decVarRef(v);
+            return nullptr;
+        }
         map->setAttr(vm, key, val, false);
     }
+    vm.decVarRef(v);
     return args[0];
 }
 
