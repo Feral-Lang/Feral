@@ -2,6 +2,15 @@ let assert = import('std/assert');
 
 let SomeTy = struct(a = 10, b = 20);
 
+let initCtr = 0;
+
+let _init_ in SomeTy = fn() {
+    ++initCtr;
+};
+let _deinit_ in SomeTy = fn() {
+    --initCtr;
+};
+
 let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
     assert.eq(self.a, 100);
     assert.eq(self.b, 200);
@@ -29,12 +38,16 @@ let func3 in SomeTy = fn(.kw) {
     self.func2(1, kw...);
 };
 
-let test = SomeTy(a = 100, b = 200);
+{
+    let test = SomeTy(a = 100, b = 200);
+    assert.eq(initCtr, 1);
 
-test.func1(1, a = 10, b = 20, c = 30, 2, 3, 4);
-test.func2(1, d = 10, e = 20);
-test.func3(a = 10, b = 20, c = 30, d = 10, e = 20);
-test.func3(a = 10, b = 20, c = 30, d = 10, e = 15, e = 20);
+    test.func1(1, a = 10, b = 20, c = 30, 2, 3, 4);
+    test.func2(1, d = 10, e = 20);
+    test.func3(a = 10, b = 20, c = 30, d = 10, e = 20);
+    test.func3(a = 10, b = 20, c = 30, d = 10, e = 15, e = 20);
+}
+assert.eq(initCtr, 0);
 
 ###############################################################################################################
 #################################################### ENUM #####################################################

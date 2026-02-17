@@ -30,7 +30,7 @@ void remDLLDirectories();
 VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSourceFn,
                                StringRef name)
     : gs(new GlobalState(argparser, parseSourceFn)), name(name), recurseCount(0), exitcode(0),
-      recurseExceeded(false), exitCalled(false), ownsGlobalState(true)
+      recurseExceeded(false), exitCalled(false), ownsGlobalState(true), ready(false)
 {
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
     vars = makeVar<VarVars>({});
@@ -39,12 +39,13 @@ VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSo
     execstack = gs->mem.allocInit<ExecStack>(*this);
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
     failstack->pushHandler(gs->basicErrHandler, -1, 1);
-    if(ownsGlobalState && !loadPrelude()) throw "Failed to load prelude module";
     ++gs->vmCount;
+    ready = true;
+    if(ownsGlobalState && !loadPrelude()) throw "Failed to load prelude module";
 }
 VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandler)
     : gs(gs), name(name), recurseCount(0), exitcode(0), recurseExceeded(false), exitCalled(false),
-      ownsGlobalState(false)
+      ownsGlobalState(false), ready(false)
 {
     vars      = makeVar<VarVars>({});
     failstack = gs->mem.allocInit<FailStack>(*this);
@@ -53,13 +54,15 @@ VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandle
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
     failstack->pushHandler(errHandler, -1, 1);
     ++gs->vmCount;
+    ready = true;
 }
 VirtualMachine::~VirtualMachine()
 {
+    decVarRef(vars);
+    ready = false;
     if(failstack->size() > 0) failstack->popHandler();
     gs->mem.freeDeinit(execstack);
     gs->mem.freeDeinit(failstack);
-    decVarRef(vars);
     --gs->vmCount;
     if(ownsGlobalState) {
         gs->deinit(*this);
@@ -266,7 +269,12 @@ Var *VirtualMachine::getTypeFn(Var *var, StringRef name)
         res = loc->second->getAttr(name);
         if(res) return res;
     }
-    return gs->typefns[typeID<VarAll>()]->getAttr(name);
+    loc = gs->typefns.find(typeID<VarAll>());
+    if(loc != gs->typefns.end()) {
+        if(loc->second) res = loc->second->getAttr(name);
+        if(res) return res;
+    }
+    return nullptr;
 }
 
 void VirtualMachine::setTypeName(size_t _typeid, StringRef name) { gs->typenames[_typeid] = name; }

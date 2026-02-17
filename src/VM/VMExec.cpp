@@ -328,6 +328,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                 goto callFail;
             }
             execstack->push(res, false);
+            if(!ready) goto callFail;
 
             // cleanup
             for(auto &a : args) decVarRef(a);
@@ -398,6 +399,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             if(recurseCount > failstack->getLastRecurseCount()) goto fail;
             if(recurseExceeded) recurseExceeded = false;
             size_t popLoc = i + 1;
+            ready         = true;
             Var *res      = failstack->handle(*this, ins.getLoc(), popLoc);
             if(!res) goto fail;
             i = popLoc - 1;
@@ -413,6 +415,7 @@ done:
     --recurseCount;
     return exitcode;
 fail:
+    ready = false;
     if(ret) decVarRef(ret);
     if(addBlk) vars->popBlk(*this, 1);
     if(addFunc) vars->popFn(*this);

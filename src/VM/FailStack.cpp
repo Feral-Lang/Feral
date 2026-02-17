@@ -39,8 +39,7 @@ Var *FailStack::handle(VirtualMachine &vm, ModuleLoc loc, size_t &popLoc)
 
 void FailStack::failStr(ModuleLoc loc, size_t recurseCount, String &&msg)
 {
-    assert(!stack.empty() && "[Internal error] No element in failstack to handle error");
-    if(!recurseCount) {
+    if(!recurseCount || stack.empty()) {
         err.fail(loc, msg);
         return;
     }
