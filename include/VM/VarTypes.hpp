@@ -24,8 +24,11 @@ enum
 struct AssnArgData;
 class VirtualMachine;
 
+class Var;
 class VarStr;
 class VarVec;
+
+template<typename T> concept VarDerived = std::is_base_of_v<Var, T>;
 
 typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
 #define INIT_DLL(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
@@ -99,16 +102,11 @@ public:
 
     void dump(String &outStr, VirtualMachine *vm);
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type is() const
+    template<VarDerived T> bool is() const
     {
         return typeid(*this).hash_code() == typeid(T).hash_code();
     }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type isDerivedFrom()
-    {
-        return dynamic_cast<T *>(this) != 0;
-    }
+    template<VarDerived T> bool isDerivedFrom() { return dynamic_cast<T *>(this) != 0; }
 
     inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 
@@ -133,12 +131,9 @@ public:
     inline void unsetConst() { info &= ~VarInfo::CONST; }
 };
 
-template<typename T> T *as(Var *data) { return static_cast<T *>(data); }
+template<VarDerived T> T *as(Var *data) { return static_cast<T *>(data); }
 
-template<typename T> typename std::enable_if<std::is_base_of<Var, T>::value, size_t>::type typeID()
-{
-    return typeid(T).hash_code();
-}
+template<VarDerived T> size_t typeID() { return typeid(T).hash_code(); }
 
 // dummy type to denote all other types
 class VarAll : public Var

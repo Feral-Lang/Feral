@@ -211,9 +211,8 @@ public:
 #endif
     }
 
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
-    makeGlobal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    template<VarDerived T, typename... Args>
+    bool makeGlobal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
     {
         T *res = makeVar<T>(loc, std::forward<Args>(args)...);
         if(!res) return false;
@@ -221,9 +220,8 @@ public:
         return true;
     }
 
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
-    makeLocal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    template<VarDerived T, typename... Args>
+    bool makeLocal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
     {
         T *res = makeVar<T>(loc, std::forward<Args>(args)...);
         if(!res) return false;
@@ -231,25 +229,20 @@ public:
         return true;
     }
 
-    template<typename T, typename... Args>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type makeVar(ModuleLoc loc,
-                                                                               Args &&...args)
+    template<VarDerived T, typename... Args> T *makeVar(ModuleLoc loc, Args &&...args)
     {
         T *res = new(gs->mem.allocRaw(sizeof(T), alignof(T))) T(loc, std::forward<Args>(args)...);
         res->create(*this);
         res->init(*this);
         return res;
     }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type incVarRef(T *var)
+    template<VarDerived T> T *incVarRef(T *var)
     {
         if(var == nullptr) return nullptr;
         var->iref();
         return var;
     }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type decVarRef(T *&var,
-                                                                                 bool del = true)
+    template<VarDerived T> T *decVarRef(T *&var, bool del = true)
     {
         if(var == nullptr) return nullptr;
         if(var->dref() <= 0 && del) {
@@ -260,16 +253,9 @@ public:
         }
         return var;
     }
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, T *>::type copyVar(ModuleLoc loc,
-                                                                               T *var)
-    {
-        return var->copy(*this, loc);
-    }
+    template<VarDerived T> T *copyVar(ModuleLoc loc, T *var) { return var->copy(*this, loc); }
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addGlobalType(ModuleLoc loc, String name, StringRef doc)
+    template<VarDerived T> void addGlobalType(ModuleLoc loc, String name, StringRef doc)
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
@@ -278,9 +264,7 @@ public:
         return addGlobal(name, doc, tyvar);
     }
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addLocalType(ModuleLoc loc, String name, StringRef doc)
+    template<VarDerived T> void addLocalType(ModuleLoc loc, String name, StringRef doc)
     {
         setTypeName(typeID<T>(), name);
         VarTypeID *tyvar = makeVar<VarTypeID>(loc, typeID<T>());
@@ -289,18 +273,16 @@ public:
         return addLocal(name, doc, tyvar);
     }
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, void>::type
-    addTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
+    template<VarDerived T>
+    void addTypeFn(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
     {
         VarFn *f = makeFn(loc, fnObj);
         addTypeFn(typeID<T>(), name, f, true);
     }
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
-    callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
+    template<VarDerived T>
+    bool callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
+                          const StringMap<AssnArgData> &assnArgs)
     {
         if(!(retdata = callVar(loc, name, args, assnArgs))) return false;
         if(!retdata->is<T>()) {
@@ -313,10 +295,9 @@ public:
         return true;
     }
 
-    template<typename T>
-    typename std::enable_if<std::is_base_of<Var, T>::value, bool>::type
-    callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs)
+    template<VarDerived T>
+    bool callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
+                          Span<Var *> args, const StringMap<AssnArgData> &assnArgs)
     {
         if(!(retdata = callVar(loc, name, callable, args, assnArgs))) return false;
         if(!retdata->is<T>()) {
