@@ -12,18 +12,17 @@ FERAL_FUNC(vecNew, 0, true,
            "  `refs = true` which makes it so that any value inserted in the map is stored as a "
            "reference.")
 {
-    auto refloc    = assnArgs.find("refs");
-    auto caploc    = assnArgs.find("cap");
+    Var *refsv     = assnArgs->getAttr("refs");
+    Var *capv      = assnArgs->getAttr("cap");
+    bool ordered   = false;
     size_t resvcap = args.size() - 1;
     bool refs      = false;
-    if(refloc != assnArgs.end()) {
-        Var *refsv = refloc->second.val;
-        EXPECT(VarBool, refsv, "'refs' named argument in vec.new()");
+    if(refsv != nullptr) {
+        EXPECT(VarBool, refsv, "'refs' named argument in map.new()");
         refs = as<VarBool>(refsv)->getVal();
     }
-    if(caploc != assnArgs.end()) {
-        Var *capv = caploc->second.val;
-        EXPECT(VarInt, capv, "'cap' named argument in vec.new()");
+    if(capv != nullptr) {
+        EXPECT(VarInt, capv, "'cap' named argument in map.new()");
         resvcap = as<VarInt>(capv)->getVal();
     }
     VarVec *res = vm.makeVar<VarVec>(loc, resvcap, refs);

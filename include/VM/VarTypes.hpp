@@ -27,6 +27,7 @@ class VirtualMachine;
 class Var;
 class VarStr;
 class VarVec;
+class VarMap;
 
 template<typename T> concept VarDerived = std::is_base_of_v<Var, T>;
 
@@ -78,8 +79,8 @@ class Var : public IAllocated
     // this function is implemented.
     virtual bool onSet(VirtualMachine &vm, Var *from);
     // Perform a call using this variable.
-    virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                        const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk);
+    virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                        bool addFunc, bool addBlk);
 
 protected:
     Var(ModuleLoc loc, size_t infoFlags);
@@ -87,8 +88,8 @@ protected:
     virtual ~Var();
 
 public:
-    Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-              const StringMap<AssnArgData> &assnArgs, bool addFunc = true, bool addBlk = false);
+    Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+              bool addFunc = true, bool addBlk = false);
     virtual void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
     virtual void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref);
     virtual bool existsAttr(StringRef name);
@@ -288,17 +289,38 @@ public:
 class VarMap : public Var
 {
     StringMap<Var *> val;
-    Vector<String> pos; // Only used by kwargs.
+    ManagedRawList *keyOrder; // list<str>
+    bool ordered;
     bool asrefs;
 
+    void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
-    VarMap(ModuleLoc loc, size_t reservesz, bool asrefs);
-    VarMap(ModuleLoc loc, StringMap<Var *> &&val, bool asrefs);
+    class Iterator
+    {
+        void *orderiter;
+        StringMap<Var *>::iterator dataiter;
 
-    bool setVal(VirtualMachine &vm, const StringMap<Var *> &newval);
+        friend class VarMap;
+
+    public:
+        Iterator(void *orderiter, StringMap<Var *>::iterator dataiter);
+
+        inline bool operator==(const Iterator &other) const
+        {
+            return orderiter == other.orderiter && dataiter == other.dataiter;
+        }
+        inline bool operator!=(const Iterator &other) const { return !(*this == other); }
+
+        inline StringRef key() { return dataiter->first; }
+        inline Var *val() { return dataiter->second; }
+    };
+
+    VarMap(ModuleLoc loc, bool ordered, bool asrefs);
+
+    bool setVal(VirtualMachine &vm, const StringMap<Var *> &newval, ManagedRawList *order);
     void clear(VirtualMachine &vm);
 
     // not inline because Var is incomplete type
@@ -309,19 +331,26 @@ public:
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     inline size_t getAttrCount() override { return val.size(); }
 
+    Iterator begin();
+    inline Iterator end() { return Iterator(nullptr, val.end()); }
+    void next(Iterator &it);
+
+    void addOrder(StringRef name);
+    void remOrder(StringRef name);
+
+    inline void reserve(size_t count) { val.reserve(count); }
+
     inline size_t size() { return val.size(); }
     inline StringMap<Var *> &getVal() { return val; }
-    inline void initializePos(size_t count) { pos = Vector<String>(count, ""); }
-    // Make sure to initializePos() first.
-    inline void setPos(size_t idx, StringRef data) { pos[idx] = data; }
-    inline Span<const String> getPositions() const { return pos; }
+    inline ManagedRawList *getOrder() { return keyOrder; }
+    inline bool isOrdered() { return ordered; }
     inline bool isRefMap() { return asrefs; }
 };
 
 class VarMapIterator : public Var
 {
     VarMap *map;
-    StringMap<Var *>::iterator curr;
+    VarMap::Iterator curr;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
@@ -332,15 +361,7 @@ public:
     bool next(VirtualMachine &vm, ModuleLoc loc, Var *&val);
 };
 
-// used in native function calls
-struct AssnArgData
-{
-    size_t pos; // index of the arg
-    Var *val;
-};
-
-typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                         const StringMap<AssnArgData> &assnArgs);
+typedef Var *(*NativeFn)(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs);
 
 class FeralNativeFnDesc
 {
@@ -355,9 +376,8 @@ public:
     {}
 };
 
-#define NATIVE_FUNC_SIGNATURE(name)                                       \
-    Var *func_##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, \
-                     const StringMap<AssnArgData> &assnArgs)
+#define NATIVE_FUNC_SIGNATURE(name) \
+    Var *func_##name(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs)
 
 #define FERAL_FUNC_DECL(name, argCount, isVariadic, doc) \
     NATIVE_FUNC_SIGNATURE(name);                         \
@@ -393,8 +413,8 @@ class VarFn : public Var
 
     void onDestroy(VirtualMachine &vm) override;
 
-    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk) override;
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
+                bool addBlk) override;
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
@@ -512,44 +532,47 @@ public:
 
 class VarStructDef : public Var
 {
-    StringMap<Var *> attrs;
-    Vector<String> attrorder;
+    VarMap *attrs;
     // type id of struct (struct id) which will be used as typeID for struct objects
     size_t id;
 
+    void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
     // returns VarStruct
-    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs, bool addFunc, bool addBlk) override;
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
+                bool addBlk) override;
 
 public:
-    VarStructDef(ModuleLoc loc, size_t attrscount);
-    VarStructDef(ModuleLoc loc, size_t attrscount, size_t id);
+    VarStructDef(ModuleLoc loc);
+    VarStructDef(ModuleLoc loc, size_t id);
 
-    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
-    inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
-    Var *getAttr(StringRef name) override;
-    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
-    inline size_t getAttrCount() override { return attrs.size(); }
+    inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return attrs->setAttr(vm, name, val, iref);
+    }
+    inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
+    inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
+    inline void getAttrList(VirtualMachine &vm, VarVec *dest) override
+    {
+        return attrs->getAttrList(vm, dest);
+    }
+    inline size_t getAttrCount() override { return attrs->size(); }
+
+    inline VarMap::Iterator attrBegin() { return attrs->begin(); }
+    inline VarMap::Iterator attrEnd() { return attrs->end(); }
+    inline void attrNext(VarMap::Iterator &it) { return attrs->next(it); }
 
     inline size_t getSubType() override { return id; }
-
-    inline void pushAttrOrder(StringRef attr) { attrorder.emplace_back(attr); }
-    inline void setAttrOrderAt(size_t idx, StringRef attr) { attrorder[idx] = attr; }
-    inline void setAttrOrder(Span<StringRef> neworder)
-    {
-        attrorder.assign(neworder.begin(), neworder.end());
-    }
-    inline Span<String> getAttrOrder() { return attrorder; }
-    inline StringRef getAttrOrderAt(size_t idx) { return attrorder[idx]; }
     inline size_t getID() { return id; }
+
+    inline void reserveAttrs(size_t count) { return attrs->reserve(count); }
 };
 
 class VarStruct : public Var
 {
-    StringMap<Var *> attrs;
     VarStructDef *base;
+    VarMap *attrs;
     size_t id;
 
     void onCreate(VirtualMachine &vm) override;
@@ -558,21 +581,30 @@ class VarStruct : public Var
 
 public:
     // base can be nullptr (as is the case for enums)
-    VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount);
+    VarStruct(ModuleLoc loc, VarStructDef *base);
     // base can be nullptr (as is the case for enums)
-    VarStruct(ModuleLoc loc, VarStructDef *base, size_t attrscount, size_t id);
+    VarStruct(ModuleLoc loc, VarStructDef *base, size_t id);
 
-    void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
+    inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return attrs->setAttr(vm, name, val, iref);
+    }
+    inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
+    inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
+    inline void getAttrList(VirtualMachine &vm, VarVec *dest) override
+    {
+        return attrs->getAttrList(vm, dest);
+    }
+    inline size_t getAttrCount() override { return attrs->size(); }
 
-    inline bool existsAttr(StringRef name) override { return attrs.find(name) != attrs.end(); }
-    Var *getAttr(StringRef name) override;
-    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
-    inline size_t getAttrCount() override { return attrs.size(); }
+    inline VarMap::Iterator attrBegin() { return attrs->begin(); }
+    inline VarMap::Iterator attrEnd() { return attrs->end(); }
+    inline void attrNext(VarMap::Iterator &it) { return attrs->next(it); }
 
     inline size_t getSubType() override { return id; }
-
-    inline const StringMap<Var *> &getAttrs() { return attrs; }
     inline VarStructDef *getBase() { return base; }
+
+    inline void reserveAttrs(size_t count) { return attrs->reserve(count); }
 };
 
 class VarFailure : public Var

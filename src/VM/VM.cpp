@@ -14,8 +14,7 @@
 namespace fer
 {
 
-Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs);
+Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs);
 
 #if defined(CORE_OS_WINDOWS)
 static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
@@ -84,7 +83,7 @@ int VirtualMachine::runFile(ModuleLoc loc, const char *file, StringRef threadNam
     return res;
 }
 Var *VirtualMachine::runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                                 const StringMap<AssnArgData> &assnArgs)
+                                 VarMap *assnArgs)
 {
     VirtualMachine *vm = createVM(name);
     Var *res           = vm->callVar(loc, name, callable, args, assnArgs);
@@ -250,7 +249,7 @@ void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *callable, bo
     auto loc  = gs->typefns.find(_typeid);
     VarMap *f = nullptr;
     if(loc == gs->typefns.end()) {
-        gs->typefns[_typeid] = f = incVarRef(makeVar<VarMap>({}, 0, false));
+        gs->typefns[_typeid] = f = incVarRef(makeVar<VarMap>({}, true, false));
     } else {
         f = loc->second;
     }
@@ -448,8 +447,7 @@ Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dll
     return makeVar<VarDll>(loc, initfn, deinitfn);
 }
 
-Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
-                             const StringMap<AssnArgData> &assnArgs)
+Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args, VarMap *assnArgs)
 {
     assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
     bool memcall = args[0] != nullptr;
@@ -477,7 +475,7 @@ Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
 }
 
 Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                             const StringMap<AssnArgData> &assnArgs)
+                             VarMap *assnArgs)
 {
     bool memcall = args[0] != nullptr;
     Var *retdata = callable->call(*this, loc, args, assnArgs);

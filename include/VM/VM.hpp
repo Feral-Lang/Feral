@@ -109,7 +109,7 @@ public:
 
     int runFile(ModuleLoc loc, const char *file, StringRef threadName);
     Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                     const StringMap<AssnArgData> &assnArgs);
+                     VarMap *assnArgs);
 
     int compileAndRun(ModuleLoc loc, const char *file);
     // Must pushModule before calling this function, and popModule after calling it.
@@ -159,10 +159,8 @@ public:
 
     // Used primarily within libraries & by toStr, toBool
     // first arg must ALWAYS be self for memcall, nullptr otherwise
-    Var *callVar(ModuleLoc loc, StringRef name, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs);
-    Var *callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
-                 const StringMap<AssnArgData> &assnArgs);
+    Var *callVar(ModuleLoc loc, StringRef name, Span<Var *> args, VarMap *assnArgs);
+    Var *callVar(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args, VarMap *assnArgs);
 
     // evaluate a given expression and return its result
     // primarily used for templates
@@ -211,30 +209,31 @@ public:
 #endif
     }
 
-    template<VarDerived T, typename... Args>
-    bool makeGlobal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    template<VarDerived T> T *copyVar(ModuleLoc loc, T *var)
     {
-        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
-        if(!res) return false;
-        addGlobal(name, doc, res);
-        return true;
+        return as<T>(var->copy(*this, loc));
     }
+    inline bool setVar(Var *dest, Var *src) { return dest->set(*this, src); }
 
-    template<VarDerived T, typename... Args>
-    bool makeLocal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
-    {
-        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
-        if(!res) return false;
-        addLocal(name, doc, res);
-        return true;
-    }
-
-    template<VarDerived T, typename... Args> T *makeVar(ModuleLoc loc, Args &&...args)
+    // makeVar => createVar + initVar
+    template<VarDerived T, typename... Args> T *createVar(ModuleLoc loc, Args &&...args)
     {
         T *res = new(gs->mem.allocRaw(sizeof(T), alignof(T))) T(loc, std::forward<Args>(args)...);
         res->create(*this);
-        res->init(*this);
         return res;
+    }
+    // makeVar => createVar + initVar
+    template<VarDerived T> T *initVar(T *v)
+    {
+        v->init(*this);
+        return v;
+    }
+
+    // makeVar => createVar + initVar
+    template<VarDerived T, typename... Args> T *makeVar(ModuleLoc loc, Args &&...args)
+    {
+        T *res = createVar<T>(loc, std::forward<Args>(args)...);
+        return initVar<T>(res);
     }
     template<VarDerived T> T *incVarRef(T *var)
     {
@@ -253,7 +252,24 @@ public:
         }
         return var;
     }
-    template<VarDerived T> T *copyVar(ModuleLoc loc, T *var) { return var->copy(*this, loc); }
+
+    template<VarDerived T, typename... Args>
+    bool makeGlobal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    {
+        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
+        if(!res) return false;
+        addGlobal(name, doc, res);
+        return true;
+    }
+
+    template<VarDerived T, typename... Args>
+    bool makeLocal(ModuleLoc loc, StringRef name, StringRef doc, Args &&...args)
+    {
+        T *res = makeVar<T>(loc, std::forward<Args>(args)...);
+        if(!res) return false;
+        addLocal(name, doc, res);
+        return true;
+    }
 
     template<VarDerived T> void addGlobalType(ModuleLoc loc, String name, StringRef doc)
     {
@@ -282,7 +298,7 @@ public:
 
     template<VarDerived T>
     bool callVarAndExpect(ModuleLoc loc, StringRef name, Var *&retdata, Span<Var *> args,
-                          const StringMap<AssnArgData> &assnArgs)
+                          VarMap *assnArgs)
     {
         if(!(retdata = callVar(loc, name, args, assnArgs))) return false;
         if(!retdata->is<T>()) {
@@ -297,7 +313,7 @@ public:
 
     template<VarDerived T>
     bool callVarAndExpect(ModuleLoc loc, StringRef name, Var *callable, Var *&retdata,
-                          Span<Var *> args, const StringMap<AssnArgData> &assnArgs)
+                          Span<Var *> args, VarMap *assnArgs)
     {
         if(!(retdata = callVar(loc, name, callable, args, assnArgs))) return false;
         if(!retdata->is<T>()) {

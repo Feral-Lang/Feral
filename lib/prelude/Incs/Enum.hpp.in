@@ -7,7 +7,8 @@ FERAL_FUNC(enumNew, 1, true,
            " fn(values...) -> Enum\n"
            "Creates and returns an Enum using the given values")
 {
-    VarStruct *res = vm.makeVar<VarStruct>(loc, nullptr, args.size() + assnArgs.size() - 1);
+    VarStruct *res = vm.makeVar<VarStruct>(loc, nullptr);
+    res->reserveAttrs(args.size() + assnArgs->size() - 1);
 
     for(size_t i = 1; i < args.size(); ++i) {
         auto &a = args[i];
@@ -15,14 +16,14 @@ FERAL_FUNC(enumNew, 1, true,
         res->setAttr(vm, as<VarStr>(a)->getVal(), vm.makeVar<VarInt>(loc, i - 1), true);
     }
 
-    for(auto &a : assnArgs) {
-        EXPECT_AND(VarInt, a.second.val, "enum field value", vm.decVarRef(res));
-        Var *cp = vm.copyVar(loc, a.second.val);
+    for(auto it = assnArgs->begin(); it != assnArgs->end(); assnArgs->next(it)) {
+        EXPECT_AND(VarInt, it.val(), "enum field value", vm.decVarRef(res));
+        Var *cp = vm.copyVar(loc, it.val());
         if(!cp) {
             vm.decVarRef(res);
             return nullptr;
         }
-        res->setAttr(vm, a.first, cp, false);
+        res->setAttr(vm, it.key(), cp, false);
     }
 
     return res;

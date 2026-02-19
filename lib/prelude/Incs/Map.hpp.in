@@ -17,42 +17,45 @@ FERAL_FUNC(mapNew, 0, true,
         vm.fail(loc, "argument count must be even to create a map");
         return nullptr;
     }
-    auto refloc    = assnArgs.find("refs");
-    auto caploc    = assnArgs.find("cap");
+    Var *orderedv  = assnArgs->getAttr("ordered");
+    Var *refsv     = assnArgs->getAttr("refs");
+    Var *capv      = assnArgs->getAttr("cap");
+    bool ordered   = false;
     size_t resvcap = args.size() - 1;
     bool refs      = false;
-    if(refloc != assnArgs.end()) {
-        Var *refsv = refloc->second.val;
+    if(orderedv != nullptr) {
+        EXPECT(VarBool, orderedv, "'ordered' named argument in map.new()");
+        ordered = as<VarBool>(orderedv)->getVal();
+    }
+    if(refsv != nullptr) {
         EXPECT(VarBool, refsv, "'refs' named argument in map.new()");
         refs = as<VarBool>(refsv)->getVal();
     }
-    if(caploc != assnArgs.end()) {
-        Var *capv = caploc->second.val;
+    if(capv != nullptr) {
         EXPECT(VarInt, capv, "'cap' named argument in map.new()");
         resvcap = as<VarInt>(capv)->getVal();
     }
-    StringMap<Var *> mapval;
-    mapval.reserve(resvcap);
+    VarMap *res = vm.makeVar<VarMap>(loc, ordered, refs);
+    res->reserve(resvcap);
     for(size_t i = 1; i < args.size(); ++i) {
         Var *v = nullptr;
         Array<Var *, 1> tmp{args[i]};
         if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-        String key(std::move(as<VarStr>(v)->getVal()));
-        auto maploc = mapval.find(key);
-        if(maploc != mapval.end()) vm.decVarRef(maploc->second);
+        StringRef key = as<VarStr>(v)->getVal();
         if(refs) {
-            vm.incVarRef(args[++i]);
-            mapval[key] = args[i];
+            res->setAttr(vm, key, args[++i], true);
         } else {
-            Var *val = vm.copyVar(loc, args[++i]);
-            if(!val) {
-                for(auto &e : mapval) vm.decVarRef(e.second);
+            Var *cp = vm.copyVar(loc, args[++i]);
+            if(!cp) {
+                vm.decVarRef(v);
+                vm.decVarRef(res);
                 return nullptr;
             }
-            mapval[key] = val;
+            res->setAttr(vm, key, cp, false);
         }
+        vm.decVarRef(v);
     }
-    return vm.makeVar<VarMap>(loc, std::move(mapval), refs);
+    return res;
 }
 
 FERAL_FUNC(mapCopy, 0, false,
@@ -60,8 +63,8 @@ FERAL_FUNC(mapCopy, 0, false,
            "Copies the map data and returns it.")
 {
     VarMap *m   = as<VarMap>(args[0]);
-    VarMap *res = vm.makeVar<VarMap>(loc, m->size(), m->isRefMap());
-    if(!res->setVal(vm, m->getVal())) vm.decVarRef(res);
+    VarMap *res = vm.makeVar<VarMap>(loc, m->isOrdered(), m->isRefMap());
+    if(!vm.setVar(res, m)) vm.decVarRef(res);
     return res;
 }
 
@@ -70,6 +73,13 @@ FERAL_FUNC(mapSize, 0, false,
            "Returns the number of elements in the map `var`.")
 {
     return vm.makeVar<VarInt>(loc, as<VarMap>(args[0])->getVal().size());
+}
+
+FERAL_FUNC(mapIsOrdered, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the map `var` is ordered.")
+{
+    return as<VarMap>(args[0])->isOrdered() ? vm.getTrue() : vm.getFalse();
 }
 
 FERAL_FUNC(mapIsRef, 0, false,
