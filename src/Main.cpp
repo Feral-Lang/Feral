@@ -112,7 +112,7 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
     pm.add<ast::CodegenPass>(astallocator, bc);
 
     if(!pm.visit((ast::Stmt *&)ptree)) {
-        logger.fatal("Failed to perform passes on AST for file: ", path);
+        LOG_FATAL("Failed to perform passes on AST for file: ", path);
         return false;
     }
     if(args.has("optparse")) {
