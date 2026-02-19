@@ -132,7 +132,6 @@ bool GlobalState::deinit(VirtualMachine &vm)
     using namespace std::chrono_literals;
     vm.stopExecution();
     while(vmCount.load() > 0) { std::this_thread::sleep_for(1ms); }
-    for(auto &mod : modules) { vm.decVarRef(mod.second); }
     vm.decVarRef(nil);
     vm.decVarRef(fals);
     vm.decVarRef(tru);

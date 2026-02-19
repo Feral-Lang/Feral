@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         }
         srcFile = binFile;
     }
-    return vm.compileAndRun({}, fs::absPath(srcFile.c_str()).c_str());
+    return vm.compileAndRun({}, fs::absPath(srcFile.c_str()).c_str(), nullptr);
 }
 
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,

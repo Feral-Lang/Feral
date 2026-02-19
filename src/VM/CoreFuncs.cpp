@@ -48,15 +48,18 @@ FERAL_FUNC_DEF(loadFile)
     LockGuard<RecursiveMutex> _(loadMtx);
     String file;
     if(!loadCommon(vm, loc, args[1], true, file)) return nullptr;
-    if(!vm.hasModule(file)) {
-        int res = vm.compileAndRun(loc, file.c_str());
+    VarModule *mod = vm.getModule(file);
+    if(!mod) {
+        int res = vm.compileAndRun(loc, file.c_str(), &mod);
         if(res != 0 && !vm.isExitCalled()) {
             vm.fail(args[1]->getLoc(), "could not import: '", file,
                     "', look at error above (exit code: ", res, ")");
             return nullptr;
         }
+        vm.decVarRef(mod, false);
+        vm.addLocal(file, "", mod);
     }
-    return vm.getModule(file);
+    return mod;
 }
 
 FERAL_FUNC_DEF(loadLibrary)
