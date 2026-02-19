@@ -409,10 +409,10 @@ Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dll
 {
 #if defined(CORE_OS_WINDOWS)
     // append the parent dir to dll search paths
-    StringRef parentdir = fs::parentDir(modpath);
+    StringRef parentdir = fs::parentDir(dllpath);
     if(!addDLLDirectory(parentdir)) {
         fail(loc, "unable to add dir: ", parentdir,
-             " as a DLL directory while loading module: ", modpath);
+             " as a DLL directory while loading module: ", dllpath);
         return nullptr;
     }
 #endif
