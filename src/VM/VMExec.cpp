@@ -25,8 +25,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
     for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
 #if defined(CORE_BUILD_DEBUG)
-        logger.debug("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
-                     " :: ", execstack->dump(this));
+        LOG_DEBUG("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
+                  " :: ", execstack->dump(this));
 #endif
 
         if(shouldStopExecution()) goto fail;

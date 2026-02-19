@@ -166,11 +166,11 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
     Bytecode bc;
     if(bcFileExists) {
         if(!f->isVirtual()) {
-            logger.info("Reading bytecode file: ", bcPath);
+            LOG_INFO("Reading bytecode file: ", bcPath);
             FILE *f = fopen(bcPath.c_str(), "rb");
             Bytecode::readFromFile(f, moduleIdCtr, bc);
             fclose(f);
-            logger.info("- Read bytecodes: ", bc.size());
+            LOG_INFO("- Read bytecodes: ", bc.size());
         }
     } else {
         if(!gs->parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
@@ -178,18 +178,18 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
             return nullptr;
         }
         if(!f->isVirtual()) {
-            logger.info("Writing bytecode file: ", bcPath);
+            LOG_INFO("Writing bytecode file: ", bcPath);
             std::error_code ec;
             if(fs::mkdir(fs::parentDir(bcPath), ec)) {
-                logger.fatal("failed to create directory for bytecode file: ", bcPath,
-                             "; error: ", ec.message());
+                LOG_FATAL("failed to create directory for bytecode file: ", bcPath,
+                          "; error: ", ec.message());
                 fail(loc, "failed to create directory for bytecode file: ", bcPath,
                      "; error: ", ec.message());
                 return nullptr;
             }
             FILE *f = fopen(bcPath.c_str(), "wb");
             if(!f) {
-                logger.fatal("failed to write bytecode file: ", bcPath);
+                LOG_FATAL("failed to write bytecode file: ", bcPath);
                 fail(loc, "failed to write bytecode file: ", bcPath);
                 return nullptr;
             }
