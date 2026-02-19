@@ -9,53 +9,25 @@ valgrind feral -e -V testdir tests
 ## Output
 
 ```sh
-==1102192== Memcheck, a memory error detector
-==1102192== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
-==1102192== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
-==1102192== Command: feral -e -V testdir tests
-==1102192== 
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/prelude/prelude.fer) allocator had 959 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 1356 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/prelude/prelude.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/bin/testdir.fer) allocator had 860 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 1084 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/bin/testdir.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/io.fer) allocator had 21 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 31 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/io.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/fs.fer) allocator had 883 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 1188 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/fs.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/stat.fer) allocator had 183 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 291 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/stat.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/os.fer) allocator had 149 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 211 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/os.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/vec.fer) allocator had 6 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 7 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/vec.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/fecl.fer) allocator had 1943 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 2606 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/fecl.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/map.fer) allocator had 6 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 7 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/map.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/time.fer) allocator had 254 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 347 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/time.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/mutex.fer) allocator had 5 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 5 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/mutex.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/atomic.fer) allocator had 5 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 5 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/atomic.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/thread.fer) allocator had 39 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 53 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/thread.fer.bc
-[2026-02-17T07:09:32-0800][INFO]: AST(/home/elec/.feral/lib/feral/std/argparse.fer) allocator had 1124 allocations
-[2026-02-17T07:09:32-0800][INFO]: TokensList allocator had 1519 allocations
-[2026-02-17T07:09:32-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/argparse.fer.bc
+==1421399== Memcheck, a memory error detector
+==1421399== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==1421399== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
+==1421399== Command: feral -e -V testdir tests
+==1421399==
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/prelude/prelude.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/bin/testdir.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/io.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/fs.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/stat.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/os.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/vec.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/fecl.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/map.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/time.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/mutex.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/atomic.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/thread.fer.bc
+[2026-02-18T23:28:35-0800][INFO]: Writing bytecode file: /home/elec/.feral/tmp/cache/home/elec/.feral/lib/feral/std/argparse.fer.bc
 test (1/66): /home/elec/.feral/bin/feral tests/all-combos.fer ^>/dev/null ...
 test (2/66): /home/elec/.feral/bin/feral tests/basic.fer ^>/dev/null ...
 test (3/66): /home/elec/.feral/bin/feral tests/bin-expo.fer ^>/dev/null ...
@@ -122,26 +94,25 @@ test (63/66): /home/elec/.feral/bin/feral tests/std/time.fer ^>/dev/null ...
 test (64/66): /home/elec/.feral/bin/feral tests/std/vec.fer ^>/dev/null ...
 test (65/66): /home/elec/.feral/bin/feral tests/sum-one-to-n.fer ^>/dev/null ...
 test (66/66): /home/elec/.feral/bin/feral tests/while.fer ^>/dev/null ...
-total: 66, passed: 66, failed: 0, time: 784 ms
-[2026-02-17T07:09:33-0800][INFO]: VM::ManagedAllocator allocator had 14 allocations
-[2026-02-17T07:09:33-0800][INFO]: =============== VM::Main memory manager stats: ===============
-[2026-02-17T07:09:33-0800][INFO]: -- Total allocated bytes (pools + otherwise): 729088
-[2026-02-17T07:09:33-0800][INFO]: --                Allocated bytes from pools: 7729792
-[2026-02-17T07:09:33-0800][INFO]: --                             Request count: 52709
-[2026-02-17T07:09:33-0800][INFO]: --                         Chunk Reuse count: 47159
-==1102192== 
-==1102192== HEAP SUMMARY:
-==1102192==     in use at exit: 10,157 bytes in 6 blocks
-==1102192==   total heap usage: 43,736 allocs, 43,730 frees, 4,982,246 bytes allocated
-==1102192== 
-==1102192== LEAK SUMMARY:
-==1102192==    definitely lost: 0 bytes in 0 blocks
-==1102192==    indirectly lost: 0 bytes in 0 blocks
-==1102192==      possibly lost: 0 bytes in 0 blocks
-==1102192==    still reachable: 10,157 bytes in 6 blocks
-==1102192==         suppressed: 0 bytes in 0 blocks
-==1102192== Rerun with --leak-check=full to see details of leaked memory
-==1102192== 
-==1102192== For lists of detected and suppressed errors, rerun with: -s
-==1102192== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+total: 66, passed: 66, failed: 0, time: 663 ms
+[2026-02-18T23:28:36-0800][INFO]: =============== VM::Main memory manager stats: ===============
+[2026-02-18T23:28:36-0800][INFO]: -- Total allocated bytes (pools + otherwise): 770048
+[2026-02-18T23:28:36-0800][INFO]: --                Allocated bytes from pools: 10010112
+[2026-02-18T23:28:36-0800][INFO]: --                             Request count: 74487
+[2026-02-18T23:28:36-0800][INFO]: --                         Chunk Reuse count: 68436
+==1421399==
+==1421399== HEAP SUMMARY:
+==1421399==     in use at exit: 10,157 bytes in 6 blocks
+==1421399==   total heap usage: 37,975 allocs, 37,969 frees, 5,086,063 bytes allocated
+==1421399==
+==1421399== LEAK SUMMARY:
+==1421399==    definitely lost: 0 bytes in 0 blocks
+==1421399==    indirectly lost: 0 bytes in 0 blocks
+==1421399==      possibly lost: 0 bytes in 0 blocks
+==1421399==    still reachable: 10,157 bytes in 6 blocks
+==1421399==         suppressed: 0 bytes in 0 blocks
+==1421399== Rerun with --leak-check=full to see details of leaked memory
+==1421399==
+==1421399== For lists of detected and suppressed errors, rerun with: -s
+==1421399== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```
