@@ -17,7 +17,8 @@ enum
     // runtime attributes
     LOAD_AS_REF = 1 << 3,
     CONST       = 1 << 4,
-    INITIALIZED = 1 << 5,
+    CREATED     = 1 << 5,
+    INITIALIZED = 1 << 6,
 };
 } // namespace VarInfo
 
@@ -48,6 +49,7 @@ class Var : public IAllocated
     friend class VirtualMachine;
 
     inline bool isLoadAsRef() const { return info & VarInfo::LOAD_AS_REF; }
+    inline bool isCreated() const { return info & VarInfo::CREATED; }
     inline bool isInitialized() const { return info & VarInfo::INITIALIZED; }
 
     inline void iref() { ++ref; }
@@ -119,6 +121,7 @@ public:
     inline bool isBasic() const { return info & VarInfo::BASIC; }
     inline bool isCallable() const { return info & VarInfo::CALLABLE; }
     inline bool isAttrBased() const { return info & VarInfo::ATTR_BASED; }
+
     inline bool isConst() const { return info & VarInfo::CONST; }
 
     inline void setLoadAsRef()
@@ -130,6 +133,12 @@ public:
 
     inline void setConst() { info |= VarInfo::CONST; }
     inline void unsetConst() { info &= ~VarInfo::CONST; }
+
+    inline void setCreated() { info |= VarInfo::CREATED; }
+    inline void unsetCreated() { info &= ~VarInfo::CREATED; }
+
+    inline void setInitialized() { info |= VarInfo::INITIALIZED; }
+    inline void unsetInitialized() { info &= ~VarInfo::INITIALIZED; }
 };
 
 template<VarDerived T> T *as(Var *data) { return static_cast<T *>(data); }
@@ -401,9 +410,11 @@ union FnBody
     FeralFnBody feral;
 };
 
+class VarModule;
+
 class VarFn : public Var
 {
-    ModuleId moduleId;
+    VarModule *mod;
     String kwArg;
     String varArg;
     Vector<String> params;
@@ -418,7 +429,7 @@ class VarFn : public Var
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
-    VarFn(ModuleLoc loc, ModuleId moduleId, const String &kwArg, const String &varArg,
+    VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
           size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative);
 
     inline void pushParam(const String &param) { params.push_back(param); }
@@ -429,7 +440,7 @@ public:
     inline void insertAssnParam(const String &key, Var *val) { assnParams.insert({key, val}); }
     inline void setAssnParams(const StringMap<Var *> &newmap) { assnParams = newmap; }
 
-    inline ModuleId getModuleId() { return moduleId; }
+    inline VarModule *getModule() { return mod; }
     inline StringRef getKwArg() { return kwArg; }
     inline StringRef getVarArg() { return varArg; }
     inline Vector<String> &getParams() { return params; }

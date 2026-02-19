@@ -22,9 +22,19 @@ static size_t genStructEnumID()
 Var::Var(ModuleLoc loc, size_t infoFlags) : loc(loc), ref(0), info(infoFlags), doc(nullptr) {}
 Var::~Var() {}
 
-void Var::create(VirtualMachine &vm) { onCreate(vm); }
+void Var::create(VirtualMachine &vm)
+{
+    if(isCreated()) {
+        vm.fail(loc, "attempted to recreate: ", vm.getTypeName(this));
+        return;
+    }
+    onCreate(vm);
+    setCreated();
+}
 void Var::destroy(VirtualMachine &vm)
 {
+    if(!isCreated()) return;
+    unsetCreated();
     onDestroy(vm);
     if(doc) vm.decVarRef(doc);
 }
@@ -52,11 +62,12 @@ void Var::init(VirtualMachine &vm)
         return;
     }
     vm.decVarRef(ret);
-    info |= VarInfo::INITIALIZED;
+    setInitialized();
 }
 void Var::deinit(VirtualMachine &vm)
 {
     if(!vm.isReady() || isBasic() || !isInitialized()) return;
+    unsetInitialized();
     Var *fn = vm.getTypeFn(this, "_deinit_");
     if(!fn) return;
     if(!fn->isCallable()) {
@@ -272,7 +283,7 @@ VarVec::VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs)
 {}
 void VarVec::onDestroy(VirtualMachine &vm)
 {
-    for(auto &v : val) vm.decVarRef(v);
+    for(auto it = val.rbegin(); it != val.rend(); ++it) vm.decVarRef(*it);
 }
 bool VarVec::onSet(VirtualMachine &vm, Var *from) { return setVal(vm, as<VarVec>(from)->getVal()); }
 bool VarVec::setVal(VirtualMachine &vm, Span<Var *> newval)
@@ -314,8 +325,8 @@ void VarVec::push(VirtualMachine &vm, Var *data, bool iref)
 void VarVec::pop(VirtualMachine &vm, bool dref)
 {
     Var *data = val.back();
-    val.pop_back();
     if(dref) vm.decVarRef(data);
+    val.pop_back();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -491,10 +502,10 @@ bool VarMapIterator::next(VirtualMachine &vm, ModuleLoc loc, Var *&val)
 ////////////////////////////////////////// VarFn /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFn::VarFn(ModuleLoc loc, ModuleId moduleId, const String &kwArg, const String &varArg,
+VarFn::VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
              size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative)
-    : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), moduleId(moduleId), kwArg(kwArg),
-      varArg(varArg), body(body), isnative(isnative)
+    : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), kwArg(kwArg), varArg(varArg),
+      body(body), isnative(isnative)
 {
     params.reserve(paramcount);
     assnParams.reserve(assnParamsCount);
@@ -520,7 +531,7 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
         if(!res) return nullptr;
         return vm.incVarRef(res);
     }
-    vm.pushModule(moduleId);
+    vm.pushModule(mod);
     VarVars *vars = vm.getVars();
     // take care of 'self' (always present - either data or nullptr)
     if(args[0] != nullptr) vars->stash(vm, "self", args[0]);
@@ -535,9 +546,12 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     // add all default args which have not been overwritten by args
     for(auto &aa : assnParams) {
         if(foundArgs.find(aa.first) != foundArgs.end()) continue;
-        Var *cpy = vm.copyVar(loc, aa.second);
-        if(!cpy) return nullptr;
-        vars->stash(vm, aa.first, cpy, false); // copy will make sure there is ref = 1 already
+        Var *cp = vm.copyVar(loc, aa.second);
+        if(!cp) {
+            vm.popModule();
+            return nullptr;
+        }
+        vars->stash(vm, aa.first, cp, false); // copy will make sure there is ref = 1 already
     }
     if(!varArg.empty()) {
         VarVec *v = vm.makeVar<VarVec>(loc, args.size(), false);
@@ -549,7 +563,10 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     }
     if(!kwArg.empty()) {
         Var *cp = vm.copyVar(loc, assnArgs);
-        if(!cp) return nullptr;
+        if(!cp) {
+            vm.popModule();
+            return nullptr;
+        }
         vars->stash(vm, kwArg, cp, false);
     }
     Var *ret = nullptr;

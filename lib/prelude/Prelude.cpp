@@ -34,6 +34,15 @@
 namespace fer
 {
 
+FERAL_FUNC(crash, 0, false,
+           "  fn() -> Nil\n"
+           "Causes the Feral binary to crash. Useful to get VM (C++) callstacks.")
+{
+    volatile int *tmp = nullptr;
+    *tmp              = 5;
+    return vm.getNil();
+}
+
 FERAL_FUNC(allGetDoc, 0, false,
            "  var.fn() -> Str | Nil\n"
            "Returns the doc string for `var` "
@@ -468,6 +477,7 @@ INIT_DLL(Prelude)
 
     // module functions
 
+    vm.addLocal(loc, "crash", crash);
     vm.addLocal(loc, "addGlobalModulePaths", addGlobalModulePaths);
     vm.addLocal(loc, "removeGlobalModulePaths", removeGlobalModulePaths);
     vm.addLocal(loc, "exitNative", exitNative);

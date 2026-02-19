@@ -78,7 +78,7 @@ void VirtualMachine::destroyVM(VirtualMachine *vm) { gs->mem.freeDeinit(vm); }
 int VirtualMachine::runFile(ModuleLoc loc, const char *file, StringRef threadName)
 {
     VirtualMachine *vm = createVM(threadName);
-    int res            = vm->compileAndRun(loc, file);
+    int res            = vm->compileAndRun(loc, file, nullptr);
     destroyVM(vm);
     return res;
 }
@@ -91,7 +91,7 @@ Var *VirtualMachine::runCallable(ModuleLoc loc, StringRef name, Var *callable, S
     return res;
 }
 
-int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
+int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file, VarModule **module)
 {
     fs::File *f          = gs->managedAllocator.alloc<fs::File>(file, false);
     Status<bool> readRes = f->read();
@@ -100,15 +100,20 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file)
         return 1;
     }
 
-    ModuleId moduleId = addModule(loc, f, false);
-    if(moduleId == (ModuleId)-1) {
+    VarModule *tmpMod = makeModule(loc, f, false);
+    if(!tmpMod) {
         err.fail(loc, "Failed to parse module: ", file);
         return 1;
     }
 
-    if(gs->argparser.has("dry")) return 0;
+    if(gs->argparser.has("dry")) {
+        decVarRef(tmpMod);
+        return 0;
+    }
 
-    pushModule(moduleId);
+    if(module) *module = incVarRef(tmpMod);
+
+    pushModule(tmpMod);
     Var *ret = nullptr;
     int res  = execute(ret);
     decVarRef(ret);
@@ -130,19 +135,21 @@ bool VirtualMachine::loadPrelude()
         err.fail({}, "Failed to find prelude: ", gs->prelude);
         return 1;
     }
-    int res = compileAndRun({}, gs->prelude.c_str());
+    VarModule *preludeMod = nullptr;
+    int res               = compileAndRun({}, gs->prelude.c_str(), &preludeMod);
     if(res != 0) {
         err.fail({}, "Failed to import prelude: ", gs->prelude);
         return false;
     }
     // set the prelude/feral global variable
-    addGlobal("feral", "The feral prelude module.", getModule(gs->prelude));
+    addGlobal("feral", "The feral prelude module.", preludeMod, false);
     return true;
 }
 
-ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
-                                   VarStack *existingVarStack)
+VarModule *VirtualMachine::makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
+                                      VarStack *existingVarStack)
 {
+    LockGuard<RecursiveMutex> globalGuard(gs->mutex);
     static ModuleId moduleIdCtr = 0;
     StringRef bcFilePath(f->getPath());
     String bcPath(getTempPath()->getVal());
@@ -168,7 +175,7 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
     } else {
         if(!gs->parseSourceFn(*this, bc, moduleIdCtr, f->getPath(), f->getData(), exprOnly)) {
             fail(loc, "failed to parse source: ", f->getPath());
-            return -1;
+            return nullptr;
         }
         if(!f->isVirtual()) {
             logger.info("Writing bytecode file: ", bcPath);
@@ -178,43 +185,36 @@ ModuleId VirtualMachine::addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
                              "; error: ", ec.message());
                 fail(loc, "failed to create directory for bytecode file: ", bcPath,
                      "; error: ", ec.message());
-                return -1;
+                return nullptr;
             }
             FILE *f = fopen(bcPath.c_str(), "wb");
             if(!f) {
                 logger.fatal("failed to write bytecode file: ", bcPath);
                 fail(loc, "failed to write bytecode file: ", bcPath);
-                return -1;
+                return nullptr;
             }
             bc.writeToFile(f);
             fclose(f);
         }
     }
     err.addFile(moduleIdCtr, f);
-    VarModule *mod = incVarRef(makeVar<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
-                                                  moduleIdCtr, existingVarStack));
-    LockGuard<RecursiveMutex> globalGuard(gs->mutex);
-    gs->modules.insert_or_assign(moduleIdCtr, mod);
-    return moduleIdCtr++;
+    VarModule *mod = makeVar<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
+                                        moduleIdCtr, existingVarStack);
+    gs->modules[moduleIdCtr++] = mod;
+    return mod;
 }
-void VirtualMachine::removeModule(ModuleId moduleId)
+void VirtualMachine::pushModule(VarModule *module) { modulestack.push_back(incVarRef(module)); }
+void VirtualMachine::popModule()
 {
-    auto loc = gs->modules.find(moduleId);
-    if(loc == gs->modules.end()) return;
-    LockGuard<RecursiveMutex> globalGuard(gs->mutex);
-    decVarRef(loc->second);
-    gs->modules.erase(loc);
+    VarModule *back = modulestack.back();
+    modulestack.pop_back();
+    ModuleId id = back->getModuleId();
+    if(!decVarRef(back)) { gs->modules.erase(id); }
 }
-void VirtualMachine::pushModule(ModuleId moduleId)
-{
-    auto mloc = gs->modules.find(moduleId);
-    modulestack.push_back(mloc->second);
-}
-void VirtualMachine::popModule() { modulestack.pop_back(); }
 
 VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
 {
-    VarFn *f = makeVar<VarFn>(loc, -1, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
+    VarFn *f = makeVar<VarFn>(loc, nullptr, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
                               FnBody{.native = fnObj.fn}, true);
     if(!f) return nullptr;
     if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
@@ -500,12 +500,12 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 
     fs::File *f = gs->managedAllocator.alloc<fs::File>(path.c_str(), true);
     f->append(code);
-    ModuleId moduleId = addModule(loc, f, isExpr, getVars()->getCurrModScope());
-    if(moduleId == (ModuleId)-1) {
+    VarModule *mod = makeModule(loc, f, isExpr, getVars()->getCurrModScope());
+    if(!mod) {
         fail(loc, "Failed to parse eval code: ", code);
         return nullptr;
     }
-    pushModule(moduleId);
+    pushModule(mod);
     Var *tmpRet = nullptr;
     int ec      = execute(tmpRet);
     popModule();

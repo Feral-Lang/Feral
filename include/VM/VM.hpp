@@ -111,15 +111,14 @@ public:
     Var *runCallable(ModuleLoc loc, StringRef name, Var *callable, Span<Var *> args,
                      VarMap *assnArgs);
 
-    int compileAndRun(ModuleLoc loc, const char *file);
+    int compileAndRun(ModuleLoc loc, const char *file, VarModule **module);
     // Must pushModule before calling this function, and popModule after calling it.
     int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
                 size_t end = 0);
 
-    ModuleId addModule(ModuleLoc loc, fs::File *f, bool exprOnly,
-                       VarStack *existingVarStack = nullptr);
-    void removeModule(ModuleId moduleId);
-    void pushModule(ModuleId moduleId);
+    VarModule *makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
+                          VarStack *existingVarStack = nullptr);
+    void pushModule(VarModule *module);
     void popModule();
 
     VarFn *makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj);
