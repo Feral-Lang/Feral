@@ -7,10 +7,10 @@ FERAL_FUNC(structNew, 0, false,
            "  fn(assnArgs...) -> Struct\n"
            "Creates a structure definition with fields defined by `assnArgs` and returns it.")
 {
-    VarStructDef *res = vm.makeVar<VarStructDef>(loc, assnArgs.size());
-    for(auto &attr : assnArgs) {
-        res->setAttr(vm, attr.first, attr.second.val, true);
-        res->setAttrOrderAt(attr.second.pos, attr.first);
+    VarStructDef *res = vm.makeVar<VarStructDef>(loc);
+    res->reserveAttrs(assnArgs->size());
+    for(auto it = assnArgs->begin(); it != assnArgs->end(); assnArgs->next(it)) {
+        res->setAttr(vm, it.key(), it.val(), true);
     }
     return res;
 }

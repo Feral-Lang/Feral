@@ -24,32 +24,15 @@ size_t ThreadIdToNum(Thread::id id)
 ///////////////////////////////////////////// VarThread //////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarThread::VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable,
-                     Span<Var *> _args, const StringMap<AssnArgData> &_assnArgs)
-    : Var(loc, 0), name(name), res(nullptr), thread(nullptr), vm(_vm), callable(_callable)
-{
-    args.reserve(_args.size() + 1); // +1 for self/nullptr
-    auto selfArgLoc = _assnArgs.find("selfVar");
-    Var *selfVar    = nullptr;
-    if(selfArgLoc != _assnArgs.end()) { selfVar = selfArgLoc->second.val; }
-    args.push_back(selfVar);
-    args.insert(args.end(), _args.begin(), _args.end());
-
-    assnArgs.reserve(_assnArgs.size() - (selfVar != nullptr ? 1 : 0));
-    for(auto &aa : _assnArgs) {
-        if(aa.first == "selfVar") continue;
-        assnArgs.insert(aa);
-    }
-}
+VarThread::VarThread(ModuleLoc loc, StringRef name, Var *_callable, Vector<Var *> &&_args,
+                     VarMap *_assnArgs)
+    : Var(loc, 0), name(name), callable(_callable), res(nullptr), thread(nullptr),
+      args(std::move(_args)), assnArgs(_assnArgs)
+{}
 VarThread::~VarThread() {}
 
 void VarThread::onCreate(VirtualMachine &vm)
 {
-    vm.incVarRef(callable);
-    for(auto &a : args) {
-        if(a) vm.incVarRef(a);
-    }
-    for(auto &aa : assnArgs) vm.incVarRef(aa.second.val);
     PackagedTask<Var *()> task(
         std::bind(&VirtualMachine::runCallable, &vm, getLoc(), name, callable, args, assnArgs));
     res    = new SharedFuture<Var *>(task.get_future());
@@ -62,7 +45,7 @@ void VarThread::onDestroy(VirtualMachine &vm)
         delete res;
         delete thread; // no need to join as we are using JThread
     }
-    for(auto &aa : assnArgs) vm.decVarRef(aa.second.val);
+    vm.decVarRef(assnArgs);
     for(auto &a : args) {
         if(a) vm.decVarRef(a);
     }
@@ -121,21 +104,26 @@ FERAL_FUNC(threadNew, 1, true,
                 vm.getTypeName(args[1]));
         return nullptr;
     }
-    auto nameLoc   = assnArgs.find("name");
+    Var *namev     = assnArgs->getAttr("name");
     StringRef name = "FeralThread";
-    if(nameLoc != assnArgs.end()) {
-        Var *nameVar = nameLoc->second.val;
-        if(!nameVar->is<VarStr>()) {
-            vm.fail(loc,
-                    "name for the new thread must be a string, found: ", vm.getTypeName(nameVar));
-            return nullptr;
-        }
-        name = as<VarStr>(nameVar)->getVal();
+    if(namev) {
+        EXPECT(VarStr, namev, "name for new thread");
+        name = as<VarStr>(namev)->getVal();
     }
-    Var *callable = args[1];
-    Span<Var *> passArgs(args.begin() + 2, args.end());
-    VarThread *t = vm.makeVar<VarThread>(loc, name, vm, callable, passArgs, assnArgs);
-    return t;
+    VarMap *newAssnArgs = vm.copyVar(loc, assnArgs);
+    if(!newAssnArgs) return nullptr;
+    Var *callable = vm.incVarRef(args[1]);
+    Vector<Var *> newArgs;
+    Var *selfVar = newAssnArgs->getAttr("selfvar");
+    newArgs.reserve(args.size() - 1); // - 2 for self + callable; + 1 for self
+    newArgs.push_back(selfVar);
+    if(selfVar) {
+        bool found = false;
+        newAssnArgs->remAttr(vm, "selfvar", found, true);
+    }
+    newArgs.insert(newArgs.end(), args.begin() + 2, args.end());
+    for(auto &a : newArgs) vm.incVarRef(a);
+    return vm.makeVar<VarThread>(loc, name, callable, std::move(newArgs), newAssnArgs);
 }
 
 FERAL_FUNC(threadGetId, 0, false,

@@ -749,6 +749,7 @@ INIT_DLL(Prelude)
     // map
 
     vm.addTypeFn<VarMap>(loc, "len", mapSize);
+    vm.addTypeFn<VarMap>(loc, "isOrdered", mapIsOrdered);
     vm.addTypeFn<VarMap>(loc, "isRef", mapIsRef);
     vm.addTypeFn<VarMap>(loc, "empty", mapEmpty);
     vm.addTypeFn<VarMap>(loc, "insert", mapInsert);

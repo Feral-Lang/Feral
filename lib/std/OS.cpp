@@ -132,13 +132,8 @@ FERAL_FUNC(
     cmd = "\"" + cmd + "\"";
 #endif
 
-    Var *outVar    = nullptr;
-    auto outVarLoc = assnArgs.find("out");
-    if(outVarLoc != assnArgs.end()) outVar = outVarLoc->second.val;
-
-    Var *envVar    = nullptr;
-    auto envVarLoc = assnArgs.find("env");
-    if(envVarLoc != assnArgs.end()) envVar = envVarLoc->second.val;
+    Var *outVar = assnArgs->getAttr("out");
+    Var *envVar = assnArgs->getAttr("env");
 
     if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>() || outVar->is<VarNil>())) {
         vm.fail(loc, "expected out variable to be a string/vector/nil, or not used, found: ",

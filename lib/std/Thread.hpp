@@ -8,19 +8,18 @@ namespace fer
 class VarThread : public Var
 {
     String name;
+    Var *callable;
     SharedFuture<Var *> *res;
     JThread *thread;
-    VirtualMachine &vm;
-    Var *callable;
     Vector<Var *> args;
-    StringMap<AssnArgData> assnArgs;
+    VarMap *assnArgs;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
 public:
-    VarThread(ModuleLoc loc, StringRef name, VirtualMachine &_vm, Var *_callable, Span<Var *> _args,
-              const StringMap<AssnArgData> &_assnArgs);
+    VarThread(ModuleLoc loc, StringRef name, Var *_callable, Vector<Var *> &&_args,
+              VarMap *_assnArgs);
     ~VarThread();
 
     inline StringRef getName() { return name; }

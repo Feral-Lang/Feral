@@ -15,8 +15,7 @@
 namespace fer
 {
 
-Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args,
-                const StringMap<AssnArgData> &assnArgs);
+Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs);
 
 #if defined(CORE_OS_WINDOWS)
 static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
@@ -45,7 +44,7 @@ bool GlobalState::init(VirtualMachine &vm)
     prelude = "prelude/prelude";
 
     basicErrHandler = vm.incVarRef(vm.makeFn({}, basicErrorHandler));
-    globals         = vm.incVarRef(vm.makeVar<VarMap>({}, 0, false));
+    globals         = vm.incVarRef(vm.makeVar<VarMap>({}, true, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     binaryPath      = vm.incVarRef(vm.makeVar<VarStr>({}, env::getProcPath()));

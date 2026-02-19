@@ -15,7 +15,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
 
     Vector<FeralFnBody> bodies;
     Vector<Var *> args;
-    StringMap<AssnArgData> assnArgs;
+    VarMap *assnArgs   = incVarRef(makeVar<VarMap>({}, true, false));
     size_t currBlkSize = 0;
 
     if(addFunc) vars->pushFn(*this, {});
@@ -25,7 +25,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
     for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
 #if defined(CORE_BUILD_DEBUG)
-        logger.trace("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
+        logger.debug("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
                      " :: ", execstack->dump(this));
 #endif
 
@@ -245,10 +245,9 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             String fnname;
             // setup call args
             args.clear();
-            assnArgs.clear();
+            assnArgs->clear(*this);
             bool memcall      = ins.getOpcode() == Opcode::MEM_CALL;
             StringRef arginfo = ins.getDataStr();
-            size_t kwargpos   = 0;
             Var *res          = nullptr;
             for(size_t i = 0; i < arginfo.size(); ++i) {
                 if(arginfo[i] == '2') { // unpack
@@ -265,27 +264,17 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
                             args.push_back(va);
                         }
                     } else if(a->is<VarMap>()) {
-                        for(auto &k : as<VarMap>(a)->getPositions()) {
-                            Var *v = as<VarMap>(a)->getAttr(k);
-                            incVarRef(v);
-                            auto loc = assnArgs.find(k);
-                            if(loc != assnArgs.end()) decVarRef(loc->second.val);
-                            assnArgs[k] = {kwargpos++, v};
+                        VarMap *atmp = as<VarMap>(a);
+                        for(auto it = atmp->begin(); it != atmp->end(); atmp->next(it)) {
+                            assnArgs->setAttr(*this, it.key(), it.val(), true);
                         }
                     }
                     decVarRef(a);
                 } else if(arginfo[i] == '1') {
-                    String name = as<VarStr>(execstack->back())->getVal();
-                    execstack->pop();
-                    auto loc   = assnArgs.find(name);
-                    size_t pos = 0;
-                    if(loc != assnArgs.end()) {
-                        pos = loc->second.pos;
-                        decVarRef(loc->second.val);
-                    } else {
-                        pos = kwargpos++;
-                    }
-                    assnArgs[name] = {pos, execstack->pop(false)};
+                    VarStr *name = as<VarStr>(execstack->pop(false));
+                    Var *val     = execstack->pop(false);
+                    assnArgs->setAttr(*this, name->getVal(), val, false);
+                    decVarRef(name);
                 } else if(arginfo[i] == '0') {
                     args.push_back(execstack->pop(false));
                 }
@@ -331,8 +320,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             if(!ready) goto callFail;
 
             // cleanup
+            assnArgs->clear(*this);
             for(auto &a : args) decVarRef(a);
-            for(auto &aa : assnArgs) decVarRef(aa.second.val);
             if(!memcall) decVarRef(fnbase);
             if(isExitCalled()) {
                 ret = execstack->pop(false);
@@ -340,8 +329,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             }
             break;
         callFail:
+            assnArgs->clear(*this);
             for(auto &a : args) decVarRef(a);
-            for(auto &aa : assnArgs) decVarRef(aa.second.val);
             if(!memcall) decVarRef(fnbase);
             goto handleErr;
         }
@@ -412,6 +401,7 @@ done:
     if(addBlk) vars->popBlk(*this, 1);
     if(addFunc) vars->popFn(*this);
     else vars->resizeBlkTo(*this, currBlkSize);
+    decVarRef(assnArgs);
     --recurseCount;
     return exitcode;
 fail:
@@ -420,6 +410,7 @@ fail:
     if(addBlk) vars->popBlk(*this, 1);
     if(addFunc) vars->popFn(*this);
     else vars->resizeBlkTo(*this, currBlkSize);
+    decVarRef(assnArgs);
     --recurseCount;
     return 1;
 }
