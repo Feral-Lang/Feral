@@ -10,7 +10,7 @@ static RecursiveMutex loadMtx;
 bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, String &result)
 {
     if(!modname->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(modname));
+        vm.fail(loc, "expected mod name to be of type string, found: ", vm.getTypeName(modname));
         return false;
     }
     Array<Var *, 3> tmpArgs{nullptr, modname, isImport ? vm.getTrue() : vm.getFalse()};
