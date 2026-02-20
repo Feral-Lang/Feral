@@ -98,9 +98,9 @@ if fs.exists(buildConfFile) {
 # Run CMake gen.
 if execCmake {
     let cmakeCmd = 'cmake -S ';
-    cmakeCmd += PROJ_DIR;
+    cmakeCmd += PROJ_DIR.str();
     cmakeCmd += ' -B ';
-    cmakeCmd += projectBuildDir;
+    cmakeCmd += projectBuildDir.str();
     cmakeCmd += ' -DDISABLE_INSTALL_MSG=true -DCMAKE_BUILD_TYPE=';
     cmakeCmd += buildType;
 
@@ -113,9 +113,9 @@ if execCmake {
         }
         cmakeCmd += ' -DWITH_COVERAGE=true';
         cmakeCmd += ' -DCMAKE_C_COMPILER=';
-        cmakeCmd += gcc;
+        cmakeCmd += gcc.str();
         cmakeCmd += ' -DCMAKE_CXX_COMPILER=';
-        cmakeCmd += gxx;
+        cmakeCmd += gxx.str();
     }
 
     # Set cache program
@@ -127,7 +127,7 @@ if execCmake {
     let cacherPath = os.findExec(cacher);
     if cacherPath != nil {
         cmakeCmd += ' -DCCACHE_PROGRAM=';
-        cmakeCmd += cacherPath;
+        cmakeCmd += cacherPath.str();
     }
 
     # Export compile commands.
