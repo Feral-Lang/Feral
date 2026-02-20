@@ -398,7 +398,7 @@ FERAL_FUNC(
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];
-        EXPECT(VarStr, arg, "path");
+        EXPECT(VarPath, arg, "path");
     }
     const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
     if(!fs::exists(modulePathsFile)) {
@@ -413,10 +413,10 @@ FERAL_FUNC(
     FILE *f      = fopen(modulePathsFile, "a+");
     size_t added = 0;
     for(size_t i = 1; i < args.size(); ++i) {
-        VarStr *arg = as<VarStr>(args[i]);
-        auto exists = std::find(existingData.begin(), existingData.end(), arg->getVal());
+        VarPath *arg = as<VarPath>(args[i]);
+        auto exists  = std::find(existingData.begin(), existingData.end(), arg->getStr());
         if(exists != existingData.end()) continue;
-        fwrite(arg->getVal().data(), sizeof(char), arg->getVal().size(), f);
+        fwrite(arg->getStr().c_str(), sizeof(char), arg->getStr().size(), f);
         fwrite("\n", sizeof(char), 1, f);
         ++added;
     }
@@ -435,7 +435,7 @@ FERAL_FUNC(
 {
     for(size_t i = 1; i < args.size(); ++i) {
         auto &arg = args[i];
-        EXPECT(VarStr, arg, "path");
+        EXPECT(VarPath, arg, "path");
     }
     const char *modulePathsFile = vm.getGlobalModulePathsFile()->getVal().c_str();
     if(!fs::exists(modulePathsFile)) {
@@ -449,8 +449,8 @@ FERAL_FUNC(
     }
     size_t removed = 0;
     for(size_t i = 1; i < args.size(); ++i) {
-        VarStr *arg = as<VarStr>(args[i]);
-        auto exists = std::find(existingData.begin(), existingData.end(), arg->getVal());
+        VarPath *arg = as<VarPath>(args[i]);
+        auto exists  = std::find(existingData.begin(), existingData.end(), arg->getStr());
         if(exists == existingData.end()) continue;
         existingData.erase(exists);
         ++removed;

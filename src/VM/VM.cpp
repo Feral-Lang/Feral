@@ -338,7 +338,7 @@ void VirtualMachine::tryAddModulePathsFromFile(const char *file)
     if(!File::readFile(file, modulePaths).getCode()) return;
     for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
         if(_path.empty()) continue;
-        VarStr *moduleLoc = makeVar<VarStr>({}, _path);
+        VarPath *moduleLoc = makeVar<VarPath>({}, _path);
         gs->moduleDirs->insert(*this, 0, moduleLoc, true);
     }
 }
@@ -364,19 +364,17 @@ bool VirtualMachine::findDllIn(VarVec *dirs, String &name, StringRef srcDir)
 }
 bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext, StringRef srcDir)
 {
-    static char testpath[MAX_PATH_CHARS];
+    Path testPath;
     if(name.front() != '~' && name.front() != '/' && name.front() != '.' &&
        (name.size() < 2 || name[1] != ':'))
     {
         for(auto locVar : dirs->getVal()) {
-            auto &loc = as<VarStr>(locVar)->getVal();
-            strncpy(testpath, loc.data(), loc.size());
-            testpath[loc.size()] = '\0';
-            strcat(testpath, "/");
-            strcat(testpath, name.c_str());
-            if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
-            if(fs::exists(testpath)) {
-                name = fs::absolute(testpath);
+            VarPath *loc = as<VarPath>(locVar);
+            testPath     = loc->getVal();
+            testPath /= name;
+            testPath += ext;
+            if(fs::exists(testPath)) {
+                name = fs::absolute(testPath);
                 return true;
             }
         }
@@ -400,10 +398,10 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext, Strin
             String parentdir = Path(dir).parent_path();
             name.insert(name.begin(), parentdir.begin(), parentdir.end());
         }
-        strcpy(testpath, name.c_str());
-        if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
-        if(fs::exists(testpath)) {
-            name = fs::absolute(testpath);
+        testPath = name;
+        testPath += ext;
+        if(fs::exists(testPath)) {
+            name = fs::absolute(testPath);
             return true;
         }
     }
