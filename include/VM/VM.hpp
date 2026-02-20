@@ -8,26 +8,26 @@ namespace fer
 {
 
 // Perform expressions in variadic before returning nullptr.
-#define EXPECT_AND(type, var, expectStr, ...)                         \
-    if(!var->is<type>()) {                                            \
-        vm.fail(loc, "expected `", vm.getTypeName(typeID<type>()),    \
-                "` for " expectStr ", found: ", vm.getTypeName(var)); \
-        __VA_ARGS__;                                                  \
-        return nullptr;                                               \
+#define EXPECT_AND(type, var, expectStr, ...)                                \
+    if(!var->is<type>()) {                                                   \
+        vm.fail(var->getLoc(), "expected `", vm.getTypeName(typeID<type>()), \
+                "` for " expectStr ", found: ", vm.getTypeName(var));        \
+        __VA_ARGS__;                                                         \
+        return nullptr;                                                      \
     }
 
-#define EXPECT2_AND(type1, type2, var, expectStr, ...)                        \
-    if(!var->is<type1>() && !var->is<type2>()) {                              \
-        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `", \
-                vm.getTypeName(typeID<type2>()),                              \
-                "` for " expectStr ", found: ", vm.getTypeName(var));         \
-        __VA_ARGS__;                                                          \
-        return nullptr;                                                       \
+#define EXPECT2_AND(type1, type2, var, expectStr, ...)                                  \
+    if(!var->is<type1>() && !var->is<type2>()) {                                        \
+        vm.fail(var->getLoc(), "expected `", vm.getTypeName(typeID<type1>()), "` or `", \
+                vm.getTypeName(typeID<type2>()),                                        \
+                "` for " expectStr ", found: ", vm.getTypeName(var));                   \
+        __VA_ARGS__;                                                                    \
+        return nullptr;                                                                 \
     }
 
 #define EXPECT3_AND(type1, type2, type3, var, expectStr, ...)                               \
     if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>()) {                       \
-        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+        vm.fail(var->getLoc(), "expected `", vm.getTypeName(typeID<type1>()), "` or `",     \
                 vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
                 "` for " expectStr ", found: ", vm.getTypeName(var));                       \
         __VA_ARGS__;                                                                        \
@@ -36,7 +36,7 @@ namespace fer
 
 #define EXPECT4_AND(type1, type2, type3, type4, var, expectStr, ...)                        \
     if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>() && !var->is<type4>()) {  \
-        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+        vm.fail(var->getLoc(), "expected `", vm.getTypeName(typeID<type1>()), "` or `",     \
                 vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
                 "` or `", vm.getTypeName(typeID<type4>()),                                  \
                 "` for " expectStr ", found: ", vm.getTypeName(var));                       \
@@ -48,7 +48,7 @@ namespace fer
     if(!var->is<type1>() && !var->is<type2>() && !var->is<type3>() && !var->is<type4>() &&  \
        !var->is<type5>())                                                                   \
     {                                                                                       \
-        vm.fail(loc, "expected `", vm.getTypeName(typeID<type1>()), "` or `",               \
+        vm.fail(var->getLoc(), "expected `", vm.getTypeName(typeID<type1>()), "` or `",     \
                 vm.getTypeName(typeID<type2>()), "` or `", vm.getTypeName(typeID<type3>()), \
                 "` or `", vm.getTypeName(typeID<type4>()), "` or `",                        \
                 vm.getTypeName(typeID<type5>()),                                            \
