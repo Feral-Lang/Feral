@@ -86,7 +86,7 @@ bool GlobalState::init(VirtualMachine &vm)
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
     String feralPaths = env::get("FERAL_PATHS");
     for(auto &_path : utils::stringDelim(feralPaths, ";")) {
-        VarStr *moduleLoc = vm.makeVar<VarStr>({}, _path);
+        VarPath *moduleLoc = vm.makeVar<VarPath>({}, _path);
         moduleDirs->insert(vm, 0, moduleLoc, true);
     }
 
