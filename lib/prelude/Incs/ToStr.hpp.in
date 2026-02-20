@@ -81,6 +81,13 @@ FERAL_FUNC(failureToStr, 0, false,
     return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
 }
 
+FERAL_FUNC(pathToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Converts the path `var` into a string and returns it.")
+{
+    return vm.makeVar<VarStr>(loc, as<VarPath>(args[0])->getStr());
+}
+
 FERAL_FUNC(structToStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns a string representation of all the fields and their respective values in the "

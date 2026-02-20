@@ -21,9 +21,9 @@ os.name;
 
 let cwd = os.getCWD();
 if os.name == 'windows' {
-    os.setCWD('C:\\');
+    os.setCWD('C:\\'.path());
 } else {
-    os.setCWD('/');
+    os.setCWD('/'.path());
 }
 assert.ne(os.getCWD(), cwd);
 os.setCWD(cwd);

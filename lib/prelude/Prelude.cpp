@@ -1,4 +1,3 @@
-#include "FS.hpp" // used by File.hpp.in
 #include "VM/VM.hpp"
 
 // These headers are below the Feral headers (above), because CORE_OS_WINDOWS is defined in them.
@@ -19,6 +18,7 @@
 #include "Incs/Map.hpp.in"
 #include "Incs/Module.hpp.in"
 #include "Incs/Nil.hpp.in"
+#include "Incs/Path.hpp.in"
 #include "Incs/Str.hpp.in"
 #include "Incs/Struct.hpp.in"
 #include "Incs/TypeID.hpp.in"
@@ -407,7 +407,9 @@ FERAL_FUNC(
     }
     String data;
     Vector<StringRef> existingData;
-    if(fs::read(modulePathsFile, data).getCode()) { existingData = utils::stringDelim(data, "\n"); }
+    if(File::readFile(modulePathsFile, data).getCode()) {
+        existingData = utils::stringDelim(data, "\n");
+    }
     FILE *f      = fopen(modulePathsFile, "a+");
     size_t added = 0;
     for(size_t i = 1; i < args.size(); ++i) {
@@ -442,7 +444,9 @@ FERAL_FUNC(
     }
     String data;
     Vector<StringRef> existingData;
-    if(fs::read(modulePathsFile, data).getCode()) { existingData = utils::stringDelim(data, "\n"); }
+    if(File::readFile(modulePathsFile, data).getCode()) {
+        existingData = utils::stringDelim(data, "\n");
+    }
     size_t removed = 0;
     for(size_t i = 1; i < args.size(); ++i) {
         VarStr *arg = as<VarStr>(args[i]);
@@ -491,24 +495,6 @@ INIT_DLL(Prelude)
     vm.addLocal(loc, "vecNew", vecNew);
     vm.addLocal(loc, "mapNew", mapNew);
     vm.addLocal(loc, "bytebufferNew", bytebufferNew);
-    // file/filesystem
-    vm.addLocal(loc, "fsFopen", fsFopen);
-    vm.addLocal(loc, "fsWalkDir", fsWalkDir);
-    vm.addLocal(loc, "fsAbsPath", fsAbsPath);
-    vm.addLocal(loc, "fsNormPath", fsNormPath);
-    // file descriptor
-    vm.addLocal(loc, "fsFdOpen", fdOpen);
-    vm.addLocal(loc, "fsFdRead", fdRead);
-    vm.addLocal(loc, "fsFdWrite", fdWrite);
-    vm.addLocal(loc, "fsFdClose", fdClose);
-    // files and dirs
-    vm.addLocal(loc, "fsExists", fsExists);
-    vm.addLocal(loc, "fsInstall", fsInstall);
-    vm.addLocal(loc, "fsMklink", fsMklink);
-    vm.addLocal(loc, "fsMove", fsMove);
-    vm.addLocal(loc, "fsMkdir", fsMkdir);
-    vm.addLocal(loc, "fsRemove", fsRemove);
-    vm.addLocal(loc, "fsCopy", fsCopy);
 
     // VM altering variables
     vm.addLocal("moduleDirs", "", vm.getModuleDirs());
@@ -588,8 +574,12 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarInt>(loc, "str", intToStr);
     vm.addTypeFn<VarFlt>(loc, "str", fltToStr);
     vm.addTypeFn<VarStr>(loc, "str", strToStr);
+    vm.addTypeFn<VarPath>(loc, "str", pathToStr);
     vm.addTypeFn<VarTypeID>(loc, "str", typeIDToStr);
     vm.addTypeFn<VarFailure>(loc, "str", failureToStr);
+
+    // to path
+    vm.addTypeFn<VarStr>(loc, "path", strToPath);
 
     // core type functions
 
@@ -785,6 +775,42 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity);
     vm.addTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
 
+    // path
+
+    vm.addTypeFn<VarPath>(loc, "_copy_", pathCopy);
+    vm.addTypeFn<VarPath>(loc, "==", pathEQ);
+    vm.addTypeFn<VarPath>(loc, "!=", pathNE);
+    vm.addTypeFn<VarPath>(loc, ">", pathGT);
+    vm.addTypeFn<VarPath>(loc, ">=", pathGE);
+    vm.addTypeFn<VarPath>(loc, "<", pathLT);
+    vm.addTypeFn<VarPath>(loc, "<=", pathLE);
+    vm.addTypeFn<VarPath>(loc, "/", pathJoin);
+    vm.addTypeFn<VarPath>(loc, "/=", pathAssnJoin);
+    vm.addTypeFn<VarPath>(loc, "clear", pathClear);
+    vm.addTypeFn<VarPath>(loc, "len", pathLen);
+    vm.addTypeFn<VarPath>(loc, "empty", pathEmpty);
+    vm.addTypeFn<VarPath>(loc, "isAbsolute", pathIsAbsolute);
+    vm.addTypeFn<VarPath>(loc, "isRelative", pathIsRelative);
+    vm.addTypeFn<VarPath>(loc, "hasRoot", pathHasRoot);
+    vm.addTypeFn<VarPath>(loc, "hasRootName", pathHasRootName);
+    vm.addTypeFn<VarPath>(loc, "hasRootDir", pathHasRootDir);
+    vm.addTypeFn<VarPath>(loc, "hasRelative", pathHasRelative);
+    vm.addTypeFn<VarPath>(loc, "hasParent", pathHasParent);
+    vm.addTypeFn<VarPath>(loc, "hasFile", pathHasFile);
+    vm.addTypeFn<VarPath>(loc, "hasFileName", pathHasFileName);
+    vm.addTypeFn<VarPath>(loc, "hasFileExt", pathHasFileExt);
+    vm.addTypeFn<VarPath>(loc, "root", pathRoot);
+    vm.addTypeFn<VarPath>(loc, "rootName", pathRootName);
+    vm.addTypeFn<VarPath>(loc, "rootDir", pathRootDir);
+    vm.addTypeFn<VarPath>(loc, "normal", pathNormal);
+    vm.addTypeFn<VarPath>(loc, "absolute", pathAbsolute);
+    vm.addTypeFn<VarPath>(loc, "relative", pathRelative);
+    vm.addTypeFn<VarPath>(loc, "relativeTo", pathRelativeTo);
+    vm.addTypeFn<VarPath>(loc, "parent", pathParent);
+    vm.addTypeFn<VarPath>(loc, "file", pathFile);
+    vm.addTypeFn<VarPath>(loc, "fileName", pathFileName);
+    vm.addTypeFn<VarPath>(loc, "fileExt", pathFileExt);
+
     // file
 
     vm.addTypeFn<VarFile>(loc, "lines", fileLines);
@@ -798,39 +824,6 @@ INIT_DLL(Prelude)
     // module
 
     vm.addTypeFn<VarModule>(loc, "_path_", moduleGetPath);
-
-    // constants (for file/filesystem)
-    // stdin, stdout, stderr file descriptors
-    vm.makeLocal<VarInt>(loc, "fsStdin", "", STDIN_FILENO);
-    vm.makeLocal<VarInt>(loc, "fsStdout", "", STDOUT_FILENO);
-    vm.makeLocal<VarInt>(loc, "fsStderr", "", STDERR_FILENO);
-    // fs.walkdir()
-    vm.makeLocal<VarInt>(loc, "FS_WALK_FILES", "", WalkEntry::FILES);
-    vm.makeLocal<VarInt>(loc, "FS_WALK_DIRS", "", WalkEntry::DIRS);
-    vm.makeLocal<VarInt>(loc, "FS_WALK_RECURSE", "", WalkEntry::RECURSE);
-    // <file>.seek()
-    vm.makeLocal<VarInt>(loc, "FS_SEEK_SET", "", SEEK_SET);
-    vm.makeLocal<VarInt>(loc, "FS_SEEK_CUR", "", SEEK_CUR);
-    vm.makeLocal<VarInt>(loc, "FS_SEEK_END", "", SEEK_END);
-    // file descriptor flags
-    vm.makeLocal<VarInt>(loc, "FS_O_RDONLY", "", O_RDONLY);
-    vm.makeLocal<VarInt>(loc, "FS_O_WRONLY", "", O_WRONLY);
-    vm.makeLocal<VarInt>(loc, "FS_O_RDWR", "", O_RDWR);
-    vm.makeLocal<VarInt>(loc, "FS_O_APPEND", "", O_APPEND);
-    vm.makeLocal<VarInt>(loc, "FS_O_CREAT", "", O_CREAT);
-#if defined(CORE_OS_LINUX) || defined(CORE_OS_APPLE)
-    vm.makeLocal<VarInt>(loc, "FS_O_DSYNC", "", O_DSYNC);
-#endif
-    vm.makeLocal<VarInt>(loc, "FS_O_EXCL", "", O_EXCL);
-#if !defined(CORE_OS_WINDOWS)
-    vm.makeLocal<VarInt>(loc, "FS_O_NOCTTY", "", O_NOCTTY);
-    vm.makeLocal<VarInt>(loc, "FS_O_NONBLOCK", "", O_NONBLOCK);
-    vm.makeLocal<VarInt>(loc, "FS_O_SYNC", "", O_SYNC);
-#endif
-#if defined(CORE_OS_LINUX)
-    vm.makeLocal<VarInt>(loc, "FS_O_RSYNC", "", O_RSYNC);
-#endif
-    vm.makeLocal<VarInt>(loc, "FS_O_TRUNC", "", O_TRUNC);
 
     return true;
 }

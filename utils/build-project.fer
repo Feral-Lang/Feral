@@ -6,19 +6,21 @@ let os = import('std/os');
 let fecl = import('std/fecl');
 let thread = import('std/thread');
 
-let PROJ_DIR = os.getEnv('PROJ_DIR');
+let PROJ_DIR_STR = os.getEnv('PROJ_DIR');
 
-if PROJ_DIR == nil {
+if PROJ_DIR_STR == nil {
     io.println('PROJ_DIR env variable does not exist');
     feral.exit(1);
 }
+
+let PROJ_DIR = PROJ_DIR_STR.path();
 
 if !fs.exists(PROJ_DIR) {
     io.println('directory ', PROJ_DIR, ' does not exist');
     feral.exit(1);
 }
 
-let projectBuildDir = fs.pathFrom(PROJ_DIR, 'build');
+let projectBuildDir = PROJ_DIR / 'build';
 
 if !fs.exists(projectBuildDir) { fs.mkdir(projectBuildDir); }
 
@@ -43,7 +45,7 @@ if codeCov && os.name != 'linux' {
 
 let execCmake = false;
 
-let cmakeCachePath = fs.pathFrom(projectBuildDir, 'CMakeCache.txt');
+let cmakeCachePath = projectBuildDir / 'CMakeCache.txt';
 if !fs.exists(cmakeCachePath) {
     if buildType.empty() {
         io.println('Invalid build type, must be either Release (r), Debug (d), or RelWithDebInfo (rd)');
@@ -76,7 +78,7 @@ if !fs.exists(cmakeCachePath) {
 }
 
 # Check if a .build.fecl file exists in the project directory, and use it if it does.
-let buildConfFile = fs.pathFrom(PROJ_DIR, '.build.fecl');
+let buildConfFile = PROJ_DIR / '.build.fecl';
 let cmakeArgs = '', makeArgs = '', testCmd = '';
 if fs.exists(buildConfFile) {
     let buildConf = fecl.loads(fs.fopen(buildConfFile, 'r').readAll());
@@ -138,13 +140,13 @@ if execCmake {
     fs.mkdir(projectBuildDir);
     let res = os.system(cmakeCmd);
     if res != 0 { feral.exit(res); }
-    let compCommandsPath = fs.pathFrom(projectBuildDir, 'compile_commands.json');
+    let compCommandsPath = projectBuildDir / 'compile_commands.json';
     if fs.exists(compCommandsPath) { fs.copy(compCommandsPath, PROJ_DIR); }
 }
 
 # Run CMake build.
 let makeCmd = 'cmake --build ';
-makeCmd += projectBuildDir;
+makeCmd += projectBuildDir.str();
 makeCmd += ' --target=install --parallel=';
 makeCmd += thread.getConcurrency().str();
 if os.name == 'windows' {

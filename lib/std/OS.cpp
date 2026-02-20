@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "Env.hpp"
-#include "FS.hpp"
 #include "VM/VM.hpp"
 
 #if defined(CORE_OS_WINDOWS)
@@ -243,28 +242,23 @@ FERAL_FUNC(osStrErr, 0, false,
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 FERAL_FUNC(osGetCWD, 0, false,
-           "  fn() -> Str\n"
+           "  fn() -> Path\n"
            "Returns the current working directory of the program.")
 {
-    VarStr *res = vm.makeVar<VarStr>(loc, fs::getCWD());
-    if(res->getVal().empty()) {
+    Path p = fs::current_path();
+    if(p.empty()) {
         vm.fail(loc, "getCWD() failed - internal error");
-        vm.decVarRef(res);
         return nullptr;
     }
-    return res;
+    return vm.makeVar<VarPath>(loc, std::move(p));
 }
 
 FERAL_FUNC(osSetCWD, 1, false,
            "  fn(dir) -> Nil\n"
            "Sets the current working directory to `dir` of the program.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for destination directory, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    fs::setCWD(as<VarStr>(args[1])->getVal());
+    EXPECT(VarPath, args[1], "destination directory");
+    fs::current_path(as<VarPath>(args[1])->getVal());
     return vm.getNil();
 }
 

@@ -2,7 +2,6 @@
 
 #include "Env.hpp"
 #include "Error.hpp"
-#include "FS.hpp"
 #include "Utils.hpp"
 #include "VM/CoreFuncs.hpp"
 #include "VM/VM.hpp"
@@ -47,21 +46,18 @@ bool GlobalState::init(VirtualMachine &vm)
     globals         = vm.incVarRef(vm.makeVar<VarMap>({}, true, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
-    binaryPath      = vm.incVarRef(vm.makeVar<VarStr>({}, env::getProcPath()));
-    installPath =
-        vm.incVarRef(vm.makeVar<VarStr>({}, fs::parentDir(fs::parentDir(binaryPath->getVal()))));
+    binaryPath      = vm.incVarRef(vm.makeVar<VarPath>({}, env::getProcPath()));
+    installPath     = vm.incVarRef(vm.makeVar<VarPath>({}, binaryPath->parent().parent_path()));
     // To make sure if user installs Feral in, say, `/usr`,
     // Feral doesn't attempt using `/usr/tmp` as the temp path.
-    if(installPath->getVal().ends_with(".feral")) {
-        tempPath = vm.incVarRef(vm.makeVar<VarStr>({}, installPath->getVal() + "/tmp"));
-        libPath  = vm.incVarRef(vm.makeVar<VarStr>({}, installPath->getVal() + "/lib/feral"));
-        globalModulesPath =
-            vm.incVarRef(vm.makeVar<VarStr>({}, libPath->getVal() + "/.modulePaths"));
+    if(installPath->fileName() == ".feral") {
+        tempPath          = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("tmp")));
+        libPath           = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
+        globalModulesPath = vm.incVarRef(vm.makeVar<VarPath>({}, libPath->join(".modulePaths")));
     } else {
-        tempPath = vm.incVarRef(vm.makeVar<VarStr>({}, "/tmp/feral." + env::get("USERNAME")));
-        libPath  = vm.incVarRef(vm.makeVar<VarStr>({}, installPath->getVal() + "/lib/feral"));
-        globalModulesPath =
-            vm.incVarRef(vm.makeVar<VarStr>({}, libPath->getVal() + "/.modulePaths"));
+        tempPath = vm.incVarRef(vm.makeVar<VarPath>({}, "/tmp/feral." + env::get("USERNAME")));
+        libPath  = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
+        globalModulesPath = vm.incVarRef(vm.makeVar<VarPath>({}, libPath->join(".modulePaths")));
     }
     tru  = vm.incVarRef(vm.makeVar<VarBool>({}, true));
     fals = vm.incVarRef(vm.makeVar<VarBool>({}, false));
@@ -113,12 +109,16 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarVec>({}, "Vec", "Builtin type.");
     vm.addGlobalType<VarMap>({}, "Map", "Builtin type.");
     vm.addGlobalType<VarFn>({}, "Func", "Builtin type.");
+    vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
     vm.addGlobalType<VarModule>({}, "Module", "Builtin type.");
     vm.addGlobalType<VarTypeID>({}, "TypeID", "Builtin type.");
+    vm.addGlobalType<VarDll>({}, "Dll", "Builtin type.");
     vm.addGlobalType<VarStructDef>({}, "StructDef", "Builtin type.");
     vm.addGlobalType<VarStruct>({}, "Struct", "Builtin type.");
     vm.addGlobalType<VarFailure>({}, "Failure", "Builtin type.");
+    vm.addGlobalType<VarPath>({}, "Path", "Builtin type.");
     vm.addGlobalType<VarFile>({}, "File", "Builtin type.");
+    vm.addGlobalType<VarVars>({}, "Vars", "Builtin type.");
     vm.addGlobalType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
     vm.addGlobalType<VarIntIterator>({}, "IntIterator", "Builtin type.");
     vm.addGlobalType<VarVecIterator>({}, "VecIterator", "Builtin type.");

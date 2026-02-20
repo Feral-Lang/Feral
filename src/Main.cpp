@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     else if(args.has("trace")) logger.setLevel(LogLevels::TRACE);
     else if(args.has("debug")) logger.setLevel(LogLevels::DEBUG);
 
-    String srcFile(args.getValue("source"));
+    Path srcFile(args.getValue("source"));
     if(srcFile.empty()) {
         // args.setSource("<repl>");
         // return ExecInteractive(args);
@@ -60,9 +60,9 @@ int main(int argc, char **argv)
 
     VirtualMachine vm(args, ParseSource, "Main");
     if(!fs::exists(srcFile)) {
-        String binFile(vm.getLibPath()->getVal());
-        binFile += "/bin/";
-        binFile += srcFile;
+        Path binFile(vm.getLibPath()->getVal());
+        binFile /= "bin";
+        binFile /= srcFile;
         binFile += ".fer";
         if(!fs::exists(binFile)) {
             err.fail({}, "File ", srcFile, " does not exist");
@@ -70,7 +70,8 @@ int main(int argc, char **argv)
         }
         srcFile = binFile;
     }
-    return vm.compileAndRun({}, fs::absPath(srcFile.c_str()).c_str(), nullptr);
+    srcFile = fs::absolute(srcFile);
+    return vm.compileAndRun({}, srcFile.c_str(), nullptr);
 }
 
 bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,

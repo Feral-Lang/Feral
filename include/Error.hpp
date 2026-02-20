@@ -32,12 +32,12 @@ static_assert(sizeof(ModuleLoc) == sizeof(uint64_t));
 class ErrorHandler
 {
     Map<ModuleId, StringRef> paths;
-    Map<ModuleId, fs::File *> files;
+    Map<ModuleId, File *> files;
 
 public:
-    void addFile(ModuleId id, fs::File *f);
+    void addFile(ModuleId id, File *f);
 
-    fs::File *getFileForId(ModuleId id);
+    File *getFileForId(ModuleId id);
     StringRef getPathForId(ModuleId id);
 
     inline bool moduleIdExists(ModuleId id) { return paths.contains(id); }

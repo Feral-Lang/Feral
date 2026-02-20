@@ -656,6 +656,55 @@ public:
     inline bool isHandling() { return handling; }
 };
 
+class VarPath : public Var
+{
+    Path val;
+
+    void onCreate(VirtualMachine &vm) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
+
+public:
+    VarPath(ModuleLoc loc, StringRef init = "");
+    VarPath(ModuleLoc loc, String &&init);
+    VarPath(ModuleLoc loc, Path init);
+
+    Path normal();
+
+    inline const String &getStr() { return val.native(); }
+
+    inline Path join(StringRef path) { return val / path; }
+    inline Path join(Path &path) { return val / path; }
+
+    inline void append(StringRef path) { val /= path; }
+    inline void append(Path &path) { val /= path; }
+
+    inline bool hasRoot() { return val.has_root_path(); }
+    inline bool hasRootName() { return val.has_root_name(); }
+    inline bool hasRootDir() { return val.has_root_directory(); }
+    inline bool hasRelative() { return val.has_relative_path(); }
+    inline bool hasParent() { return val.has_parent_path(); }
+    inline bool hasFile() { return val.has_filename(); }
+    inline bool hasFileName() { return val.has_stem(); }
+    inline bool hasFileExt() { return val.has_extension(); }
+
+    inline Path root() { return val.root_path(); }
+    inline Path rootName() { return val.root_name(); }
+    inline Path rootDir() { return val.root_directory(); }
+    inline Path absolute(std::error_code &ec) { return fs::canonical(val, ec); }
+    inline Path relative() { return val.relative_path(); }
+    inline Path relativeTo(const Path &path) { return val.lexically_relative(path); }
+    inline Path parent() { return val.parent_path(); }
+    inline Path file() { return val.filename(); }
+    inline Path fileName() { return val.stem(); }
+    inline Path fileExt() { return val.extension(); }
+
+    inline void clear() { return val.clear(); }
+    inline size_t size() { return val.native().size(); }
+    inline bool empty() { return val.empty(); }
+
+    inline Path &getVal() { return val; }
+};
+
 class VarFile : public Var
 {
     FILE *file;

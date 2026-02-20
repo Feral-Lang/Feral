@@ -3,7 +3,6 @@
 #include <charconv>
 
 #include "Error.hpp"
-#include "FS.hpp"
 
 namespace fer::lex
 {
@@ -249,7 +248,7 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
                 tmpstr   = utils::toRawString(path);
                 strClass = STR;
             } else if(str == "__SRC_DIR__") {
-                tmpstr   = utils::toRawString(fs::parentDir(path));
+                tmpstr   = utils::toRawString(Path(path).parent_path());
                 strClass = STR;
             }
             if(strClass == STR || strClass == IDEN) {

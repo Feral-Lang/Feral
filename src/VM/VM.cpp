@@ -1,7 +1,6 @@
 #include "VM/VM.hpp"
 
 #include "Error.hpp"
-#include "FS.hpp"
 #include "Utils.hpp"
 #include "VM/CoreFuncs.hpp"
 #include "VM/DynLib.hpp"
@@ -93,7 +92,7 @@ Var *VirtualMachine::runCallable(ModuleLoc loc, StringRef name, Var *callable, S
 
 int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file, VarModule **module)
 {
-    fs::File *f          = gs->managedAllocator.alloc<fs::File>(file, false);
+    File *f              = gs->managedAllocator.alloc<File>(file, false);
     Status<bool> readRes = f->read();
     if(!readRes.getCode()) {
         err.fail({}, "Failed to read file: ", file, ": ", readRes.getMsg());
@@ -131,7 +130,7 @@ bool VirtualMachine::loadPrelude()
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
 
-    if(!findImportIn(gs->moduleDirs, gs->prelude, fs::getCWD())) {
+    if(!findImportIn(gs->moduleDirs, gs->prelude, fs::current_path().c_str())) {
         err.fail({}, "Failed to find prelude: ", gs->prelude);
         return 1;
     }
@@ -146,25 +145,30 @@ bool VirtualMachine::loadPrelude()
     return true;
 }
 
-VarModule *VirtualMachine::makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
+VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
                                       VarStack *existingVarStack)
 {
     LockGuard<RecursiveMutex> globalGuard(gs->mutex);
     static ModuleId moduleIdCtr = 0;
-    StringRef bcFilePath(f->getPath());
-    String bcPath(getTempPath()->getVal());
-    bcPath += "/cache";
+    Path srcPath(f->getPath());
+    Path bcPath;
+    if(!f->isVirtual()) {
+        bcPath = getTempPath()->getVal();
+        bcPath /= "bytecode";
 #if defined(CORE_OS_WINDOWS)
-    bcPath += "/";
+        String drive = srcPath.root_name().string();
+        utils::stringReplace(drive, ":", "");
+        bcPath /= drive;
 #endif
-    bcPath += bcFilePath;
-    bcPath += ".bc";
-#if defined(CORE_OS_WINDOWS)
-    utils::stringReplace(bcPath, ":", "/");
-#endif
-    bool bcFileExists = fs::isFileNewer(bcPath.c_str(), f->getPathCStr());
+        bcPath /= srcPath.relative_path();
+        bcPath += ".bc";
+    }
+    std::error_code ec;
+    auto bcPathTime   = fs::last_write_time(bcPath, ec);
+    auto filePathTime = fs::last_write_time(f->getPath(), ec);
+    bool bcFileValid  = bcPathTime > filePathTime;
     Bytecode bc;
-    if(bcFileExists) {
+    if(bcFileValid) {
         if(!f->isVirtual()) {
             LOG_INFO("Reading bytecode file: ", bcPath);
             FILE *f = fopen(bcPath.c_str(), "rb");
@@ -180,7 +184,8 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
         if(!f->isVirtual()) {
             LOG_INFO("Writing bytecode file: ", bcPath);
             std::error_code ec;
-            if(fs::mkdir(fs::parentDir(bcPath), ec)) {
+            fs::create_directories(bcPath.parent_path(), ec);
+            if(ec.value()) {
                 LOG_FATAL("failed to create directory for bytecode file: ", bcPath,
                           "; error: ", ec.message());
                 fail(loc, "failed to create directory for bytecode file: ", bcPath,
@@ -330,7 +335,7 @@ void VirtualMachine::tryAddModulePathsFromFile(const char *file)
 {
     if(!fs::exists(file)) return;
     String modulePaths;
-    if(!fs::read(file, modulePaths).getCode()) return;
+    if(!File::readFile(file, modulePaths).getCode()) return;
     for(auto &_path : utils::stringDelim(modulePaths, "\n")) {
         if(_path.empty()) continue;
         VarStr *moduleLoc = makeVar<VarStr>({}, _path);
@@ -371,34 +376,34 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext, Strin
             strcat(testpath, name.c_str());
             if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
             if(fs::exists(testpath)) {
-                name = fs::absPath(testpath);
+                name = fs::absolute(testpath);
                 return true;
             }
         }
     } else {
         if(name.front() == '~') {
             name.erase(name.begin());
-            static StringRef home = fs::home();
+            static String home = env::getHome();
             name.insert(name.begin(), home.begin(), home.end());
         } else if(name.front() == '.' && (name.size() == 1 || name[1] != '.')) {
             assert(srcDir.size() > 0 &&
                    "dot based module search cannot be done on empty modulestack");
-            StringRef dir = fs::parentDir(srcDir);
+            String dir = Path(srcDir).parent_path();
             name.erase(name.begin());
             name.insert(name.begin(), dir.begin(), dir.end());
         } else if(name.size() > 1 && name[0] == '.' && name[1] == '.') {
             assert(srcDir.size() > 0 &&
                    "dot based module search cannot be done on empty modulestack");
-            StringRef dir = fs::parentDir(srcDir);
+            String dir = Path(srcDir).parent_path();
             name.erase(name.begin());
             name.erase(name.begin());
-            StringRef parentdir = fs::parentDir(dir);
+            String parentdir = Path(dir).parent_path();
             name.insert(name.begin(), parentdir.begin(), parentdir.end());
         }
         strcpy(testpath, name.c_str());
         if(!ext.empty()) strncat(testpath, ext.data(), ext.size());
         if(fs::exists(testpath)) {
-            name = fs::absPath(testpath);
+            name = fs::absolute(testpath);
             return true;
         }
     }
@@ -498,7 +503,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     path += utils::toString(evalCtr++);
     path += ">";
 
-    fs::File *f = gs->managedAllocator.alloc<fs::File>(path.c_str(), true);
+    File *f = gs->managedAllocator.alloc<File>(path.c_str(), true);
     f->append(code);
     VarModule *mod = makeModule(loc, f, isExpr, getVars()->getCurrModScope());
     if(!mod) {
