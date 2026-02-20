@@ -152,7 +152,7 @@ FERAL_FUNC(fsRemove, 1, true,
         VarPath *path = as<VarPath>(args[i]);
         if(path->empty()) continue;
         std::error_code ec;
-        fs::remove(path->getVal(), ec);
+        fs::remove_all(path->getVal(), ec);
         if(ec.value()) {
             vm.fail(loc, "remove failed (", ec.value(), "): ", ec.message());
             return nullptr;
@@ -169,12 +169,13 @@ FERAL_FUNC(fsCopy, 2, true,
     Var *destArg = args[args.size() - 1];
     EXPECT(VarPath, destArg, "copy destination");
     const Path &dest = as<VarPath>(destArg)->getVal();
+    auto opts        = fs::copy_options::update_existing | fs::copy_options::recursive;
     for(size_t i = 1; i < args.size() - 1; ++i) {
         EXPECT(VarPath, args[i], "path to copy");
         const Path &src = as<VarPath>(args[i])->getVal();
         if(src.empty()) continue;
         std::error_code ec;
-        fs::copy(src, dest, ec);
+        fs::copy(src, dest, opts, ec);
         if(ec.value()) {
             vm.fail(loc, "copy failed (", ec.value(), "): ", ec.message());
             return nullptr;

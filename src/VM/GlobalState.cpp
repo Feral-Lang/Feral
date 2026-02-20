@@ -46,26 +46,25 @@ bool GlobalState::init(VirtualMachine &vm)
     globals         = vm.incVarRef(vm.makeVar<VarMap>({}, true, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
-    binaryPath      = vm.incVarRef(vm.makeVar<VarPath>({}, env::getProcPath()));
-    installPath     = vm.incVarRef(vm.makeVar<VarPath>({}, binaryPath->parent().parent_path()));
-    // To make sure if user installs Feral in, say, `/usr`,
-    // Feral doesn't attempt using `/usr/tmp` as the temp path.
-    if(installPath->fileName() == ".feral") {
-        tempPath          = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("tmp")));
-        libPath           = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
-        globalModulesPath = vm.incVarRef(vm.makeVar<VarPath>({}, libPath->join(".modulePaths")));
-    } else {
-        tempPath = vm.incVarRef(vm.makeVar<VarPath>({}, "/tmp/feral." + env::get("USERNAME")));
-        libPath  = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
-        globalModulesPath = vm.incVarRef(vm.makeVar<VarPath>({}, libPath->join(".modulePaths")));
-    }
+
+    tempPath = vm.incVarRef(vm.makeVar<VarPath>({}, fs::temp_directory_path()));
+#if defined(CORE_OS_WINDOWS)
+    tempPath->append("feral." + env::get("USERNAME"));
+#else
+    tempPath->append("feral." + env::get("USER"));
+#endif
+    binaryPath        = vm.incVarRef(vm.makeVar<VarPath>({}, env::getProcPath()));
+    installPath       = vm.incVarRef(vm.makeVar<VarPath>({}, binaryPath->parent().parent_path()));
+    libPath           = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
+    globalModulesPath = vm.incVarRef(vm.makeVar<VarPath>({}, libPath->join(".modulePaths")));
+
     tru  = vm.incVarRef(vm.makeVar<VarBool>({}, true));
     fals = vm.incVarRef(vm.makeVar<VarBool>({}, false));
     nil  = vm.incVarRef(vm.makeVar<VarNil>({}));
 
+    tempPath->setConst();
     binaryPath->setConst();
     installPath->setConst();
-    tempPath->setConst();
     libPath->setConst();
     globalModulesPath->setConst();
     basicErrHandler->setConst();
@@ -138,9 +137,9 @@ bool GlobalState::deinit(VirtualMachine &vm)
     vm.decVarRef(cmdargs);
     vm.decVarRef(globalModulesPath);
     vm.decVarRef(libPath);
-    vm.decVarRef(tempPath);
     vm.decVarRef(installPath);
     vm.decVarRef(binaryPath);
+    vm.decVarRef(tempPath);
     vm.decVarRef(moduleFinders);
     vm.decVarRef(moduleDirs);
     vm.decVarRef(globals);
