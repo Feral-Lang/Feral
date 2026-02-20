@@ -452,7 +452,6 @@ Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dll
 
 Var *VirtualMachine::callVar(ModuleLoc loc, StringRef name, Span<Var *> args, VarMap *assnArgs)
 {
-    assert(!modulestack.empty() && "cannot perform a call with empty modulestack");
     bool memcall = args[0] != nullptr;
     Var *fn      = nullptr;
     if(memcall) {
