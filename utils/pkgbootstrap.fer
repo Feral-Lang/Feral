@@ -58,10 +58,10 @@ logging.info('Git repository successfully retrieved');
 
 # Install Pkg
 
-let pkgBasePath = fs.pathFrom(feral.libPath, 'pkg');
-if fs.dirExists(pkgBasePath) { fs.remove(pkgBasePath); }
+let pkgBasePath = feral.libPath / 'pkg';
+if fs.exists(pkgBasePath) { fs.remove(pkgBasePath); }
 
-let pkgInstallPath = fs.pathFrom(pkgBasePath, 'installed', 'Pkg', pkgVersion);
+let pkgInstallPath = pkgBasePath / 'installed' / 'Pkg' / pkgVersion;
 
 logging.info('Installing Pkg to: ', pkgInstallPath);
 io.println('Installing Pkg to: ', pkgInstallPath);

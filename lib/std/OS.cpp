@@ -106,23 +106,19 @@ FERAL_FUNC(
         startFrom = 0;
     }
 
-    for(size_t i = startFrom; i < argsToUse.size(); ++i) {
-        if(!argsToUse[i]->is<VarStr>()) {
-            vm.fail(loc,
-                    "expected string argument for command, found: ", vm.getTypeName(argsToUse[i]));
-            return nullptr;
-        }
-    }
-
     String cmd;
     for(size_t i = startFrom; i < argsToUse.size(); ++i) {
         if(i > startFrom) cmd += " ";
-        StringRef arg      = as<VarStr>(argsToUse[i])->getVal();
-        bool isArgOperator = !arg.empty() && arg[0] == '^';
-        if(isArgOperator) arg = arg.substr(1);
+        Var *v = nullptr;
+        Array<Var *, 1> tmp{argsToUse[i]};
+        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+        StringRef s        = as<VarStr>(v)->getVal();
+        bool isArgOperator = !s.empty() && s[0] == '^';
+        if(isArgOperator) s = s.substr(1);
         if(!isArgOperator) cmd += "\"";
-        cmd += arg;
+        cmd += s;
         if(!isArgOperator) cmd += "\"";
+        vm.decVarRef(v);
     }
 #if defined(CORE_OS_WINDOWS)
     // Apparently, popen on Windows eradicates the outermost quotes.
