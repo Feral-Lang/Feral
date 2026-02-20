@@ -82,12 +82,14 @@ FERAL_FUNC(fsWalkDir, 3, false, "")
 ///////////////////////////////////// FileSystem Functions ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-FERAL_FUNC(fsExists, 1, false,
-           "  fn(path) -> Bool\n"
-           "Returns if the given `path` exists or not.")
+FERAL_FUNC(fsStatus, 1, false,
+           "  fn(path) -> Int\n"
+           "Returns the status code as per C++'s `std::filesystem::file_type` for `path`.")
 {
     EXPECT(VarPath, args[1], "path");
-    return fs::exists(as<VarPath>(args[1])->getVal()) ? vm.getTrue() : vm.getFalse();
+    std::error_code ec;
+    int res = (int)fs::symlink_status(as<VarPath>(args[1])->getVal(), ec).type();
+    return vm.makeVar<VarInt>(loc, res);
 }
 
 FERAL_FUNC(fsMkdir, 1, true,
@@ -431,7 +433,7 @@ INIT_DLL(FS)
     vm.addLocal(loc, "fopenNative", fsFopen);
     vm.addLocal(loc, "walkDirNative", fsWalkDir);
     // files and dirs
-    vm.addLocal(loc, "exists", fsExists);
+    vm.addLocal(loc, "status", fsStatus);
     vm.addLocal(loc, "move", fsMove);
     vm.addLocal(loc, "mkdir", fsMkdir);
     vm.addLocal(loc, "mklinkDir", fsMklinkDir);
@@ -456,6 +458,17 @@ INIT_DLL(FS)
     vm.addLocal(loc, "fdClose", fdClose);
 
     // constants (for file/filesystem)
+    // std::filesystem::file_type
+    vm.makeLocal<VarInt>(loc, "TYPE_NONE", "", (int)fs::file_type::none);
+    vm.makeLocal<VarInt>(loc, "TYPE_NOT_FOUND", "", (int)fs::file_type::not_found);
+    vm.makeLocal<VarInt>(loc, "TYPE_REG", "", (int)fs::file_type::regular);
+    vm.makeLocal<VarInt>(loc, "TYPE_DIR", "", (int)fs::file_type::directory);
+    vm.makeLocal<VarInt>(loc, "TYPE_SYMLINK", "", (int)fs::file_type::symlink);
+    vm.makeLocal<VarInt>(loc, "TYPE_BLOCK", "", (int)fs::file_type::block);
+    vm.makeLocal<VarInt>(loc, "TYPE_CHAR", "", (int)fs::file_type::character);
+    vm.makeLocal<VarInt>(loc, "TYPE_FIFO", "", (int)fs::file_type::fifo);
+    vm.makeLocal<VarInt>(loc, "TYPE_SOCKET", "", (int)fs::file_type::socket);
+    vm.makeLocal<VarInt>(loc, "TYPE_UNKNOWN", "", (int)fs::file_type::unknown);
     // stdin, stdout, stderr file descriptors
     vm.makeLocal<VarInt>(loc, "stdin", "The standard input stream.", STDIN_FILENO);
     vm.makeLocal<VarInt>(loc, "stdout", "The standard output stream.", STDOUT_FILENO);
