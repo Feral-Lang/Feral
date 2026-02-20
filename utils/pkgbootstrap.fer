@@ -11,9 +11,9 @@ let pkgExePath = feral.libPath / 'bin' / 'pkg.fer';
 
 if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
 
-let logFileName = feral.tempPath / 'feralPkgBootstrap.log';
-logging.addTargetByName(logFileName, logging.Levels.TRACE, false);
-io.println('Writing full logs to: ', logFileName);
+let logFilePath = feral.tempPath / 'feralPkgBootstrap.log';
+logging.addTargetByPath(logFilePath, logging.Levels.TRACE, false);
+io.println('Writing full logs to: ', logFilePath);
 
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) && !feral.args.find('--force') {

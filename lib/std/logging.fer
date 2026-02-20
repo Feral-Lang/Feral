@@ -45,8 +45,8 @@ let addTarget = fn(target, level = Levels.WARN, withCol = true) {
     targets.push(FileInfo(target, level, withCol));
 };
 
-let addTargetByName = fn(name, level = Levels.WARN, withCol = true, mustClose = true) {
-    let file = fs.fopen(name, 'w+', mustClose);
+let addTargetByPath = fn(path, level = Levels.WARN, withCol = true, mustClose = true) {
+    let file = fs.fopen(path, 'w+', mustClose);
     targets.push(FileInfo(ref(file), level, withCol));
 };
 

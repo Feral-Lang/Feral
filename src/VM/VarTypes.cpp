@@ -840,7 +840,8 @@ Path VarPath::normal()
 {
     String tmp{val};
     utils::stringReplace(tmp, "\\", "/");
-    return fs::weakly_canonical(tmp);
+    std::error_code ec;
+    return fs::weakly_canonical(tmp, ec);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -21,15 +21,15 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
                     "' when attempting to call the callable: ", vm.getTypeName(callable));
             return false;
         }
-        if(ret && ret->is<VarStr>()) break;
+        if(ret && ret->is<VarPath>()) break;
         if(ret && !ret->is<VarNil>()) vm.decVarRef(ret);
         ret = nullptr;
     }
-    if(!ret || !ret->is<VarStr>()) {
+    if(!ret || !ret->is<VarPath>()) {
         vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->getVal());
         return false;
     }
-    result = as<VarStr>(ret)->getVal();
+    result = as<VarPath>(ret)->getVal();
     vm.decVarRef(ret);
 
     if(isImport) {
@@ -93,7 +93,7 @@ FERAL_FUNC_DEF(basicModuleFinder)
     } else {
         if(!vm.findDllIn(vm.getModuleDirs(), modfile)) return vm.getNil();
     }
-    return vm.makeVar<VarStr>(loc, modfile);
+    return vm.makeVar<VarPath>(loc, std::move(modfile));
 }
 
 FERAL_FUNC_DEF(basicErrorHandler)
