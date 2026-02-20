@@ -18,7 +18,7 @@ let getVSInstallPath = fn() {
 let getMSBuildPath = fn() {
     let vs = getVSInstallPath();
     if vs.empty() { return ''; }
-    let msbuild = fs.pathFrom(vs, 'MSBuild', 'Current', 'Bin', 'msbuild.exe');
+    let msbuild = vs / 'MSBuild' / 'Current' / 'Bin' / 'msbuild.exe';
     if !fs.exists(msbuild) { return ''; }
     return msbuild;
 };

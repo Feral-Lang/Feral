@@ -841,7 +841,7 @@ Path VarPath::normal()
     String tmp{val};
     utils::stringReplace(tmp, "\\", "/");
     std::error_code ec;
-    return fs::weakly_canonical(tmp, ec);
+    return Path(tmp).lexically_normal();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

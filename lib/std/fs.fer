@@ -17,6 +17,14 @@ let path = fn(pathparts...) {
 ###################################################################### FileSystem stuff #######################################################################
 
 "
+  fn(path) -> Bool
+Returns `true` if `path` exists.
+"
+let exists = fn(path) {
+    return status(path) != TYPE_NOT_FOUND;
+};
+
+"
   fn(path, mode = 'r', shouldClose = true) -> File
 Opens a file a returns its handle given the `path` and the `mode` string.
 If `shouldClose` is `true`, the file won't be closed when the returned variable goes out of scope.
