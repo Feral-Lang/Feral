@@ -675,8 +675,16 @@ public:
     inline Path join(StringRef path) { return val / path; }
     inline Path join(Path &path) { return val / path; }
 
-    inline void append(StringRef path) { val /= path; }
-    inline void append(Path &path) { val /= path; }
+    inline void append(StringRef path)
+    {
+        val /= path;
+        val = normal();
+    }
+    inline void append(Path &path)
+    {
+        val /= path;
+        val = normal();
+    }
 
     inline bool hasRoot() { return val.has_root_path(); }
     inline bool hasRootName() { return val.has_root_name(); }

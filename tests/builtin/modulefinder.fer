@@ -6,7 +6,7 @@ let fs = import('std/fs');
 let customModuleFinder = fn(moduleName, isimport) {
     if !isimport { return nil; }
     let module = moduleName + '.fer';
-    let testPath = __SRC_DIR__.path() / module;
+    let testPath = __SRC_DIR__ / module;
     if fs.exists(testPath) { return testPath.str(); }
     return nil;
 };

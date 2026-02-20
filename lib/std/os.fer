@@ -56,7 +56,7 @@ let findExec = fn(exec) {
     let PATH = getEnv('PATH');
     if PATH == nil { return nil; }
     for dir in PATH.split(envDelimiter).each() {
-        let p = dir.path() / exec;
+        let p = dir / exec;
         if fs.exists(p) { return p; }
     }
     return nil;
