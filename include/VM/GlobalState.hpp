@@ -33,11 +33,11 @@ class GlobalState
     // Signature is: fn(moduleToResolve: str, isImport: bool): nil/str
     VarVec *moduleFinders;
     // Various paths used by Feral and are provided as <prelude>.<pathVar>.
-    VarStr *binaryPath;        // where feral exists
-    VarStr *installPath;       // <binaryPath>/..
-    VarStr *tempPath;          // <binaryPath>/../tmp
-    VarStr *libPath;           // <binaryPath>/../lib/feral
-    VarStr *globalModulesPath; // <libPath>/.modulePaths
+    VarPath *binaryPath;        // where feral exists
+    VarPath *installPath;       // <binaryPath>/..
+    VarPath *tempPath;          // <binaryPath>/../tmp
+    VarPath *libPath;           // <binaryPath>/../lib/feral
+    VarPath *globalModulesPath; // <libPath>/.modulePaths
     // Args provided to feral command line
     VarVec *cmdargs;
     VarBool *tru;

@@ -3,7 +3,7 @@ let assert = import('std/assert');
 let fs = import('std/fs');
 let bytebuffer = import('std/bytebuffer');
 
-let file = fs.fdOpen(__SRC_PATH__);
+let file = fs.fdOpen(__SRC_PATH__.path());
 defer fs.fdClose(file);
 
 let bbuf = bytebuffer.new(200); # 200 bytes capacity

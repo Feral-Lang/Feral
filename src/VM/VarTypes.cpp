@@ -825,6 +825,28 @@ void VarFailure::reset()
 ///////////////////////////////////////////// VarFile ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+VarPath::VarPath(ModuleLoc loc, StringRef init) : Var(loc, VarInfo::BASIC), val(init) {}
+VarPath::VarPath(ModuleLoc loc, String &&init) : Var(loc, VarInfo::BASIC), val(std::move(init)) {}
+VarPath::VarPath(ModuleLoc loc, Path init) : Var(loc, VarInfo::BASIC), val(std::move(init)) {}
+
+void VarPath::onCreate(VirtualMachine &vm) { val = normal(); }
+bool VarPath::onSet(VirtualMachine &vm, Var *from)
+{
+    val = as<VarPath>(from)->getVal();
+    return true;
+}
+
+Path VarPath::normal()
+{
+    String tmp{val};
+    utils::stringReplace(tmp, "\\", "/");
+    return fs::weakly_canonical(tmp);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// VarFile ////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 VarFile::VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool requiresClosing)
     : Var(loc, VarInfo::BASIC), file(file), mode(mode), requiresClosing(requiresClosing)
 {}

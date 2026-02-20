@@ -3,10 +3,11 @@ let assert = import('std/assert');
 
 let fs = import('std/fs');
 
-let customModuleFinder = fn(module, isimport) {
+let customModuleFinder = fn(moduleName, isimport) {
     if !isimport { return nil; }
-    let testPath = fs.pathFrom(__SRC_DIR__, module + '.fer');
-    if fs.exists(testPath) { return testPath; }
+    let module = moduleName + '.fer';
+    let testPath = __SRC_DIR__.path() / module;
+    if fs.exists(testPath) { return testPath.str(); }
     return nil;
 };
 

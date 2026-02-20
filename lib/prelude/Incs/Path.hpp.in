@@ -1,0 +1,300 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(pathCopy, 0, false,
+           "  var.fn() -> Path\n"
+           "Creates and returns a new instance of Path using `var`.")
+{
+    return vm.makeVar<VarPath>(loc, as<VarPath>(args[0])->getVal());
+}
+
+FERAL_FUNC(pathEQ, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `other` is also Nil.")
+{
+    if(!args[1]->is<VarPath>()) return vm.getFalse();
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs == rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathNE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `other` is not Nil.")
+{
+    if(!args[1]->is<VarPath>()) return vm.getTrue();
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs != rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathGT, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if  `var` > `other`.")
+{
+    EXPECT(VarPath, args[1], "comparison operand");
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs > rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathGE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if  `var` >= `other`.")
+{
+    EXPECT(VarPath, args[1], "comparison operand");
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs >= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathLT, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if  `var` < `other`.")
+{
+    EXPECT(VarPath, args[1], "comparison operand");
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs < rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathLE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if  `var` <= `other`.")
+{
+    EXPECT(VarPath, args[1], "comparison operand");
+    Path &lhs = as<VarPath>(args[0])->getVal();
+    Path &rhs = as<VarPath>(args[1])->getVal();
+    return lhs <= rhs ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathJoin, 1, false,
+           "  var.fn(other) -> Path\n"
+           "Joins `other` to `var` and returns a new Path.")
+{
+    EXPECT2(VarStr, VarPath, args[1], "source");
+    VarPath *res = vm.makeVar<VarPath>(loc, as<VarPath>(args[0])->getVal());
+    if(args[1]->is<VarStr>()) {
+        res->append(as<VarStr>(args[1])->getVal());
+    } else {
+        res->append(as<VarPath>(args[1])->getVal());
+    }
+    return res;
+}
+
+FERAL_FUNC(pathAssnJoin, 1, false,
+           "  var.fn(other) -> var\n"
+           "Appends `other` to `var` and returns `var` itself.")
+{
+    EXPECT_NO_CONST(args[0], "path");
+    EXPECT2(VarStr, VarPath, args[1], "source");
+    VarPath *res = as<VarPath>(args[0]);
+    if(args[1]->is<VarStr>()) {
+        res->append(as<VarStr>(args[1])->getVal());
+    } else {
+        res->append(as<VarPath>(args[1])->getVal());
+    }
+    return res;
+}
+
+FERAL_FUNC(pathClear, 0, false,
+           "  var.fn() -> Nil\n"
+           "Clears the path `var`.")
+{
+    as<VarPath>(args[0])->clear();
+    return vm.getNil();
+}
+
+FERAL_FUNC(pathLen, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the length of the path `var`.")
+{
+    return vm.makeVar<VarInt>(loc, as<VarPath>(args[0])->size());
+}
+
+FERAL_FUNC(pathEmpty, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path `var` is empty.")
+{
+    return as<VarPath>(args[0])->empty() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathIsAbsolute, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path is fully qualified.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->getVal().is_absolute() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathIsRelative, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path is not fully qualified.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->getVal().is_relative() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasRoot, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a root path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasRoot() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasRootName, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a root name.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasRootName() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasRootDir, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a root dir.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasRootDir() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasRelative, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a relative path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasRelative() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasParent, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a parent path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasParent() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasFile, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a file.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasFile() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasFileName, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a file name.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasFileName() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathHasFileExt, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the path contains a file extension.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return res->hasFileExt() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(pathRoot, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the root path (root name / root dir) of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->root());
+}
+
+FERAL_FUNC(pathRootName, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the root name of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->rootName());
+}
+
+FERAL_FUNC(pathRootDir, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the root directory of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->rootDir());
+}
+
+FERAL_FUNC(pathNormal, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the normalized path equivalent to `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->normal());
+}
+
+FERAL_FUNC(pathAbsolute, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the normalized path equivalent to `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    std::error_code ec;
+    Path p = res->absolute(ec);
+    if(ec.value()) {
+        vm.fail(loc, "path.absolute() failed (", ec.value(), "): ", ec.message());
+        return nullptr;
+    }
+    return vm.makeVar<VarPath>(loc, std::move(p));
+}
+
+FERAL_FUNC(pathRelative, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the relative path (path - root path) of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->relative());
+}
+
+FERAL_FUNC(pathRelativeTo, 1, false,
+           "  var.fn(base) -> Path\n"
+           "Returns the part of path `var` relative to `base` as a new Path.")
+{
+    VarPath *curr = as<VarPath>(args[0]);
+    VarPath *base = as<VarPath>(args[1]);
+    return vm.makeVar<VarPath>(loc, curr->relativeTo(base->getVal()));
+}
+
+FERAL_FUNC(
+    pathParent, 0, false,
+    "  var.fn() -> Path\n"
+    "Returns the parent path (path - inner-most item if any) of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->parent());
+}
+
+FERAL_FUNC(pathFile, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the file (fileName + fileExt) of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->file());
+}
+
+FERAL_FUNC(pathFileName, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the fileName of the path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->fileName());
+}
+
+FERAL_FUNC(pathFileExt, 0, false,
+           "  var.fn() -> Path\n"
+           "Returns the extension of the file in path `var` as a new Path.")
+{
+    VarPath *res = as<VarPath>(args[0]);
+    return vm.makeVar<VarPath>(loc, res->fileExt());
+}
+
+} // namespace fer

@@ -116,7 +116,7 @@ public:
     int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
                 size_t end = 0);
 
-    VarModule *makeModule(ModuleLoc loc, fs::File *f, bool exprOnly,
+    VarModule *makeModule(ModuleLoc loc, File *f, bool exprOnly,
                           VarStack *existingVarStack = nullptr);
     void pushModule(VarModule *module);
     void popModule();
@@ -179,11 +179,11 @@ public:
     inline MemoryManager &getMemoryManager() { return gs->mem; }
     inline VarVec *getModuleDirs() { return gs->moduleDirs; }
     inline VarVec *getModuleFinders() { return gs->moduleFinders; }
-    inline VarStr *getBinaryPath() { return gs->binaryPath; }
-    inline VarStr *getInstallPath() { return gs->installPath; }
-    inline VarStr *getTempPath() { return gs->tempPath; }
-    inline VarStr *getLibPath() { return gs->libPath; }
-    inline VarStr *getGlobalModulePathsFile() { return gs->globalModulesPath; }
+    inline VarPath *getBinaryPath() { return gs->binaryPath; }
+    inline VarPath *getInstallPath() { return gs->installPath; }
+    inline VarPath *getTempPath() { return gs->tempPath; }
+    inline VarPath *getLibPath() { return gs->libPath; }
+    inline VarPath *getGlobalModulePathsFile() { return gs->globalModulesPath; }
     inline VarBool *getTrue() { return gs->tru; }
     inline VarBool *getFalse() { return gs->fals; }
     inline VarNil *getNil() { return gs->nil; }

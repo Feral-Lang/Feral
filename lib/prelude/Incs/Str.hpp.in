@@ -550,6 +550,13 @@ FERAL_FUNC(strReplace, 2, false,
     return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
+FERAL_FUNC(strToPath, 0, false,
+           "  var.fn() -> Path\n"
+           "Creates a Path instance using `var` and returns it.")
+{
+    return vm.makeVar<VarPath>(loc, StringRef(as<VarStr>(args[0])->getVal()));
+}
+
 // trim from start (in place)
 static inline void ltrim(String &s)
 {

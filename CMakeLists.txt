@@ -134,7 +134,7 @@ endif()
 FetchContent_Declare(
     LibCore
     GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-    GIT_TAG        1.1.6
+    GIT_TAG        1.1.7
 )
 
 FetchContent_MakeAvailable(LibCore)

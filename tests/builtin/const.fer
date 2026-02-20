@@ -1,6 +1,6 @@
 let assert = import('std/assert');
 
-feral.binaryPath += 'hello' or e {
+feral.binaryPath.str() += 'hello' or e {
     assert.eq(e.str(), '`var` cannot be a const');
 };
 

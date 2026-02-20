@@ -17,7 +17,6 @@ let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
 let fecl = import('std/fecl');
-let stat = import('std/stat');
 let time = import('std/time');
 let mutex = import('std/mutex');
 let atomic = import('std/atomic');
@@ -34,30 +33,29 @@ let fmtWithPath = fn(path, fmtStrs) {
     if fmtStrs.empty() { return nil; }
     let v = vec.new(refs = true);
     for fmtStr in fmtStrs.each() {
-        v.push(fs.fmtWithPath(fmtStr, path));
+        v.push(path.fmt(fmtStr));
     }
     return v;
 };
 
-let testsDir = args.getValue('path');
+let testsDir = args.getValue('path').path();
 
-let st = stat.stat(testsDir) or err {
-    io.println('error: stat failed on directory: ', err);
-    feral.exit(1);
-    return nil; # unreachable
-};
-
-if !st.isDir() {
-    io.println('error: entered path is not a directory');
+if !fs.exists(testsDir) {
+    io.println('non-existent path: ', testsDir);
     feral.exit(1);
 }
 
-let cfgname = fs.pathFrom(testsDir, 'config.fecl');
-if !fs.exists(cfgname) {
-    io.println('error: test config: \'' + cfgname + '\' not found');
+if !fs.isDir(testsDir) {
+    io.println('error: entered path `', testsDir, '` is not a directory');
     feral.exit(1);
 }
-let cfgfile = fs.fopen(cfgname);
+
+let cfgPath = testsDir / 'config.fecl';
+if !fs.exists(cfgPath) {
+    io.println('error: test config: `' + cfgPath + '` not found');
+    feral.exit(1);
+}
+let cfgfile = fs.fopen(cfgPath);
 let cfgstr = '';
 for line in cfgfile.eachLine() {
     cfgstr += line + '\n';
@@ -132,7 +130,7 @@ for let i = 0; i < runCount; ++i {
             io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
         }
         io.fflush(io.stdout);
-        tpool.push(thread.run(cmd, name = file));
+        tpool.push(thread.run(cmd, name = file.str()));
     }
 }
 waitProcs(1, !valgrindCmd.empty());
@@ -146,7 +144,7 @@ if !cleanCmd.empty() {
         cmd.push('^>' + io.null);
         io.cprintln('{c}clean{0}: {y}', cmd.join(' '), '{0} ...');
         io.fflush(io.stdout);
-        tpool.push(thread.run(cmd));
+        tpool.push(thread.run(cmd, name = file.str()));
     }
     waitProcs(1, false, false);
 }

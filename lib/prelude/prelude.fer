@@ -284,6 +284,82 @@ let str in MapTy = fn() {
     return res;
 };
 
+"
+  var.fn(fmtStr) -> Str
+Uses the path `var` to format the format string `fmtStr` using specific shorthands, and returns the new string.
+The shorthands are:
+  $s => feral binary (which is running the program) location
+  $p => `path` as is
+  $d => parent directory of `path`
+  $f => filename (file name without directory)
+  $b => basename (file name without directory and extension)
+  $e => file extension (including dot)
+"
+let fmt in PathTy = fn(fmtStr) {
+    if fmtStr == nil { return nil; }
+    let feralBinStr = feral.binaryPath.str();
+    let selfStr = self.str();
+    let shorthand = false;
+    let parentStr = self.parent().str();
+    let fileStr = self.file().str();
+    let fileNameStr = self.fileName().str();
+    let extStr = self.fileExt().str();
+    let res = fmtStr;
+    for let i = 0; i < res.len(); ++i {
+        if res[i] == '$' && !shorthand {
+            shorthand = true;
+            res.erase(i);
+            --i;
+            continue;
+        }
+        if !shorthand { continue; }
+        shorthand = false;
+        if res[i] == 's' {
+            res.erase(i);
+            res.insert(i, feralBinStr);
+            i += feralBinStr.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'p' {
+            res.erase(i);
+            res.insert(i, selfStr);
+            i += selfStr.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'd' {
+            res.erase(i);
+            res.insert(i, parentStr);
+            i += parentStr.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'b' {
+            res.erase(i);
+            res.insert(i, fileNameStr);
+            i += fileNameStr.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'f' {
+            res.erase(i);
+            res.insert(i, fileStr);
+            i += fileStr.len();
+            --i;
+            continue;
+        }
+        if res[i] == 'e' {
+            res.erase(i);
+            res.insert(i, extStr);
+            i += extStr.len();
+            --i;
+            continue;
+        }
+    }
+    return res;
+};
+
 # FS
 
 "

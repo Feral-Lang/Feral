@@ -4,21 +4,21 @@ namespace fer
 {
 
 FERAL_FUNC(nilEQ, 1, false,
-           "  var.fn(other) -> Str\n"
+           "  var.fn(other) -> Bool\n"
            "Returns `true` if `other` is also Nil.")
 {
     return args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
 FERAL_FUNC(nilNE, 1, false,
-           "  var.fn(other) -> Str\n"
+           "  var.fn(other) -> Bool\n"
            "Returns `true` if `other` is not Nil.")
 {
     return !args[1]->is<VarNil>() ? vm.getTrue() : vm.getFalse();
 }
 
 FERAL_FUNC(nilNot, 0, false,
-           "  var.fn() -> Str\n"
+           "  var.fn() -> Bool\n"
            "Returns `true` for Nil.")
 {
     return vm.getTrue();

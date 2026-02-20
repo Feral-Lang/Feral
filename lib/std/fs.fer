@@ -1,64 +1,20 @@
-let stat = import('std/stat');
+loadlib('std/FS');
 
-################################# Some definitions #################################
-
-let absPath = feral.fsAbsPath;
-let normPath = feral.fsNormPath;
-
-let fdRead = feral.fsFdRead;
-let fdWrite = feral.fsFdWrite;
-let fdClose = feral.fsFdClose;
-
-let exists = feral.fsExists;
-let install = feral.fsInstall;
-let mklink = feral.fsMklink;
-let mkdir = feral.fsMkdir;
-let remove = feral.fsRemove;
-let copy = feral.fsCopy;
-let move = feral.fsMove;
+######################################################################### Path stuff ##########################################################################
 
 "
-The standard input stream.
+  fn(parts...) -> Path
+Create and return a Path using each of `parts`, separated by platform directory separator, and normalized.
 "
-let stdin = feral.fsStdin;
-"
-The standard output stream.
-"
-let stdout = feral.fsStdout;
-"
-The standard error stream.
-"
-let stderr = feral.fsStderr;
+let path = fn(pathparts...) {
+    let p = ''.path();
+    for part in pathparts.each() {
+        p /= part;
+    }
+    return p.normal();
+};
 
-# fs.walkdir()
-let WALK_FILES = feral.FS_WALK_FILES;
-let WALK_DIRS = feral.FS_WALK_DIRS;
-let WALK_RECURSE = feral.FS_WALK_RECURSE;
-# <file>.seek()
-let SEEK_SET = feral.FS_SEEK_SET;
-let SEEK_CUR = feral.FS_SEEK_CUR;
-let SEEK_END = feral.FS_SEEK_END;
-# file descriptor flags
-let O_RDONLY = feral.FS_O_RDONLY;
-let O_WRONLY = feral.FS_O_WRONLY;
-let O_RDWR = feral.FS_O_RDWR;
-let O_APPEND = feral.FS_O_APPEND;
-let O_CREAT = feral.FS_O_CREAT;
-inline if feral.getOSName() == 'linux' || feral.getOSName() == 'macos' {
-let O_DSYNC = feral.FS_O_DSYNC;
-}
-let O_EXCL = feral.FS_O_EXCL;
-inline if feral.getOSName() != 'windows' {
-let O_NOCTTY = feral.FS_O_NOCTTY;
-let O_NONBLOCK = feral.FS_O_NONBLOCK;
-let O_SYNC = feral.FS_O_SYNC;
-}
-inline if feral.getOSName() == 'linux' {
-let O_RSYNC = feral.FS_O_RSYNC;
-}
-let O_TRUNC = feral.FS_O_TRUNC;
-
-####################################################################################
+###################################################################### FileSystem stuff #######################################################################
 
 "
   fn(path, mode = 'r', shouldClose = true) -> File
@@ -67,7 +23,7 @@ If `shouldClose` is `true`, the file won't be closed when the returned variable 
 That is useful for handles like `stdout` and `stderr`.
 "
 let fopen = fn(file, mode = 'r', mustClose = true) {
-    return feral.fsFopen(file, mode, mustClose);
+    return fopenNative(file, mode, mustClose);
 };
 
 "
@@ -76,19 +32,48 @@ Given a directory path `dirPath`, get all files and/or directories with/without 
 `fileRegex` can be used to filter out the results based on some regular expression.
 "
 let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
-    let res = feral.fsWalkDir(dir, mode, regex);
+    let res = walkDirNative(dir, mode, regex);
     let nameOnly = kw['nameOnly'] != nil && kw['nameOnly'];
-    inline if nameOnly {
-    let dirslashed = dir;
-    if !dir.endsWith('/') { dirslashed += '/'; }
-    }
-    for i in res.each() {
-        i = normalizePath(i);
-        if nameOnly {
-            i = i.replace(dirslashed, '');
+    if nameOnly {
+        for i in res.each() {
+                i = i.relativeTo(dir);
         }
     }
     return res;
+};
+
+"
+  fn(source, destination) -> Nil
+Copy the `source` file to `destination`.
+Creates parent directories for `desination` as needed.
+"
+let install = fn(src, dest) {
+    let destParent = dest.parent();
+    mkdir(destParent);
+    copy(src, dest);
+};
+
+"
+  fn(source, destination) -> Nil
+Creates a symbolic link at `destination` from `source`.
+"
+let mklink = fn(src, dest) {
+    if exists(dest) { remove(dest); }
+    if exists(src) && isDir(src) {
+        mklinkDir(src, dest);
+    } else {
+        mklinkFile(src, dest);
+    }
+};
+
+#################################################################### File descriptor stuff ####################################################################
+
+"
+  fn(path, flags = fs.O_CREAT) -> Int
+Create and return a file descriptor using `path` and `flags`.
+"
+let fdCreate = fn(name, flags = O_CREAT) {
+    return fdCreateNative(name, flags);
 };
 
 "
@@ -96,156 +81,5 @@ let walkDir = fn(dir, mode = WALK_FILES, regex = '(.*)', .kw) {
 Open and return a file descriptor using `path` and `flags`.
 "
 let fdOpen = fn(name, flags = O_RDONLY) {
-    return feral.fsFdOpen(name, flags);
-};
-
-"
-  fn(path) -> Bool
-Returns `true` if a `path` exists and is a directory.
-"
-let dirExists = fn(name) {
-    if !exists(name) { return false; }
-    return stat.stat(name).isDir();
-};
-
-"
-  fn(path, parts...) -> Nil
-Appends each of `parts` to `path` using `/` as the separator.
-"
-let pathAppend = fn(fullpath, pathparts...) {
-    for let i = 0; i < pathparts.len(); ++i {
-        if !fullpath.empty() { fullpath += '/'; }
-        fullpath += pathparts[i];
-    }
-};
-
-"
-  fn(parts...) -> Str
-Create and return a string using each of `parts`, separated by `/`.
-"
-let pathFrom = fn(pathparts...) {
-    if pathparts.empty() { return ''; }
-    let fullpath = '';
-    pathAppend(fullpath, pathparts...);
-    return fullpath;
-};
-
-"
-  fn(path) -> Str
-Replaces all `\\` and `//` in `path` with `/` and returns the new string.
-"
-let normalizePath = fn(path) {
-    return path.replace('\\', '/').replace('//', '/');
-};
-
-"
-  fn(path) -> Str
-Returns the parent directory of `path` as a new string.
-If no `/` is found, returns `.`.
-Can also be written as:
-  fmtWithPath('$d', path)
-"
-let parentDir = fn(path) {
-    let dirname = '';
-    let locslash = path.rfind('/');
-    if locslash == -1 { dirname = '.'; }
-    else { dirname = path.sub(0, locslash); }
-    return dirname;
-};
-
-"
-  fn(fmtstr, path) -> Str
-Uses the `path` to format the format string `fmtstr` using specific shorthands, and returns the new string.
-The shorthands are:
-  $s => feral binary (which is running the program) location
-  $p => `path` as is
-  $d => parent directory of `path`
-  $f => filename (file name without directory)
-  $b => basename (file name without directory and extension)
-  $e => file extension
-"
-let fmtWithPath = fn(fmtstr, fpath) {
-    let shorthand = false;
-    let dirname = '';
-    let filename = '';
-    let ext = '';
-    let locslash = fpath.rfind('/');
-    let locdot = fpath.rfind('.');
-    if locslash == -1 {
-        dirname = '.';
-        if locdot == -1 {
-            filename = fpath;
-        } else {
-            filename = fpath.sub(0, fpath.len() - locdot);
-        }
-    }
-    else {
-        dirname = fpath.sub(0, locslash);
-        if locdot == -1 {
-            filename = fpath.sub(locslash + 1, fpath.len() - locslash);
-        } else {
-            filename = fpath.sub(locslash + 1, fpath.len() - locslash - (fpath.len() - locdot + 1));
-        }
-    }
-    if locdot == -1 { ext = ''; }
-    else { ext = fpath.sub(locdot + 1, fpath.len() - locdot); }
-
-    let res = fmtstr;
-    for let i = 0; i < res.len(); ++i {
-        if res[i] == '$' && !shorthand {
-            shorthand = true;
-            res.erase(i);
-            --i;
-            continue;
-        }
-        if !shorthand { continue; }
-        shorthand = false;
-        if res[i] == 's' {
-            res.erase(i);
-            res.insert(i, feral.binaryPath);
-            i += feral.binaryPath.len();
-            --i;
-            continue;
-        }
-        if res[i] == 'p' {
-            res.erase(i);
-            res.insert(i, fpath);
-            i += fpath.len();
-            --i;
-            continue;
-        }
-        if res[i] == 'd' {
-            res.erase(i);
-            res.insert(i, dirname);
-            i += dirname.len();
-            --i;
-            continue;
-        }
-        if res[i] == 'b' {
-            res.erase(i);
-            res.insert(i, filename);
-            i += filename.len();
-            --i;
-            continue;
-        }
-        if res[i] == 'f' {
-            res.erase(i);
-            let extdot = '';
-            if !ext.empty() {
-                extdot = '.';
-            }
-            res.insert(i, filename + extdot + ext);
-            i += filename.len() + extdot.len() + ext.len();
-            --i;
-            continue;
-        }
-        if res[i] == 'e' {
-            res.erase(i);
-            res.insert(i, ext);
-            i += ext.len();
-            --i;
-            continue;
-        }
-    }
-    return res;
+    return fdOpenNative(name, flags);
 };

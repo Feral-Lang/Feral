@@ -12,13 +12,13 @@ ModuleLoc::ModuleLoc(ModuleId id, uint64_t offStart, uint64_t offEnd)
     : id(id), offStart(offStart), offEnd(offEnd)
 {}
 
-void ErrorHandler::addFile(ModuleId id, fs::File *f)
+void ErrorHandler::addFile(ModuleId id, File *f)
 {
     auto pair = files.emplace(id, f);
     paths.emplace(id, pair.first->second->getPath());
 }
 
-fs::File *ErrorHandler::getFileForId(ModuleId id)
+File *ErrorHandler::getFileForId(ModuleId id)
 {
     auto loc = files.find(id);
     if(loc == files.end()) return nullptr;

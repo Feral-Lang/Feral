@@ -6,16 +6,19 @@ let vec = import('std/vec');
 
 /* sample comment block */
 
-assert.eq(fs.exists(__SRC_PATH__), true);
+let srcPath = __SRC_PATH__.path();
+let srcDir = __SRC_DIR__.path();
 
-assert.gt(fs.walkDir(__SRC_DIR__).len(), 0);
+assert.eq(fs.exists(srcPath), true);
+
+assert.gt(fs.walkDir(srcDir).len(), 0);
 
 /*
 sample comment block
 multiline
 */
 
-let file = fs.fopen(__SRC_PATH__);
+let file = fs.fopen(srcPath);
 
 assert.gt(file.lines().len(), 0);
 
@@ -31,24 +34,25 @@ assert.eq(blocks[2], '\', \''); # from readBlocks() itself
 
 # File management stuff
 
-let insfile = '__testinsfile__';
-fs.install(__SRC_PATH__, insfile);
+let insfile = '__testinsfile__'.path();
+fs.install(srcPath, insfile);
 assert.eq(fs.exists(insfile), true);
 fs.remove(insfile);
 assert.eq(!fs.exists(insfile), true);
 
-let dir = '__testdir__';
+let dir = '__testdir__'.path();
+let movedDir = '__moved_testdir__'.path();
 fs.mkdir(dir);
 assert.eq(fs.exists(dir), true);
-fs.move(dir, '__moved_testdir__');
-assert.eq(fs.exists('__moved_testdir__'), true);
+fs.move(dir, movedDir);
+assert.eq(fs.exists(movedDir), true);
 assert.eq(!fs.exists(dir), true);
-fs.move('__moved_testdir__', dir);
+fs.move(movedDir, dir);
 fs.remove(dir);
 assert.eq(!fs.exists(dir), true);
 
-let cpfile = '__testcpfile__';
-fs.copy(__SRC_PATH__, cpfile);
+let cpfile = '__testcpfile__'.path();
+fs.copy(srcPath, cpfile);
 assert.eq(fs.exists(cpfile), true);
 fs.remove(cpfile);
 assert.eq(!fs.exists(cpfile), true);
@@ -56,6 +60,6 @@ assert.eq(!fs.exists(cpfile), true);
 
 # Just... utility stuff?
 
-let suavePath = 'C:\\Users\\Some/file/here/and/a/double//here';
-let normiePath = fs.normalizePath(suavePath);
-assert.eq(normiePath, 'C:/Users/Some/file/here/and/a/double/here');
+let suavePath = 'C:\\Users\\Some/file/../here/and/a/double//here'.path();
+let normiePath = suavePath.normal();
+assert.eq(normiePath.str(), 'C:/Users/Some/here/and/a/double/here');
