@@ -168,6 +168,7 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
     auto filePathTime = fs::last_write_time(f->getPath(), ec);
     bool bcFileValid  = bcPathTime > filePathTime;
     Bytecode bc;
+    err.addFile(moduleIdCtr, f);
     if(bcFileValid) {
         if(!f->isVirtual()) {
             LOG_INFO("Reading bytecode file: ", bcPath);
@@ -202,7 +203,6 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
             fclose(f);
         }
     }
-    err.addFile(moduleIdCtr, f);
     VarModule *mod = makeVar<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
                                         moduleIdCtr, existingVarStack);
     gs->modules[moduleIdCtr++] = mod;
