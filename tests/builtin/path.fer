@@ -1,0 +1,7 @@
+let assert = import('std/assert');
+
+let sPath1 = '/home/someuser/tmp/../somefile.txt';
+let path1 = sPath1.path();
+
+assert.eq(path1.str(), '/home/someuser/somefile.txt');
+assert.eq(path1.str() / '..', '/home/someuser/'.path());

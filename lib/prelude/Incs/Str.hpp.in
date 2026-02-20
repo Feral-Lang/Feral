@@ -32,6 +32,18 @@ FERAL_FUNC(strMul, 1, false,
     return res;
 }
 
+FERAL_FUNC(strDiv, 1, false,
+           "  var.fn(other) -> Path\n"
+           "Returns a Path that is `var` joined with `other`.")
+{
+    EXPECT2(VarStr, VarPath, args[1], "path generation");
+    StringRef lhs = as<VarStr>(args[0])->getVal();
+    VarPath *res  = vm.makeVar<VarPath>(loc, lhs);
+    if(args[1]->is<VarStr>()) res->append(as<VarStr>(args[1])->getVal());
+    else if(args[1]->is<VarPath>()) res->append(as<VarPath>(args[1])->getVal());
+    return res;
+}
+
 FERAL_FUNC(strAssnAdd, 1, false,
            "  var.fn(other) -> var\n"
            "Concatenates the string `other` with `var` returns the updated `var`.")

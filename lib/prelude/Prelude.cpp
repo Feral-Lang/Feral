@@ -678,6 +678,7 @@ INIT_DLL(Prelude)
     // string
     vm.addTypeFn<VarStr>(loc, "+", strAdd);
     vm.addTypeFn<VarStr>(loc, "*", strMul);
+    vm.addTypeFn<VarStr>(loc, "/", strDiv);
 
     vm.addTypeFn<VarStr>(loc, "+=", strAssnAdd);
     vm.addTypeFn<VarStr>(loc, "*=", strAssnMul);
