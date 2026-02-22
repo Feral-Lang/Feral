@@ -44,6 +44,14 @@ let getEnvHome = fn() {
     return getEnv(var);
 };
 
+let getEnvUser = fn() {
+    let var = 'USER';
+    if name == 'windows' {
+        var = 'USERNAME';
+    }
+    return getEnv(var);
+};
+
 inline if name == 'windows' {
 let envDelimiter = ';';
 } else {

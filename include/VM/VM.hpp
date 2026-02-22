@@ -210,6 +210,7 @@ public:
 
     template<VarDerived T> T *copyVar(ModuleLoc loc, T *var)
     {
+        if(!var) return nullptr;
         return as<T>(var->copy(*this, loc));
     }
     inline bool setVar(Var *dest, Var *src) { return dest->set(*this, src); }
