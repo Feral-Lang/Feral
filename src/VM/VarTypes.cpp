@@ -93,7 +93,7 @@ Var *Var::copy(VirtualMachine &vm, ModuleLoc loc)
     if(!fn) return vm.incVarRef(this);
     if(!fn->isCallable()) return nullptr;
     Array<Var *, 1> args = {this};
-    Var *res             = vm.callVar(loc, "_copy_", fn, args, {});
+    Var *res             = vm.callVar(loc, "_copy_", fn, args, nullptr);
     if(doc && res) res->setDoc(vm, doc);
     return res;
 }
@@ -809,7 +809,7 @@ void VarFailure::onDestroy(VirtualMachine &vm) { vm.decVarRef(handler); }
 Var *VarFailure::callHandler(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args)
 {
     handling = true;
-    Var *res = handler->call(vm, loc, args, {}, false, true);
+    Var *res = handler->call(vm, loc, args, nullptr, false, true);
     handling = false;
     reset();
     return res;
