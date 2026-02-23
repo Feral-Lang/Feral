@@ -13,6 +13,13 @@ let os = import('std/os');
 os.setEnv('__tmp__', 'val');
 assert.eq(os.getEnv('__tmp__'), 'val');
 
+os.setEnv('__start__', 'this');
+os.setEnv('__mid__', 'begins');
+os.setEnv('__end__', 'this');
+
+let testApply = '$<<__start__>> statement $<<__mid__>> with $<<__end__>>';
+assert.eq(os.applyEnv(testApply), 'this statement begins with this');
+
 # this script is probably running thanks to os.exec()
 
 # TODO: add os.system() test

@@ -26,6 +26,17 @@ let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
 # Str
 
 "
+  var.fn(start = '$<<', end = '>>', callback = feral.evalExpr) -> Str
+Uses `var` as a template and replaces variables in it by calling `callback` and using its return value.
+The variables should be enclosed in `start` and `end` in `data` to be substituted.
+The substitution is ignored if `start` is preceded by `\\` in `data`.
+Optionally takes `nofail = true` as an argument which prevents it from failing if the returned value from callback is empty/invalid.
+"
+let fmt in StrTy = fn(start = '$<<', end = '>>', callback = evalExpr, .kw) {
+    return self.fmtNative(start, end, callback, kw...);
+};
+
+"
   var.fn(base = 10) -> Int
 Converts the string `var` which must represent an int and returns it as an int type using the given `base`.
 "

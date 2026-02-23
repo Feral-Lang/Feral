@@ -714,7 +714,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "splitNative", strSplitNative);
     vm.addTypeFn<VarStr>(loc, "startsWith", strStartsWith);
     vm.addTypeFn<VarStr>(loc, "endsWith", strEndsWith);
-    vm.addTypeFn<VarStr>(loc, "fmt", strFormat);
+    vm.addTypeFn<VarStr>(loc, "fmtNative", strFormat);
     vm.addTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr);
     vm.addTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr);
 
