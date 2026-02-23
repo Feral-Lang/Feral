@@ -92,6 +92,17 @@ FERAL_FUNC(fsStatus, 1, false,
     return vm.makeVar<VarInt>(loc, res);
 }
 
+FERAL_FUNC(fsLastWriteTime, 1, false,
+           "  fn(path) -> Int\n"
+           "Returns the last write time of `path` as number of seconds since epoch.")
+{
+    EXPECT(VarPath, args[1], "path");
+    std::error_code ec;
+    auto t      = fs::last_write_time(as<VarPath>(args[1])->getVal(), ec).time_since_epoch();
+    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(t).count();
+    return vm.makeVar<VarInt>(loc, sec);
+}
+
 FERAL_FUNC(fsMkdir, 1, true,
            "  fn(paths...) -> Nil\n"
            "Creates all directories in `paths`.")
@@ -434,6 +445,7 @@ INIT_DLL(FS)
     vm.addLocal(loc, "walkDirNative", fsWalkDir);
     // files and dirs
     vm.addLocal(loc, "status", fsStatus);
+    vm.addLocal(loc, "lastWriteTime", fsLastWriteTime);
     vm.addLocal(loc, "move", fsMove);
     vm.addLocal(loc, "mkdir", fsMkdir);
     vm.addLocal(loc, "mklinkDir", fsMklinkDir);

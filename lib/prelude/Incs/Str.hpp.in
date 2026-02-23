@@ -408,57 +408,94 @@ FERAL_FUNC(strEndsWith, 1, false,
     return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
 
-FERAL_FUNC(
-    strFormat, 0, true,
-    "  var.fn(args...) -> Str\n"
-    "Applies `args` as the values in the template string `var` and returns the resulting string.\n"
-    "For example:\n"
-    "  let result = '1 + 2 = {} and 3 + 4 = {}'.fmt(1 + 2, 3 + 4);\n"
-    "Here, `result` will be:\n"
-    "  '1 + 2 = 3 and 3 + 4 = 7'")
+FERAL_FUNC(strFormat, 3, false, "")
 {
-    String str    = as<VarStr>(args[0])->getVal();
-    size_t argctr = 1;
-    for(size_t i = 0; i < str.size(); ++i) {
-        if(str[i] != '{') continue;
-        if(i > 0 && str[i - 1] == '\\') {
-            str.erase(str.begin() + i - 1);
+    EXPECT(VarStr, args[1], "start enclosure");
+    EXPECT(VarStr, args[2], "end enclosure");
+
+    if(!args[3]->isCallable()) {
+        vm.fail(loc, "expected a callable as format function, found: ", vm.getTypeName(args[3]));
+        return nullptr;
+    }
+    Var *cb = args[3];
+
+    String result   = as<VarStr>(args[0])->getVal();
+    StringRef start = as<VarStr>(args[1])->getVal();
+    StringRef end   = as<VarStr>(args[2])->getVal();
+    bool noFail     = false;
+    Var *noFailVar  = assnArgs->getAttr("nofail");
+    if(noFailVar) {
+        EXPECT(VarBool, noFailVar, "nofail value");
+        noFail = as<VarBool>(noFailVar)->getVal();
+    }
+    if(start.empty()) {
+        vm.fail(loc, "`start` cannot be an empty string");
+        return nullptr;
+    }
+    if(end.empty()) {
+        vm.fail(loc, "`end` cannot be an empty string");
+        return nullptr;
+    }
+    for(size_t i = 0; i < result.size(); ++i) {
+        if(result[i] != start[0]) continue;
+        if(i != 0 && result[i - 1] == '\\') {
+            result.erase(i - 1, 1);
             --i;
             continue;
         }
-        size_t start = i;
-        ++i;
-        String expr;
-        Var *base = nullptr;
-        if(i < str.size() && str[i] == '}') {
-            base = args[argctr++];
-            vm.incVarRef(base);
-        } else {
-            while(i < str.size() && str[i] != '}') expr += str[i++];
-            if(i == str.size()) {
-                vm.fail(loc, "failed to find ending brace for eval expr: ", expr);
-                return nullptr;
+        StringRef tmp(result.begin() + i, result.end());
+        if(!tmp.starts_with(start)) continue;
+        result.erase(i, start.size());
+        size_t endidx = i;
+        bool found    = false;
+        while(endidx < result.size()) {
+            if(result[endidx] != end[0]) {
+                ++endidx;
+                continue;
             }
-            base = vm.eval(loc, expr, true);
-            if(!base) {
-                vm.fail(loc, "failed to evaluate expr: ", expr);
-                return nullptr;
+            StringRef tmpEnd(result.begin() + endidx, result.end());
+            if(!tmpEnd.starts_with(end)) {
+                ++endidx;
+                continue;
             }
+            result.erase(endidx, end.size());
+            found = true;
+            break;
         }
-        Var *v = nullptr;
-        Array<Var *, 1> tmp{base};
-        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
-            vm.decVarRef(base);
+        if(!found) {
+            vm.fail(loc, "Failed to find the end tag: `", end, "` in data");
             return nullptr;
         }
-        String res = as<VarStr>(v)->getVal();
-        vm.decVarRef(v);
-        vm.decVarRef(base);
-        str.erase(start, expr.size() + 2); // +2 for braces
-        str.insert(str.begin() + start, res.begin(), res.end());
-        i = start + res.size() - 1; // -1 for loop increment (++i)
+        if(i == endidx) continue;
+        String varStr(result.begin() + i, result.begin() + endidx);
+        VarStr *var = vm.makeVar<VarStr>(loc, varStr);
+        Array<Var *, 2> cbArgs{nullptr, vm.incVarRef(var)};
+        Var *subs = vm.callVar(loc, "formatCallback", cb, cbArgs, nullptr);
+        vm.decVarRef(var);
+        if(!subs) {
+            vm.fail(loc, "failed to call the format callback");
+            return nullptr;
+        }
+        if(!subs->is<VarStr>() && !subs->is<VarNil>()) {
+            Var *subsStr = nullptr;
+            Array<Var *, 1> strArgs{subs};
+            bool strRes = vm.callVarAndExpect<VarStr>(loc, "str", subsStr, strArgs, nullptr);
+            vm.decVarRef(subs);
+            if(!strRes) return nullptr;
+            subs = subsStr;
+        }
+        StringRef val = "";
+        if(subs->is<VarStr>()) val = as<VarStr>(subs)->getVal();
+        if(val.empty() && !noFail) {
+            vm.fail(loc, "couldn't find a value after substitution for string: `", varStr,
+                    "`. Use `nofail = true` to ignore failures like this.");
+            vm.decVarRef(subs);
+            return nullptr;
+        }
+        result.replace(i, endidx - i, val);
+        vm.decVarRef(subs);
     }
-    return vm.makeVar<VarStr>(loc, std::move(str));
+    return vm.makeVar<VarStr>(loc, std::move(result));
 }
 
 FERAL_FUNC(hexStrToBinStr, 0, false,
