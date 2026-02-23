@@ -562,12 +562,11 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
         vars->stash(vm, varArg, v);
     }
     if(!kwArg.empty()) {
-        Var *cp = vm.copyVar(loc, assnArgs);
-        if(!cp) {
+        if(!assnArgs) {
             vm.popModule();
             return nullptr;
         }
-        vars->stash(vm, kwArg, cp, false);
+        vars->stash(vm, kwArg, assnArgs, true);
     }
     Var *ret = nullptr;
     if(vm.execute(ret, addFunc, addBlk, body.feral.begin, body.feral.end) != 0 &&
