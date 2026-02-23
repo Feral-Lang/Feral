@@ -41,7 +41,7 @@ let setEnv = fn(var, val, overwrite = false) {
 Uses `data` as a template and replaces variables in it with equivalents from environment.
 The variables should be enclosed in `start` and `end` in `data` to be substituted.
 The substitution is ignored if `start` is preceded by `\\` in `data`.
-Optionally takes `nofail = true` as an argument which prevents it from failing when a variable doesn't exist in the environment.
+Optionally takes `nofail = false` as an argument which makes it fail when a variable doesn't exist in the environment.
 "
 let applyEnv = fn(data, start = '$<<', end = '>>', .kw) {
     return data.fmt(start, end, getEnv, kw...);
