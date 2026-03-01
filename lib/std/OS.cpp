@@ -33,10 +33,7 @@ FERAL_FUNC(sleepCustom, 1, false,
            "  fn(duration) -> Nil\n"
            "Suspends the current thread for `duration` milliseconds.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected integer argument for sleep time, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "sleep duration");
     size_t dur = as<VarInt>(args[1])->getVal();
     std::this_thread::sleep_for(std::chrono::milliseconds(dur));
     return vm.getNil();
@@ -46,11 +43,7 @@ FERAL_FUNC(getEnv, 1, false,
            "  fn(variable) -> Str | Nil\n"
            "Returns the value of the environment `variable` as string, or `nil` if not found.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument for env variable name, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "env variable name");
     const String &var = as<VarStr>(args[1])->getVal();
     String res        = env::get(var.c_str());
     if(res.empty()) return vm.getNil();
@@ -62,32 +55,12 @@ FERAL_FUNC(setEnv, 3, false,
            "Sets the `value` of the environment `variable` as string.\n"
            "If `overwrite` is `true`, any existing environment `variable` is overwritten.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument"
-                " for env variable name, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument"
-                " for env variable value, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarBool>()) {
-        vm.fail(loc,
-                "expected boolean argument for overwriting"
-                " existing env variable, found: ",
-                vm.getTypeName(args[3]));
-        return nullptr;
-    }
-
+    EXPECT(VarStr, args[1], "env variable name");
+    EXPECT(VarStr, args[2], "env variable value");
+    EXPECT(VarBool, args[3], "overwrite existing variable");
     const String &var = as<VarStr>(args[1])->getVal();
     const String &val = as<VarStr>(args[2])->getVal();
     bool overwrite    = as<VarBool>(args[3])->getVal();
-
     return vm.makeVar<VarInt>(loc, env::set(var.c_str(), val.c_str(), overwrite));
 }
 
@@ -130,16 +103,8 @@ FERAL_FUNC(
     Var *outVar = assnArgs->getAttr("out");
     Var *envVar = assnArgs->getAttr("env");
 
-    if(outVar && !(outVar->is<VarStr>() || outVar->is<VarVec>() || outVar->is<VarNil>())) {
-        vm.fail(loc, "expected out variable to be a string/vector/nil, or not used, found: ",
-                vm.getTypeName(outVar));
-        return nullptr;
-    }
-
-    if(envVar && !envVar->is<VarMap>()) {
-        vm.fail(loc, "expected env variable to be a map, found: ", vm.getTypeName(envVar));
-        return nullptr;
-    }
+    if(outVar) { EXPECT3(VarStr, VarVec, VarNil, outVar, "output variable"); }
+    if(envVar) { EXPECT(VarMap, envVar, "environment variables"); }
 
     StringMap<String> existingEnv;
     // this is made to convert Feral's map of string,Var* without tainting env variables should
@@ -208,10 +173,7 @@ FERAL_FUNC(systemCustom, 1, false,
            "Runs the `command` using C's `system()` function and returns the exit code.\n"
            "Here, the `command` is a single string containing the command and all parameters.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for command, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "command");
     const String &cmd = as<VarStr>(args[1])->getVal();
 
     int res = std::system(cmd.c_str());
@@ -263,27 +225,9 @@ FERAL_FUNC(
     "Changes permissions of path `dest` as `mode` string.\n"
     "If `recursive` is `true` and `dest` is a directory, update the permissions recursively.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument"
-                " for destination, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc,
-                "expected string argument"
-                " for mode, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarBool>()) {
-        vm.fail(loc,
-                "expected boolean argument"
-                " for recursive, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "destination");
+    EXPECT(VarStr, args[2], "mode");
+    EXPECT(VarBool, args[3], "apply recursive");
     const String &dest = as<VarStr>(args[1])->getVal();
     const String &mode = as<VarStr>(args[2])->getVal();
     bool recurse       = as<VarBool>(args[3])->getVal();

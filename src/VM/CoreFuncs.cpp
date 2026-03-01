@@ -78,14 +78,8 @@ FERAL_FUNC_DEF(loadLibrary)
 
 FERAL_FUNC_DEF(basicModuleFinder)
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected argument to be of type string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarBool>()) {
-        vm.fail(loc, "expected argument to be of type bool, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "module file");
+    EXPECT(VarBool, args[2], "is import");
     String modfile = as<VarStr>(args[1])->getVal();
     bool isImport  = as<VarBool>(args[2])->getVal();
     if(isImport) {
@@ -98,10 +92,7 @@ FERAL_FUNC_DEF(basicModuleFinder)
 
 FERAL_FUNC_DEF(basicErrorHandler)
 {
-    if(!args[1]->is<VarFailure>()) {
-        vm.fail(loc, "expected argument of type failure, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFailure, args[1], "failure");
     VarFailure *f         = as<VarFailure>(args[1]);
     Span<ModuleLoc> trace = f->getTrace();
     StringRef msg         = f->getMsg();
