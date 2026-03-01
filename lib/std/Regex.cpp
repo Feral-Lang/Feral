@@ -41,14 +41,8 @@ FERAL_FUNC(regexNew, 2, false,
            "  fn(regex, flags) -> Regex\n"
            "Creates and returns an instance of Regex using `regex` string and `flags`.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected regex to be a string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarInt>()) {
-        vm.fail(loc, "expected regex flags mask to be an int, found: ", vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "regex");
+    EXPECT(VarInt, args[2], "flags");
     return vm.makeVar<VarRegex>(loc, as<VarStr>(args[1])->getVal(),
                                 (std::regex::flag_type)as<VarInt>(args[2])->getVal());
 }
@@ -62,21 +56,9 @@ FERAL_FUNC(regexMatch, 3, false,
            "If `ignoreFirstMatch` is `true`, first match (usually full string `data`) is ignored "
            "from being put in `dest`.")
 {
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected regex target to be a string, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>() && !args[2]->is<VarVec>() && !args[2]->is<VarNil>()) {
-        vm.fail(loc,
-                "expected regex capture destination "
-                "to be a string, vector, or nil, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[3]->is<VarBool>()) {
-        vm.fail(loc, "expected ignore first match to be a bool, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarStr, args[1], "regex target");
+    EXPECT3(VarStr, VarVec, VarNil, args[2], "capture destination");
+    EXPECT(VarBool, args[3], "ignore first match");
     StringRef target = as<VarStr>(args[1])->getVal();
     Var *matches     = nullptr;
     if(args[2]->is<VarVec>() || args[2]->is<VarStr>()) matches = args[2];

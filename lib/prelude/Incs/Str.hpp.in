@@ -50,11 +50,6 @@ FERAL_FUNC(strAssnAdd, 1, false,
 {
     EXPECT_NO_CONST(args[0], "var");
     EXPECT(VarStr, args[1], "string addition-assn");
-    if(!args[1]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument for addition assignment, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
     VarStr *res = as<VarStr>(args[0]);
     res->getVal() += as<VarStr>(args[1])->getVal();
     return args[0];

@@ -22,16 +22,8 @@ FERAL_FUNC(formatTime, 2, false,
            "Formats the `timestamp` which is in microseconds since epoch, using `format` string, "
            "returning the resulting string.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected integer argument as time for formatting, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    if(!args[2]->is<VarStr>()) {
-        vm.fail(loc, "expected string argument as format for time formatting, found: ",
-                vm.getTypeName(args[2]));
-        return nullptr;
-    }
+    EXPECT(VarInt, args[1], "time");
+    EXPECT(VarStr, args[2], "format");
     uint64_t val = as<VarInt>(args[1])->getVal();
     std::chrono::system_clock::time_point tp(std::chrono::microseconds{val});
     std::time_t time = std::chrono::system_clock::to_time_t(tp);

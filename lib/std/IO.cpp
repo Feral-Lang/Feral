@@ -196,11 +196,7 @@ FERAL_FUNC(fprint, 1, true,
            "  fn(file, args...) -> Int\n"
            "Same as `print` but accepts a File `file` to write to.")
 {
-    if(!args[1]->is<VarFile>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected a file argument for fprint, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFile, args[1], "file");
     if(as<VarFile>(args[1])->getFile() == nullptr) {
         vm.fail(args[1]->getLoc(), "file has probably been closed already",
                 vm.getTypeName(args[1]));
@@ -216,11 +212,7 @@ FERAL_FUNC(fprintln, 0, true,
            "  fn(file, args...) -> Int\n"
            "Same as `println` but accepts a File `file` to write to.")
 {
-    if(!args[1]->is<VarFile>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected a file argument for fprint, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFile, args[1], "file");
     if(as<VarFile>(args[1])->getFile() == nullptr) {
         vm.fail(args[1]->getLoc(), "file has probably been closed already",
                 vm.getTypeName(args[1]));
@@ -237,11 +229,7 @@ FERAL_FUNC(fcprint, 1, true,
            "  fn(file, args...) -> Int\n"
            "Same as `cprint` but accepts a File `file` to write to.")
 {
-    if(!args[1]->is<VarFile>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFile, args[1], "file");
     if(as<VarFile>(args[1])->getFile() == nullptr) {
         vm.fail(args[1]->getLoc(), "file has probably been closed already",
                 vm.getTypeName(args[1]));
@@ -257,11 +245,7 @@ FERAL_FUNC(fcprintln, 0, true,
            "  fn(file, args...) -> Int\n"
            "Same as `cprintln` but accepts a File `file` to write to.")
 {
-    if(!args[1]->is<VarFile>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFile, args[1], "file");
     if(as<VarFile>(args[1])->getFile() == nullptr) {
         vm.fail(args[1]->getLoc(), "file has probably been closed already",
                 vm.getTypeName(args[1]));
@@ -308,11 +292,7 @@ FERAL_FUNC(fflush, 1, false,
            "  fn(file) -> Nil\n"
            "Flush the `file`, writing any pending data to it.")
 {
-    if(!args[1]->is<VarFile>()) {
-        vm.fail(args[1]->getLoc(),
-                "expected a file argument for fcprint, found: ", vm.getTypeName(args[1]));
-        return nullptr;
-    }
+    EXPECT(VarFile, args[1], "file");
     if(as<VarFile>(args[1])->getFile() == nullptr) {
         vm.fail(args[1]->getLoc(), "file has probably been closed already",
                 vm.getTypeName(args[1]));
@@ -326,12 +306,7 @@ FERAL_FUNC(readChar, 1, false,
            "  fn(file) -> Str\n"
            "Reads a character from the file descriptor `file` and returns it as a string.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(args[1]->getLoc(), "expected an integer argument for file descriptor, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-
+    EXPECT(VarInt, args[1], "file descriptor");
     int fd  = as<VarInt>(args[1])->getVal();
     char c  = 0;
     int res = read(fd, &c, 1);
