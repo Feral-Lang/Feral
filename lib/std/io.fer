@@ -11,3 +11,32 @@ Can be used to dump any output to the void.
 "
 let null = '/dev/null';
 }
+
+"
+  fn(choices...) -> Str
+Reads input line from `stdin` and returns it as a string.
+If one or more of `choices` are provided, it would make sure the input is one of them.
+Optionally takes:
+* `icase = true` to ignore case in choices.
+* `maxRetries = n` to make it retry `n` times if the provided input is not one of the choices.
+* `hide = true` to hide the input written by the user.
+"
+let scan = fn(.kw, choices...) {
+    let hidden = kw['hide'] ?? false;
+    if choices.empty() { return scanNative(hidden); }
+    let icase = kw['icase'] ?? false;
+    let maxRetries = kw['retries'] ?? 5;
+    let input = '';
+    let found = false;
+    while !found && maxRetries-- > 0 {
+        print('Must provide one of: ', choices.join(' / '));
+        input = scanNative(hidden);
+        for c in choices.each() {
+            if icase { found = input.lower() == c.lower(); }
+            else { found = input == c; }
+            if found { break; }
+        }
+    }
+    if !found { raise('invalid input provided'); }
+    return input;
+};

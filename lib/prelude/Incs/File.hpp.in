@@ -7,8 +7,26 @@ namespace fer
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+FERAL_FUNC(fileFd, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the file descriptor for the file `var`.")
+{
+    FILE *file = as<VarFile>(args[0])->getFile();
+    int fd =
+#if defined(CORE_OS_WINDOWS)
+        _fileno(file);
+#else
+        fileno(file);
+#endif
+    if(fd < 0) {
+        vm.fail(loc, "failed to get file descriptor: ", strerror(errno));
+        return nullptr;
+    }
+    return vm.makeVar<VarInt>(loc, fd);
+}
+
 FERAL_FUNC(fileLines, 0, false,
-           "  var.fn() -> Vec<str>\n"
+           "  var.fn() -> Vec<Str>\n"
            "Read all lines in the File `var`, and return them as a list separated by newlines.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();

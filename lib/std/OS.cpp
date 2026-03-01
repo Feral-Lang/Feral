@@ -222,15 +222,13 @@ FERAL_FUNC(systemCustom, 1, false,
 }
 
 FERAL_FUNC(osStrErr, 0, false,
-           "  fn(errCode) -> Str\n"
-           "Returns the string equivalent for the `errCode`.")
+           "  fn(errCode = nil) -> Str\n"
+           "Returns the string equivalent for the `errCode`.\n"
+           "If no `errCode` is provided, the internal errno is used.")
 {
-    if(!args[1]->is<VarInt>()) {
-        vm.fail(loc, "expected integer argument for destination directory, found: ",
-                vm.getTypeName(args[1]));
-        return nullptr;
-    }
-    return vm.makeVar<VarStr>(loc, strerror(as<VarInt>(args[1])->getVal()));
+    int e = errno;
+    if(args.size() > 0 && args[1]->is<VarInt>()) e = as<VarInt>(args[1])->getVal();
+    return vm.makeVar<VarStr>(loc, strerror(e));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

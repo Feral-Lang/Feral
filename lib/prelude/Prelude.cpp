@@ -814,6 +814,7 @@ INIT_DLL(Prelude)
 
     // file
 
+    vm.addTypeFn<VarFile>(loc, "fd", fileFd);
     vm.addTypeFn<VarFile>(loc, "lines", fileLines);
     vm.addTypeFn<VarFile>(loc, "seek", fileSeek);
     vm.addTypeFn<VarFile>(loc, "eachLine", fileEachLine);
