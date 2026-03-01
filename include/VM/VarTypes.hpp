@@ -196,7 +196,7 @@ public:
     VarInt(ModuleLoc loc, const char *_val);
 
     inline void setVal(int64_t newval) { val = newval; }
-    inline int64_t getVal() { return val; }
+    inline int64_t &getVal() { return val; }
 };
 
 class VarIntIterator : public Var

@@ -4,8 +4,7 @@
 
 #if defined(CORE_OS_WINDOWS)
 #include <io.h>
-
-#include "FS.hpp" // For STDOUT_FILENO
+#include <Windows.h>
 #else
 #include <termios.h>
 #include <unistd.h>
@@ -18,6 +17,53 @@ static constexpr size_t MAX_SCAN_LINE_LEN = 1024;
 
 StringRef getColor(StringRef code);
 int applyColors(String &str);
+
+inline bool _isTTY(int fd)
+{
+#if defined(CORE_OS_WINDOWS)
+    return _isatty(fd);
+#else
+    return isatty(fd);
+#endif
+}
+
+bool _hideStdin(VirtualMachine &vm, ModuleLoc loc, bool enable)
+{
+    if(!_isTTY(STDIN_FILENO)) return true;
+#if defined(CORE_OS_WINDOWS)
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode;
+    if(!GetConsoleMode(hStdin, &mode)) {
+        vm.fail(loc, "GetConsoleMode failed");
+        return false;
+    }
+    if(!enable) {
+        mode &= ~ENABLE_ECHO_INPUT;
+    } else {
+        mode |= ENABLE_ECHO_INPUT;
+    }
+    if(!SetConsoleMode(hStdin, mode)) {
+        vm.fail(loc, "SetConsoleMode failed");
+        return false;
+    }
+#else
+    struct termios tty;
+    if(tcgetattr(STDIN_FILENO, &tty) != 0) {
+        vm.fail(loc, "tcgetattr failed");
+        return false;
+    }
+    if(!enable) {
+        tty.c_lflag &= static_cast<decltype(tty.c_lflag)>(~ECHO);
+    } else {
+        tty.c_lflag |= ECHO;
+    }
+    if(tcsetattr(STDIN_FILENO, TCSANOW, &tty) != 0) {
+        vm.fail(loc, "tcsetattr failed");
+        return false;
+    }
+#endif
+    return true;
+}
 
 inline ssize_t writeToFile(FILE *file, StringRef data)
 {
@@ -228,12 +274,15 @@ FERAL_FUNC(fcprintln, 0, true,
     return vm.makeVar<VarInt>(loc, count);
 }
 
-FERAL_FUNC(scan, 0, false,
-           "  fn() -> Str\n"
-           "Reads input line from `stdin` and returns it as a string.")
+FERAL_FUNC(scan, 1, false, "")
 {
+    EXPECT(VarBool, args[1], "hide input");
     VarStr *res = vm.makeVar<VarStr>(loc, "");
+    bool hidden = as<VarBool>(args[1]);
+
+    if(hidden && !_hideStdin(vm, loc, true)) return nullptr;
     std::getline(std::cin, res->getVal());
+    if(hidden && !_hideStdin(vm, loc, false)) return nullptr;
 
     if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
     if(!res->getVal().empty() && res->getVal().back() == '\n') res->getVal().pop_back();
@@ -293,6 +342,28 @@ FERAL_FUNC(readChar, 1, false,
     return vm.makeVar<VarStr>(loc, c);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// Utility Functions //////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+FERAL_FUNC(isTTY, 1, false,
+           "  fn(fd) -> Bool\n"
+           "Returns `true` if the file descriptor `fd` represents a valid TTY.")
+{
+    EXPECT(VarInt, args[1], "file descriptor");
+    int fd = as<VarInt>(args[1])->getVal();
+    return _isTTY(fd) ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(hideStdin, 1, false,
+           "  fn(shouldHide) -> Nil\n"
+           "Makes the stdin hidden or not based on boolean `shouldHide`.")
+{
+    EXPECT(VarBool, args[1], "hide stdin");
+    if(!_hideStdin(vm, loc, as<VarBool>(args[1]))) return nullptr;
+    return vm.getNil();
+}
+
 INIT_DLL(IO)
 {
     vm.addLocal(loc, "print", print);
@@ -307,10 +378,12 @@ INIT_DLL(IO)
     vm.addLocal(loc, "fprintln", fprintln);
     vm.addLocal(loc, "fcprint", fcprint);
     vm.addLocal(loc, "fcprintln", fcprintln);
-    vm.addLocal(loc, "scan", scan);
+    vm.addLocal(loc, "scanNative", scan);
     vm.addLocal(loc, "scanEOF", scanEOF);
     vm.addLocal(loc, "fflush", fflush);
     vm.addLocal(loc, "readChar", readChar);
+
+    vm.addLocal(loc, "isTTY", isTTY);
 
     // stdin, stdout, and stderr cannot be owned by a VarFile
     vm.makeLocal<VarFile>(loc, "stdin", "The standard input stream.", stdin, "r", false);
