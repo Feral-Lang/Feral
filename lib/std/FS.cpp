@@ -5,35 +5,35 @@
 namespace fer
 {
 
-enum WalkEntry
+enum WalkEntryMode
 {
-    FILES   = 1 << 0,
-    DIRS    = 1 << 1,
-    RECURSE = 1 << 2,
+    FILES   = 0,
+    DIRS    = 1,
+    RECURSE = 2,
 };
 
 void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const Path &dir, VarVec *v, Regex regex,
-                        size_t flags)
+                        WalkEntryMode mode)
 {
     Path entry;
     for(const auto &ent : fs::directory_iterator(dir)) {
         if(ent.path() == "." || ent.path() == "..") continue;
         entry.clear();
         entry += ent.path().generic_string();
-        if((!(flags & WalkEntry::RECURSE) || !ent.is_directory()) &&
+        if((!(mode == WalkEntryMode::RECURSE) || !ent.is_directory()) &&
            !std::regex_match(entry.native(), regex))
         {
             continue;
         }
         if(ent.is_directory()) {
-            if(flags & WalkEntry::RECURSE) {
-                getEntriesInternal(vm, loc, entry, v, regex, flags);
-            } else if(flags & WalkEntry::DIRS) {
+            if(mode == WalkEntryMode::RECURSE) {
+                getEntriesInternal(vm, loc, entry, v, regex, mode);
+            } else if(mode == WalkEntryMode::DIRS) {
                 v->push(vm, vm.makeVar<VarPath>(loc, entry), true);
             }
             continue;
         }
-        if(flags & WalkEntry::FILES || flags & WalkEntry::RECURSE) {
+        if(mode == WalkEntryMode::FILES || mode == WalkEntryMode::RECURSE) {
             v->push(vm, vm.makeVar<VarPath>(loc, entry), true);
         }
     }
@@ -68,13 +68,13 @@ FERAL_FUNC(fsWalkDir, 3, false, "")
         return nullptr;
     }
 
-    size_t flags = as<VarInt>(args[2])->getVal();
+    size_t mode = as<VarInt>(args[2])->getVal();
 
     const String &regexstr = as<VarStr>(args[3])->getVal();
     Regex regex(regexstr);
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
-    getEntriesInternal(vm, loc, dir, res, regex, flags);
+    getEntriesInternal(vm, loc, dir, res, regex, (WalkEntryMode)mode);
     return res;
 }
 
@@ -486,9 +486,9 @@ INIT_DLL(FS)
     vm.makeLocal<VarInt>(loc, "stdout", "The standard output stream.", STDOUT_FILENO);
     vm.makeLocal<VarInt>(loc, "stderr", "The standard error stream.", STDERR_FILENO);
     // fs.walkdir()
-    vm.makeLocal<VarInt>(loc, "WALK_FILES", "", WalkEntry::FILES);
-    vm.makeLocal<VarInt>(loc, "WALK_DIRS", "", WalkEntry::DIRS);
-    vm.makeLocal<VarInt>(loc, "WALK_RECURSE", "", WalkEntry::RECURSE);
+    vm.makeLocal<VarInt>(loc, "WALK_FILES", "", WalkEntryMode::FILES);
+    vm.makeLocal<VarInt>(loc, "WALK_DIRS", "", WalkEntryMode::DIRS);
+    vm.makeLocal<VarInt>(loc, "WALK_RECURSE", "", WalkEntryMode::RECURSE);
     // <file>.seek()
     vm.makeLocal<VarInt>(loc, "SEEK_SET", "", SEEK_SET);
     vm.makeLocal<VarInt>(loc, "SEEK_CUR", "", SEEK_CUR);
