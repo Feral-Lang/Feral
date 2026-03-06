@@ -306,6 +306,12 @@ void VarVec::clear(VirtualMachine &vm)
     for(auto &v : val) vm.decVarRef(v);
     val.clear();
 }
+void VarVec::setAt(VirtualMachine &vm, size_t idx, Var *data, bool iref)
+{
+    if(iref) vm.incVarRef(data);
+    vm.decVarRef(val[idx]);
+    val[idx] = data;
+}
 void VarVec::insert(VirtualMachine &vm, size_t idx, Var *data, bool iref)
 {
     if(iref) vm.incVarRef(data);
@@ -350,8 +356,8 @@ bool VarVecIterator::next(Var *&val)
 ////////////////////////////////////////// VarMap ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarMap::Iterator::Iterator(void *orderiter, StringMap<Var *>::iterator dataiter)
-    : orderiter(orderiter), dataiter(dataiter)
+VarMap::Iterator::Iterator(void *orderiter, StringMap<Var *>::iterator dataiter, bool forward)
+    : orderiter(orderiter), dataiter(dataiter), forward(forward)
 {}
 
 VarMap::VarMap(ModuleLoc loc, bool ordered, bool asrefs)
@@ -444,20 +450,22 @@ void VarMap::getAttrList(VirtualMachine &vm, VarVec *dest)
     for(auto &e : val) dest->push(vm, vm.makeVar<VarStr>(dest->getLoc(), e.first), true);
 }
 
-VarMap::Iterator VarMap::begin()
+VarMap::Iterator VarMap::begin(bool forward)
 {
     if(isOrdered()) {
         char *key = (char *)keyOrder->next();
         if(!key) return end();
-        return Iterator(key, val.find(key));
+        return Iterator(key, val.find(key), forward);
     }
-    return Iterator(nullptr, val.begin());
+    return Iterator(nullptr, val.begin(), true);
 }
 
 void VarMap::next(VarMap::Iterator &it)
 {
     if(isOrdered()) {
-        char *key    = (char *)keyOrder->next(it.orderiter);
+        char *key = nullptr;
+        if(it.isForward()) key = (char *)keyOrder->next(it.orderiter);
+        else key = (char *)keyOrder->prev(it.orderiter);
         it.orderiter = key;
         it.dataiter  = key ? val.find(key) : val.end();
         return;
@@ -576,6 +584,41 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     }
     vm.popModule();
     return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// VarClosure //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+VarClosure::VarClosure(ModuleLoc loc, Var *callable)
+    : Var(loc, VarInfo::CALLABLE), callable(callable), args(nullptr), assnArgs(nullptr)
+{}
+
+void VarClosure::onCreate(VirtualMachine &vm)
+{
+    vm.incVarRef(callable);
+    args     = vm.incVarRef(vm.makeVar<VarVec>(getLoc(), 2, true));
+    assnArgs = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), true, true));
+    args->push(vm, nullptr, false); // for self
+}
+void VarClosure::onDestroy(VirtualMachine &vm)
+{
+    vm.decVarRef(assnArgs);
+    vm.decVarRef(args);
+    vm.decVarRef(callable);
+}
+
+Var *VarClosure::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                        bool addFunc, bool addBlk)
+{
+    bool argsStart = args[0] == nullptr ? 1 : 0;
+    for(size_t i = argsStart; i < args.size(); ++i) this->args->push(vm, args[i], true);
+    for(auto &aa : this->assnArgs->getVal()) {
+        if(!assnArgs->existsAttr(aa.first)) assnArgs->setAttr(vm, aa.first, aa.second, true);
+    }
+    Var *res = callable->call(vm, loc, this->args->getVal(), assnArgs, addFunc, addBlk);
+    for(size_t i = argsStart; i < args.size(); ++i) this->args->pop(vm, true);
+    return res;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

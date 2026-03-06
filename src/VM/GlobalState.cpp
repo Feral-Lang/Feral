@@ -108,6 +108,7 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarVec>({}, "Vec", "Builtin type.");
     vm.addGlobalType<VarMap>({}, "Map", "Builtin type.");
     vm.addGlobalType<VarFn>({}, "Func", "Builtin type.");
+    vm.addGlobalType<VarClosure>({}, "Closure", "Builtin type.");
     vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
     vm.addGlobalType<VarModule>({}, "Module", "Builtin type.");
     vm.addGlobalType<VarTypeID>({}, "TypeID", "Builtin type.");

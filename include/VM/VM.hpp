@@ -66,6 +66,12 @@ namespace fer
 #define EXPECT5(type1, type2, type3, type4, type5, var, expectStr) \
     EXPECT5_AND(type1, type2, type3, type4, type5, var, expectStr)
 
+#define EXPECT_CALLABLE(var, name)                     \
+    if(!var->isCallable()) {                           \
+        vm.fail(loc, "`" name "` must be a callable"); \
+        return nullptr;                                \
+    }
+
 #define EXPECT_NO_CONST(var, name)                    \
     if(var->isConst()) {                              \
         vm.fail(loc, "`" name "` cannot be a const"); \
