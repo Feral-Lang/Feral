@@ -1,0 +1,12 @@
+loadlib('std/Term');
+
+let fs = import('std/fs');
+
+let isTTY = fn(fd = fs.stdin) {
+    return isTTYNative(fd);
+};
+
+let hideInput = fn(shouldHide) {
+    if !isTTY() { return; }
+    return hideInputNative(shouldHide);
+};
