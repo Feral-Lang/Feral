@@ -1,5 +1,7 @@
 loadlib('std/IO');
 
+let term = import('std/term');
+
 inline if feral.getOSName() == 'windows' {
 "
 Can be used to dump any output to the void.
@@ -13,6 +15,100 @@ let null = '/dev/null';
 }
 
 "
+  fn(args...) -> Int
+Same as `print` but also applies terminal color codes on the output.
+Returns the number of bytes written.
+The color shorthands are:
+  {0}  => Resets any previous colors
+  {r}  => Red
+  {g}  => Green
+  {y}  => Yellow
+  {b}  => Blue
+  {m}  => Magenta
+  {c}  => Cyan
+  {w}  => White
+  {br} => Bright Red
+  {bg} => Bright Green
+  {by} => Bright Yellow
+  {bb} => Bright Blue
+  {bm} => Bright Magenta
+  {bc} => Bright Cyan
+  {bw} => Bright White
+"
+let cprint = fn(data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return print(res);
+};
+
+"
+  fn(args...) -> Int
+Same as `cprint` but adds a newline at the end.
+Returns the number of bytes written.
+"
+let cprintln = fn(data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return println(res);
+};
+
+"
+  fn(args...) -> Int
+Same as `cprint` but for stderr.
+Returns the number of bytes written.
+"
+let ecprint = fn(data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return eprint(res);
+};
+
+"
+  fn(args...) -> Int
+Same as `cprintln` but for stderr.
+Returns the number of bytes written.
+"
+let ecprintln = fn(data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return eprintln(res);
+};
+
+"
+  fn(file, args...) -> Int
+Same as `fprint` but with colors.
+Returns the number of bytes written.
+"
+let fcprint = fn(file, data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return fprint(file, res);
+};
+
+"
+  fn(file, args...) -> Int
+Same as `fprintln` but with colors.
+Returns the number of bytes written.
+"
+let fcprintln = fn(file, data...) {
+    let res = '';
+    for e in data.each() {
+        res += e.str().fmt('{', '}', term.getANSISeq);
+    }
+    return fprintln(file, res);
+};
+
+"
   fn(choices...) -> Str
 Reads input line from `stdin` and returns it as a string.
 If one or more of `choices` are provided, it would make sure the input is one of them.
@@ -23,14 +119,21 @@ Optionally takes:
 "
 let scan = fn(.kw, choices...) {
     let hidden = kw['hide'] ?? false;
-    if choices.empty() { return scanNative(hidden); }
+    if choices.empty() {
+        if hidden && term.isTTY() { term.hideInput(true); }
+        let data = scanNative();
+        if hidden && term.isTTY() { term.hideInput(false); }
+        return data;
+    }
     let icase = kw['icase'] ?? false;
     let maxRetries = kw['retries'] ?? 5;
     let input = '';
     let found = false;
     while !found && maxRetries-- > 0 {
         print('Must provide one of: ', choices.join(' / '));
-        input = scanNative(hidden);
+        if hidden && term.isTTY() { term.hideInput(true); }
+        input = scanNative();
+        if hidden && term.isTTY() { term.hideInput(false); }
         for c in choices.each() {
             if icase { found = input.lower() == c.lower(); }
             else { found = input == c; }
