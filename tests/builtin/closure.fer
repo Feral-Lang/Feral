@@ -1,0 +1,25 @@
+let assert = import('std/assert');
+
+let Info = struct(
+    user = '',
+    ctr = 0
+);
+
+let getDataStr in Info = fn(data) {
+    ++self.ctr;
+    return 'Hello ' + self.user + '! The data is: ' + data + '!';
+};
+
+let closureX2 = fn(cl, data) {
+    return cl(data) + cl(data);
+};
+
+let info = Info('world');
+
+let cl = closure(self = info, info.getDataStr);
+let doubleClosure = closure(closureX2, cl, 'doubled');
+
+assert.eq(cl('something'), 'Hello world! The data is: something!');
+assert.eq(doubleClosure(), 'Hello world! The data is: doubled!Hello world! The data is: doubled!');
+assert.eq(cl('something again'), 'Hello world! The data is: something again!');
+assert.eq(info.ctr, 4);

@@ -264,6 +264,7 @@ public:
 
     bool setVal(VirtualMachine &vm, Span<Var *> newval);
     void clear(VirtualMachine &vm);
+    void setAt(VirtualMachine &vm, size_t idx, Var *data, bool iref);
     void insert(VirtualMachine &vm, size_t idx, Var *data, bool iref);
     void erase(VirtualMachine &vm, size_t idx, bool dref);
     void push(VirtualMachine &vm, Var *data, bool iref);
@@ -311,11 +312,12 @@ public:
     {
         void *orderiter;
         StringMap<Var *>::iterator dataiter;
+        bool forward;
 
         friend class VarMap;
 
     public:
-        Iterator(void *orderiter, StringMap<Var *>::iterator dataiter);
+        Iterator(void *orderiter, StringMap<Var *>::iterator dataiter, bool forward);
 
         inline bool operator==(const Iterator &other) const
         {
@@ -325,6 +327,7 @@ public:
 
         inline StringRef key() { return dataiter->first; }
         inline Var *val() { return dataiter->second; }
+        inline bool isForward() { return forward; }
     };
 
     VarMap(ModuleLoc loc, bool ordered, bool asrefs);
@@ -340,8 +343,8 @@ public:
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
     inline size_t getAttrCount() override { return val.size(); }
 
-    Iterator begin();
-    inline Iterator end() { return Iterator(nullptr, val.end()); }
+    Iterator begin(bool forward = true);
+    inline Iterator end() { return Iterator(nullptr, val.end(), false); }
     void next(Iterator &it);
 
     void addOrder(StringRef name);
@@ -454,6 +457,45 @@ public:
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
+};
+
+class VarClosure : public Var
+{
+    Var *callable;
+    VarVec *args;
+    VarMap *assnArgs;
+
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
+
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
+                bool addBlk) override;
+
+public:
+    VarClosure(ModuleLoc loc, Var *callable);
+
+    inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return assnArgs->setAttr(vm, name, val, iref);
+    }
+    inline void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override
+    {
+        return assnArgs->remAttr(vm, name, found, dref);
+    }
+    inline bool existsAttr(StringRef name) override { return assnArgs->existsAttr(name); }
+    inline Var *getAttr(StringRef name) override { return assnArgs->getAttr(name); }
+    inline size_t getAttrCount() override { return args->size() + assnArgs->size(); }
+
+    inline void setSelf(VirtualMachine &vm, Var *data, bool iref)
+    {
+        return args->setAt(vm, 0, data, iref);
+    }
+
+    inline void push(VirtualMachine &vm, Var *data, bool iref)
+    {
+        return args->push(vm, data, iref);
+    }
+    inline void pop(VirtualMachine &vm, bool dref) { return args->pop(vm, dref); }
 };
 
 class VarStack : public Var

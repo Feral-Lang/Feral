@@ -183,6 +183,28 @@ FERAL_FUNC(allNilCoalesce, 1, false,
     return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
+FERAL_FUNC(closure, 1, true,
+           "  fn(callable, ...) -> Closure\n"
+           "Creates and returns a closure using the `callable` as well as any arguments (including "
+           "optional) that are provided.\n"
+           "Calling the closure will call the `callable` with the arguments provided here, plus "
+           "any more that are added when the closure is called.\n"
+           "A special optional `self = <val>` can be provided which will be used as the `self` var "
+           "for the `callable`. This assumes that `callable` is a member function.")
+{
+    EXPECT_CALLABLE(args[1], "first arg");
+    VarClosure *cl = vm.makeVar<VarClosure>(loc, args[1]);
+    for(size_t i = 2; i < args.size(); ++i) { cl->push(vm, args[i], true); }
+    for(auto aaIt = assnArgs->begin(); aaIt != assnArgs->end(); assnArgs->next(aaIt)) {
+        if(aaIt.key() == "self") {
+            cl->setSelf(vm, aaIt.val(), true);
+            continue;
+        }
+        cl->setAttr(vm, aaIt.key(), aaIt.val(), true);
+    }
+    return cl;
+}
+
 // This is useful when a new (struct) instance is created and inserted into a container,
 // but must also be returned as a reference and not a copy.
 // If a new instance is created and simply returned without storing in a container,
@@ -468,6 +490,7 @@ FERAL_FUNC(
 INIT_DLL(Prelude)
 {
     // global functions
+    vm.addGlobal(loc, "closure", closure);
     vm.addGlobal(loc, "ref", reference);
     vm.addGlobal(loc, "unref", unreference);
     vm.addGlobal(loc, "const", constant);
