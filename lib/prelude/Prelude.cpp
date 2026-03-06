@@ -496,8 +496,6 @@ INIT_DLL(Prelude)
     vm.addGlobal(loc, "const", constant);
     vm.addGlobal(loc, "deconst", deconstant);
     vm.addGlobal(loc, "raise", raise);
-    vm.addGlobal(loc, "evalCode", evalCode);
-    vm.addGlobal(loc, "evalExpr", evalExpr);
     vm.addGlobal(loc, "enum", enumNew);
     vm.addGlobal(loc, "struct", structNew);
     vm.addGlobal(loc, "irange", intRange);
@@ -505,6 +503,8 @@ INIT_DLL(Prelude)
     // module functions
 
     vm.addLocal(loc, "crash", crash);
+    vm.addLocal(loc, "evalCode", evalCode);
+    vm.addLocal(loc, "evalExpr", evalExpr);
     vm.addLocal(loc, "addGlobalModulePaths", addGlobalModulePaths);
     vm.addLocal(loc, "removeGlobalModulePaths", removeGlobalModulePaths);
     vm.addLocal(loc, "exitNative", exitNative);
