@@ -2,10 +2,10 @@ let assert = import('std/assert');
 
 # expr evaluation
 
-let data1 = evalExpr('1 + 1'); # 2
-let data2 = evalExpr('data1'); # 2
-let data3 = evalExpr("'data2'"); # 'data2'
-let data4 = evalExpr(data3); # 2
+let data1 = feral.evalExpr('1 + 1'); # 2
+let data2 = feral.evalExpr('data1'); # 2
+let data3 = feral.evalExpr("'data2'"); # 'data2'
+let data4 = feral.evalExpr(data3); # 2
 
 assert.eq(data1, 2);
 assert.eq(data2, 2);
@@ -31,5 +31,5 @@ let io = import('std/io');
 io.println('hi there');
 `;
 
-let nilRes = evalCode(nilCode);
+let nilRes = feral.evalCode(nilCode);
 assert.eq(nilRes, nil);
