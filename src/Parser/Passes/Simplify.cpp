@@ -60,7 +60,7 @@ bool SimplifyPass::visit(Stmt *stmt, Stmt **source)
     case COND: return visit(as<StmtCond>(stmt), source);
     case FOR: return visit(as<StmtFor>(stmt), source);
     case FORIN: return visit(as<StmtForIn>(stmt), source);
-    case RET: return visit(as<StmtRet>(stmt), source);
+    case RET: return visit(as<StmtRetYield>(stmt), source);
     case CONTINUE: return visit(as<StmtContinue>(stmt), source);
     case BREAK: return visit(as<StmtBreak>(stmt), source);
     case DEFER: return visit(as<StmtDefer>(stmt), source);
@@ -234,9 +234,9 @@ bool SimplifyPass::visit(StmtForIn *stmt, Stmt **source)
     if(!defers.popLoop(stmt->getLoc())) return false;
     return true;
 }
-bool SimplifyPass::visit(StmtRet *stmt, Stmt **source)
+bool SimplifyPass::visit(StmtRetYield *stmt, Stmt **source)
 {
-    if(stmt->getRetVal() && !visit(stmt->getRetVal(), &stmt->getRetVal())) {
+    if(stmt->getVal() && !visit(stmt->getVal(), &stmt->getVal())) {
         err.fail(stmt->getLoc(), "failed to apply simplify pass on return value");
         return false;
     }

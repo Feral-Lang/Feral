@@ -10,9 +10,11 @@ class Parser
 {
     ManagedList &allocator;
     ParseHelper p;
+    Vector<Stmt *> prependBlock;
 
     // Append a return statement if the block doesn't already contain one at the end
     void ensureBlockReturns(StmtBlock *blk);
+    bool parseAwait(Stmt *&resultCallExpr);
 
 public:
     Parser(ManagedList &allocator, ManagedList &toks);

@@ -49,7 +49,7 @@ public:
     virtual bool visit(StmtCond *stmt, Stmt **source)     = 0;
     virtual bool visit(StmtFor *stmt, Stmt **source)      = 0;
     virtual bool visit(StmtForIn *stmt, Stmt **source)    = 0;
-    virtual bool visit(StmtRet *stmt, Stmt **source)      = 0;
+    virtual bool visit(StmtRetYield *stmt, Stmt **source) = 0;
     virtual bool visit(StmtContinue *stmt, Stmt **source) = 0;
     virtual bool visit(StmtBreak *stmt, Stmt **source)    = 0;
     virtual bool visit(StmtDefer *stmt, Stmt **source)    = 0;
