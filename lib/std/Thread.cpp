@@ -181,7 +181,7 @@ INIT_DLL(Thread)
     vm.addLocal(loc, "getConcurrency", getConcurrency);
     vm.addLocal(loc, "getCurrentId", getCurrentThreadId);
     vm.addLocal(loc, "getCurrentName", getCurrentThreadName);
-    vm.addLocal(loc, "yield", yieldCurrentThread);
+    vm.addLocal(loc, "yieldCurrent", yieldCurrentThread);
 
     vm.addLocal(loc, "new", threadNew);
 

@@ -18,12 +18,15 @@ enum class Opcode : uint8_t
     POP_BLOCK,     // pop a layer of variables from stack; operand = count of layers to pop
     PUSH_LOOP,     // special handling for loops
     POP_LOOP,      // special handling for loops
-    RETURN,        // self explanatory; operand = true if a val exists, false for void/nil
+    RETURN,        // return / yield - data or nil; operand = string:
+                   // - first char is '1' if it's a yield, '0' otherwise
+                   // - second char is '1' if a val exists, '0' for void/nil
     BLOCK_TILL,    // create a block (for function); operand = index till which block exists
     CREATE_FN,     // self explanatory; operand = string:
-                   // first char '1' if function contains keyword arg, else '0';
-                   // second char '1' if function contains variadic, else '0';
-                   // rest chars '1' if the equivalent arg has default value, else '0'
+                   // - first char '1' if function is an async, else '0';
+                   // - second char '1' if function contains keyword arg, else '0';
+                   // - third char '1' if function contains variadic, else '0';
+                   // - rest chars '1' if the equivalent arg has default value, else '0'
     CONTINUE,      // self explanatory; operand = jump index
     BREAK,         // self explanatory, operand = pop loop index
     JMP,           // jump unconditionally; operand = index in bytecode to jump to

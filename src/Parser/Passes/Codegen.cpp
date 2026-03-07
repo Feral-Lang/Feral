@@ -24,7 +24,7 @@ bool CodegenPass::visit(Stmt *stmt, Stmt **source)
     case COND: return visit(as<StmtCond>(stmt), source);
     case FOR: return visit(as<StmtFor>(stmt), source);
     case FORIN: return visit(as<StmtForIn>(stmt), source);
-    case RET: return visit(as<StmtRet>(stmt), source);
+    case RET: return visit(as<StmtRetYield>(stmt), source);
     case CONTINUE: return visit(as<StmtContinue>(stmt), source);
     case BREAK: return visit(as<StmtBreak>(stmt), source);
     case DEFER: return visit(as<StmtDefer>(stmt), source);
@@ -255,6 +255,7 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
     String arginfo;
+    arginfo += stmt->isAsync() ? "1" : "0";
     arginfo += stmt->getKwArg() ? "1" : "0";
     arginfo += stmt->getVaArg() ? "1" : "0";
     Vector<StmtVar *> &args = stmt->getArgs();
@@ -475,13 +476,14 @@ bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
 //////////////////////////////////////////// StmtRet //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CodegenPass::visit(StmtRet *stmt, Stmt **source)
+bool CodegenPass::visit(StmtRetYield *stmt, Stmt **source)
 {
-    if(stmt->getRetVal() && !visit(stmt->getRetVal(), &stmt->getRetVal())) {
-        err.fail(stmt->getRetVal()->getLoc(), "failed to generate code for return value");
+    if(stmt->getVal() && !visit(stmt->getVal(), &stmt->getVal())) {
+        err.fail(stmt->getVal()->getLoc(), "failed to generate code for return / yield value");
         return false;
     }
-    bc.addInstrBool(Opcode::RETURN, stmt->getLoc(), stmt->getRetVal());
+    char operand[3] = {stmt->isYield() ? '1' : '0', stmt->getVal() ? '1' : '0', 0};
+    bc.addInstrStr(Opcode::RETURN, stmt->getLoc(), operand);
     return true;
 }
 

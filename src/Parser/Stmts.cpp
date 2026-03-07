@@ -196,20 +196,20 @@ void StmtVar::disp(bool hasNext)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtFnSig::StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
-                     StmtSimple *vaarg)
-    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg)
+                     StmtSimple *vaarg, bool async)
+    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg), async(async)
 {}
 StmtFnSig::~StmtFnSig() {}
 StmtFnSig *StmtFnSig::create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg)
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool async)
 {
-    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg);
+    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg, async);
 }
 
 void StmtFnSig::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Function signature\n"});
+    tio::print(hasNext, {async ? "Async" : "Function", " Signature\n"});
     if(kwarg) {
         tio::taba(true);
         tio::print(vaarg || args.size() > 0, {"Keyword Argument:\n"});
@@ -247,16 +247,10 @@ StmtFnDef *StmtFnDef::create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *s
 void StmtFnDef::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Function definition\n"});
-    tio::taba(true);
-    tio::print(true, {"Function Signature:\n"});
-    sig->disp(false);
-    tio::tabr();
-
-    tio::taba(false);
-    tio::print(false, {"Function Block:\n"});
+    tio::print(hasNext, {isAsync() ? "Async" : "Function", " Definition\n"});
+    sig->disp(true);
     blk->disp(false);
-    tio::tabr(2);
+    tio::tabr(1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,17 +392,19 @@ void StmtForIn::disp(bool hasNext)
 //////////////////////////////////////////// StmtRet //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtRet::StmtRet(ModuleLoc loc, Stmt *val) : Stmt(RET, loc), val(val) {}
-StmtRet::~StmtRet() {}
-StmtRet *StmtRet::create(ManagedList &allocator, ModuleLoc loc, Stmt *val)
+StmtRetYield::StmtRetYield(ModuleLoc loc, Stmt *val, bool yield)
+    : Stmt(RET, loc), val(val), yield(yield)
+{}
+StmtRetYield::~StmtRetYield() {}
+StmtRetYield *StmtRetYield::create(ManagedList &allocator, ModuleLoc loc, Stmt *val, bool yield)
 {
-    return allocator.alloc<StmtRet>(loc, val);
+    return allocator.alloc<StmtRetYield>(loc, val, yield);
 }
 
-void StmtRet::disp(bool hasNext)
+void StmtRetYield::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Return\n"});
+    tio::print(hasNext, {isYield() ? "Yield\n" : "Return\n"});
     if(val) {
         tio::taba(false);
         tio::print(false, {"Value:\n"});

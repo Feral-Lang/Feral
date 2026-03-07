@@ -184,12 +184,14 @@ class StmtFnSig : public Stmt
     // StmtVar contains name and, optionally, val
     Vector<StmtVar *> args;
     StmtSimple *kwarg, *vaarg;
+    bool async;
 
 public:
-    StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg);
+    StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg,
+              bool async);
     ~StmtFnSig();
     static StmtFnSig *create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg);
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool async);
 
     void disp(bool hasNext);
 
@@ -200,6 +202,7 @@ public:
     inline Vector<StmtVar *> &getArgs() { return args; }
     inline StmtSimple *&getKwArg() { return kwarg; }
     inline StmtSimple *&getVaArg() { return vaarg; }
+    inline bool isAsync() { return async; }
 };
 
 class StmtFnDef : public Stmt
@@ -223,6 +226,7 @@ public:
     inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
     inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
     inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
+    inline bool isAsync() { return sig->isAsync(); }
 };
 
 class StmtVarDecl : public Stmt
@@ -321,18 +325,21 @@ public:
     inline StmtBlock *&getBlk() { return blk; }
 };
 
-class StmtRet : public Stmt
+class StmtRetYield : public Stmt
 {
     Stmt *val;
+    bool yield;
 
 public:
-    StmtRet(ModuleLoc loc, Stmt *val);
-    ~StmtRet();
-    static StmtRet *create(ManagedList &allocator, ModuleLoc loc, Stmt *val);
+    StmtRetYield(ModuleLoc loc, Stmt *val, bool yield);
+    ~StmtRetYield();
+    static StmtRetYield *create(ManagedList &allocator, ModuleLoc loc, Stmt *val, bool yield);
 
     void disp(bool hasNext);
 
-    inline Stmt *&getRetVal() { return val; }
+    inline Stmt *&getVal() { return val; }
+
+    inline bool isYield() { return yield; }
 };
 
 class StmtContinue : public Stmt

@@ -16,6 +16,7 @@ const char *TokStrs[_LAST] = {
     // Keywords
     "let",
     "fn",
+    "async",
     "if",
     "elif",
     "else",
@@ -23,6 +24,8 @@ const char *TokStrs[_LAST] = {
     "in",
     "while",
     "return",
+    "yield",
+    "await",
     "continue",
     "break",
     "void",
@@ -330,6 +333,7 @@ TokType classifyStr(StringRef str)
 {
     if(str == TokStrs[LET]) return LET;
     if(str == TokStrs[FN]) return FN;
+    if(str == TokStrs[ASYNC]) return ASYNC;
     if(str == TokStrs[IF]) return IF;
     if(str == TokStrs[ELIF]) return ELIF;
     if(str == TokStrs[ELSE]) return ELSE;
@@ -337,6 +341,8 @@ TokType classifyStr(StringRef str)
     if(str == TokStrs[FIN]) return FIN;
     if(str == TokStrs[WHILE]) return WHILE;
     if(str == TokStrs[RETURN]) return RETURN;
+    if(str == TokStrs[YIELD]) return YIELD;
+    if(str == TokStrs[AWAIT]) return AWAIT;
     if(str == TokStrs[CONTINUE]) return CONTINUE;
     if(str == TokStrs[BREAK]) return BREAK;
     if(str == TokStrs[FVOID]) return FVOID;

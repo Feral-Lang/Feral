@@ -69,6 +69,8 @@ bool Parser::parseBlock(StmtBlock *&tree, bool withBrace)
         }
 
         if(skipCols || p.acceptn(lex::COLS)) {
+            for(auto &s : prependBlock) stmts.push_back(s);
+            prependBlock.clear();
             stmts.push_back(stmt);
             stmt = nullptr;
             continue;
@@ -231,7 +233,8 @@ bool Parser::parseExpr16(Stmt *&expr)
     ensureBlockReturns(orBlk);
 
     StmtVar *arg = StmtVar::create(allocator, orBlkVar->getLoc(), orBlkVar, nullptr, nullptr, true);
-    StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr);
+    StmtFnSig *fnsig =
+        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, false);
     StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar->getLoc(), fnsig, orBlk);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
@@ -660,7 +663,9 @@ bool Parser::parseExpr01(Stmt *&expr)
         err.fail(p.peek()->getLoc(), "failed to parse simple");
         return false;
     }
-    if(p.accept(lex::FN) && !parseFnDef(lhs)) return false;
+    if(p.accept(lex::FN, lex::ASYNC) && !parseFnDef(lhs)) return false;
+    if(p.accept(lex::AWAIT) && !parseAwait(lhs)) return false;
+    if(p.accept(lex::YIELD) && !parseRet(lhs)) return false;
     goto beginBrack;
 
 afterDot:
@@ -795,7 +800,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
     StmtSimple *kwArg = nullptr, *vaarg = nullptr;
     lex::Lexeme *start = p.peek();
 
-    if(!p.acceptn(lex::FN)) {
+    if(!p.acceptn(lex::FN, lex::ASYNC)) {
         err.fail(p.peek()->getLoc(), "expected 'fn' here, found: ", p.peek()->getTok().cStr());
         return false;
     }
@@ -817,9 +822,8 @@ bool Parser::parseFnSig(Stmt *&fsig)
             return false;
         }
         if(argnames.find(p.peek()->getDataStr()) != argnames.end()) {
-            err.fail(p.peek()->getLoc(),
-                     "this argument name is already used "
-                     "before in this function signature");
+            err.fail(p.peek()->getLoc(), "this argument name is already used "
+                                         "before in this function signature");
             return false;
         }
         argnames.insert(p.peek()->getDataStr());
@@ -862,7 +866,8 @@ bool Parser::parseFnSig(Stmt *&fsig)
     }
 
 postArgs:
-    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg);
+    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg,
+                             start->getTok().isType(lex::ASYNC));
     return true;
 }
 bool Parser::parseFnDef(Stmt *&fndef)
@@ -1100,8 +1105,9 @@ bool Parser::parseRet(Stmt *&ret)
     Stmt *val          = nullptr;
     lex::Lexeme *start = p.peek();
 
-    if(!p.acceptn(lex::RETURN)) {
-        err.fail(p.peek()->getLoc(), "expected 'return' here, found: ", p.peek()->getTok().cStr());
+    if(!p.acceptn(lex::RETURN, lex::YIELD)) {
+        err.fail(p.peek()->getLoc(),
+                 "expected 'return' / 'yield' here, found: ", p.peek()->getTok().cStr());
         return false;
     }
 
@@ -1114,7 +1120,7 @@ bool Parser::parseRet(Stmt *&ret)
     }
 
 done:
-    ret = StmtRet::create(allocator, start->getLoc(), val);
+    ret = StmtRetYield::create(allocator, start->getLoc(), val, start->getTok().isType(lex::YIELD));
     return true;
 }
 bool Parser::parseContinue(Stmt *&cont)
@@ -1172,8 +1178,80 @@ void Parser::ensureBlockReturns(StmtBlock *blk)
 {
     auto &stmts = blk->getStmts();
     if(stmts.empty() || !stmts.back()->isReturn()) {
-        stmts.emplace_back(StmtRet::create(allocator, blk->getLoc(), nullptr));
+        stmts.emplace_back(StmtRetYield::create(allocator, blk->getLoc(), nullptr, false));
     }
+}
+
+/*
+... await <expr> ...
+
+expands to
+
+let __futureVar<N>__ = <expr>;
+while !__futureVar<N>__.done() {
+    yield __futureVar<N>__.call();
+}
+... __futureVar<N>__.result() ...
+*/
+bool Parser::parseAwait(Stmt *&resultCallExpr)
+{
+    lex::Lexeme *start   = p.peek();
+    ModuleLoc loc        = start->getLoc();
+    static size_t varCtr = 0;
+
+    if(!p.acceptn(lex::AWAIT)) {
+        err.fail(loc, "expected `await` here, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+    Stmt *val = nullptr;
+    if(!parseExpr01(val)) {
+        err.fail(loc, "failed to parse await expression");
+        return false;
+    }
+
+    lex::Lexeme *dotOp  = allocator.alloc<lex::Lexeme>(loc, lex::DOT);
+    lex::Lexeme *callOp = allocator.alloc<lex::Lexeme>(loc, lex::FNCALL);
+    lex::Lexeme *notOp  = allocator.alloc<lex::Lexeme>(loc, lex::LNOT);
+
+    // let __futureVar<N>__ = <expr>;
+    static Vector<StmtVar *> decls;
+    lex::Lexeme *futureVarName = allocator.alloc<lex::Lexeme>(
+        loc, lex::IDEN, "__futureVar" + std::to_string(varCtr++) + "__");
+    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, val, false);
+    decls.push_back(futureVar);
+    StmtVarDecl *futureVarDecl = StmtVarDecl::create(allocator, loc, decls);
+    decls.clear();
+
+    // while !__futureVar<N>__.done() {
+    //     yield __futureVar<N>__.call();
+    // }
+    StmtSimple *future    = StmtSimple::create(allocator, loc, futureVarName);
+    lex::Lexeme *doneName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
+    StmtSimple *doneRHS   = StmtSimple::create(allocator, loc, doneName);
+    StmtExpr *doneExpr    = StmtExpr::create(allocator, loc, future, dotOp, doneRHS);
+    StmtFnArgs *args      = StmtFnArgs::create(allocator, loc, {}, {});
+    StmtExpr *doneCall    = StmtExpr::create(allocator, loc, doneExpr, callOp, args);
+    StmtExpr *notDone     = StmtExpr::create(allocator, loc, doneCall, notOp, nullptr);
+
+    lex::Lexeme *callName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("call"));
+    StmtSimple *callRHS   = StmtSimple::create(allocator, loc, callName);
+    StmtExpr *callExpr    = StmtExpr::create(allocator, loc, future, dotOp, callRHS);
+    StmtExpr *callCall    = StmtExpr::create(allocator, loc, callExpr, callOp, args);
+    StmtRetYield *yield   = StmtRetYield::create(allocator, loc, callCall, true);
+    StmtBlock *blk        = StmtBlock::create(allocator, loc, {yield}, false);
+
+    StmtFor *loop = StmtFor::create(allocator, loc, nullptr, notDone, nullptr, blk);
+
+    prependBlock.push_back(futureVarDecl);
+    prependBlock.push_back(loop);
+
+    // ... __futureVar<N>__.result() ...
+    lex::Lexeme *resultName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("result"));
+    StmtSimple *resultRHS   = StmtSimple::create(allocator, loc, resultName);
+    StmtExpr *resultExpr    = StmtExpr::create(allocator, loc, future, dotOp, resultRHS);
+
+    resultCallExpr = StmtExpr::create(allocator, loc, resultExpr, callOp, args);
+    return true;
 }
 
 } // namespace fer::ast

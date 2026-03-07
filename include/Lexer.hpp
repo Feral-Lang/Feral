@@ -16,6 +16,7 @@ enum TokType
     // Keywords
     LET,
     FN,
+    ASYNC,
     IF,
     ELIF,
     ELSE,
@@ -23,6 +24,8 @@ enum TokType
     FIN, // IN but Windows APIs define a macro with that name
     WHILE,
     RETURN,
+    YIELD,
+    AWAIT,
     CONTINUE,
     BREAK,
     FVOID,  // VOID but Windows APIs define a macro with that name

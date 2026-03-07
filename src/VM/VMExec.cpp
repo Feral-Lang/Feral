@@ -206,24 +206,25 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
         }
         case Opcode::CREATE_FN: {
             StringRef arginfo = ins.getDataStr();
+            bool async        = arginfo[0] == '1';
             String kw, va;
-            if(arginfo[0] == '1') {
+            if(arginfo[1] == '1') {
                 kw = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
-            if(arginfo[1] == '1') {
+            if(arginfo[2] == '1') {
                 va = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
             size_t argCount = 0, assnArgCount = 0;
-            for(size_t i = 0; i < arginfo.size(); ++i) {
+            for(size_t i = 3; i < arginfo.size(); ++i) {
                 if(arginfo[i] == '1') ++assnArgCount;
                 else ++argCount;
             }
             VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod, kw, va, argCount, assnArgCount,
                                        FnBody{.feral = bodies.back()}, false);
             bodies.pop_back();
-            for(size_t i = 2; i < arginfo.size(); ++i) {
+            for(size_t i = 3; i < arginfo.size(); ++i) {
                 String name = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
                 if(arginfo[i] == '1') {
@@ -351,7 +352,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
             break;
         }
         case Opcode::RETURN: {
-            ret = ins.getDataBool() ? execstack->pop(false) : incVarRef(gs->nil);
+            StringRef operand = ins.getDataStr();
+            ret               = operand[1] == '1' ? execstack->pop(false) : incVarRef(gs->nil);
             goto done;
         }
         case Opcode::PUSH_LOOP: {
