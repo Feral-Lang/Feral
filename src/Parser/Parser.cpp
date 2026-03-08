@@ -234,7 +234,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 
     StmtVar *arg = StmtVar::create(allocator, orBlkVar->getLoc(), orBlkVar, nullptr, nullptr, true);
     StmtFnSig *fnsig =
-        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, false);
+        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, false, true);
     StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar->getLoc(), fnsig, orBlk);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
@@ -867,7 +867,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
 
 postArgs:
     fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg,
-                             start->getTok().isType(lex::ASYNC));
+                             start->getTok().isType(lex::ASYNC), false);
     return true;
 }
 bool Parser::parseFnDef(Stmt *&fndef)
@@ -1215,9 +1215,11 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
 
     // let __futureVar<N>__ = <expr>;
     static Vector<StmtVar *> decls;
-    lex::Lexeme *futureVarName = allocator.alloc<lex::Lexeme>(
+    lex::Lexeme *futureVarNameCreate =
+        allocator.alloc<lex::Lexeme>(loc, lex::STR, "__futureVar" + std::to_string(varCtr) + "__");
+    lex::Lexeme *futureVarNameUse = allocator.alloc<lex::Lexeme>(
         loc, lex::IDEN, "__futureVar" + std::to_string(varCtr++) + "__");
-    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, val, false);
+    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarNameCreate, nullptr, val, false);
     decls.push_back(futureVar);
     StmtVarDecl *futureVarDecl = StmtVarDecl::create(allocator, loc, decls);
     decls.clear();
@@ -1225,7 +1227,7 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     // while !__futureVar<N>__.done() {
     //     yield __futureVar<N>__.call();
     // }
-    StmtSimple *future    = StmtSimple::create(allocator, loc, futureVarName);
+    StmtSimple *future    = StmtSimple::create(allocator, loc, futureVarNameUse);
     lex::Lexeme *doneName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
     StmtSimple *doneRHS   = StmtSimple::create(allocator, loc, doneName);
     StmtExpr *doneExpr    = StmtExpr::create(allocator, loc, future, dotOp, doneRHS);

@@ -3,7 +3,7 @@
 namespace fer
 {
 
-int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, size_t end)
+int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t end)
 {
     ++recurseCount;
     VarModule *varmod  = getCurrModule();
@@ -18,9 +18,8 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
     VarMap *assnArgs   = incVarRef(makeVar<VarMap>({}, true, false));
     size_t currBlkSize = 0;
 
-    if(addFunc) vars->pushFn(*this, {});
+    if(fnstack) vars->pushFn(*this, fnstack);
     else currBlkSize = vars->getBlkSize();
-    if(addBlk) vars->pushBlk(*this, {}, 1);
 
     for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
@@ -32,7 +31,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
         if(shouldStopExecution()) goto fail;
         if(exitCalled) goto done;
 
-        if(addFunc && recurseCount >= getRecurseMax()) {
+        if(fnstack && recurseCount >= getRecurseMax()) {
             fail(ins.getLoc(), "stack overflow, current max: ", getRecurseMax());
             recurseExceeded = true;
             goto handleErr;
@@ -207,24 +206,25 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
         case Opcode::CREATE_FN: {
             StringRef arginfo = ins.getDataStr();
             bool async        = arginfo[0] == '1';
+            bool orblk        = arginfo[1] == '1';
             String kw, va;
-            if(arginfo[1] == '1') {
+            if(arginfo[2] == '1') {
                 kw = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
-            if(arginfo[2] == '1') {
+            if(arginfo[3] == '1') {
                 va = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
             size_t argCount = 0, assnArgCount = 0;
-            for(size_t i = 3; i < arginfo.size(); ++i) {
+            for(size_t i = 4; i < arginfo.size(); ++i) {
                 if(arginfo[i] == '1') ++assnArgCount;
                 else ++argCount;
             }
             VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod, kw, va, argCount, assnArgCount,
-                                       FnBody{.feral = bodies.back()}, false);
+                                       FnBody{.feral = bodies.back()}, false, async, orblk);
             bodies.pop_back();
-            for(size_t i = 3; i < arginfo.size(); ++i) {
+            for(size_t i = 4; i < arginfo.size(); ++i) {
                 String name = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
                 if(arginfo[i] == '1') {
@@ -400,8 +400,7 @@ int VirtualMachine::execute(Var *&ret, bool addFunc, bool addBlk, size_t begin, 
         }
     }
 done:
-    if(addBlk) vars->popBlk(*this, 1);
-    if(addFunc) vars->popFn(*this);
+    if(fnstack) vars->popFn(*this);
     else vars->resizeBlkTo(*this, currBlkSize);
     decVarRef(assnArgs);
     --recurseCount;
@@ -409,8 +408,7 @@ done:
 fail:
     ready = false;
     if(ret) decVarRef(ret);
-    if(addBlk) vars->popBlk(*this, 1);
-    if(addFunc) vars->popFn(*this);
+    if(fnstack) vars->popFn(*this);
     else vars->resizeBlkTo(*this, currBlkSize);
     decVarRef(assnArgs);
     --recurseCount;

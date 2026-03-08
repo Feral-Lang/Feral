@@ -185,13 +185,14 @@ class StmtFnSig : public Stmt
     Vector<StmtVar *> args;
     StmtSimple *kwarg, *vaarg;
     bool async;
+    bool orblk; // if this signature is for `or` block.
 
 public:
     StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg,
-              bool async);
+              bool async, bool orblk);
     ~StmtFnSig();
     static StmtFnSig *create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg, bool async);
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool async, bool orblk);
 
     void disp(bool hasNext);
 
@@ -203,6 +204,7 @@ public:
     inline StmtSimple *&getKwArg() { return kwarg; }
     inline StmtSimple *&getVaArg() { return vaarg; }
     inline bool isAsync() { return async; }
+    inline bool isOrBlk() { return orblk; }
 };
 
 class StmtFnDef : public Stmt
@@ -227,6 +229,7 @@ public:
     inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
     inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
     inline bool isAsync() { return sig->isAsync(); }
+    inline bool isOrBlk() { return sig->isOrBlk(); }
 };
 
 class StmtVarDecl : public Stmt
