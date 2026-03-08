@@ -255,7 +255,6 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
     String arginfo;
-    arginfo += stmt->isAsync() ? "1" : "0";
     arginfo += stmt->isOrBlk() ? "1" : "0";
     arginfo += stmt->getKwArg() ? "1" : "0";
     arginfo += stmt->getVaArg() ? "1" : "0";

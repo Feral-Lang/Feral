@@ -205,26 +205,25 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t e
         }
         case Opcode::CREATE_FN: {
             StringRef arginfo = ins.getDataStr();
-            bool async        = arginfo[0] == '1';
-            bool orblk        = arginfo[1] == '1';
+            bool orblk        = arginfo[0] == '1';
             String kw, va;
-            if(arginfo[2] == '1') {
+            if(arginfo[1] == '1') {
                 kw = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
-            if(arginfo[3] == '1') {
+            if(arginfo[2] == '1') {
                 va = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
             }
             size_t argCount = 0, assnArgCount = 0;
-            for(size_t i = 4; i < arginfo.size(); ++i) {
+            for(size_t i = 3; i < arginfo.size(); ++i) {
                 if(arginfo[i] == '1') ++assnArgCount;
                 else ++argCount;
             }
             VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod, kw, va, argCount, assnArgCount,
-                                       FnBody{.feral = bodies.back()}, false, async, orblk);
+                                       FnBody{.feral = bodies.back()}, false, orblk);
             bodies.pop_back();
-            for(size_t i = 4; i < arginfo.size(); ++i) {
+            for(size_t i = 3; i < arginfo.size(); ++i) {
                 String name = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
                 if(arginfo[i] == '1') {

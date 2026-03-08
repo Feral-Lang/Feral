@@ -16,7 +16,6 @@ const char *TokStrs[_LAST] = {
     // Keywords
     "let",
     "fn",
-    "async",
     "if",
     "elif",
     "else",
@@ -333,7 +332,6 @@ TokType classifyStr(StringRef str)
 {
     if(str == TokStrs[LET]) return LET;
     if(str == TokStrs[FN]) return FN;
-    if(str == TokStrs[ASYNC]) return ASYNC;
     if(str == TokStrs[IF]) return IF;
     if(str == TokStrs[ELIF]) return ELIF;
     if(str == TokStrs[ELSE]) return ELSE;

@@ -196,21 +196,20 @@ void StmtVar::disp(bool hasNext)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtFnSig::StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
-                     StmtSimple *vaarg, bool async, bool orblk)
-    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg), async(async), orblk(orblk)
+                     StmtSimple *vaarg, bool orblk)
+    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg), orblk(orblk)
 {}
 StmtFnSig::~StmtFnSig() {}
 StmtFnSig *StmtFnSig::create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg, bool async, bool orblk)
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool orblk)
 {
-    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg, async, orblk);
+    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg, orblk);
 }
 
 void StmtFnSig::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {async ? "Async" : "Function", " Signature",
-                         isOrBlk() ? " for `or` block\n" : "\n"});
+    tio::print(hasNext, {"Function Signature", isOrBlk() ? " for `or` block\n" : "\n"});
     if(kwarg) {
         tio::taba(true);
         tio::print(vaarg || args.size() > 0, {"Keyword Argument:\n"});
@@ -248,8 +247,7 @@ StmtFnDef *StmtFnDef::create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *s
 void StmtFnDef::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {isAsync() ? "Async" : "Function", " Definition",
-                         isOrBlk() ? " for `or` block\n" : "\n"});
+    tio::print(hasNext, {"Function Definition", isOrBlk() ? " for `or` block\n" : "\n"});
     sig->disp(true);
     blk->disp(false);
     tio::tabr(1);

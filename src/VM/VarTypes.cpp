@@ -511,10 +511,9 @@ bool VarMapIterator::next(VirtualMachine &vm, ModuleLoc loc, Var *&val)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFn::VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative, bool isasync,
-             bool isorblk)
+             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative, bool isorblk)
     : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), kwArg(kwArg), varArg(varArg),
-      body(body), isnative(isnative), isasync(isasync), isorblk(isorblk)
+      body(body), isnative(isnative), isorblk(isorblk)
 {
     params.reserve(paramcount);
     assnParams.reserve(assnParamsCount);

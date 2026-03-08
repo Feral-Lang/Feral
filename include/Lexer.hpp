@@ -16,7 +16,6 @@ enum TokType
     // Keywords
     LET,
     FN,
-    ASYNC,
     IF,
     ELIF,
     ELSE,
