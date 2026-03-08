@@ -24,8 +24,10 @@ enum class Opcode : uint8_t
     BLOCK_TILL,    // create a block (for function); operand = index till which block exists
     CREATE_FN,     // self explanatory; operand = string:
                    // - first char '1' if function is an async, else '0';
-                   // - second char '1' if function contains keyword arg, else '0';
-                   // - third char '1' if function contains variadic, else '0';
+                   // - second char '1' if it requires a new function scope, else '0';
+                   //   -- function scope is not present only for or-blocks.
+                   // - third char '1' if function contains keyword arg, else '0';
+                   // - fourth char '1' if function contains variadic, else '0';
                    // - rest chars '1' if the equivalent arg has default value, else '0'
     CONTINUE,      // self explanatory; operand = jump index
     BREAK,         // self explanatory, operand = pop loop index

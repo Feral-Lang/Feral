@@ -37,6 +37,7 @@ typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
 typedef void (*DllDeinitFn)(VirtualMachine &vm);
 #define DEINIT_DLL(name) extern "C" void Deinit##name(VirtualMachine &vm)
 
+class VarStack;
 class Var : public IAllocated
 {
     ModuleLoc loc;
@@ -82,7 +83,7 @@ class Var : public IAllocated
     virtual bool onSet(VirtualMachine &vm, Var *from);
     // Perform a call using this variable.
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                        bool addFunc, bool addBlk);
+                        VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr);
 
 protected:
     Var(ModuleLoc loc, size_t infoFlags);
@@ -91,7 +92,7 @@ protected:
 
 public:
     Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-              bool addFunc = true, bool addBlk = false);
+              VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr);
     virtual void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
     virtual void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref);
     virtual bool existsAttr(StringRef name);
@@ -424,16 +425,19 @@ class VarFn : public Var
     StringMap<Var *> assnParams;
     FnBody body;
     bool isnative;
+    bool isasync;
+    bool isorblk;
 
     void onDestroy(VirtualMachine &vm) override;
 
-    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
-                bool addBlk) override;
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
     VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative);
+          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative, bool isasync,
+          bool isorblk);
 
     inline void pushParam(const String &param) { params.push_back(param); }
     inline void setParams(Span<String> newparams)
@@ -457,6 +461,8 @@ public:
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
+    inline bool isAsync() { return isasync; }
+    inline bool isOrBlk() { return isorblk; }
 };
 
 class VarClosure : public Var
@@ -468,8 +474,8 @@ class VarClosure : public Var
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
-    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
-                bool addBlk) override;
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarClosure(ModuleLoc loc, Var *callable);
@@ -496,6 +502,23 @@ public:
         return args->push(vm, data, iref);
     }
     inline void pop(VirtualMachine &vm, bool dref) { return args->pop(vm, dref); }
+};
+
+class VarAsync : public Var
+{
+    VarClosure *closure; // closure is required to preserve args.
+    VarStack *fnstack;
+    size_t currentlyAt;
+    Var *returned; // when the callable is finished, this is set to the returned value.
+
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
+
+public:
+    VarAsync(ModuleLoc loc, VarClosure *closure);
+
+    inline bool isDone() { return returned != nullptr; }
+    inline Var *getReturned() { return returned; }
 };
 
 class VarStack : public Var
@@ -593,8 +616,8 @@ class VarStructDef : public Var
     void onDestroy(VirtualMachine &vm) override;
 
     // returns VarStruct
-    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, bool addFunc,
-                bool addBlk) override;
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarStructDef(ModuleLoc loc);
@@ -838,7 +861,7 @@ public:
 
     void pushModScope(VirtualMachine &vm, VarStack *modScope);
     void popModScope(VirtualMachine &vm);
-    void pushFn(VirtualMachine &vm, ModuleLoc loc);
+    void pushFn(VirtualMachine &vm, VarStack *fn);
     void popFn(VirtualMachine &vm);
     void stash(VirtualMachine &vm, StringRef name, Var *val, bool iref = true);
     void unstash(VirtualMachine &vm);

@@ -118,9 +118,9 @@ public:
                      VarMap *assnArgs);
 
     int compileAndRun(ModuleLoc loc, const char *file, VarModule **module);
-    // Must pushModule before calling this function, and popModule after calling it.
-    int execute(Var *&ret, bool addFunc = false, bool addBlk = false, size_t begin = 0,
-                size_t end = 0);
+    // Must pushModule, pushFn/pushBlk before calling this function,
+    // and popModule, popFn/popBlk after calling it.
+    int execute(Var *&ret, VarStack *fnstack, size_t begin = 0, size_t end = 0);
 
     VarModule *makeModule(ModuleLoc loc, File *f, bool exprOnly,
                           VarStack *existingVarStack = nullptr);

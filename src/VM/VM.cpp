@@ -114,7 +114,7 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file, VarModule **m
 
     pushModule(tmpMod);
     Var *ret = nullptr;
-    int res  = execute(ret);
+    int res  = execute(ret, nullptr);
     decVarRef(ret);
     popModule();
     return res;
@@ -220,7 +220,7 @@ void VirtualMachine::popModule()
 VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
 {
     VarFn *f = makeVar<VarFn>(loc, nullptr, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
-                              FnBody{.native = fnObj.fn}, true);
+                              FnBody{.native = fnObj.fn}, true, false, false);
     if(!f) return nullptr;
     if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
     for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
@@ -509,7 +509,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     }
     pushModule(mod);
     Var *tmpRet = nullptr;
-    int ec      = execute(tmpRet);
+    int ec      = execute(tmpRet, nullptr);
     popModule();
     if(tmpRet) {
         decVarRef(tmpRet);
