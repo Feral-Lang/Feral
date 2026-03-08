@@ -340,7 +340,12 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t e
             Var *inbase    = execstack->pop(false);
             Var *val       = nullptr;
             if(inbase->isAttrBased()) val = inbase->getAttr(attr);
-            if(!val) val = getTypeFn(inbase, attr);
+            if(!val) {
+                val = getTypeFn(inbase, attr);
+                // Make the type func into a closure with inbase as `self`.
+                val = makeVar<VarClosure>(ins.getLoc(), val);
+                as<VarClosure>(val)->setSelf(*this, inbase, true);
+            }
             if(!val) {
                 fail(ins.getLoc(), "type ", getTypeName(inbase),
                      " does not contain attribute: ", attr);

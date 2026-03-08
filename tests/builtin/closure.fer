@@ -16,7 +16,7 @@ let closureX2 = fn(cl, data) {
 
 let info = Info('world');
 
-let cl = closure(self = info, info.getDataStr);
+let cl = closure(info.getDataStr);
 let doubleClosure = closure(closureX2, cl, 'doubled');
 
 assert.eq(cl('something'), 'Hello world! The data is: something!');
