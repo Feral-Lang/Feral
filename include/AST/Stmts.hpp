@@ -184,15 +184,14 @@ class StmtFnSig : public Stmt
     // StmtVar contains name and, optionally, val
     Vector<StmtVar *> args;
     StmtSimple *kwarg, *vaarg;
-    bool async;
     bool orblk; // if this signature is for `or` block.
 
 public:
     StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg,
-              bool async, bool orblk);
+              bool orblk);
     ~StmtFnSig();
     static StmtFnSig *create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg, bool async, bool orblk);
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool orblk);
 
     void disp(bool hasNext);
 
@@ -203,7 +202,6 @@ public:
     inline Vector<StmtVar *> &getArgs() { return args; }
     inline StmtSimple *&getKwArg() { return kwarg; }
     inline StmtSimple *&getVaArg() { return vaarg; }
-    inline bool isAsync() { return async; }
     inline bool isOrBlk() { return orblk; }
 };
 
@@ -228,7 +226,6 @@ public:
     inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
     inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
     inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
-    inline bool isAsync() { return sig->isAsync(); }
     inline bool isOrBlk() { return sig->isOrBlk(); }
 };
 

@@ -234,7 +234,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 
     StmtVar *arg = StmtVar::create(allocator, orBlkVar->getLoc(), orBlkVar, nullptr, nullptr, true);
     StmtFnSig *fnsig =
-        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, false, true);
+        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, true);
     StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar->getLoc(), fnsig, orBlk);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
@@ -663,7 +663,7 @@ bool Parser::parseExpr01(Stmt *&expr)
         err.fail(p.peek()->getLoc(), "failed to parse simple");
         return false;
     }
-    if(p.accept(lex::FN, lex::ASYNC) && !parseFnDef(lhs)) return false;
+    if(p.accept(lex::FN) && !parseFnDef(lhs)) return false;
     if(p.accept(lex::AWAIT) && !parseAwait(lhs)) return false;
     if(p.accept(lex::YIELD) && !parseRet(lhs)) return false;
     goto beginBrack;
@@ -800,7 +800,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
     StmtSimple *kwArg = nullptr, *vaarg = nullptr;
     lex::Lexeme *start = p.peek();
 
-    if(!p.acceptn(lex::FN, lex::ASYNC)) {
+    if(!p.acceptn(lex::FN)) {
         err.fail(p.peek()->getLoc(), "expected 'fn' here, found: ", p.peek()->getTok().cStr());
         return false;
     }
@@ -866,8 +866,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
     }
 
 postArgs:
-    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg,
-                             start->getTok().isType(lex::ASYNC), false);
+    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg, false);
     return true;
 }
 bool Parser::parseFnDef(Stmt *&fndef)
