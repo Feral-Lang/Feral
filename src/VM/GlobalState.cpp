@@ -6,21 +6,10 @@
 #include "VM/CoreFuncs.hpp"
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
-#include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
-#include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
-#endif
-
 namespace fer
 {
 
 Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs);
-
-#if defined(CORE_OS_WINDOWS)
-static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
-bool addDLLDirectory(StringRef dir);
-void remDLLDirectories();
-#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// GlobalState //////////////////////////////////////////////
@@ -161,6 +150,8 @@ bool GlobalState::deinit(VirtualMachine &vm)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(CORE_OS_WINDOWS)
+StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
+
 bool addDLLDirectory(StringRef dir)
 {
     if(dllDirectories.find(dir) != dllDirectories.end()) return true;
