@@ -581,7 +581,9 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     vm.pushModule(mod);
     if(existingFnStack) fnstack = existingFnStack;
     else if(!isOrBlk()) fnstack = vm.incVarRef(vm.makeVar<VarStack>(loc));
-    if(vm.execute(ret, fnstack, body.feral.begin, body.feral.end) != 0 && !vm.isExitCalled()) {
+    if(vm.execute(ret, fnstack, currentlyAt, body.feral.begin, body.feral.end) != 0 &&
+       !vm.isExitCalled())
+    {
         vars->unstash(vm);
     }
     if(!existingFnStack && !isOrBlk()) vm.decVarRef(fnstack);
@@ -614,12 +616,15 @@ void VarClosure::onDestroy(VirtualMachine &vm)
 Var *VarClosure::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                         VarStack *fnstack, size_t *currentlyAt)
 {
-    bool argsStart = args[0] == nullptr ? 1 : 0;
+    bool argsStart = args.size() > 0 && args[0] == nullptr ? 1 : 0;
     for(size_t i = argsStart; i < args.size(); ++i) this->args->push(vm, args[i], true);
-    for(auto &aa : this->assnArgs->getVal()) {
-        if(!assnArgs->existsAttr(aa.first)) assnArgs->setAttr(vm, aa.first, aa.second, true);
+    if(assnArgs) {
+        for(auto &aa : this->assnArgs->getVal()) {
+            if(!assnArgs->existsAttr(aa.first)) assnArgs->setAttr(vm, aa.first, aa.second, true);
+        }
     }
-    Var *res = callable->call(vm, loc, this->args->getVal(), assnArgs, fnstack, currentlyAt);
+    Var *res = callable->call(vm, loc, this->args->getVal(), assnArgs ? assnArgs : this->assnArgs,
+                              fnstack, currentlyAt);
     for(size_t i = argsStart; i < args.size(); ++i) this->args->pop(vm, true);
     return res;
 }
@@ -629,7 +634,8 @@ Var *VarClosure::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, Var
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarAsync::VarAsync(ModuleLoc loc, VarClosure *closure)
-    : Var(loc, 0), closure(closure), fnstack(nullptr), currentlyAt(-1), returned(nullptr)
+    : Var(loc, VarInfo::CALLABLE), closure(closure), fnstack(nullptr), currentlyAt(-1),
+      returned(nullptr)
 {}
 
 void VarAsync::onCreate(VirtualMachine &vm)
@@ -642,6 +648,15 @@ void VarAsync::onDestroy(VirtualMachine &vm)
     if(returned) vm.decVarRef(returned);
     vm.decVarRef(fnstack);
     vm.decVarRef(closure);
+}
+
+Var *VarAsync::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                      VarStack *existingFnStack, size_t *currentlyAt)
+{
+    if(this->currentlyAt != -1) { vm.pushExecStack(args.size() > 1 ? args[1] : vm.getNil(), true); }
+    Var *res = closure->call(vm, loc, {}, nullptr, fnstack, &this->currentlyAt);
+    if(this->currentlyAt == -1) returned = vm.incVarRef(res);
+    return res;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

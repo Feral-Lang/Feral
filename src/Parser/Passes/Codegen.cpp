@@ -46,7 +46,9 @@ bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
             err.fail(stmt->getLoc(), "failed to generate bytecode for block stmt");
             return false;
         }
-        if(stmt->shouldUnload() && (s->isExpr() || s->isSimple())) {
+        if(stmt->shouldUnload() &&
+           (s->isExpr() || s->isSimple() || (s->isReturn() && as<StmtRetYield>(s)->isYield())))
+        {
             bc.addInstrInt(Opcode::UNLOAD, s->getLoc(), 1);
         }
     }
@@ -473,7 +475,7 @@ bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////// StmtRet //////////////////////////////////////////////
+///////////////////////////////////////// StmtRetYield ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool CodegenPass::visit(StmtRetYield *stmt, Stmt **source)

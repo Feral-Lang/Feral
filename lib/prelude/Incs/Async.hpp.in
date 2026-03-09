@@ -1,0 +1,27 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(asyncDone, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if the async has returned and shouldn't be called again.")
+{
+    VarAsync *async = as<VarAsync>(args[0]);
+    return async->isDone() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(asyncResult, 0, false,
+           "  var.fn() -> Var\n"
+           "Returns the resulting return value once the async is fully complete.\n"
+           "If the async is not yet complete, this will raise an error.")
+{
+    VarAsync *async = as<VarAsync>(args[0]);
+    if(!async->isDone()) {
+        vm.fail(loc, "failed to get async result - it's not finished yet");
+        return nullptr;
+    }
+    return async->getReturned();
+}
+
+} // namespace fer

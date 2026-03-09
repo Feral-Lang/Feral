@@ -25,6 +25,7 @@ enum TokType
     RETURN,
     YIELD,
     AWAIT,
+    WAIT,
     CONTINUE,
     BREAK,
     FVOID,  // VOID but Windows APIs define a macro with that name
