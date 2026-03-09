@@ -9,6 +9,7 @@
 #include <unistd.h>
 #endif
 
+#include "Incs/Async.hpp.in"
 #include "Incs/Bool.hpp.in"
 #include "Incs/Bytebuffer.hpp.in"
 #include "Incs/Enum.hpp.in"
@@ -203,6 +204,22 @@ FERAL_FUNC(closure, 1, true,
         cl->setAttr(vm, aaIt.key(), aaIt.val(), true);
     }
     return cl;
+}
+
+FERAL_FUNC(async, 1, true,
+           "  fn(callable, ...) -> Async\n"
+           "Creates and returns an async using the `callable` as well as any arguments (including "
+           "optional) that are provided.\n"
+           "The Async holds the `callable`'s execution state and the closure within it stores the "
+           "arguments required by the function.\n"
+           "This gives the foundation of being able to resume functions later.\n"
+           "To use the Async, these methods are provided: Async.done(), Async(value = nil) -> "
+           "YieldedObject, Async.finish() -> Object.")
+{
+    EXPECT_CALLABLE(args[1], "first arg");
+    VarClosure *cl  = as<VarClosure>(FERAL_FUNC_CALL(closure, vm, loc, args, assnArgs));
+    VarAsync *async = vm.makeVar<VarAsync>(loc, cl);
+    return async;
 }
 
 // This is useful when a new (struct) instance is created and inserted into a container,
@@ -491,6 +508,7 @@ INIT_DLL(Prelude)
 {
     // global functions
     vm.addGlobal(loc, "closure", closure);
+    vm.addGlobal(loc, "async", async);
     vm.addGlobal(loc, "ref", reference);
     vm.addGlobal(loc, "unref", unreference);
     vm.addGlobal(loc, "const", constant);
@@ -605,6 +623,10 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "path", strToPath);
 
     // core type functions
+
+    // Async
+    vm.addTypeFn<VarAsync>(loc, "done", asyncDone);
+    vm.addTypeFn<VarAsync>(loc, "result", asyncResult);
 
     // nil
     vm.addTypeFn<VarNil>(loc, "==", nilEQ);
@@ -787,6 +809,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarMapIterator>(loc, "next", mapIteratorNext);
 
     // struct
+
     vm.addTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName);
     vm.addTypeFn<VarStructDef>(loc, "len", structDefLen);
 

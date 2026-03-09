@@ -25,6 +25,7 @@ const char *TokStrs[_LAST] = {
     "return",
     "yield",
     "await",
+    "wait",
     "continue",
     "break",
     "void",
@@ -341,6 +342,7 @@ TokType classifyStr(StringRef str)
     if(str == TokStrs[RETURN]) return RETURN;
     if(str == TokStrs[YIELD]) return YIELD;
     if(str == TokStrs[AWAIT]) return AWAIT;
+    if(str == TokStrs[WAIT]) return WAIT;
     if(str == TokStrs[CONTINUE]) return CONTINUE;
     if(str == TokStrs[BREAK]) return BREAK;
     if(str == TokStrs[FVOID]) return FVOID;

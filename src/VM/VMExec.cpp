@@ -3,7 +3,8 @@
 namespace fer
 {
 
-int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t end)
+int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, size_t begin,
+                            size_t end)
 {
     ++recurseCount;
     VarModule *varmod  = getCurrModule();
@@ -21,7 +22,9 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t e
     if(fnstack) vars->pushFn(*this, fnstack);
     else currBlkSize = vars->getBlkSize();
 
-    for(size_t i = begin; i < bcsz; ++i) {
+    if(currentlyAt && *currentlyAt != -1) begin = *currentlyAt;
+
+    for(size_t i = currentlyAt && *currentlyAt != -1 ? *currentlyAt : begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
 #if defined(CORE_BUILD_DEBUG)
         LOG_DEBUG("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
@@ -59,7 +62,13 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t e
             break;
         }
         case Opcode::UNLOAD: {
-            for(size_t i = 0; i < ins.getDataInt(); ++i) execstack->pop();
+            for(size_t i = 0; i < ins.getDataInt(); ++i) {
+                if(execstack->empty()) {
+                    fail(ins.getLoc(), "no data present in execstack to unload");
+                    goto handleErr;
+                }
+                execstack->pop();
+            }
             break;
         }
         case Opcode::CREATE: {
@@ -357,7 +366,16 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t begin, size_t e
         }
         case Opcode::RETURN: {
             StringRef operand = ins.getDataStr();
-            ret               = operand[1] == '1' ? execstack->pop(false) : incVarRef(gs->nil);
+            if(operand[0] == '1') { // yield
+                if(!currentlyAt) {
+                    fail(ins.getLoc(), "cannot yield from a non async function");
+                    goto handleErr;
+                }
+                *currentlyAt = i + 1;
+            } else {
+                if(currentlyAt) *currentlyAt = -1;
+            }
+            ret = operand[1] == '1' ? execstack->pop(false) : incVarRef(gs->nil);
             goto done;
         }
         case Opcode::PUSH_LOOP: {

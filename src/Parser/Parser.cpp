@@ -664,7 +664,7 @@ bool Parser::parseExpr01(Stmt *&expr)
         return false;
     }
     if(p.accept(lex::FN) && !parseFnDef(lhs)) return false;
-    if(p.accept(lex::AWAIT) && !parseAwait(lhs)) return false;
+    if(p.accept(lex::AWAIT, lex::WAIT) && !parseAwait(lhs)) return false;
     if(p.accept(lex::YIELD) && !parseRet(lhs)) return false;
     goto beginBrack;
 
@@ -1182,24 +1182,25 @@ void Parser::ensureBlockReturns(StmtBlock *blk)
 }
 
 /*
-... await <expr> ...
+... await <expr>(args...) ...
 
 expands to
 
-let __futureVar<N>__ = <expr>;
+let __futureVar<N>__ = async(<expr>, args...);
 while !__futureVar<N>__.done() {
-    yield __futureVar<N>__.call();
+    yield __futureVar<N>__();
 }
 ... __futureVar<N>__.result() ...
 */
 bool Parser::parseAwait(Stmt *&resultCallExpr)
 {
-    lex::Lexeme *start   = p.peek();
-    ModuleLoc loc        = start->getLoc();
+    lex::Lexeme *start = p.peek();
+    ModuleLoc loc      = start->getLoc();
+
     static size_t varCtr = 0;
 
-    if(!p.acceptn(lex::AWAIT)) {
-        err.fail(loc, "expected `await` here, found: ", p.peek()->getTok().cStr());
+    if(!p.acceptn(lex::AWAIT, lex::WAIT)) {
+        err.fail(loc, "expected `await` / `wait` here, found: ", p.peek()->getTok().cStr());
         return false;
     }
     Stmt *val = nullptr;
@@ -1208,38 +1209,65 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
         return false;
     }
 
+    if(!val->isExpr() || !as<StmtExpr>(val)->getOperTok().isType(lex::FNCALL)) {
+        err.fail(loc, "expected await to invoke a function call in the expression");
+        return false;
+    }
+    Stmt *valExpr = as<StmtExpr>(val)->getLHS();
+    if(!as<StmtExpr>(val)->getRHS() || !as<StmtExpr>(val)->getRHS()->isFnArgs()) {
+        err.fail(loc, "expected await expression to be a function call");
+        return false;
+    }
+
+    bool isWait = start->getTok().isType(lex::WAIT);
+
     lex::Lexeme *dotOp  = allocator.alloc<lex::Lexeme>(loc, lex::DOT);
     lex::Lexeme *callOp = allocator.alloc<lex::Lexeme>(loc, lex::FNCALL);
     lex::Lexeme *notOp  = allocator.alloc<lex::Lexeme>(loc, lex::LNOT);
 
-    // let __futureVar<N>__ = <expr>;
+    // async(<expr>, args...)
+    StmtFnArgs *valExprArgs = as<StmtFnArgs>(as<StmtExpr>(val)->getRHS());
+    valExprArgs->insertArg(0, valExpr, false);
+    lex::Lexeme *asyncName = allocator.alloc<lex::Lexeme>(loc, lex::IDEN, StringRef("async"));
+    StmtSimple *asyncLHS   = StmtSimple::create(allocator, loc, asyncName);
+    StmtExpr *asyncCall    = StmtExpr::create(allocator, loc, asyncLHS, callOp, valExprArgs);
+
+    // let __futureVar<N>__ = async(<expr>, args...);
     static Vector<StmtVar *> decls;
     lex::Lexeme *futureVarNameCreate =
         allocator.alloc<lex::Lexeme>(loc, lex::STR, "__futureVar" + std::to_string(varCtr) + "__");
-    lex::Lexeme *futureVarNameUse = allocator.alloc<lex::Lexeme>(
+    lex::Lexeme *futureVarNameUseDone =
+        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, "__futureVar" + std::to_string(varCtr) + "__");
+    lex::Lexeme *futureVarNameUseCall =
+        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, "__futureVar" + std::to_string(varCtr) + "__");
+    lex::Lexeme *futureVarNameUseResult = allocator.alloc<lex::Lexeme>(
         loc, lex::IDEN, "__futureVar" + std::to_string(varCtr++) + "__");
-    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarNameCreate, nullptr, val, false);
+    StmtVar *futureVar =
+        StmtVar::create(allocator, loc, futureVarNameCreate, nullptr, asyncCall, false);
     decls.push_back(futureVar);
     StmtVarDecl *futureVarDecl = StmtVarDecl::create(allocator, loc, decls);
     decls.clear();
 
     // while !__futureVar<N>__.done() {
-    //     yield __futureVar<N>__.call();
+    //     yield __futureVar<N>__();
     // }
-    StmtSimple *future    = StmtSimple::create(allocator, loc, futureVarNameUse);
-    lex::Lexeme *doneName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
-    StmtSimple *doneRHS   = StmtSimple::create(allocator, loc, doneName);
-    StmtExpr *doneExpr    = StmtExpr::create(allocator, loc, future, dotOp, doneRHS);
-    StmtFnArgs *args      = StmtFnArgs::create(allocator, loc, {}, {});
-    StmtExpr *doneCall    = StmtExpr::create(allocator, loc, doneExpr, callOp, args);
-    StmtExpr *notDone     = StmtExpr::create(allocator, loc, doneCall, notOp, nullptr);
+    StmtSimple *futureDoneSimple = StmtSimple::create(allocator, loc, futureVarNameUseDone);
+    lex::Lexeme *doneName        = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
+    StmtSimple *doneRHS          = StmtSimple::create(allocator, loc, doneName);
+    StmtExpr *doneExpr = StmtExpr::create(allocator, loc, futureDoneSimple, dotOp, doneRHS);
+    StmtFnArgs *args   = StmtFnArgs::create(allocator, loc, {}, {});
+    StmtExpr *doneCall = StmtExpr::create(allocator, loc, doneExpr, callOp, args);
+    StmtExpr *notDone  = StmtExpr::create(allocator, loc, doneCall, notOp, nullptr);
 
-    lex::Lexeme *callName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("call"));
-    StmtSimple *callRHS   = StmtSimple::create(allocator, loc, callName);
-    StmtExpr *callExpr    = StmtExpr::create(allocator, loc, future, dotOp, callRHS);
-    StmtExpr *callCall    = StmtExpr::create(allocator, loc, callExpr, callOp, args);
-    StmtRetYield *yield   = StmtRetYield::create(allocator, loc, callCall, true);
-    StmtBlock *blk        = StmtBlock::create(allocator, loc, {yield}, false);
+    StmtSimple *futureCallSimple = StmtSimple::create(allocator, loc, futureVarNameUseCall);
+    StmtExpr *callFuture         = StmtExpr::create(allocator, loc, futureCallSimple, callOp, args);
+    Stmt *blkStmt                = nullptr;
+    if(isWait) {
+        blkStmt = callFuture;
+    } else {
+        blkStmt = StmtRetYield::create(allocator, loc, callFuture, true);
+    }
+    StmtBlock *blk = StmtBlock::create(allocator, loc, {blkStmt}, false);
 
     StmtFor *loop = StmtFor::create(allocator, loc, nullptr, notDone, nullptr, blk);
 
@@ -1247,9 +1275,10 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     prependBlock.push_back(loop);
 
     // ... __futureVar<N>__.result() ...
+    StmtSimple *futureResultSimple = StmtSimple::create(allocator, loc, futureVarNameUseResult);
     lex::Lexeme *resultName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("result"));
     StmtSimple *resultRHS   = StmtSimple::create(allocator, loc, resultName);
-    StmtExpr *resultExpr    = StmtExpr::create(allocator, loc, future, dotOp, resultRHS);
+    StmtExpr *resultExpr = StmtExpr::create(allocator, loc, futureResultSimple, dotOp, resultRHS);
 
     resultCallExpr = StmtExpr::create(allocator, loc, resultExpr, callOp, args);
     return true;

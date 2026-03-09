@@ -402,6 +402,8 @@ public:
     static constexpr FeralNativeFnDesc name(doc, func_##name, argCount, isVariadic); \
     NATIVE_FUNC_SIGNATURE(name)
 
+#define FERAL_FUNC_CALL(name, vm, loc, args, assnArgs) func_##name(vm, loc, args, assnArgs)
+
 struct FeralFnBody
 {
     size_t begin;
@@ -510,6 +512,9 @@ class VarAsync : public Var
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
+
+    Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
+                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarAsync(ModuleLoc loc, VarClosure *closure);

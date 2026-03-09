@@ -120,7 +120,8 @@ public:
     int compileAndRun(ModuleLoc loc, const char *file, VarModule **module);
     // Must pushModule, pushFn/pushBlk before calling this function,
     // and popModule, popFn/popBlk after calling it.
-    int execute(Var *&ret, VarStack *fnstack, size_t begin = 0, size_t end = 0);
+    int execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt = nullptr, size_t begin = 0,
+                size_t end = 0);
 
     VarModule *makeModule(ModuleLoc loc, File *f, bool exprOnly,
                           VarStack *existingVarStack = nullptr);
@@ -179,6 +180,8 @@ public:
     inline bool isReady() { return ready; }
     inline void setExitCalled(bool called) { exitCalled = called; }
     inline void setExitCode(int code) { exitcode = code; }
+
+    inline void pushExecStack(Var *val, bool iref) { execstack->push(val, iref); }
 
     inline GlobalState *getGlobalState() { return gs; }
     inline args::ArgParser &getArgParser() { return gs->argparser; }

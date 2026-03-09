@@ -1,0 +1,40 @@
+let fs = import('std/fs');
+let assert = import('std/assert');
+
+let loadFile = fn(path) {
+    let f = await fs.fopen(path);
+    return await f.readAll();
+};
+
+let asyncFn = fn() {
+    let s = yield 'yield 1';
+    assert.eq(s, 'call 2');
+    let s = yield 'yield 2';
+    assert.eq(s, 'call 3');
+    return 'returned';
+};
+
+let future = async(asyncFn);
+if !future.done() {
+    # The first call doesn't take any args since it just starts the function and there is no yield to send the data.
+    let yieldResult = future();
+    assert.eq(yieldResult, 'yield 1');
+}
+if !future.done() {
+    let yieldResult = future('call 2');
+    assert.eq(yieldResult, 'yield 2');
+}
+if !future.done() {
+    let result = future('call 3');
+    assert.eq(result, 'returned');
+}
+if future.done() {
+    let result = future.result();
+    assert.eq(result, 'returned');
+} else {
+    assert.eq(false, true);
+}
+
+# Call an async func synchronously.
+let l = wait loadFile(__SRC_PATH__.path());
+assert.gt(l.len(), 0);

@@ -125,6 +125,11 @@ public:
     void disp(bool hasNext);
 
     inline void setArg(size_t idx, Stmt *a) { args[idx] = a; }
+    inline void insertArg(size_t idx, Stmt *a, bool unpack)
+    {
+        args.insert(args.begin() + idx, a);
+        unpackVector.insert(unpackVector.begin() + idx, unpack);
+    }
     inline Vector<Stmt *> &getArgs() { return args; }
     inline Stmt *&getArg(size_t idx) { return args[idx]; }
     inline bool unpackArg(size_t idx) { return unpackVector[idx]; }
