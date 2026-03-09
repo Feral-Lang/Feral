@@ -49,10 +49,9 @@ enum TokType
     MUL_ASSN,
     DIV_ASSN,
     MOD_ASSN,
-    POWER,             // **
-    ROOT,              // //
-    NIL_COALESCE,      // ??
-    NIL_COALESCE_ASSN, // ??=
+    POWER,        // **
+    ROOT,         // //
+    NIL_COALESCE, // ??
     // Post/Pre Inc/Dec
     XINC,
     INCX,

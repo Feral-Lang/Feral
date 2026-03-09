@@ -188,7 +188,7 @@ bool Parser::parseExpr17(Stmt *&expr)
 // += -= *=
 // /= %= <<=
 // >>= &= |=
-// ~= ^= ??=
+// ~= ^=
 // or-block
 bool Parser::parseExpr16(Stmt *&expr)
 {
@@ -206,7 +206,7 @@ bool Parser::parseExpr16(Stmt *&expr)
     while(p.accept(lex::ADD_ASSN, lex::SUB_ASSN, lex::MUL_ASSN) ||
           p.accept(lex::DIV_ASSN, lex::MOD_ASSN, lex::LSHIFT_ASSN) ||
           p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) ||
-          p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN, lex::NIL_COALESCE_ASSN))
+          p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN))
     {
         lex::Lexeme *oper = p.peek();
         p.next();
