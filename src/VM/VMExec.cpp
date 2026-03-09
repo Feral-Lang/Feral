@@ -225,17 +225,17 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
                 execstack->pop();
             }
             size_t argCount = 0, assnArgCount = 0;
-            for(size_t i = 3; i < arginfo.size(); ++i) {
-                if(arginfo[i] == '1') ++assnArgCount;
+            for(size_t idx = 3; idx < arginfo.size(); ++idx) {
+                if(arginfo[idx] == '1') ++assnArgCount;
                 else ++argCount;
             }
             VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod, kw, va, argCount, assnArgCount,
                                        FnBody{.feral = bodies.back()}, false, orblk);
             bodies.pop_back();
-            for(size_t i = 3; i < arginfo.size(); ++i) {
+            for(size_t idx = 3; idx < arginfo.size(); ++idx) {
                 String name = as<VarStr>(execstack->back())->getVal();
                 execstack->pop();
-                if(arginfo[i] == '1') {
+                if(arginfo[idx] == '1') {
                     Var *data = execstack->back();
                     execstack->pop(false);
                     fn->insertAssnParam(name, data);

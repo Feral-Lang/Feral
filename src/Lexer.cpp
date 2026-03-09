@@ -49,10 +49,9 @@ const char *TokStrs[_LAST] = {
     "*=",
     "/=",
     "%=",
-    "**",    // power
-    "//",    // root
-    "\?\?",  // nil-coalesce
-    "\?\?=", // nil-coalesce-assn
+    "**",   // power
+    "//",   // root
+    "\?\?", // nil-coalesce
     // Post/Pre Inc/Dec
     "x++",
     "++x",
@@ -137,7 +136,7 @@ bool Lexeme::cmpData(const Lexeme &other, const TokType type) const
     case IDEN: return getDataStr() == other.getDataStr();
     case INT: return getDataInt() == other.getDataInt();
     case FLT: return getDataFlt() == other.getDataFlt();
-    default: return false;
+    default: break;
     }
     return false;
 }
@@ -660,10 +659,6 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
     case '?':
         if(i < len - 1 && NEXT == '?') {
             ++i;
-            if(i < len - 1 && NEXT == '=') {
-                ++i;
-                SET_OP_TYPE_BRK(NIL_COALESCE_ASSN);
-            }
             SET_OP_TYPE_BRK(NIL_COALESCE);
         }
         SET_OP_TYPE_BRK(QUEST);
