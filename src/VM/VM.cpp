@@ -15,12 +15,6 @@ namespace fer
 
 Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs);
 
-#if defined(CORE_OS_WINDOWS)
-static StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
-bool addDLLDirectory(StringRef dir);
-void remDLLDirectories();
-#endif
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////// VirtualMachine //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -520,24 +514,5 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     if(ec) return nullptr;
     return execstack->empty() ? incVarRef(getNil()) : execstack->pop(false);
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////// Other Functions ///////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if defined(CORE_OS_WINDOWS)
-bool addDLLDirectory(StringRef dir)
-{
-    if(dllDirectories.find(dir) != dllDirectories.end()) return true;
-    DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::toWString(dir).c_str());
-    if(!dlldir) return false;
-    dllDirectories.insert({String(dir), dlldir});
-    return true;
-}
-void remDLLDirectories()
-{
-    for(auto dir : dllDirectories) { RemoveDllDirectory(dir.second); }
-}
-#endif
 
 } // namespace fer

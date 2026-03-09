@@ -2,6 +2,11 @@
 
 #include "VarTypes.hpp"
 
+#if defined(CORE_OS_WINDOWS)
+#include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
+#include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
+#endif
+
 namespace fer
 {
 
@@ -58,5 +63,11 @@ public:
     GlobalState(args::ArgParser &argparser, ParseSourceFn parseSourceFn);
     ~GlobalState();
 };
+
+#if defined(CORE_OS_WINDOWS)
+extern StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
+bool addDLLDirectory(StringRef dir);
+void remDLLDirectories();
+#endif
 
 } // namespace fer

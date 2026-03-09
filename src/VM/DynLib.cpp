@@ -8,8 +8,6 @@
 // https://stackoverflow.com/questions/53530566/loading-dll-in-windows-c-for-cross-platform-design
 #include <Windows.h>
 
-#include "FS.hpp"
-
 #define RTLD_GLOBAL 0x100 /* do not hide entries in this module */
 #define RTLD_LOCAL 0x000  /* hide entries in this module */
 
@@ -92,14 +90,14 @@ void *dlopen(const char *filename, int flags)
     // Windows can't find the dependent modules (assuming one is in the same directory)
     // otherwise.
     using namespace fer;
-    String prevdir = fs::getCWD();
-    fs::setCWD(String(fs::parentDir(filename)).c_str());
+    auto prevdir = fs::current_path();
+    fs::current_path(filename);
     HINSTANCE hInst = LoadLibraryA(filename);
     if(hInst == NULL) {
         var.lasterror = GetLastError();
         var.err_rutin = "dlopen";
     }
-    fs::setCWD(prevdir.c_str());
+    fs::current_path(prevdir);
     return hInst;
 }
 
