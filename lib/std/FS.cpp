@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <unistd.h> // for read(), write(), close() on macOS.
 
 #include "VM/VM.hpp"
 
