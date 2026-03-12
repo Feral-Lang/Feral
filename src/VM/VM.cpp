@@ -158,9 +158,11 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
         bcPath += ".bc";
     }
     std::error_code ec;
-    auto bcPathTime   = fs::last_write_time(bcPath, ec);
-    auto filePathTime = fs::last_write_time(f->getPath(), ec);
-    bool bcFileValid  = bcPathTime > filePathTime;
+    static auto feralTime  = fs::last_write_time(env::getProcPath(), ec);
+    static bool hasNoBCArg = getArgParser().has("nobc");
+    auto bcPathTime        = fs::last_write_time(bcPath, ec);
+    auto filePathTime      = fs::last_write_time(f->getPath(), ec);
+    bool bcFileValid       = bcPathTime > filePathTime && bcPathTime > feralTime && !hasNoBCArg;
     Bytecode bc;
     err.addFile(moduleIdCtr, f);
     if(bcFileValid) {
