@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     args.addArg("parse").addOpts("--parse", "-p").setHelp("shows AST");
     args.addArg("optparse").addOpts("--optparse", "-P").setHelp("shows optimized AST (AST after passes)");
     args.addArg("ir").addOpts("--ir", "-i").setHelp("shows codegen IR");
+    args.addArg("nobc").addOpts("--nobc", "-n").setHelp("disables usage of cached bytecode files");
     args.addArg("dry").addOpts("--dry", "-d").setHelp("dry run - generate IR but don't run the VM");
     args.addArg("logerr").addOpts("--logerr", "-e").setHelp("show logs on stderr");
     args.addArg("verbose").addOpts("--verbose", "-V").setHelp("show verbose compiler output");
