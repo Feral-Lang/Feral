@@ -127,7 +127,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     bool hasAttrName = false;
     // index to edit from where the jump after RHS is to occur (for && and || operations)
     size_t beforelogicaljmplocscount = jmplocs.size();
-    lex::TokType oper                = stmt->getOperTok().getVal();
+    lex::TokType oper                = stmt->getOper();
 
     size_t orInstrPos = 0;
 
@@ -135,7 +135,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     // of the whole thing ourselves
     if(oper == lex::FNCALL && stmt->getLHS()->isExpr()) {
         StmtExpr *l = as<StmtExpr>(stmt->getLHS());
-        if(l->getOperTok().getVal() == lex::DOT) {
+        if(l->getOper() == lex::DOT) {
             assert(l->getRHS()->isSimple() && "RHS of dot operation must always be an identifier");
             if(!visit(l->getLHS(), &l->getLHS())) {
                 err.fail(l->getLHS()->getLoc(),
@@ -155,7 +155,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 
     if(oper == lex::OR) {
         orInstrPos = bc.size();
-        bc.addInstrInt(Opcode::PUSH_TRY, stmt->getOper()->getLoc(), 0); // placeholder
+        bc.addInstrInt(Opcode::PUSH_TRY, stmt->getLoc(), 0); // placeholder
     }
 
     if(oper == lex::LAND || oper == lex::LOR) {
@@ -168,7 +168,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     if(oper != lex::ASSN && oper != lex::DOT && oper != lex::FNCALL && oper != lex::OR &&
        oper != lex::LAND && oper != lex::LOR && oper != lex::INVALID)
     {
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getOper()->getLoc(), String(lex::TokStrs[oper]));
+        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), String(lex::TokStrs[oper]));
     }
 
     if(oper != lex::DOT && stmt->getRHS() && !visit(stmt->getRHS(), &stmt->getRHS())) {
@@ -178,7 +178,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
 
     if(oper == lex::OR) {
         bc.updateInstrInt(orInstrPos, bc.size());
-        bc.addInstrNil(Opcode::POP_TRY, stmt->getOper()->getLoc());
+        bc.addInstrNil(Opcode::POP_TRY, stmt->getLoc());
         goto end;
     }
 

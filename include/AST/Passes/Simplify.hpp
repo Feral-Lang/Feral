@@ -23,7 +23,7 @@ public:
 
 class SimplifyPass : public Pass
 {
-    bool applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r, lex::Lexeme *oper);
+    bool applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r, lex::TokType oper);
     DeferStack defers;
 
 public:
