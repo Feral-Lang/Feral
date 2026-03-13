@@ -127,8 +127,7 @@ bool SimplifyPass::visit(StmtExpr *stmt, Stmt **source)
 bool SimplifyPass::visit(StmtVar *stmt, Stmt **source)
 {
     if(stmt->getVal() && !visit(stmt->getVal(), asStmt(&stmt->getVal()))) {
-        err.fail(stmt->getLoc(),
-                 "failed to apply simplify pass on var: ", stmt->getName()->getDataStr());
+        err.fail(stmt->getLoc(), "failed to apply simplify pass on var: ", stmt->getName());
         return false;
     }
     return true;

@@ -44,6 +44,10 @@ Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType d
                          String &&comment)
     : data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode), comment(std::move(comment))
 {}
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype,
+                         String &&comment)
+    : data(String(data)), loc(loc), dtype(dtype), opcode(opcode), comment(std::move(comment))
+{}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, int64_t data)
     : data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
 {}

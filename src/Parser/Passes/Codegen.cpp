@@ -224,10 +224,10 @@ end:
 
 bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 {
-    Stmt *&val  = stmt->getVal();
-    String name = stmt->getName()->getMoveDataStr();
+    Stmt *&val     = stmt->getVal();
+    StringRef name = stmt->getName();
     String doc;
-    if(stmt->getDoc()) doc = stmt->getDoc()->getMoveDataStr();
+    if(stmt->hasDoc()) doc = stmt->getDoc();
     if(!val && !stmt->isArg()) {
         err.fail(stmt->getLoc(), "cannot generate bytecode of a variable with no value: ", name);
         return false;
@@ -264,8 +264,8 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
     for(auto arg = args.rbegin(); arg != args.rend(); ++arg) {
         auto &a = *arg;
         if(!visit(a, asStmt(&a))) {
-            err.fail(a->getLoc(), "failed to generate bytecode for function parameter: ",
-                     a->getName()->getDataStr());
+            err.fail(a->getLoc(),
+                     "failed to generate bytecode for function parameter: ", a->getName());
             return false;
         }
     }
@@ -420,9 +420,9 @@ bool CodegenPass::visit(StmtFor *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
 {
-    lex::Lexeme *iter = stmt->getIter();
-    lex::Lexeme *__iter =
-        allocator.alloc<lex::Lexeme>(iter->getLoc(), lex::IDEN, iter->getDataStr());
+    StringRef iter = stmt->getIter();
+    String __iter  = "__";
+    __iter += iter;
     Stmt *&in       = stmt->getIn();
     StmtBlock *&blk = stmt->getBlk();
     ModuleLoc loc   = stmt->getLoc();
@@ -434,19 +434,18 @@ bool CodegenPass::visit(StmtForIn *stmt, Stmt **source)
         err.fail(in->getLoc(), "failed to generate bytecode for forin loop in-expr");
         return false;
     }
-    __iter->setDataStr("__", __iter->getDataStr());
-    bc.addInstrStr(Opcode::CREATE, loc, String(__iter->getDataStr()));
+    bc.addInstrStr(Opcode::CREATE, loc, __iter);
 
     size_t continuejmppos = bc.size();
 
     // let <iter> = __<iter>.next();
-    bc.addInstrIden(Opcode::LOAD_DATA, loc, __iter->getMoveDataStr());
+    bc.addInstrIden(Opcode::LOAD_DATA, loc, std::move(__iter));
     bc.addInstrStr(Opcode::LOAD_DATA, loc, String("next"));
     bc.addInstrStr(Opcode::MEM_CALL, loc, String(""));
     // jump-nil location will be set later
     size_t jmpNilPos = bc.size();
     bc.addInstrInt(Opcode::JMP_NIL, loc, 0); // placeholder
-    bc.addInstrStr(Opcode::CREATE, loc, iter->getMoveDataStr());
+    bc.addInstrStr(Opcode::CREATE, loc, iter);
 
     size_t bodyBegin = bc.size();
     if(blk && !visit(blk, asStmt(&blk))) {
@@ -485,7 +484,7 @@ bool CodegenPass::visit(StmtRetYield *stmt, Stmt **source)
         return false;
     }
     char operand[3] = {stmt->isYield() ? '1' : '0', stmt->getVal() ? '1' : '0', 0};
-    bc.addInstrStr(Opcode::RETURN, stmt->getLoc(), operand);
+    bc.addInstrStr(Opcode::RETURN, stmt->getLoc(), String(operand));
     return true;
 }
 

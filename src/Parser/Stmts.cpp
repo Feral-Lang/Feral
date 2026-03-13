@@ -156,12 +156,12 @@ void StmtExpr::disp(bool hasNext)
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVar::StmtVar(ModuleLoc loc, lex::Lexeme *name, Stmt *in, Stmt *val, bool isarg)
-    : Stmt(VAR, loc), name(name), doc(nullptr), in(in), val(val), isarg(isarg)
+StmtVar::StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, bool isarg)
+    : Stmt(VAR, loc), name(name), doc(""), in(in), val(val), isarg(isarg)
 {}
 StmtVar::~StmtVar() {}
-StmtVar *StmtVar::create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *name, Stmt *in,
-                         Stmt *val, bool isarg)
+StmtVar *StmtVar::create(ManagedList &allocator, ModuleLoc loc, StringRef name, Stmt *in, Stmt *val,
+                         bool isarg)
 {
     return allocator.alloc<StmtVar>(loc, name, in, val, isarg);
 }
@@ -169,10 +169,10 @@ StmtVar *StmtVar::create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *nam
 void StmtVar::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {isarg ? "Argument: " : "Variable: ", name->getDataStr(), "\n"});
+    tio::print(hasNext, {isarg ? "Argument: " : "Variable: ", name, "\n"});
     if(hasDoc()) {
         tio::taba(in || val);
-        tio::print(in || val, {"Doc: ", utils::toRawString(doc->getDataStr()), "\n"});
+        tio::print(in || val, {"Doc: ", utils::toRawString(doc), "\n"});
         tio::tabr();
     }
     if(in) {
@@ -360,11 +360,11 @@ void StmtFor::disp(bool hasNext)
 /////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtForIn::StmtForIn(ModuleLoc loc, lex::Lexeme *iter, Stmt *in, StmtBlock *blk)
+StmtForIn::StmtForIn(ModuleLoc loc, StringRef iter, Stmt *in, StmtBlock *blk)
     : Stmt(FORIN, loc), iter(iter), in(in), blk(blk)
 {}
 StmtForIn::~StmtForIn() {}
-StmtForIn *StmtForIn::create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *iter, Stmt *in,
+StmtForIn *StmtForIn::create(ManagedList &allocator, ModuleLoc loc, StringRef iter, Stmt *in,
                              StmtBlock *blk)
 {
     return allocator.alloc<StmtForIn>(loc, iter, in, blk);
@@ -373,7 +373,7 @@ StmtForIn *StmtForIn::create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme 
 void StmtForIn::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"For each: ", iter->getDataStr(), "\n"});
+    tio::print(hasNext, {"For each: ", iter, "\n"});
     tio::taba(blk);
     tio::print(blk, {"In-Expr:\n"});
     in->disp(false);
