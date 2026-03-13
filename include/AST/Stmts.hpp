@@ -138,22 +138,24 @@ public:
 class StmtExpr : public Stmt
 {
     Stmt *lhs;
-    lex::Lexeme *oper;
     Stmt *rhs;
+    lex::Tok oper;
 
 public:
-    StmtExpr(ModuleLoc loc, Stmt *lhs, lex::Lexeme *oper, Stmt *rhs);
+    StmtExpr(ModuleLoc loc, Stmt *lhs, lex::TokType oper, Stmt *rhs);
     ~StmtExpr();
 
-    static StmtExpr *create(ManagedList &allocator, ModuleLoc loc, Stmt *lhs, lex::Lexeme *oper,
+    static StmtExpr *create(ManagedList &allocator, ModuleLoc loc, Stmt *lhs, lex::TokType oper,
                             Stmt *rhs);
 
     void disp(bool hasNext);
 
+    inline void setOper(lex::TokType val) { oper.setVal(val); }
+
     inline Stmt *&getLHS() { return lhs; }
     inline Stmt *&getRHS() { return rhs; }
-    inline lex::Lexeme *getOper() { return oper; }
-    inline lex::Tok &getOperTok() { return oper->getTok(); }
+    inline lex::TokType getOper() { return oper.getVal(); }
+    inline bool isOper(lex::TokType val) { return oper.getVal() == val; }
 };
 
 class StmtVar : public Stmt

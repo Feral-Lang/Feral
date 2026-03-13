@@ -118,11 +118,11 @@ void StmtFnArgs::disp(bool hasNext)
 //////////////////////////////////////////// StmtExpr /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtExpr::StmtExpr(ModuleLoc loc, Stmt *lhs, lex::Lexeme *oper, Stmt *rhs)
+StmtExpr::StmtExpr(ModuleLoc loc, Stmt *lhs, lex::TokType oper, Stmt *rhs)
     : Stmt(EXPR, loc), lhs(lhs), oper(oper), rhs(rhs)
 {}
 StmtExpr::~StmtExpr() {}
-StmtExpr *StmtExpr::create(ManagedList &allocator, ModuleLoc loc, Stmt *lhs, lex::Lexeme *oper,
+StmtExpr *StmtExpr::create(ManagedList &allocator, ModuleLoc loc, Stmt *lhs, lex::TokType oper,
                            Stmt *rhs)
 {
     return allocator.alloc<StmtExpr>(loc, lhs, oper, rhs);
@@ -133,15 +133,14 @@ void StmtExpr::disp(bool hasNext)
     tio::taba(hasNext);
     tio::print(hasNext, {"Expression\n"});
     if(lhs) {
-        tio::taba(oper->getTok().isValid() || rhs);
-        tio::print(oper->getTok().isValid() || rhs, {"LHS:\n"});
+        tio::taba(oper.isValid() || rhs);
+        tio::print(oper.isValid() || rhs, {"LHS:\n"});
         lhs->disp(false);
         tio::tabr();
     }
-    if(oper->getTok().isValid()) {
+    if(oper.isValid()) {
         tio::taba(rhs);
-        tio::print(rhs, {"Oper: [", std::to_string(oper->getTok().getVal()), ":",
-                         oper->getTok().cStr(), "]\n"});
+        tio::print(rhs, {"Oper: [", std::to_string(oper.getVal()), ":", oper.cStr(), "]\n"});
         tio::tabr();
     }
     if(rhs) {

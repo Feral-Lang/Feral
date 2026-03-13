@@ -55,7 +55,7 @@ template<typename T> T getValueAs(const lex::Lexeme *tok)
     resultStmt = StmtSimple::create(allocator, restok->getLoc(), restok);
 
 bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r,
-                                        lex::Lexeme *oper)
+                                        lex::TokType oper)
 {
     lex::TokType ltok = l->getLexValue()->getTokVal();
     lex::TokType rtok = r ? r->getLexValue()->getTokVal() : lex::INVALID;
@@ -63,7 +63,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
     if(!l->getLexValue()->getTok().isLiteral()) return true;
     if(r && !r->getLexValue()->getTok().isLiteral()) return true;
 
-    switch(oper->getTok().getVal()) {
+    switch(oper) {
     case lex::ADD: {
         if(ltok == lex::STR && rtok == lex::STR) {
             lex::Lexeme *restok =
@@ -104,7 +104,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         if((rtok == lex::INT && r->getLexDataInt() == 0) ||
            (rtok == lex::FLT && r->getLexDataFlt() == 0.0))
         {
-            err.fail(oper->getLoc(), "Attempted to divide by zero during constant folding pass");
+            err.fail(l->getLoc(), "Attempted to divide by zero during constant folding pass");
             return false;
         }
         binaryIntFltOps(/);

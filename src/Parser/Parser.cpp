@@ -115,7 +115,6 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
 {
     lex::Lexeme *iden = p.peekt() == lex::IDEN ? p.peek() : p.peek(1);
     lex::Lexeme *lit  = p.peekt() == lex::IDEN ? p.peek(1) : p.peek();
-    lex::Lexeme *oper = allocator.alloc<lex::Lexeme>(iden->getLoc(), lex::TokType::FNCALL);
 
     p.next();
     p.next();
@@ -123,7 +122,7 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
     StmtSimple *arg   = StmtSimple::create(allocator, lit->getLoc(), lit);
     StmtSimple *fn    = StmtSimple::create(allocator, iden->getLoc(), iden);
     StmtFnArgs *finfo = StmtFnArgs::create(allocator, arg->getLoc(), {arg}, {false});
-    expr              = StmtExpr::create(allocator, lit->getLoc(), fn, oper, finfo);
+    expr = StmtExpr::create(allocator, iden->getLoc(), fn, lex::TokType::FNCALL, finfo);
 
     return true;
 }
@@ -140,7 +139,7 @@ bool Parser::parseExpr18(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     size_t commas = 0;
 
@@ -148,7 +147,7 @@ bool Parser::parseExpr18(Stmt *&expr)
 
     while(p.accept(lex::COMMA)) {
         ++commas;
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr17(lhs)) { return false; }
         rhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -167,14 +166,14 @@ bool Parser::parseExpr17(Stmt *&expr)
     Stmt *lhs = nullptr;
     Stmt *rhs = nullptr;
 
-    lex::Lexeme *oper = nullptr;
+    lex::TokType oper = lex::TokType::INVALID;
 
     lex::Lexeme *start = p.peek();
 
     if(!parseExpr15(rhs)) { return false; }
 
     while(p.accept(lex::ASSN)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr15(lhs)) { return false; }
         rhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -208,7 +207,7 @@ bool Parser::parseExpr16(Stmt *&expr)
           p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) ||
           p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN))
     {
-        lex::Lexeme *oper = p.peek();
+        lex::TokType oper = p.peekt();
         p.next();
         if(!parseExpr14(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -218,7 +217,7 @@ bool Parser::parseExpr16(Stmt *&expr)
     expr = lhs;
 
     if(!p.accept(lex::OR)) return true;
-    lex::Lexeme *orOp = p.peek();
+    ModuleLoc orLoc = p.peek()->getLoc();
     p.next();
 
     if(p.accept(lex::IDEN)) {
@@ -238,7 +237,7 @@ bool Parser::parseExpr16(Stmt *&expr)
     StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar->getLoc(), fnsig, orBlk);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
-    expr = StmtExpr::create(allocator, orOp->getLoc(), fndef, orOp, expr);
+    expr = StmtExpr::create(allocator, orLoc, fndef, lex::OR, expr);
     return true;
 }
 // Left Associative
@@ -286,12 +285,12 @@ bool Parser::parseExpr14(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr13(lhs)) { return false; }
 
     while(p.accept(lex::NIL_COALESCE)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr13(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -311,12 +310,12 @@ bool Parser::parseExpr13(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr12(lhs)) { return false; }
 
     while(p.accept(lex::LOR)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr12(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -336,12 +335,12 @@ bool Parser::parseExpr12(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr11(lhs)) { return false; }
 
     while(p.accept(lex::LAND)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr11(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -361,12 +360,12 @@ bool Parser::parseExpr11(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr10(lhs)) { return false; }
 
     while(p.accept(lex::BOR)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr10(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -386,12 +385,12 @@ bool Parser::parseExpr10(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr09(lhs)) { return false; }
 
     while(p.accept(lex::BXOR)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr09(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -411,12 +410,12 @@ bool Parser::parseExpr09(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr08(lhs)) { return false; }
 
     while(p.accept(lex::BAND)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr08(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -436,12 +435,12 @@ bool Parser::parseExpr08(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr07(lhs)) { return false; }
 
     while(p.accept(lex::EQ, lex::NE)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr07(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -462,12 +461,12 @@ bool Parser::parseExpr07(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr06(lhs)) { return false; }
 
     while(p.accept(lex::LT, lex::LE) || p.accept(lex::GT, lex::GE)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr06(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -487,12 +486,12 @@ bool Parser::parseExpr06(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr05(lhs)) { return false; }
 
     while(p.accept(lex::LSHIFT, lex::RSHIFT)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr05(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -512,12 +511,12 @@ bool Parser::parseExpr05(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr04(lhs)) { return false; }
 
     while(p.accept(lex::ADD, lex::SUB)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr04(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -537,12 +536,12 @@ bool Parser::parseExpr04(Stmt *&expr)
     Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *oper  = nullptr;
+    lex::TokType oper  = lex::TokType::INVALID;
 
     if(!parseExpr03(lhs)) { return false; }
 
     while(p.accept(lex::MUL, lex::DIV, lex::MOD) || p.accept(lex::POWER, lex::ROOT)) {
-        oper = p.peek();
+        oper = p.peekt();
         p.next();
         if(!parseExpr03(rhs)) { return false; }
         lhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
@@ -564,7 +563,7 @@ bool Parser::parseExpr03(Stmt *&expr)
     Stmt *lhs = nullptr;
 
     lex::Lexeme *start = p.peek();
-    Vector<lex::Lexeme *> opers;
+    Vector<lex::TokType> opers;
 
     while(p.accept(lex::XINC, lex::XDEC) || p.accept(lex::ADD, lex::SUB) ||
           p.accept(lex::MUL, lex::BAND) || p.accept(lex::LNOT, lex::BNOT))
@@ -575,7 +574,7 @@ bool Parser::parseExpr03(Stmt *&expr)
         if(p.peekt() == lex::SUB) p.sett(lex::USUB);
         if(p.peekt() == lex::MUL) p.sett(lex::UMUL);
         if(p.peekt() == lex::BAND) p.sett(lex::UAND);
-        opers.insert(opers.begin(), p.peek());
+        opers.insert(opers.begin(), p.peekt());
         p.next();
     }
 
@@ -590,20 +589,20 @@ bool Parser::parseExpr03(Stmt *&expr)
         lex::Lexeme *val = as<StmtSimple>(lhs)->getLexValue();
         lex::TokType tk  = val->getTokVal();
         if(tk == lex::INT) {
-            while(!opers.empty() && opers.front()->getTokVal() == lex::USUB) {
+            while(!opers.empty() && opers.front() == lex::USUB) {
                 val->setDataInt(-val->getDataInt());
                 opers.erase(opers.begin());
             }
         }
         if(tk == lex::FLT) {
-            while(!opers.empty() && opers.front()->getTokVal() == lex::USUB) {
+            while(!opers.empty() && opers.front() == lex::USUB) {
                 val->setDataFlt(-val->getDataFlt());
                 opers.erase(opers.begin());
             }
         }
     }
 
-    for(auto &op : opers) { lhs = StmtExpr::create(allocator, op->getLoc(), lhs, op, nullptr); }
+    for(auto &op : opers) { lhs = StmtExpr::create(allocator, start->getLoc(), lhs, op, nullptr); }
 
     expr = lhs;
     return true;
@@ -623,7 +622,7 @@ bool Parser::parseExpr02(Stmt *&expr)
 
     if(p.accept(lex::XINC, lex::XDEC, lex::PreVA)) {
         if(p.accept(lex::PreVA)) p.sett(lex::PostVA);
-        lhs = StmtExpr::create(allocator, p.peek()->getLoc(), lhs, p.peek(), nullptr);
+        lhs = StmtExpr::create(allocator, p.peek()->getLoc(), lhs, p.peekt(), nullptr);
         p.next();
     }
 
@@ -635,7 +634,7 @@ bool Parser::parseExpr01(Stmt *&expr)
     expr = nullptr;
 
     lex::Lexeme *start = p.peek();
-    lex::Lexeme *dot   = nullptr;
+    ModuleLoc dotLoc;
 
     Stmt *lhs = nullptr;
     Stmt *rhs = nullptr;
@@ -671,9 +670,9 @@ bool Parser::parseExpr01(Stmt *&expr)
 afterDot:
     if(!p.acceptd() || !parseSimple(rhs)) return false;
     if(lhs && rhs) {
-        lhs = StmtExpr::create(allocator, dot->getLoc(), lhs, dot, rhs);
-        rhs = nullptr;
-        dot = nullptr;
+        lhs    = StmtExpr::create(allocator, dotLoc, lhs, lex::DOT, rhs);
+        rhs    = nullptr;
+        dotLoc = ModuleLoc();
     }
 
 beginBrack:
@@ -692,7 +691,7 @@ beginBrack:
                      p.peek()->getTok().cStr());
             return false;
         }
-        lhs = StmtExpr::create(allocator, oper->getLoc(), lhs, oper, rhs);
+        lhs = StmtExpr::create(allocator, oper->getLoc(), lhs, oper->getTokVal(), rhs);
         rhs = nullptr;
         if(p.accept(lex::LBRACK, lex::LPAREN) || (p.peekt() == lex::DOT && p.peekt(1) == lex::LT))
             goto beginBrack;
@@ -714,8 +713,7 @@ beginBrack:
             } else if(!parseExpr17(arg)) { // normal arg
                 return false;
             }
-            unpackVector.push_back(arg->isExpr() &&
-                                   as<StmtExpr>(arg)->getOperTok().isType(lex::PostVA));
+            unpackVector.push_back(arg->isExpr() && as<StmtExpr>(arg)->isOper(lex::PostVA));
             if(unpackVector.back()) arg = as<StmtExpr>(arg)->getLHS();
             args.push_back(arg);
             arg = nullptr;
@@ -731,7 +729,7 @@ beginBrack:
     postArgs:
         rhs =
             StmtFnArgs::create(allocator, oper->getLoc(), std::move(args), std::move(unpackVector));
-        lhs          = StmtExpr::create(allocator, oper->getLoc(), lhs, oper, rhs);
+        lhs          = StmtExpr::create(allocator, oper->getLoc(), lhs, oper->getTokVal(), rhs);
         rhs          = nullptr;
         args         = {};
         unpackVector = {};
@@ -740,16 +738,16 @@ beginBrack:
     }
 
     if(p.acceptn(lex::DOT, lex::ARROW)) {
-        dot = p.peek(-1);
+        dotLoc = p.peek(-1)->getLoc();
         if(lhs && rhs) {
-            lhs = StmtExpr::create(allocator, dot->getLoc(), lhs, dot, rhs);
+            lhs = StmtExpr::create(allocator, dotLoc, lhs, lex::DOT, rhs);
             rhs = nullptr;
         }
         goto afterDot;
     }
 
     if(lhs && rhs) {
-        lhs = StmtExpr::create(allocator, dot->getLoc(), lhs, dot, rhs);
+        lhs = StmtExpr::create(allocator, dotLoc, lhs, lex::DOT, rhs);
         rhs = nullptr;
     }
     expr = lhs;
@@ -1209,7 +1207,7 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
         return false;
     }
 
-    if(!val->isExpr() || !as<StmtExpr>(val)->getOperTok().isType(lex::FNCALL)) {
+    if(!val->isExpr() || !as<StmtExpr>(val)->isOper(lex::FNCALL)) {
         err.fail(loc, "expected await to invoke a function call in the expression");
         return false;
     }
@@ -1221,16 +1219,12 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
 
     bool isWait = start->getTok().isType(lex::WAIT);
 
-    lex::Lexeme *dotOp  = allocator.alloc<lex::Lexeme>(loc, lex::DOT);
-    lex::Lexeme *callOp = allocator.alloc<lex::Lexeme>(loc, lex::FNCALL);
-    lex::Lexeme *notOp  = allocator.alloc<lex::Lexeme>(loc, lex::LNOT);
-
     // async(<expr>, args...)
     StmtFnArgs *valExprArgs = as<StmtFnArgs>(as<StmtExpr>(val)->getRHS());
     valExprArgs->insertArg(0, valExpr, false);
     lex::Lexeme *asyncName = allocator.alloc<lex::Lexeme>(loc, lex::IDEN, StringRef("async"));
     StmtSimple *asyncLHS   = StmtSimple::create(allocator, loc, asyncName);
-    StmtExpr *asyncCall    = StmtExpr::create(allocator, loc, asyncLHS, callOp, valExprArgs);
+    StmtExpr *asyncCall    = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
 
     // let __futureVar<N>__ = async(<expr>, args...);
     static Vector<StmtVar *> decls;
@@ -1254,14 +1248,14 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     StmtSimple *futureDoneSimple = StmtSimple::create(allocator, loc, futureVarNameUseDone);
     lex::Lexeme *doneName        = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
     StmtSimple *doneRHS          = StmtSimple::create(allocator, loc, doneName);
-    StmtExpr *doneExpr = StmtExpr::create(allocator, loc, futureDoneSimple, dotOp, doneRHS);
+    StmtExpr *doneExpr = StmtExpr::create(allocator, loc, futureDoneSimple, lex::DOT, doneRHS);
     StmtFnArgs *args   = StmtFnArgs::create(allocator, loc, {}, {});
-    StmtExpr *doneCall = StmtExpr::create(allocator, loc, doneExpr, callOp, args);
-    StmtExpr *notDone  = StmtExpr::create(allocator, loc, doneCall, notOp, nullptr);
+    StmtExpr *doneCall = StmtExpr::create(allocator, loc, doneExpr, lex::FNCALL, args);
+    StmtExpr *notDone  = StmtExpr::create(allocator, loc, doneCall, lex::LNOT, nullptr);
 
     StmtSimple *futureCallSimple = StmtSimple::create(allocator, loc, futureVarNameUseCall);
-    StmtExpr *callFuture         = StmtExpr::create(allocator, loc, futureCallSimple, callOp, args);
-    Stmt *blkStmt                = nullptr;
+    StmtExpr *callFuture = StmtExpr::create(allocator, loc, futureCallSimple, lex::FNCALL, args);
+    Stmt *blkStmt        = nullptr;
     if(isWait) {
         blkStmt = callFuture;
     } else {
@@ -1278,9 +1272,10 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     StmtSimple *futureResultSimple = StmtSimple::create(allocator, loc, futureVarNameUseResult);
     lex::Lexeme *resultName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("result"));
     StmtSimple *resultRHS   = StmtSimple::create(allocator, loc, resultName);
-    StmtExpr *resultExpr = StmtExpr::create(allocator, loc, futureResultSimple, dotOp, resultRHS);
+    StmtExpr *resultExpr =
+        StmtExpr::create(allocator, loc, futureResultSimple, lex::DOT, resultRHS);
 
-    resultCallExpr = StmtExpr::create(allocator, loc, resultExpr, callOp, args);
+    resultCallExpr = StmtExpr::create(allocator, loc, resultExpr, lex::FNCALL, args);
     return true;
 }
 
