@@ -9,9 +9,11 @@ StringRef getOpcodeStr(Opcode opcode)
 {
     switch(opcode) {
     case Opcode::LOAD_DATA: return "LOAD_DATA";
+    case Opcode::LOAD_FAST: return "LOAD_FAST";
     case Opcode::UNLOAD: return "UNLOAD";
     case Opcode::STORE: return "STORE";
     case Opcode::CREATE: return "CREATE_VAR";
+    case Opcode::CREATE_FAST: return "CREATE_FAST";
     case Opcode::CREATE_IN: return "CREATE_VARIN";
     case Opcode::PUSH_BLOCK: return "PUSH_BLOCK";
     case Opcode::POP_BLOCK: return "POP_BLOCK";
