@@ -69,18 +69,52 @@ void StmtBlock::disp(bool hasNext)
 ////////////////////////////////////////// StmtSimple /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtSimple::StmtSimple(ModuleLoc loc, lex::Lexeme *val) : Stmt(SIMPLE, loc), val(val) {}
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val)
+    : Stmt(SIMPLE, loc), val(std::move(val)), tok(tokType)
+{}
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val)
+    : Stmt(SIMPLE, loc), val(String(val)), tok(tokType)
+{}
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, int64_t val)
+    : Stmt(SIMPLE, loc), val(val), tok(tokType)
+{}
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, double val)
+    : Stmt(SIMPLE, loc), val(val), tok(tokType)
+{}
 
 StmtSimple::~StmtSimple() {}
-StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *val)
+StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                               String &&val)
 {
-    return allocator.alloc<StmtSimple>(loc, val);
+    return allocator.alloc<StmtSimple>(loc, tokType, std::move(val));
+}
+StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                               StringRef val)
+{
+    return allocator.alloc<StmtSimple>(loc, tokType, val);
+}
+StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                               int64_t val)
+{
+    return allocator.alloc<StmtSimple>(loc, tokType, val);
+}
+StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                               double val)
+{
+    return allocator.alloc<StmtSimple>(loc, tokType, val);
 }
 
 void StmtSimple::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Simple: ", val->str(0), "\n"});
+    lex::TokType ty = tok.getVal();
+    if(hasDataStr()) {
+        tio::print(hasNext, {"Simple<Str>: ", getDataStr(), "\n"});
+    } else if(hasDataInt()) {
+        tio::print(hasNext, {"Simple<Int>: ", std::to_string(getDataInt()), "\n"});
+    } else if(hasDataFlt()) {
+        tio::print(hasNext, {"Simple<Flt>: ", std::to_string(getDataFlt()), "\n"});
+    }
     tio::tabr();
 }
 
