@@ -105,7 +105,6 @@ public:
     inline void updateLexDataStr(StringRef newdata) { val->setDataStr(newdata); }
     inline lex::Lexeme *getLexValue() { return val; }
 
-    inline String getMoveLexDataStr() { return val->getMoveDataStr(); }
     inline StringRef getLexDataStr() const { return val->getDataStr(); }
     inline double getLexDataFlt() const { return val->getDataFlt(); }
     inline int64_t getLexDataInt() const { return val->getDataInt(); }

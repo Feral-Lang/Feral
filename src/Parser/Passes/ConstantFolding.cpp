@@ -67,7 +67,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
     case lex::ADD: {
         if(ltok == lex::STR && rtok == lex::STR) {
             lex::Lexeme *restok =
-                allocator.alloc<lex::Lexeme>(l->getLoc(), lex::STR, l->getMoveLexDataStr());
+                allocator.alloc<lex::Lexeme>(l->getLoc(), lex::STR, String(l->getLexDataStr()));
             restok->appendDataStr(r->getLexDataStr());
             resultStmt = StmtSimple::create(allocator, restok->getLoc(), restok);
         }

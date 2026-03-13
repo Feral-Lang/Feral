@@ -222,11 +222,6 @@ public:
         std::get<String>(data) += str;
     }
 
-    inline String getMoveDataStr()
-    {
-        return hasString() ? std::move(std::get<String>(data)) : String(std::get<StringRef>(data));
-    }
-
     inline StringRef getDataStr() const
     {
         return hasString() ? std::get<String>(data) : std::get<StringRef>(data);

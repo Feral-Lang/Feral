@@ -65,11 +65,10 @@ bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
     lex::Lexeme *val = stmt->getLexValue();
     switch(val->getTokVal()) {
     case lex::IDEN:
-        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val->getMoveDataStr());
+        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataStr());
         return true;
     case lex::STR:
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(),
-                       utils::fromRawString(val->getMoveDataStr()));
+        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), utils::fromRawString(val->getDataStr()));
         return true;
     case lex::INT:
         bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataInt());
@@ -144,7 +143,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
             }
             hasAttrName = true;
             bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(),
-                           as<StmtSimple>(l->getRHS())->getMoveLexDataStr());
+                           as<StmtSimple>(l->getRHS())->getLexDataStr());
         }
     }
 
@@ -199,7 +198,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
         if(r->getLexValue()->getTok().isType(lex::INT))
             bc.addInstrStr(Opcode::ATTR, r->getLoc(),
                            std::to_string(r->getLexValue()->getDataInt()));
-        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getMoveLexDataStr());
+        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
     } else if(oper == lex::FNCALL) {
         if(!stmt->getRHS()->isFnArgs()) {
             err.fail(stmt->getLoc(),
@@ -271,10 +270,10 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
     }
     if(stmt->getVaArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
-                       stmt->getVaArg()->getMoveLexDataStr());
+                       stmt->getVaArg()->getLexDataStr());
     if(stmt->getKwArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
-                       stmt->getKwArg()->getMoveLexDataStr());
+                       stmt->getKwArg()->getLexDataStr());
     for(auto &a : args) { arginfo += a->getVal() ? "1" : "0"; }
     fndefarginfo.push_back(std::move(arginfo));
     return true;
