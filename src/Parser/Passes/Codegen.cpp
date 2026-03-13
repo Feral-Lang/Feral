@@ -62,19 +62,19 @@ bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
 {
-    lex::Lexeme *val = stmt->getLexValue();
-    switch(val->getTokVal()) {
+    lex::TokType ty = stmt->getTokType();
+    switch(ty) {
     case lex::IDEN:
-        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataStr());
+        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getDataStr());
         return true;
     case lex::STR:
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), utils::fromRawString(val->getDataStr()));
+        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), utils::fromRawString(stmt->getDataStr()));
         return true;
     case lex::INT:
-        bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataInt());
+        bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getDataInt());
         return true;
     case lex::FLT:
-        bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), val->getDataFlt());
+        bc.addInstrFlt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getDataFlt());
         return true;
     case lex::FTRUE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), true); return true;
     case lex::FFALSE: bc.addInstrBool(Opcode::LOAD_DATA, stmt->getLoc(), false); return true;
@@ -82,7 +82,7 @@ bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
     default: break;
     }
     err.fail(stmt->getLoc(),
-             "unable to generate bytecode - unknown simple type: ", val->getTok().cStr());
+             "unable to generate bytecode - unknown simple type: ", stmt->getTok().cStr());
     return false;
 }
 
@@ -143,7 +143,7 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
             }
             hasAttrName = true;
             bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(),
-                           as<StmtSimple>(l->getRHS())->getLexDataStr());
+                           as<StmtSimple>(l->getRHS())->getDataStr());
         }
     }
 
@@ -195,10 +195,9 @@ bool CodegenPass::visit(StmtExpr *stmt, Stmt **source)
     } else if(oper == lex::DOT) {
         assert(stmt->getRHS()->isSimple() && "RHS of dot operation must always be a primitive");
         StmtSimple *r = as<StmtSimple>(stmt->getRHS());
-        if(r->getLexValue()->getTok().isType(lex::INT))
-            bc.addInstrStr(Opcode::ATTR, r->getLoc(),
-                           std::to_string(r->getLexValue()->getDataInt()));
-        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getLexDataStr());
+        if(r->getTok().isType(lex::INT))
+            bc.addInstrStr(Opcode::ATTR, r->getLoc(), std::to_string(r->getDataInt()));
+        else bc.addInstrStr(Opcode::ATTR, r->getLoc(), r->getDataStr());
     } else if(oper == lex::FNCALL) {
         if(!stmt->getRHS()->isFnArgs()) {
             err.fail(stmt->getLoc(),
@@ -270,10 +269,10 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
     }
     if(stmt->getVaArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
-                       stmt->getVaArg()->getLexDataStr());
+                       stmt->getVaArg()->getDataStr());
     if(stmt->getKwArg())
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
-                       stmt->getKwArg()->getLexDataStr());
+                       stmt->getKwArg()->getDataStr());
     for(auto &a : args) { arginfo += a->getVal() ? "1" : "0"; }
     fndefarginfo.push_back(std::move(arginfo));
     return true;

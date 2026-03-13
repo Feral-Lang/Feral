@@ -101,10 +101,20 @@ bool Parser::parseSimple(Stmt *&data)
         return false;
     }
 
+    lex::TokType ty  = p.peekt();
     lex::Lexeme *val = p.peek();
     p.next();
 
-    data = StmtSimple::create(allocator, val->getLoc(), val);
+    if(ty == lex::STR || ty == lex::IDEN) {
+        data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataStr());
+    } else if(ty == lex::INT) {
+        data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataInt());
+    } else if(ty == lex::FLT) {
+        data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataFlt());
+    } else {
+        data = StmtSimple::create(allocator, val->getLoc(), ty, (int64_t)0);
+    }
+
     return true;
 }
 
@@ -119,8 +129,18 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
     p.next();
     p.next();
 
-    StmtSimple *arg   = StmtSimple::create(allocator, lit->getLoc(), lit);
-    StmtSimple *fn    = StmtSimple::create(allocator, iden->getLoc(), iden);
+    StmtSimple *arg = nullptr;
+    if(lit->getTokVal() == lex::STR) {
+        arg = StmtSimple::create(allocator, lit->getLoc(), lex::STR, lit->getDataStr());
+    } else if(lit->getTokVal() == lex::INT) {
+        arg = StmtSimple::create(allocator, lit->getLoc(), lex::INT, lit->getDataInt());
+    } else if(lit->getTokVal() == lex::FLT) {
+        arg = StmtSimple::create(allocator, lit->getLoc(), lex::FLT, lit->getDataFlt());
+    } else {
+        err.fail(lit->getLoc(), "unexpected literal type here, found: ", lit->getTok().cStr());
+        return false;
+    }
+    StmtSimple *fn = StmtSimple::create(allocator, iden->getLoc(), lex::IDEN, iden->getDataStr());
     StmtFnArgs *finfo = StmtFnArgs::create(allocator, arg->getLoc(), {arg}, {false});
     expr = StmtExpr::create(allocator, iden->getLoc(), fn, lex::TokType::FNCALL, finfo);
 
@@ -586,17 +606,17 @@ bool Parser::parseExpr03(Stmt *&expr)
     }
 
     if(lhs->isSimple() && !opers.empty()) {
-        lex::Lexeme *val = as<StmtSimple>(lhs)->getLexValue();
-        lex::TokType tk  = val->getTokVal();
+        StmtSimple *l   = as<StmtSimple>(lhs);
+        lex::TokType tk = l->getTokType();
         if(tk == lex::INT) {
             while(!opers.empty() && opers.front() == lex::USUB) {
-                val->setDataInt(-val->getDataInt());
+                l->setData(-l->getDataInt());
                 opers.erase(opers.begin());
             }
         }
         if(tk == lex::FLT) {
             while(!opers.empty() && opers.front() == lex::USUB) {
-                val->setDataFlt(-val->getDataFlt());
+                l->setData(-l->getDataFlt());
                 opers.erase(opers.begin());
             }
         }
@@ -820,27 +840,28 @@ bool Parser::parseFnSig(Stmt *&fsig)
                      "expected identifier/str for argument, found: ", p.peek()->getTok().cStr());
             return false;
         }
-        if(argnames.find(p.peek()->getDataStr()) != argnames.end()) {
+        StringRef name = p.peek()->getDataStr();
+        if(argnames.find(name) != argnames.end()) {
             err.fail(p.peek()->getLoc(), "this argument name is already used "
                                          "before in this function signature");
             return false;
         }
-        argnames.insert(p.peek()->getDataStr());
+        argnames.insert(name);
         // this is a keyword arg
         if(tryKW) {
             if(kwArg) {
                 err.fail(p.peek()->getLoc(),
                          "function cannot have multiple"
                          " keyword arguments (previous: ",
-                         kwArg->getLexDataStr(), ")");
+                         kwArg->getDataStr(), ")");
                 return false;
             }
-            kwArg = StmtSimple::create(allocator, p.peek()->getLoc(), p.peek());
+            kwArg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name);
             p.next();
         } else if(p.peekt(1) == lex::PreVA) {
             p.peek(1)->getTok().setVal(lex::PostVA);
             // no check for multiple variadic as no arg can exist after a variadic
-            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), p.peek());
+            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name);
             p.next();
             p.next();
         } else {
@@ -1223,35 +1244,25 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     // async(<expr>, args...)
     StmtFnArgs *valExprArgs = as<StmtFnArgs>(as<StmtExpr>(val)->getRHS());
     valExprArgs->insertArg(0, valExpr, false);
-    lex::Lexeme *asyncName = allocator.alloc<lex::Lexeme>(loc, lex::IDEN, StringRef("async"));
-    StmtSimple *asyncLHS   = StmtSimple::create(allocator, loc, asyncName);
-    StmtExpr *asyncCall    = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
+    StmtSimple *asyncLHS = StmtSimple::create(allocator, loc, lex::IDEN, StringRef("async"));
+    StmtExpr *asyncCall  = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
 
     // let __futureVar<N>__ = async(<expr>, args...);
     String futureVarName = "__futureVar" + std::to_string(varCtr++) + "__";
-    lex::Lexeme *futureVarNameCreate =
-        allocator.alloc<lex::Lexeme>(loc, lex::STR, String(futureVarName));
-    lex::Lexeme *futureVarNameUseDone =
-        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
-    lex::Lexeme *futureVarNameUseCall =
-        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
-    lex::Lexeme *futureVarNameUseResult =
-        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
     StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, false);
     prependBlock.push_back(futureVar);
 
     // while !__futureVar<N>__.done() {
     //     yield __futureVar<N>__();
     // }
-    StmtSimple *futureDoneSimple = StmtSimple::create(allocator, loc, futureVarNameUseDone);
-    lex::Lexeme *doneName        = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("done"));
-    StmtSimple *doneRHS          = StmtSimple::create(allocator, loc, doneName);
+    StmtSimple *futureDoneSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
+    StmtSimple *doneRHS          = StmtSimple::create(allocator, loc, lex::STR, StringRef("done"));
     StmtExpr *doneExpr = StmtExpr::create(allocator, loc, futureDoneSimple, lex::DOT, doneRHS);
     StmtFnArgs *args   = StmtFnArgs::create(allocator, loc, {}, {});
     StmtExpr *doneCall = StmtExpr::create(allocator, loc, doneExpr, lex::FNCALL, args);
     StmtExpr *notDone  = StmtExpr::create(allocator, loc, doneCall, lex::LNOT, nullptr);
 
-    StmtSimple *futureCallSimple = StmtSimple::create(allocator, loc, futureVarNameUseCall);
+    StmtSimple *futureCallSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
     StmtExpr *callFuture = StmtExpr::create(allocator, loc, futureCallSimple, lex::FNCALL, args);
     Stmt *blkStmt        = nullptr;
     if(isWait) {
@@ -1266,9 +1277,8 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     prependBlock.push_back(loop);
 
     // ... __futureVar<N>__.result() ...
-    StmtSimple *futureResultSimple = StmtSimple::create(allocator, loc, futureVarNameUseResult);
-    lex::Lexeme *resultName = allocator.alloc<lex::Lexeme>(loc, lex::STR, StringRef("result"));
-    StmtSimple *resultRHS   = StmtSimple::create(allocator, loc, resultName);
+    StmtSimple *futureResultSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
+    StmtSimple *resultRHS = StmtSimple::create(allocator, loc, lex::STR, StringRef("result"));
     StmtExpr *resultExpr =
         StmtExpr::create(allocator, loc, futureResultSimple, lex::DOT, resultRHS);
 

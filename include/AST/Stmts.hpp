@@ -93,21 +93,42 @@ public:
 
 class StmtSimple : public Stmt
 {
-    lex::Lexeme *val;
+    Variant<String, int64_t, double> val;
+    lex::Tok tok;
 
 public:
-    StmtSimple(ModuleLoc loc, lex::Lexeme *val);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, int64_t val);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, double val);
     ~StmtSimple();
-    static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *val);
+    static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                              String &&val);
+    static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                              StringRef val);
+    static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                              int64_t val);
+    static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
+                              double val);
 
     void disp(bool hasNext);
 
-    inline void updateLexDataStr(StringRef newdata) { val->setDataStr(newdata); }
-    inline lex::Lexeme *getLexValue() { return val; }
+    inline void setData(StringRef newdata) { val = String(newdata); }
+    inline void setData(String &&newdata) { val = std::move(newdata); }
+    inline void setData(int64_t newdata) { val = newdata; }
+    inline void setData(double newdata) { val = newdata; }
 
-    inline StringRef getLexDataStr() const { return val->getDataStr(); }
-    inline double getLexDataFlt() const { return val->getDataFlt(); }
-    inline int64_t getLexDataInt() const { return val->getDataInt(); }
+    inline void setTokType(lex::TokType newTokType) { tok = newTokType; }
+
+    inline StringRef getDataStr() const { return std::get<String>(val); }
+    inline int64_t getDataInt() const { return std::get<int64_t>(val); }
+    inline double getDataFlt() const { return std::get<double>(val); }
+    inline lex::TokType getTokType() const { return tok.getVal(); }
+    inline const lex::Tok &getTok() const { return tok; }
+
+    inline bool hasDataStr() const { return std::holds_alternative<String>(val); }
+    inline bool hasDataInt() const { return std::holds_alternative<int64_t>(val); }
+    inline bool hasDataFlt() const { return std::holds_alternative<double>(val); }
 };
 
 class StmtFnArgs : public Stmt
