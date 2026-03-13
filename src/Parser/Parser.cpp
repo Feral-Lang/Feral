@@ -193,10 +193,8 @@ bool Parser::parseExpr16(Stmt *&expr)
 {
     expr = nullptr;
 
-    Stmt *lhs             = nullptr;
-    Stmt *rhs             = nullptr;
-    StmtBlock *orBlk      = nullptr;
-    lex::Lexeme *orBlkVar = nullptr;
+    Stmt *lhs = nullptr;
+    Stmt *rhs = nullptr;
 
     lex::Lexeme *start = p.peek();
 
@@ -217,24 +215,26 @@ bool Parser::parseExpr16(Stmt *&expr)
     expr = lhs;
 
     if(!p.accept(lex::OR)) return true;
-    ModuleLoc orLoc = p.peek()->getLoc();
+
+    StmtBlock *orBlk      = nullptr;
+    ModuleLoc orLoc       = p.peek()->getLoc();
+    StringRef orBlkVar    = "_";
+    ModuleLoc orBlkVarLoc = orLoc;
     p.next();
 
     if(p.accept(lex::IDEN)) {
-        orBlkVar = p.peek();
+        orBlkVar    = p.peek()->getDataStr();
+        orBlkVarLoc = p.peek()->getLoc();
         p.next();
-    } else {
-        orBlkVar = allocator.alloc<lex::Lexeme>(p.peek()->getLoc(), lex::IDEN, StringRef("_"));
     }
 
     if(!parseBlock(orBlk)) return false;
 
     ensureBlockReturns(orBlk);
 
-    StmtVar *arg = StmtVar::create(allocator, orBlkVar->getLoc(), orBlkVar, nullptr, nullptr, true);
-    StmtFnSig *fnsig =
-        StmtFnSig::create(allocator, orBlkVar->getLoc(), {arg}, nullptr, nullptr, true);
-    StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVar->getLoc(), fnsig, orBlk);
+    StmtVar *arg     = StmtVar::create(allocator, orBlkVarLoc, orBlkVar, nullptr, nullptr, true);
+    StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVarLoc, {arg}, nullptr, nullptr, true);
+    StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
     expr = StmtExpr::create(allocator, orLoc, fndef, lex::OR, expr);
@@ -709,7 +709,8 @@ beginBrack:
                 p.next();
                 p.next();
                 if(!parseExpr17(arg)) return false;
-                arg = StmtVar::create(allocator, name->getLoc(), name, nullptr, arg, true);
+                arg = StmtVar::create(allocator, name->getLoc(), name->getDataStr(), nullptr, arg,
+                                      true);
             } else if(!parseExpr17(arg)) { // normal arg
                 return false;
             }
@@ -763,28 +764,28 @@ bool Parser::parseVar(StmtVar *&var, bool isFnArg)
                  "expected identifier for variable name, found: ", p.peek()->getTok().cStr());
         return false;
     }
-    lex::Lexeme *name = p.peek();
+    lex::Lexeme *start = p.peek();
+    StringRef name     = start->getDataStr();
     p.next();
     Stmt *val = nullptr;
     Stmt *in  = nullptr;
 
     if(p.acceptn(lex::FIN) && !isFnArg) {
         if(!parseExpr01((Stmt *&)in)) {
-            err.fail(p.peek()->getLoc(),
-                     "failed to parse in-type for variable: ", name->getDataStr());
+            err.fail(p.peek()->getLoc(), "failed to parse in-type for variable: ", name);
             return false;
         }
     }
 
     if(!p.acceptn(lex::ASSN)) {
         if(isFnArg) goto end;
-        err.fail(name->getLoc(), "invalid variable declaration - no value set");
+        err.fail(start->getLoc(), "invalid variable declaration - no value set");
         return false;
     }
     if(!parseExpr17(val)) return false;
 
 end:
-    var = StmtVar::create(allocator, name->getLoc(), name, in, val, isFnArg);
+    var = StmtVar::create(allocator, start->getLoc(), name, in, val, isFnArg);
     return true;
 }
 
@@ -889,10 +890,10 @@ bool Parser::parseVardecl(Stmt *&vd)
     vd = nullptr;
 
     Vector<StmtVar *> decls;
-    StmtVar *decl    = nullptr;
-    lex::Lexeme *doc = nullptr;
+    StmtVar *decl = nullptr;
+    StringRef doc = "";
     if(p.accept(lex::STR)) {
-        doc = p.peek();
+        doc = p.peek()->getDataStr();
         p.next();
     }
     lex::Lexeme *start = p.peek();
@@ -905,7 +906,7 @@ bool Parser::parseVardecl(Stmt *&vd)
 
     while(p.accept(lex::IDEN, lex::STR)) {
         if(!parseVar(decl, false)) return false;
-        if(doc && doc->getTok().isValid()) decl->setDoc(doc);
+        if(!doc.empty()) decl->setDoc(doc);
         decls.push_back(decl);
         decl = nullptr;
         if(!p.acceptn(lex::COMMA)) break;
@@ -1014,7 +1015,7 @@ bool Parser::parseForIn(Stmt *&fin)
         return false;
     }
 
-    fin = StmtForIn::create(allocator, start->getLoc(), iter, in, blk);
+    fin = StmtForIn::create(allocator, start->getLoc(), iter->getDataStr(), in, blk);
     return true;
 }
 bool Parser::parseFor(Stmt *&f)
@@ -1227,20 +1228,17 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     StmtExpr *asyncCall    = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
 
     // let __futureVar<N>__ = async(<expr>, args...);
-    static Vector<StmtVar *> decls;
+    String futureVarName = "__futureVar" + std::to_string(varCtr++) + "__";
     lex::Lexeme *futureVarNameCreate =
-        allocator.alloc<lex::Lexeme>(loc, lex::STR, "__futureVar" + std::to_string(varCtr) + "__");
+        allocator.alloc<lex::Lexeme>(loc, lex::STR, String(futureVarName));
     lex::Lexeme *futureVarNameUseDone =
-        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, "__futureVar" + std::to_string(varCtr) + "__");
+        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
     lex::Lexeme *futureVarNameUseCall =
-        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, "__futureVar" + std::to_string(varCtr) + "__");
-    lex::Lexeme *futureVarNameUseResult = allocator.alloc<lex::Lexeme>(
-        loc, lex::IDEN, "__futureVar" + std::to_string(varCtr++) + "__");
-    StmtVar *futureVar =
-        StmtVar::create(allocator, loc, futureVarNameCreate, nullptr, asyncCall, false);
-    decls.push_back(futureVar);
-    StmtVarDecl *futureVarDecl = StmtVarDecl::create(allocator, loc, decls);
-    decls.clear();
+        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
+    lex::Lexeme *futureVarNameUseResult =
+        allocator.alloc<lex::Lexeme>(loc, lex::IDEN, String(futureVarName));
+    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, false);
+    prependBlock.push_back(futureVar);
 
     // while !__futureVar<N>__.done() {
     //     yield __futureVar<N>__();
@@ -1265,7 +1263,6 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
 
     StmtFor *loop = StmtFor::create(allocator, loc, nullptr, notDone, nullptr, blk);
 
-    prependBlock.push_back(futureVarDecl);
     prependBlock.push_back(loop);
 
     // ... __futureVar<N>__.result() ...

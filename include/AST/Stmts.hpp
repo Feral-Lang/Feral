@@ -160,30 +160,30 @@ public:
 
 class StmtVar : public Stmt
 {
-    lex::Lexeme *name; // can be STR in case of assn args
-    lex::Lexeme *doc;  // doc string for the var (optional)
+    String name;
+    String doc; // doc string for the var (optional)
     Stmt *in;
     Stmt *val;  // expr or simple
     bool isarg; // fndef param / fncall arg or not
 
 public:
-    StmtVar(ModuleLoc loc, lex::Lexeme *name, Stmt *in, Stmt *val, bool isarg);
+    StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, bool isarg);
     ~StmtVar();
     // at least one of type or val must be present
-    static StmtVar *create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *name, Stmt *in,
+    static StmtVar *create(ManagedList &allocator, ModuleLoc loc, StringRef name, Stmt *in,
                            Stmt *val, bool isarg);
 
     void disp(bool hasNext);
 
-    inline void setDoc(lex::Lexeme *newDoc) { doc = newDoc; }
+    inline void setDoc(StringRef newDoc) { doc = newDoc; }
     inline void setVal(Stmt *newval) { val = newval; }
 
-    inline lex::Lexeme *getName() { return name; }
-    inline lex::Lexeme *getDoc() { return doc; }
+    inline StringRef getName() { return name; }
+    inline StringRef getDoc() { return doc; }
     inline Stmt *&getVal() { return val; }
     inline Stmt *&getIn() { return in; }
     inline bool isArg() { return isarg; }
-    inline bool hasDoc() { return doc && doc->getTok().isValid(); }
+    inline bool hasDoc() { return !doc.empty(); }
 };
 
 class StmtFnSig : public Stmt
@@ -314,20 +314,20 @@ public:
 
 class StmtForIn : public Stmt
 {
-    lex::Lexeme *iter;
+    String iter;
     Stmt *in;
     StmtBlock *blk;
 
 public:
-    StmtForIn(ModuleLoc loc, lex::Lexeme *iter, Stmt *in, StmtBlock *blk);
+    StmtForIn(ModuleLoc loc, StringRef iter, Stmt *in, StmtBlock *blk);
     ~StmtForIn();
     // init, cond, incr can be nullptr
-    static StmtForIn *create(ManagedList &allocator, ModuleLoc loc, lex::Lexeme *iter, Stmt *in,
+    static StmtForIn *create(ManagedList &allocator, ModuleLoc loc, StringRef iter, Stmt *in,
                              StmtBlock *blk);
 
     void disp(bool hasNext);
 
-    inline lex::Lexeme *getIter() { return iter; }
+    inline StringRef getIter() { return iter; }
     inline Stmt *&getIn() { return in; }
     inline StmtBlock *&getBlk() { return blk; }
 };
