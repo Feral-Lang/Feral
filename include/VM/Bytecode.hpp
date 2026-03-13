@@ -129,13 +129,17 @@ public:
     {
         code.emplace_back(opcode, loc, std::move(data), DataType::STR, std::move(comment));
     }
+    inline void addInstrStr(Opcode opcode, ModuleLoc loc, StringRef data, String &&comment = "")
+    {
+        code.emplace_back(opcode, loc, data, DataType::STR, std::move(comment));
+    }
     inline void addInstrIden(Opcode opcode, ModuleLoc loc, String &&data, String &&comment = "")
     {
         code.emplace_back(opcode, loc, std::move(data), DataType::IDEN, std::move(comment));
     }
-    inline void addInstrStr(Opcode opcode, ModuleLoc loc, StringRef data, String &&comment = "")
+    inline void addInstrIden(Opcode opcode, ModuleLoc loc, StringRef data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, data, DataType::STR, std::move(comment));
+        code.emplace_back(opcode, loc, data, DataType::IDEN, std::move(comment));
     }
     inline void addInstrInt(Opcode opcode, ModuleLoc loc, int64_t data)
     {
