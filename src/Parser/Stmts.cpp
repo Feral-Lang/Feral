@@ -69,29 +69,29 @@ void StmtBlock::disp(bool hasNext)
 ////////////////////////////////////////// StmtSimple /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val)
-    : Stmt(SIMPLE, loc), val(std::move(val)), tok(tokType)
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val, size_t index)
+    : Stmt(SIMPLE, loc), val(std::move(val)), index(index), tok(tokType)
 {}
-StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val)
-    : Stmt(SIMPLE, loc), val(String(val)), tok(tokType)
+StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val, size_t index)
+    : Stmt(SIMPLE, loc), val(String(val)), index(index), tok(tokType)
 {}
 StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, int64_t val)
-    : Stmt(SIMPLE, loc), val(val), tok(tokType)
+    : Stmt(SIMPLE, loc), val(val), index(-1), tok(tokType)
 {}
 StmtSimple::StmtSimple(ModuleLoc loc, lex::TokType tokType, double val)
-    : Stmt(SIMPLE, loc), val(val), tok(tokType)
+    : Stmt(SIMPLE, loc), val(val), index(-1), tok(tokType)
 {}
 
 StmtSimple::~StmtSimple() {}
 StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
-                               String &&val)
+                               String &&val, size_t index)
 {
-    return allocator.alloc<StmtSimple>(loc, tokType, std::move(val));
+    return allocator.alloc<StmtSimple>(loc, tokType, std::move(val), index);
 }
 StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
-                               StringRef val)
+                               StringRef val, size_t index)
 {
-    return allocator.alloc<StmtSimple>(loc, tokType, val);
+    return allocator.alloc<StmtSimple>(loc, tokType, val, index);
 }
 StmtSimple *StmtSimple::create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
                                int64_t val)
@@ -108,12 +108,14 @@ void StmtSimple::disp(bool hasNext)
 {
     tio::taba(hasNext);
     lex::TokType ty = tok.getVal();
+    String indexTmp = " (at index: " + std::to_string(index) + ")";
     if(hasDataStr()) {
-        tio::print(hasNext, {"Simple<Str>: ", getDataStr(), "\n"});
+        tio::print(hasNext,
+                   {"Simple<", tok.cStr(), ">: ", getDataStr(), hasIndex() ? indexTmp : "", "\n"});
     } else if(hasDataInt()) {
-        tio::print(hasNext, {"Simple<Int>: ", std::to_string(getDataInt()), "\n"});
+        tio::print(hasNext, {"Simple<", tok.cStr(), ">: ", std::to_string(getDataInt()), "\n"});
     } else if(hasDataFlt()) {
-        tio::print(hasNext, {"Simple<Flt>: ", std::to_string(getDataFlt()), "\n"});
+        tio::print(hasNext, {"Simple<", tok.cStr(), ">: ", std::to_string(getDataFlt()), "\n"});
     }
     tio::tabr();
 }
@@ -190,20 +192,22 @@ void StmtExpr::disp(bool hasNext)
 //////////////////////////////////////////// StmtVar //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtVar::StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, bool isarg)
-    : Stmt(VAR, loc), name(name), doc(""), in(in), val(val), isarg(isarg)
+StmtVar::StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, size_t index, bool isarg)
+    : Stmt(VAR, loc), name(name), doc(""), in(in), val(val), index(index), isarg(isarg)
 {}
 StmtVar::~StmtVar() {}
 StmtVar *StmtVar::create(ManagedList &allocator, ModuleLoc loc, StringRef name, Stmt *in, Stmt *val,
-                         bool isarg)
+                         size_t index, bool isarg)
 {
-    return allocator.alloc<StmtVar>(loc, name, in, val, isarg);
+    return allocator.alloc<StmtVar>(loc, name, in, val, index, isarg);
 }
 
 void StmtVar::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {isarg ? "Argument: " : "Variable: ", name, "\n"});
+    String indexTmp = " (at index: " + std::to_string(index) + ")";
+    tio::print(hasNext,
+               {isarg ? "Argument: " : "Variable: ", name, hasIndex() ? indexTmp : "", "\n"});
     if(hasDoc()) {
         tio::taba(in || val);
         tio::print(in || val, {"Doc: ", utils::toRawString(doc), "\n"});
@@ -268,19 +272,22 @@ void StmtFnSig::disp(bool hasNext)
 //////////////////////////////////////////// StmtFnDef ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
-    : Stmt(FNDEF, loc), sig(sig), blk(blk)
+StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters)
+    : Stmt(FNDEF, loc), sig(sig), blk(blk), reqdRegisters(reqdRegisters)
 {}
 StmtFnDef::~StmtFnDef() {}
-StmtFnDef *StmtFnDef::create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk)
+StmtFnDef *StmtFnDef::create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk,
+                             size_t reqdRegisters)
 {
-    return allocator.alloc<StmtFnDef>(loc, sig, blk);
+    return allocator.alloc<StmtFnDef>(loc, sig, blk, reqdRegisters);
 }
 
 void StmtFnDef::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Function Definition", isOrBlk() ? " for `or` block\n" : "\n"});
+    String maxIndexTmp = " (required virtual registers: " + std::to_string(reqdRegisters) + ")";
+    tio::print(hasNext,
+               {"Function Definition", maxIndexTmp, isOrBlk() ? " for `or` block\n" : "\n"});
     sig->disp(true);
     blk->disp(false);
     tio::tabr(1);
