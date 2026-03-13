@@ -9,10 +9,12 @@ class ModuleLoc;
 
 enum class Opcode : uint8_t
 {
-    LOAD_DATA,     // laod a const int/float/char/string from operand onto the stack
+    LOAD_DATA,     // load a variable or const, given by operand, onto the stack
+    LOAD_FAST,     // load a variable from index, given by operand, onto the stack
     UNLOAD,        // unload from stack; operand = count of unloads to perform
     STORE,         // store data in a variable; no operand
     CREATE,        // create a variable with name as operand, value present in stack
+    CREATE_FAST,   // create a variable at index, given by operand, value present in stack
     CREATE_IN,     // create a variable with name as operand, value and 'in' present in stack
     PUSH_BLOCK,    // push a layer for variables on stack; operand = count of layers to push
     POP_BLOCK,     // pop a layer of variables from stack; operand = count of layers to pop

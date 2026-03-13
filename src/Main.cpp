@@ -108,12 +108,12 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
         ast::dumpTree(std::cout, ptree);
     }
 
-    ast::PassManager pm;
+    ast::PassManager astpm;
 
-    pm.add<ast::SimplifyPass>(astallocator);
-    pm.add<ast::CodegenPass>(astallocator, bc);
+    astpm.add<ast::SimplifyPass>(astallocator);
+    astpm.add<ast::CodegenPass>(astallocator, bc);
 
-    if(!pm.visit((ast::Stmt *&)ptree)) {
+    if(!astpm.visit((ast::Stmt *&)ptree)) {
         LOG_FATAL("Failed to perform passes on AST for file: ", path);
         return false;
     }
