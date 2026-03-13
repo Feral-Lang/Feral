@@ -32,6 +32,7 @@ bool Parser::parseBlock(StmtBlock *&tree, bool withBrace)
         }
     }
 
+    virtualRegisters.pushBlk();
     while(p.isValid() && (!withBrace || !p.accept(lex::RBRACE))) {
         bool skipCols = false;
         // logic
@@ -79,6 +80,7 @@ bool Parser::parseBlock(StmtBlock *&tree, bool withBrace)
                  "expected semicolon for end of statement, found: ", p.peek()->getTok().cStr());
         return false;
     }
+    virtualRegisters.popBlk();
 
     if(withBrace) {
         if(!p.acceptn(lex::RBRACE)) {
@@ -105,8 +107,11 @@ bool Parser::parseSimple(Stmt *&data)
     lex::Lexeme *val = p.peek();
     p.next();
 
-    if(ty == lex::STR || ty == lex::IDEN) {
-        data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataStr());
+    if(ty == lex::IDEN) {
+        size_t index = virtualRegisters.getIndex(val->getDataStr());
+        data         = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataStr(), index);
+    } else if(ty == lex::STR) {
+        data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataStr(), -1);
     } else if(ty == lex::INT) {
         data = StmtSimple::create(allocator, val->getLoc(), ty, val->getDataInt());
     } else if(ty == lex::FLT) {
@@ -131,7 +136,7 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
 
     StmtSimple *arg = nullptr;
     if(lit->getTokVal() == lex::STR) {
-        arg = StmtSimple::create(allocator, lit->getLoc(), lex::STR, lit->getDataStr());
+        arg = StmtSimple::create(allocator, lit->getLoc(), lex::STR, lit->getDataStr(), -1);
     } else if(lit->getTokVal() == lex::INT) {
         arg = StmtSimple::create(allocator, lit->getLoc(), lex::INT, lit->getDataInt());
     } else if(lit->getTokVal() == lex::FLT) {
@@ -140,7 +145,9 @@ bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
         err.fail(lit->getLoc(), "unexpected literal type here, found: ", lit->getTok().cStr());
         return false;
     }
-    StmtSimple *fn = StmtSimple::create(allocator, iden->getLoc(), lex::IDEN, iden->getDataStr());
+    size_t index = virtualRegisters.getIndex(iden->getDataStr());
+    StmtSimple *fn =
+        StmtSimple::create(allocator, iden->getLoc(), lex::IDEN, iden->getDataStr(), index);
     StmtFnArgs *finfo = StmtFnArgs::create(allocator, arg->getLoc(), {arg}, {false});
     expr = StmtExpr::create(allocator, iden->getLoc(), fn, lex::TokType::FNCALL, finfo);
 
@@ -240,21 +247,27 @@ bool Parser::parseExpr16(Stmt *&expr)
     ModuleLoc orLoc       = p.peek()->getLoc();
     StringRef orBlkVar    = "_";
     ModuleLoc orBlkVarLoc = orLoc;
+    size_t orBlkVarIndex  = -1;
     p.next();
 
+    virtualRegisters.pushFunc();
     if(p.accept(lex::IDEN)) {
         orBlkVar    = p.peek()->getDataStr();
         orBlkVarLoc = p.peek()->getLoc();
         p.next();
+        virtualRegisters.pushName(orBlkVar);
+        orBlkVarIndex = virtualRegisters.getLastIndex();
     }
 
     if(!parseBlock(orBlk)) return false;
+    size_t reqdRegisters = virtualRegisters.popFunc();
 
     ensureBlockReturns(orBlk);
 
-    StmtVar *arg     = StmtVar::create(allocator, orBlkVarLoc, orBlkVar, nullptr, nullptr, true);
+    StmtVar *arg =
+        StmtVar::create(allocator, orBlkVarLoc, orBlkVar, nullptr, nullptr, orBlkVarIndex, true);
     StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVarLoc, {arg}, nullptr, nullptr, true);
-    StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk);
+    StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk, reqdRegisters);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
     expr = StmtExpr::create(allocator, orLoc, fndef, lex::OR, expr);
@@ -730,7 +743,7 @@ beginBrack:
                 p.next();
                 if(!parseExpr17(arg)) return false;
                 arg = StmtVar::create(allocator, name->getLoc(), name->getDataStr(), nullptr, arg,
-                                      true);
+                                      -1, true);
             } else if(!parseExpr17(arg)) { // normal arg
                 return false;
             }
@@ -805,7 +818,12 @@ bool Parser::parseVar(StmtVar *&var, bool isFnArg)
     if(!parseExpr17(val)) return false;
 
 end:
-    var = StmtVar::create(allocator, start->getLoc(), name, in, val, isFnArg);
+    size_t index = -1;
+    if(!in) {
+        virtualRegisters.pushName(name);
+        index = virtualRegisters.getLastIndex();
+    }
+    var = StmtVar::create(allocator, start->getLoc(), name, in, val, index, isFnArg);
     return true;
 }
 
@@ -856,12 +874,16 @@ bool Parser::parseFnSig(Stmt *&fsig)
                          kwArg->getDataStr(), ")");
                 return false;
             }
-            kwArg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name);
+            virtualRegisters.pushName(name);
+            size_t index = virtualRegisters.getLastIndex();
+            kwArg        = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name, index);
             p.next();
         } else if(p.peekt(1) == lex::PreVA) {
             p.peek(1)->getTok().setVal(lex::PostVA);
             // no check for multiple variadic as no arg can exist after a variadic
-            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name);
+            virtualRegisters.pushName(name);
+            size_t index = virtualRegisters.getLastIndex();
+            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name, index);
             p.next();
             p.next();
         } else {
@@ -897,12 +919,14 @@ bool Parser::parseFnDef(Stmt *&fndef)
     StmtBlock *blk     = nullptr;
     lex::Lexeme *start = p.peek();
 
+    virtualRegisters.pushFunc();
     if(!parseFnSig(sig)) return false;
     if(!parseBlock(blk)) return false;
+    size_t reqdRegisters = virtualRegisters.popFunc();
 
     ensureBlockReturns(blk);
 
-    fndef = StmtFnDef::create(allocator, start->getLoc(), (StmtFnSig *)sig, blk);
+    fndef = StmtFnDef::create(allocator, start->getLoc(), (StmtFnSig *)sig, blk, reqdRegisters);
     return true;
 }
 
@@ -1013,6 +1037,7 @@ bool Parser::parseForIn(Stmt *&fin)
         return false;
     }
     lex::Lexeme *iter = p.peek();
+    virtualRegisters.pushName(iter->getDataStr());
     p.next();
 
     if(!p.acceptn(lex::FIN)) {
@@ -1244,25 +1269,30 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     // async(<expr>, args...)
     StmtFnArgs *valExprArgs = as<StmtFnArgs>(as<StmtExpr>(val)->getRHS());
     valExprArgs->insertArg(0, valExpr, false);
-    StmtSimple *asyncLHS = StmtSimple::create(allocator, loc, lex::IDEN, StringRef("async"));
+    StmtSimple *asyncLHS = StmtSimple::create(allocator, loc, lex::IDEN, StringRef("async"), -1);
     StmtExpr *asyncCall  = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
 
     // let __futureVar<N>__ = async(<expr>, args...);
-    String futureVarName = "__futureVar" + std::to_string(varCtr++) + "__";
-    StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, false);
+    String futureVarName  = "__futureVar" + std::to_string(varCtr++) + "__";
+    size_t futureVarIndex = -1;
+    if(virtualRegisters.pushName(futureVarName)) futureVarIndex = virtualRegisters.getLastIndex();
+    StmtVar *futureVar =
+        StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, futureVarIndex, false);
     prependBlock.push_back(futureVar);
 
     // while !__futureVar<N>__.done() {
     //     yield __futureVar<N>__();
     // }
-    StmtSimple *futureDoneSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
-    StmtSimple *doneRHS          = StmtSimple::create(allocator, loc, lex::STR, StringRef("done"));
-    StmtExpr *doneExpr = StmtExpr::create(allocator, loc, futureDoneSimple, lex::DOT, doneRHS);
-    StmtFnArgs *args   = StmtFnArgs::create(allocator, loc, {}, {});
-    StmtExpr *doneCall = StmtExpr::create(allocator, loc, doneExpr, lex::FNCALL, args);
-    StmtExpr *notDone  = StmtExpr::create(allocator, loc, doneCall, lex::LNOT, nullptr);
+    StmtSimple *futureDoneSimple =
+        StmtSimple::create(allocator, loc, lex::IDEN, futureVarName, futureVarIndex);
+    StmtSimple *doneRHS = StmtSimple::create(allocator, loc, lex::STR, StringRef("done"), -1);
+    StmtExpr *doneExpr  = StmtExpr::create(allocator, loc, futureDoneSimple, lex::DOT, doneRHS);
+    StmtFnArgs *args    = StmtFnArgs::create(allocator, loc, {}, {});
+    StmtExpr *doneCall  = StmtExpr::create(allocator, loc, doneExpr, lex::FNCALL, args);
+    StmtExpr *notDone   = StmtExpr::create(allocator, loc, doneCall, lex::LNOT, nullptr);
 
-    StmtSimple *futureCallSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
+    StmtSimple *futureCallSimple =
+        StmtSimple::create(allocator, loc, lex::IDEN, futureVarName, futureVarIndex);
     StmtExpr *callFuture = StmtExpr::create(allocator, loc, futureCallSimple, lex::FNCALL, args);
     Stmt *blkStmt        = nullptr;
     if(isWait) {
@@ -1277,8 +1307,9 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
     prependBlock.push_back(loop);
 
     // ... __futureVar<N>__.result() ...
-    StmtSimple *futureResultSimple = StmtSimple::create(allocator, loc, lex::IDEN, futureVarName);
-    StmtSimple *resultRHS = StmtSimple::create(allocator, loc, lex::STR, StringRef("result"));
+    StmtSimple *futureResultSimple =
+        StmtSimple::create(allocator, loc, lex::IDEN, futureVarName, futureVarIndex);
+    StmtSimple *resultRHS = StmtSimple::create(allocator, loc, lex::STR, StringRef("result"), -1);
     StmtExpr *resultExpr =
         StmtExpr::create(allocator, loc, futureResultSimple, lex::DOT, resultRHS);
 

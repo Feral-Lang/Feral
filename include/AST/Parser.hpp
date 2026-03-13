@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AST/VirtualRegisters.hpp"
 #include "ParseHelper.hpp"
 #include "Stmts.hpp"
 
@@ -11,6 +12,7 @@ class Parser
     ManagedList &allocator;
     ParseHelper p;
     Vector<Stmt *> prependBlock;
+    VRegManager virtualRegisters;
 
     // Append a return statement if the block doesn't already contain one at the end
     void ensureBlockReturns(StmtBlock *blk);

@@ -62,7 +62,7 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
         if(ltok == lex::STR && rtok == lex::STR) {
             String res(l->getDataStr());
             res += r->getDataStr();
-            resultStmt = StmtSimple::create(allocator, l->getLoc(), lex::STR, std::move(res));
+            resultStmt = StmtSimple::create(allocator, l->getLoc(), lex::STR, std::move(res), -1);
         }
         binaryIntFltOps(+);
         break;
@@ -77,14 +77,14 @@ bool SimplifyPass::applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSi
             String res;
             res.reserve(l->getDataStr().size() * r->getDataInt());
             for(int64_t i = 0; i < r->getDataInt(); ++i) { res += l->getDataStr(); }
-            resultStmt = StmtSimple::create(allocator, l->getLoc(), lex::STR, std::move(res));
+            resultStmt = StmtSimple::create(allocator, l->getLoc(), lex::STR, std::move(res), -1);
         }
         // 2 * "xyz" = "xyzxyz"
         if(ltok == lex::INT && rtok == lex::STR) {
             String res;
             res.reserve(l->getDataInt() * r->getDataStr().size());
             for(int64_t i = 0; i < l->getDataInt(); ++i) { res += r->getDataStr(); }
-            resultStmt = StmtSimple::create(allocator, r->getLoc(), lex::STR, std::move(res));
+            resultStmt = StmtSimple::create(allocator, r->getLoc(), lex::STR, std::move(res), -1);
         }
         binaryIntFltOps(*);
         break;

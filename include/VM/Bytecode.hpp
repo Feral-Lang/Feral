@@ -100,6 +100,7 @@ public:
     inline void setInt(int64_t dat) { data = dat; }
     inline void setStr(String &&dat) { data = std::move(dat); }
     inline void setComment(String &&dat) { comment = std::move(dat); }
+    inline void setComment(StringRef dat) { comment = dat; }
 
     inline ModuleLoc getLoc() const { return loc; }
     inline StringRef getDataStr() const { return std::get<String>(data); }
