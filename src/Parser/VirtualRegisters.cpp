@@ -34,12 +34,12 @@ void VRegManager::popBlk()
     blocks.back().pop_back();
 }
 
-bool VRegManager::pushName(StringRef name)
+size_t VRegManager::pushName(StringRef name)
 {
-    if(data.empty()) return false;
+    if(data.empty()) return -1;
     data.back().push_back(name);
     if(maxCount.back() < data.back().size()) ++maxCount.back();
-    return true;
+    return data.back().size() - 1;
 }
 void VRegManager::setName(size_t index, StringRef name)
 {
@@ -53,12 +53,6 @@ size_t VRegManager::getIndex(StringRef name)
     auto loc = std::find(data.back().begin(), data.back().end(), name);
     if(loc == data.back().end()) return -1;
     return loc - data.back().begin();
-}
-
-size_t VRegManager::getLastIndex()
-{
-    if(data.empty()) return -1;
-    return data.back().size() - 1;
 }
 
 } // namespace fer::ast
