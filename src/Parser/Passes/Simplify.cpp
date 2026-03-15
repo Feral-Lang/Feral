@@ -59,7 +59,6 @@ bool SimplifyPass::visit(Stmt *stmt, Stmt **source)
     case VARDECL: return visit(as<StmtVarDecl>(stmt), source);
     case COND: return visit(as<StmtCond>(stmt), source);
     case FOR: return visit(as<StmtFor>(stmt), source);
-    case FORIN: return visit(as<StmtForIn>(stmt), source);
     case RET: return visit(as<StmtRetYield>(stmt), source);
     case CONTINUE: return visit(as<StmtContinue>(stmt), source);
     case BREAK: return visit(as<StmtBreak>(stmt), source);
@@ -209,20 +208,6 @@ bool SimplifyPass::visit(StmtFor *stmt, Stmt **source)
     }
     if(stmt->getIncr() && !visit(stmt->getIncr(), &stmt->getIncr())) {
         err.fail(stmt->getLoc(), "failed to apply simplify pass on for-loop incr");
-        return false;
-    }
-    defers.pushLoop();
-    if(!visit(stmt->getBlk(), asStmt(&stmt->getBlk()))) {
-        err.fail(stmt->getLoc(), "failed to apply simplify pass on func def block");
-        return false;
-    }
-    if(!defers.popLoop(stmt->getLoc())) return false;
-    return true;
-}
-bool SimplifyPass::visit(StmtForIn *stmt, Stmt **source)
-{
-    if(!visit(stmt->getIn(), &stmt->getIn())) {
-        err.fail(stmt->getLoc(), "failed to apply simplify pass on forin loop expr");
         return false;
     }
     defers.pushLoop();

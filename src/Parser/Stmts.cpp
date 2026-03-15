@@ -25,7 +25,6 @@ const char *Stmt::getStmtTypeCString() const
     case VARDECL: return "variable declaration";
     case COND: return "conditional";
     case FOR: return "for loop";
-    case FORIN: return "forin loop";
     case RET: return "return";
     case CONTINUE: return "continue";
     case BREAK: return "break";
@@ -391,37 +390,6 @@ void StmtFor::disp(bool hasNext)
         incr->disp(false);
         tio::tabr();
     }
-    if(blk) {
-        tio::taba(false);
-        tio::print(false, {"Block:\n"});
-        blk->disp(false);
-        tio::tabr();
-    }
-    tio::tabr();
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////// StmtForIn /////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-StmtForIn::StmtForIn(ModuleLoc loc, StringRef iter, Stmt *in, StmtBlock *blk)
-    : Stmt(FORIN, loc), iter(iter), in(in), blk(blk)
-{}
-StmtForIn::~StmtForIn() {}
-StmtForIn *StmtForIn::create(ManagedList &allocator, ModuleLoc loc, StringRef iter, Stmt *in,
-                             StmtBlock *blk)
-{
-    return allocator.alloc<StmtForIn>(loc, iter, in, blk);
-}
-
-void StmtForIn::disp(bool hasNext)
-{
-    tio::taba(hasNext);
-    tio::print(hasNext, {"For each: ", iter, "\n"});
-    tio::taba(blk);
-    tio::print(blk, {"In-Expr:\n"});
-    in->disp(false);
-    tio::tabr();
     if(blk) {
         tio::taba(false);
         tio::print(false, {"Block:\n"});

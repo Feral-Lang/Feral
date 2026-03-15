@@ -33,7 +33,6 @@ enum class Opcode : uint8_t
     CONTINUE,      // self explanatory; operand = jump index
     BREAK,         // self explanatory, operand = pop loop index
     JMP,           // jump unconditionally; operand = index in bytecode to jump to
-    JMP_NIL,       // jump if nil (for for-in loops); operand = index in bytecode to jump to
     JMP_TRUE,      // jump if true; operand = index in bytecode to jump to
     JMP_FALSE,     // jump if false; operand = index in bytecode to jump to
     JMP_TRUE_POP,  // jump if true; operand = index in bytecode to jump to

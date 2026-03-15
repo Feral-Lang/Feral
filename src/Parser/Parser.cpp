@@ -253,7 +253,7 @@ bool Parser::parseExpr16(Stmt *&expr)
     bool hadFunc = virtualRegisters.hasFunc();
 
     if(!hadFunc) virtualRegisters.pushFunc();
-    size_t selfIndex = virtualRegisters.getLastIndex();
+    size_t selfIndex = virtualRegisters.getIndex("self");
     StmtVar *selfVar =
         StmtVar::create(allocator, start->getLoc(), "self", nullptr, nullptr, selfIndex, true);
 
@@ -261,8 +261,7 @@ bool Parser::parseExpr16(Stmt *&expr)
         orBlkVar    = p.peek()->getDataStr();
         orBlkVarLoc = p.peek()->getLoc();
         p.next();
-        virtualRegisters.pushName(orBlkVar);
-        orBlkVarIndex = virtualRegisters.getLastIndex();
+        orBlkVarIndex = virtualRegisters.pushName(orBlkVar);
     }
     if(!parseBlock(orBlk)) return false;
 
@@ -828,10 +827,7 @@ bool Parser::parseVar(StmtVar *&var, bool isFnArg)
 
 end:
     size_t index = -1;
-    if(!in) {
-        virtualRegisters.pushName(name);
-        index = virtualRegisters.getLastIndex();
-    }
+    if(!in) { index = virtualRegisters.pushName(name); }
     var = StmtVar::create(allocator, start->getLoc(), name, in, val, index, isFnArg);
     return true;
 }
@@ -857,7 +853,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
         return false;
     }
 
-    size_t selfIndex = virtualRegisters.getLastIndex();
+    size_t selfIndex = virtualRegisters.getIndex("self");
     StmtVar *selfVar =
         StmtVar::create(allocator, start->getLoc(), "self", nullptr, nullptr, selfIndex, true);
     argnames.insert("self");
@@ -890,15 +886,13 @@ bool Parser::parseFnSig(Stmt *&fsig)
                          kwArg->getDataStr(), ")");
                 return false;
             }
-            virtualRegisters.pushName(name);
-            size_t index = virtualRegisters.getLastIndex();
+            size_t index = virtualRegisters.pushName(name);
             kwArg        = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name, index);
             p.next();
         } else if(p.peekt(1) == lex::PreVA) {
             p.peek(1)->getTok().setVal(lex::PostVA);
             // no check for multiple variadic as no arg can exist after a variadic
-            virtualRegisters.pushName(name);
-            size_t index = virtualRegisters.getLastIndex();
+            size_t index = virtualRegisters.pushName(name);
             vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name, index);
             p.next();
             p.next();
@@ -1018,70 +1012,7 @@ blk:
     conds = StmtCond::create(allocator, start->getLoc(), cvec);
     return true;
 }
-// For-In transformation:
-//
-// for e in vec.eachRev() {
-//     ...
-// }
-// ----------------------
-// will generate
-// ----------------------
-// LOOP_BEGIN
-// let __e = vec.eachRev();
-// INIT:
-// let x = __e.next();
-// {
-//     if x is nil, jump to LOOP_END (done using JMP_NIL instr)
-//     ...
-// }
-// JMP INIT
-// LOOP_END
-bool Parser::parseForIn(Stmt *&fin)
-{
-    fin = nullptr;
 
-    Stmt *in           = nullptr; // Expr15
-    StmtBlock *blk     = nullptr;
-    lex::Lexeme *start = p.peek();
-
-    if(!p.acceptn(lex::FOR)) {
-        err.fail(p.peek()->getLoc(), "expected 'for' here, found: ", p.peek()->getTok().cStr());
-        return false;
-    }
-
-    if(!p.accept(lex::IDEN)) {
-        err.fail(p.peek()->getLoc(),
-                 "expected iterator (identifier) here, found: ", p.peek()->getTok().cStr());
-        return false;
-    }
-    lex::Lexeme *iter = p.peek();
-    virtualRegisters.pushName(iter->getDataStr());
-    p.next();
-
-    if(!p.acceptn(lex::FIN)) {
-        err.fail(p.peek()->getLoc(), "expected 'in' here, found: ", p.peek()->getTok().cStr());
-        return false;
-    }
-
-    if(!parseExpr16(in)) {
-        err.fail(p.peek()->getLoc(), "failed to parse expression for 'in'");
-        return false;
-    }
-
-    if(!p.accept(lex::LBRACE)) {
-        err.fail(p.peek()->getLoc(),
-                 "expected block for for-in construct, found: ", p.peek()->getTok().cStr());
-        return false;
-    }
-
-    if(!parseBlock(blk)) {
-        err.fail(p.peek()->getLoc(), "failed to parse block for for-in construct");
-        return false;
-    }
-
-    fin = StmtForIn::create(allocator, start->getLoc(), iter->getDataStr(), in, blk);
-    return true;
-}
 bool Parser::parseFor(Stmt *&f)
 {
     f = nullptr;
@@ -1245,10 +1176,110 @@ void Parser::ensureBlockReturns(StmtBlock *blk)
 }
 
 /*
+For-In transformation:
+
+for e in vec.eachRev() {
+    ...
+}
+----------------------
+will generate
+----------------------
+let __e = vec.eachRev();
+for ; ; {
+    let x = __e.next();
+    if x == nil { break; }
+    ...
+}
+*/
+bool Parser::parseForIn(Stmt *&fin)
+{
+    fin = nullptr;
+
+    Stmt *in           = nullptr; // Expr15
+    StmtBlock *blk     = nullptr;
+    lex::Lexeme *start = p.peek();
+
+    if(!p.acceptn(lex::FOR)) {
+        err.fail(p.peek()->getLoc(), "expected 'for' here, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+
+    if(!p.accept(lex::IDEN)) {
+        err.fail(p.peek()->getLoc(),
+                 "expected iterator (identifier) here, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+    StringRef iterName = p.peek()->getDataStr();
+    ModuleLoc iterLoc  = p.peek()->getLoc();
+    p.next();
+
+    static size_t __iterCtr = 0;
+    String __iterName       = "__";
+    __iterName += iterName;
+    __iterName += std::to_string(__iterCtr++);
+    size_t __iterIndex = virtualRegisters.pushName(__iterName);
+    size_t iterIndex   = virtualRegisters.pushName(iterName);
+
+    if(!p.acceptn(lex::FIN)) {
+        err.fail(p.peek()->getLoc(), "expected 'in' here, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+
+    if(!parseExpr16(in)) {
+        err.fail(p.peek()->getLoc(), "failed to parse expression for 'in'");
+        return false;
+    }
+
+    if(!p.accept(lex::LBRACE)) {
+        err.fail(p.peek()->getLoc(),
+                 "expected block for for-in construct, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+
+    if(!parseBlock(blk)) {
+        err.fail(p.peek()->getLoc(), "failed to parse block for for-in construct");
+        return false;
+    }
+
+    // let __e = <in-expr>;
+    StmtVar *__iterVar =
+        StmtVar::create(allocator, iterLoc, __iterName, nullptr, in, __iterIndex, false);
+    prependBlock.push_back(__iterVar);
+
+    // let x = __e.next();
+    StmtSimple *__iterSimple =
+        StmtSimple::create(allocator, iterLoc, lex::IDEN, __iterName, __iterIndex);
+    StmtSimple *__iterRHS = StmtSimple::create(allocator, iterLoc, lex::STR, StringRef("next"), -1);
+    StmtExpr *__nextExpr  = StmtExpr::create(allocator, iterLoc, __iterSimple, lex::DOT, __iterRHS);
+    StmtFnArgs *__args    = StmtFnArgs::create(allocator, iterLoc, {}, {});
+    StmtExpr *__iterNextCall =
+        StmtExpr::create(allocator, iterLoc, __nextExpr, lex::FNCALL, __args);
+    StmtVar *iterVar =
+        StmtVar::create(allocator, iterLoc, iterName, nullptr, __iterNextCall, iterIndex, false);
+
+    // if x == nil { break; }
+    StmtSimple *nil        = StmtSimple::create(allocator, iterLoc, lex::NIL, (int64_t)0);
+    StmtSimple *iterSimple = StmtSimple::create(allocator, iterLoc, lex::IDEN, iterName, iterIndex);
+    StmtExpr *nilCheck     = StmtExpr::create(allocator, iterLoc, iterSimple, lex::EQ, nil);
+    StmtBreak *brk         = StmtBreak::create(allocator, iterLoc);
+    StmtBlock *breakBlk    = StmtBlock::create(allocator, iterLoc, {brk}, false);
+    Conditional c(nilCheck, breakBlk);
+    StmtCond *breakCond = StmtCond::create(allocator, iterLoc, {c});
+
+    blk->insertStmt(0, breakCond);
+    blk->insertStmt(0, iterVar);
+
+    fin = StmtFor::create(allocator, start->getLoc(), nullptr, nullptr, nullptr, blk);
+    return true;
+}
+
+/*
+Await transformation:
+
 ... await <expr>(args...) ...
-
-expands to
-
+----------------------
+will generate
+----------------------
 let __futureVar<N>__ = async(<expr>, args...);
 while !__futureVar<N>__.done() {
     yield __futureVar<N>__();
@@ -1292,8 +1323,7 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
 
     // let __futureVar<N>__ = async(<expr>, args...);
     String futureVarName  = "__futureVar" + std::to_string(varCtr++) + "__";
-    size_t futureVarIndex = -1;
-    if(virtualRegisters.pushName(futureVarName)) futureVarIndex = virtualRegisters.getLastIndex();
+    size_t futureVarIndex = virtualRegisters.pushName(futureVarName);
     StmtVar *futureVar =
         StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, futureVarIndex, false);
     prependBlock.push_back(futureVar);

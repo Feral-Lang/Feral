@@ -35,7 +35,6 @@ public:
     bool visit(StmtVarDecl *stmt, Stmt **source) override;
     bool visit(StmtCond *stmt, Stmt **source) override;
     bool visit(StmtFor *stmt, Stmt **source) override;
-    bool visit(StmtForIn *stmt, Stmt **source) override;
     bool visit(StmtRetYield *stmt, Stmt **source) override;
     bool visit(StmtContinue *stmt, Stmt **source) override;
     bool visit(StmtBreak *stmt, Stmt **source) override;

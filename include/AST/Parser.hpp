@@ -16,6 +16,9 @@ class Parser
 
     // Append a return statement if the block doesn't already contain one at the end
     void ensureBlockReturns(StmtBlock *blk);
+
+    // this is just a transformation that generates a for loop
+    bool parseForIn(Stmt *&fin);
     bool parseAwait(Stmt *&resultCallExpr);
 
 public:
@@ -58,8 +61,6 @@ public:
     bool parseVardecl(Stmt *&vd); // combines VAR_DECL_BASE and VAR_DECL
 
     bool parseConds(Stmt *&conds);
-    // this is just a transformation that generates a for loop
-    bool parseForIn(Stmt *&fin);
     bool parseFor(Stmt *&f);
     bool parseWhile(Stmt *&w);
     bool parseRet(Stmt *&ret);

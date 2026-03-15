@@ -20,7 +20,6 @@ enum Stmts : uint8_t
     VARDECL, // <VAR>[, <VAR>]*
     COND,
     FOR,
-    FORIN,
     RET,
     CONTINUE,
     BREAK,
@@ -55,7 +54,6 @@ public:
     isStmtX(VarDecl, VARDECL);
     isStmtX(Cond, COND);
     isStmtX(For, FOR);
-    isStmtX(ForIn, FORIN);
     isStmtX(Return, RET);
     isStmtX(Continue, CONTINUE);
     isStmtX(Break, BREAK);
@@ -84,6 +82,7 @@ public:
 
     void disp(bool hasNext);
 
+    inline void insertStmt(size_t index, Stmt *stmt) { stmts.insert(stmts.begin() + index, stmt); }
     inline void setTop(bool _istop) { istop = _istop; }
     inline void setUnload(bool _shouldunload) { shouldunload = _shouldunload; }
     inline Vector<Stmt *> &getStmts() { return stmts; }
@@ -341,26 +340,6 @@ public:
     inline Stmt *&getInit() { return init; }
     inline Stmt *&getCond() { return cond; }
     inline Stmt *&getIncr() { return incr; }
-    inline StmtBlock *&getBlk() { return blk; }
-};
-
-class StmtForIn : public Stmt
-{
-    String iter;
-    Stmt *in;
-    StmtBlock *blk;
-
-public:
-    StmtForIn(ModuleLoc loc, StringRef iter, Stmt *in, StmtBlock *blk);
-    ~StmtForIn();
-    // init, cond, incr can be nullptr
-    static StmtForIn *create(ManagedList &allocator, ModuleLoc loc, StringRef iter, Stmt *in,
-                             StmtBlock *blk);
-
-    void disp(bool hasNext);
-
-    inline StringRef getIter() { return iter; }
-    inline Stmt *&getIn() { return in; }
     inline StmtBlock *&getBlk() { return blk; }
 };
 

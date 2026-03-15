@@ -168,13 +168,6 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
             i = ins.getDataInt() - 1;
             break;
         }
-        case Opcode::JMP_NIL: {
-            if(execstack->back()->is<VarNil>()) {
-                execstack->pop();
-                i = ins.getDataInt() - 1;
-            }
-            break;
-        }
         case Opcode::JMP_TRUE_POP:  // fallthrough
         case Opcode::JMP_TRUE:      // fallthrough
         case Opcode::JMP_FALSE_POP: // fallthrough
