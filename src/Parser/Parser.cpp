@@ -272,8 +272,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 
     StmtVar *arg =
         StmtVar::create(allocator, orBlkVarLoc, orBlkVar, nullptr, nullptr, orBlkVarIndex, true);
-    StmtFnSig *fnsig =
-        StmtFnSig::create(allocator, orBlkVarLoc, {selfVar, arg}, nullptr, nullptr, true);
+    StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVarLoc, {selfVar, arg}, nullptr, nullptr);
     StmtFnDef *fndef =
         StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk, reqdRegisters, orBlkVarIndex);
 
@@ -918,7 +917,7 @@ bool Parser::parseFnSig(Stmt *&fsig)
     }
 
 postArgs:
-    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg, false);
+    fsig = StmtFnSig::create(allocator, start->getLoc(), args, kwArg, vaarg);
     return true;
 }
 bool Parser::parseFnDef(Stmt *&fndef)
