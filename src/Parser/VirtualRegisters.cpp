@@ -8,7 +8,10 @@ void VRegManager::pushFunc()
     data.push_back({});
     blocks.push_back({});
     maxCount.push_back(0);
-    pushName("self"); // self is permanent
+    // kw, va, self are permanent
+    pushName(".kw."); // kw placeholder
+    pushName(".va."); // va placeholder
+    pushName("self");
 }
 size_t VRegManager::popFunc()
 {
@@ -37,6 +40,11 @@ bool VRegManager::pushName(StringRef name)
     data.back().push_back(name);
     if(maxCount.back() < data.back().size()) ++maxCount.back();
     return true;
+}
+void VRegManager::setName(size_t index, StringRef name)
+{
+    if(data.empty()) return;
+    data.back()[index] = name;
 }
 
 size_t VRegManager::getIndex(StringRef name)
