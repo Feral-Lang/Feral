@@ -243,12 +243,14 @@ class StmtFnDef : public Stmt
     StmtFnSig *sig;
     StmtBlock *blk;
     size_t reqdRegisters;
+    size_t argsStartRegister; // does not include `self`
 
 public:
-    StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters);
+    StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters,
+              size_t argsStartRegister);
     ~StmtFnDef();
     static StmtFnDef *create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk,
-                             size_t reqdRegisters);
+                             size_t reqdRegisters, size_t argsStartRegister);
 
     void disp(bool hasNext);
 
@@ -257,12 +259,13 @@ public:
     inline StmtFnSig *&getSig() { return sig; }
     inline StmtBlock *&getBlk() { return blk; }
     inline size_t getRequiredRegisters() { return reqdRegisters; }
+    inline size_t getArgsStartRegister() { return argsStartRegister; }
 
     inline StmtVar *&getSigArg(size_t idx) { return sig->getArg(idx); }
     inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
     inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
     inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
-    inline bool isOrBlk() { return sig->isOrBlk(); }
+    inline bool createStack() { return reqdRegisters != 0; }
 };
 
 class StmtVarDecl : public Stmt

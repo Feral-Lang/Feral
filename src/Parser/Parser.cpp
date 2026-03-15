@@ -250,7 +250,13 @@ bool Parser::parseExpr16(Stmt *&expr)
     size_t orBlkVarIndex  = -1;
     p.next();
 
-    virtualRegisters.pushFunc();
+    bool hadFunc = virtualRegisters.hasFunc();
+
+    if(!hadFunc) virtualRegisters.pushFunc();
+    size_t selfIndex = virtualRegisters.getLastIndex();
+    StmtVar *selfVar =
+        StmtVar::create(allocator, start->getLoc(), "self", nullptr, nullptr, selfIndex, true);
+
     if(p.accept(lex::IDEN)) {
         orBlkVar    = p.peek()->getDataStr();
         orBlkVarLoc = p.peek()->getLoc();
@@ -258,16 +264,19 @@ bool Parser::parseExpr16(Stmt *&expr)
         virtualRegisters.pushName(orBlkVar);
         orBlkVarIndex = virtualRegisters.getLastIndex();
     }
-
     if(!parseBlock(orBlk)) return false;
-    size_t reqdRegisters = virtualRegisters.popFunc();
+
+    size_t reqdRegisters = 0;
+    if(!hadFunc) reqdRegisters = virtualRegisters.popFunc();
 
     ensureBlockReturns(orBlk);
 
     StmtVar *arg =
         StmtVar::create(allocator, orBlkVarLoc, orBlkVar, nullptr, nullptr, orBlkVarIndex, true);
-    StmtFnSig *fnsig = StmtFnSig::create(allocator, orBlkVarLoc, {arg}, nullptr, nullptr, true);
-    StmtFnDef *fndef = StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk, reqdRegisters);
+    StmtFnSig *fnsig =
+        StmtFnSig::create(allocator, orBlkVarLoc, {selfVar, arg}, nullptr, nullptr, true);
+    StmtFnDef *fndef =
+        StmtFnDef::create(allocator, orBlkVarLoc, fnsig, orBlk, reqdRegisters, orBlkVarIndex);
 
     // expr with or blk's format is: <fndef> <OR> <expr>
     expr = StmtExpr::create(allocator, orLoc, fndef, lex::OR, expr);
@@ -847,6 +856,13 @@ bool Parser::parseFnSig(Stmt *&fsig)
                  p.peek()->getTok().cStr());
         return false;
     }
+
+    size_t selfIndex = virtualRegisters.getLastIndex();
+    StmtVar *selfVar =
+        StmtVar::create(allocator, start->getLoc(), "self", nullptr, nullptr, selfIndex, true);
+    argnames.insert("self");
+    args.push_back(selfVar);
+
     if(p.acceptn(lex::RPAREN)) goto postArgs;
 
     // args
@@ -922,11 +938,13 @@ bool Parser::parseFnDef(Stmt *&fndef)
     virtualRegisters.pushFunc();
     if(!parseFnSig(sig)) return false;
     if(!parseBlock(blk)) return false;
+    size_t selfIndex     = virtualRegisters.getIndex("self");
     size_t reqdRegisters = virtualRegisters.popFunc();
 
     ensureBlockReturns(blk);
 
-    fndef = StmtFnDef::create(allocator, start->getLoc(), (StmtFnSig *)sig, blk, reqdRegisters);
+    fndef = StmtFnDef::create(allocator, start->getLoc(), (StmtFnSig *)sig, blk, reqdRegisters,
+                              selfIndex + 1);
     return true;
 }
 

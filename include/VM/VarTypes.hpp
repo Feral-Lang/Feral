@@ -385,7 +385,7 @@ public:
     bool isVariadic;
 
     constexpr FeralNativeFnDesc(StringRef doc, NativeFn fn, size_t argCount, bool isVariadic)
-        : doc(doc), fn(fn), argCount(argCount), isVariadic(isVariadic)
+        : doc(doc), fn(fn), argCount(argCount + 1), isVariadic(isVariadic) // + 1 for self
     {}
 };
 
