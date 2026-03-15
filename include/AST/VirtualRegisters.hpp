@@ -21,10 +21,13 @@ public:
     void popBlk();
 
     bool pushName(StringRef name);
+    void setName(size_t index, StringRef name);
 
     size_t getIndex(StringRef name);
 
     size_t getLastIndex();
+
+    inline bool hasFunc() { return !data.empty(); }
 };
 
 } // namespace fer::ast
