@@ -20,12 +20,10 @@ public:
     void pushBlk();
     void popBlk();
 
-    bool pushName(StringRef name);
+    size_t pushName(StringRef name);
     void setName(size_t index, StringRef name);
 
     size_t getIndex(StringRef name);
-
-    size_t getLastIndex();
 
     inline bool hasFunc() { return !data.empty(); }
 };
