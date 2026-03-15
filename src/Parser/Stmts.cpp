@@ -272,22 +272,25 @@ void StmtFnSig::disp(bool hasNext)
 //////////////////////////////////////////// StmtFnDef ////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters)
-    : Stmt(FNDEF, loc), sig(sig), blk(blk), reqdRegisters(reqdRegisters)
+StmtFnDef::StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters,
+                     size_t argsStartRegister)
+    : Stmt(FNDEF, loc), sig(sig), blk(blk), reqdRegisters(reqdRegisters),
+      argsStartRegister(argsStartRegister)
 {}
 StmtFnDef::~StmtFnDef() {}
 StmtFnDef *StmtFnDef::create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk,
-                             size_t reqdRegisters)
+                             size_t reqdRegisters, size_t argsStartRegister)
 {
-    return allocator.alloc<StmtFnDef>(loc, sig, blk, reqdRegisters);
+    return allocator.alloc<StmtFnDef>(loc, sig, blk, reqdRegisters, argsStartRegister);
 }
 
 void StmtFnDef::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    String maxIndexTmp = " (required virtual registers: " + std::to_string(reqdRegisters) + ")";
+    String registerTmp = " (required virtual registers: " + std::to_string(reqdRegisters) +
+                         "; args start at: " + std::to_string(argsStartRegister) + ")";
     tio::print(hasNext,
-               {"Function Definition", maxIndexTmp, isOrBlk() ? " for `or` block\n" : "\n"});
+               {"Function Definition", registerTmp, !createStack() ? " for `or` block\n" : "\n"});
     sig->disp(true);
     blk->disp(false);
     tio::tabr(1);

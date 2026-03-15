@@ -525,12 +525,11 @@ void VarFn::onDestroy(VirtualMachine &vm)
 Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                    VarStack *existingFnStack, size_t *currentlyAt)
 {
-    // -1 for self
-    if(args.size() - 1 < params.size() - assnParams.size() ||
-       (args.size() - 1 > params.size() && varArg.empty()))
+    if(args.size() < params.size() - assnParams.size() ||
+       (args.size() > params.size() && varArg.empty()))
     {
-        vm.fail(loc, "arg count required: ", params.size(),
-                " (without default args: ", (int64_t)params.size() - (int64_t)assnArgs->size(),
+        vm.fail(loc, "arg count required: ", params.size() - 1, " (without default args: ",
+                (int64_t)params.size() - (int64_t)(assnArgs ? assnArgs->size() : 0) - 1,
                 "); received: ", args.size() - 1);
         return nullptr;
     }
@@ -545,7 +544,8 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     // default arguments
     Set<StringRef> foundArgs;
     size_t i = 1;
-    for(auto &a : params) {
+    while(i < params.size()) {
+        auto &a = params[i];
         if(i == args.size()) break;
         vars->stash(vm, a, args[i++]);
         foundArgs.insert(a);
