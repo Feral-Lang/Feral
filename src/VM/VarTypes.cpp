@@ -511,9 +511,10 @@ bool VarMapIterator::next(VirtualMachine &vm, ModuleLoc loc, Var *&val)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFn::VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative, bool isorblk)
+             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative,
+             bool createstack)
     : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), kwArg(kwArg), varArg(varArg),
-      body(body), isnative(isnative), isorblk(isorblk)
+      body(body), isnative(isnative), createstack(createstack)
 {
     params.reserve(paramcount);
     assnParams.reserve(assnParamsCount);
@@ -580,13 +581,13 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
     Var *ret          = nullptr;
     vm.pushModule(mod);
     if(existingFnStack) fnstack = existingFnStack;
-    else if(!isOrBlk()) fnstack = vm.incVarRef(vm.makeVar<VarStack>(loc));
+    else if(createStack()) fnstack = vm.incVarRef(vm.makeVar<VarStack>(loc));
     if(vm.execute(ret, fnstack, currentlyAt, body.feral.begin, body.feral.end) != 0 &&
        !vm.isExitCalled())
     {
         vars->unstash(vm);
     }
-    if(!existingFnStack && !isOrBlk()) vm.decVarRef(fnstack);
+    if(!existingFnStack && createStack()) vm.decVarRef(fnstack);
     vm.popModule();
     return ret;
 }

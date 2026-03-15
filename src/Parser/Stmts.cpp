@@ -232,20 +232,20 @@ void StmtVar::disp(bool hasNext)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 StmtFnSig::StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg,
-                     StmtSimple *vaarg, bool orblk)
-    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg), orblk(orblk)
+                     StmtSimple *vaarg)
+    : Stmt(FNSIG, loc), args(args), kwarg(kwarg), vaarg(vaarg)
 {}
 StmtFnSig::~StmtFnSig() {}
 StmtFnSig *StmtFnSig::create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg, bool orblk)
+                             StmtSimple *kwarg, StmtSimple *vaarg)
 {
-    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg, orblk);
+    return allocator.alloc<StmtFnSig>(loc, args, kwarg, vaarg);
 }
 
 void StmtFnSig::disp(bool hasNext)
 {
     tio::taba(hasNext);
-    tio::print(hasNext, {"Function Signature", isOrBlk() ? " for `or` block\n" : "\n"});
+    tio::print(hasNext, {"Function Signature\n"});
     if(kwarg) {
         tio::taba(true);
         tio::print(vaarg || args.size() > 0, {"Keyword Argument:\n"});

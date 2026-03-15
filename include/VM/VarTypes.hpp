@@ -427,7 +427,7 @@ class VarFn : public Var
     StringMap<Var *> assnParams;
     FnBody body;
     bool isnative;
-    bool isorblk;
+    bool createstack;
 
     void onDestroy(VirtualMachine &vm) override;
 
@@ -437,7 +437,7 @@ class VarFn : public Var
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
     VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative, bool isorblk);
+          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative, bool createstack);
 
     inline void pushParam(const String &param) { params.push_back(param); }
     inline void setParams(Span<String> newparams)
@@ -461,7 +461,7 @@ public:
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
-    inline bool isOrBlk() { return isorblk; }
+    inline bool createStack() { return createstack; }
 };
 
 class VarClosure : public Var

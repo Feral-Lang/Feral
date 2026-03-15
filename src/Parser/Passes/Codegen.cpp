@@ -254,7 +254,7 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
     String arginfo;
-    arginfo += stmt->isOrBlk() ? "1" : "0";
+    arginfo += '0'; // placeholder for should create stack
     arginfo += stmt->getKwArg() ? "1" : "0";
     arginfo += stmt->getVaArg() ? "1" : "0";
     Vector<StmtVar *> &args = stmt->getArgs();
@@ -294,8 +294,10 @@ bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
         err.fail(stmt->getLoc(), "failed to generate bytecode for function signature");
         return false;
     }
-    bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), std::move(fndefarginfo.back()));
+    String arginfo = std::move(fndefarginfo.back());
     fndefarginfo.pop_back();
+    arginfo[0] = stmt->createStack() ? '1' : '0';
+    bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), std::move(arginfo));
     return true;
 }
 
