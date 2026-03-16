@@ -9,11 +9,9 @@ StringRef getOpcodeStr(Opcode opcode)
 {
     switch(opcode) {
     case Opcode::LOAD_DATA: return "LOAD_DATA";
-    case Opcode::LOAD_FAST: return "LOAD_FAST";
     case Opcode::UNLOAD: return "UNLOAD";
     case Opcode::STORE: return "STORE";
     case Opcode::CREATE: return "CREATE_VAR";
-    case Opcode::CREATE_FAST: return "CREATE_FAST";
     case Opcode::CREATE_IN: return "CREATE_VARIN";
     case Opcode::PUSH_BLOCK: return "PUSH_BLOCK";
     case Opcode::POP_BLOCK: return "POP_BLOCK";
@@ -39,25 +37,27 @@ StringRef getOpcodeStr(Opcode opcode)
     return "";
 }
 
-Instruction::Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype,
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, DataType dtype, String &&data,
                          String &&comment)
-    : data(std::move(data)), loc(loc), dtype(dtype), opcode(opcode), comment(std::move(comment))
+    : data(std::move(data)), comment(std::move(comment)), loc(loc), index(-1), dtype(dtype),
+      opcode(opcode)
 {}
-Instruction::Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype,
+Instruction::Instruction(Opcode opcode, ModuleLoc loc, DataType dtype, StringRef data,
                          String &&comment)
-    : data(String(data)), loc(loc), dtype(dtype), opcode(opcode), comment(std::move(comment))
+    : data(String(data)), comment(std::move(comment)), loc(loc), index(-1), dtype(dtype),
+      opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, int64_t data)
-    : data(data), loc(loc), dtype(DataType::INT), opcode(opcode)
+    : data(data), loc(loc), index(-1), dtype(DataType::INT), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, double data)
-    : data(data), loc(loc), dtype(DataType::FLT), opcode(opcode)
+    : data(data), loc(loc), index(-1), dtype(DataType::FLT), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc, bool data)
-    : data(data), loc(loc), dtype(DataType::BOOL), opcode(opcode)
+    : data(data), loc(loc), index(-1), dtype(DataType::BOOL), opcode(opcode)
 {}
 Instruction::Instruction(Opcode opcode, ModuleLoc loc)
-    : loc(loc), dtype(DataType::NIL), opcode(opcode)
+    : loc(loc), index(-1), dtype(DataType::NIL), opcode(opcode)
 {}
 
 void Instruction::dump(OStream &os) const

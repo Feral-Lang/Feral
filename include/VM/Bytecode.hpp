@@ -10,11 +10,9 @@ class ModuleLoc;
 enum class Opcode : uint8_t
 {
     LOAD_DATA,     // load a variable or const, given by operand, onto the stack
-    LOAD_FAST,     // load a variable from index, given by operand, onto the stack
     UNLOAD,        // unload from stack; operand = count of unloads to perform
     STORE,         // store data in a variable; no operand
     CREATE,        // create a variable with name as operand, value present in stack
-    CREATE_FAST,   // create a variable at index, given by operand, value present in stack
     CREATE_IN,     // create a variable with name as operand, value and 'in' present in stack
     PUSH_BLOCK,    // push a layer for variables on stack; operand = count of layers to push
     POP_BLOCK,     // pop a layer of variables from stack; operand = count of layers to pop
@@ -76,12 +74,13 @@ private:
     Data data;
     String comment;
     ModuleLoc loc;
+    size_t index;
     DataType dtype;
     Opcode opcode;
 
 public:
-    Instruction(Opcode opcode, ModuleLoc loc, String &&data, DataType dtype, String &&comment);
-    Instruction(Opcode opcode, ModuleLoc loc, StringRef data, DataType dtype, String &&comment);
+    Instruction(Opcode opcode, ModuleLoc loc, DataType dtype, String &&data, String &&comment);
+    Instruction(Opcode opcode, ModuleLoc loc, DataType dtype, StringRef data, String &&comment);
     Instruction(Opcode opcode, ModuleLoc loc, int64_t data);
     Instruction(Opcode opcode, ModuleLoc loc, double data);
     Instruction(Opcode opcode, ModuleLoc loc, bool data);
@@ -102,6 +101,7 @@ public:
     inline void setComment(StringRef dat) { comment = dat; }
 
     inline ModuleLoc getLoc() const { return loc; }
+    inline size_t getIndex() const { return index; }
     inline StringRef getDataStr() const { return std::get<String>(data); }
     inline int64_t getDataInt() const { return std::get<int64_t>(data); }
     inline double getDataFlt() const { return std::get<double>(data); }
@@ -112,6 +112,8 @@ public:
     inline bool hasComment() const { return !comment.empty(); }
     inline DataType getDataType() const { return dtype; }
     inline Opcode getOpcode() const { return opcode; }
+
+    inline bool hasIndex() const { return index != -1; }
 
     void dump(OStream &os) const;
     String dump() const;
@@ -127,19 +129,19 @@ class Bytecode
 public:
     inline void addInstrStr(Opcode opcode, ModuleLoc loc, String &&data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, std::move(data), DataType::STR, std::move(comment));
+        code.emplace_back(opcode, loc, DataType::STR, std::move(data), std::move(comment));
     }
     inline void addInstrStr(Opcode opcode, ModuleLoc loc, StringRef data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, data, DataType::STR, std::move(comment));
+        code.emplace_back(opcode, loc, DataType::STR, data, std::move(comment));
     }
     inline void addInstrIden(Opcode opcode, ModuleLoc loc, String &&data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, std::move(data), DataType::IDEN, std::move(comment));
+        code.emplace_back(opcode, loc, DataType::IDEN, std::move(data), std::move(comment));
     }
     inline void addInstrIden(Opcode opcode, ModuleLoc loc, StringRef data, String &&comment = "")
     {
-        code.emplace_back(opcode, loc, data, DataType::IDEN, std::move(comment));
+        code.emplace_back(opcode, loc, DataType::IDEN, data, std::move(comment));
     }
     inline void addInstrInt(Opcode opcode, ModuleLoc loc, int64_t data)
     {

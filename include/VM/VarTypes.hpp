@@ -358,6 +358,7 @@ public:
     inline ManagedRawList *getOrder() { return keyOrder; }
     inline bool isOrdered() { return ordered; }
     inline bool isRefMap() { return asrefs; }
+    inline bool empty() { return val.empty(); }
 };
 
 class VarMapIterator : public Var
@@ -421,14 +422,13 @@ class VarModule;
 class VarFn : public Var
 {
     VarModule *mod;
-    Vector<Var *> defaultArgs;
-    size_t paramCount;
-    size_t reqdRegisters;
-    size_t argsStartRegister;
+    Vector<String> params;
+    StringMap<Var *> defaultParams;
+    String kwArg;
+    String vaArg;
     FnBody body;
-    bool withkw;
-    bool withva;
     bool isnative;
+    bool createstack;
 
     void onDestroy(VirtualMachine &vm) override;
 
@@ -437,15 +437,13 @@ class VarFn : public Var
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
-    VarFn(ModuleLoc loc, VarModule *mod, Vector<Var *> &&defaultArgs, size_t paramCount,
-          size_t reqdRegisters, size_t argsStartRegister, FnBody body, bool withkw, bool withva,
-          bool isnative);
+    VarFn(ModuleLoc loc, VarModule *mod, Vector<String> &&params, StringMap<Var *> &&defaultParams,
+          FnBody body, StringRef kwArg, StringRef vaArg, bool isnative, bool createstack);
 
     inline VarModule *getModule() { return mod; }
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
-    inline bool createStack() { return reqdRegisters != 0; }
 };
 
 class VarClosure : public Var
@@ -516,7 +514,6 @@ class VarStack : public Var
     // This is so because otherwise, on vector resize, it will cause the VarFrame object to
     // delete and reconstruct, therefore incorrectly calling the dref() calls
     VarVec *stack; // VarVec<VarMap>
-    VarVec *registers;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
@@ -539,17 +536,6 @@ public:
     // 'break' also uses this
     void popLoop(VirtualMachine &vm);
     void continueLoop(VirtualMachine &vm);
-
-    void initRegisters(VirtualMachine &vm, ModuleLoc loc, size_t registerCount);
-
-    inline Var *getAt(size_t idx) { return registers->at(idx); }
-
-    inline void setAt(VirtualMachine &vm, size_t idx, Var *data, bool iref)
-    {
-        registers->setAt(vm, idx, data, iref);
-    }
-
-    inline size_t getRegisterCount() { return registers ? registers->size() : -1; }
 
     inline void resizeTo(VirtualMachine &vm, size_t count)
     {
@@ -832,6 +818,7 @@ class VarVars : public Var
     // 0 is the id for global (module) scope
     Map<size_t, VarStack *> fnvars;
     VarVec *modScopeStack; // VarVec<VarStack>
+    VarMap *stashed;
     size_t fnstack;
 
     void onCreate(VirtualMachine &vm) override;
@@ -861,7 +848,13 @@ public:
     void pushFn(VirtualMachine &vm, VarStack *fn);
     void popFn(VirtualMachine &vm);
 
-    inline VarStack *getCurrFnStack() { return fnstack > 0 ? fnvars[fnstack] : nullptr; }
+    inline void stash(VirtualMachine &vm, StringRef name, Var *val, bool iref)
+    {
+        stashed->setAttr(vm, name, val, iref);
+    }
+    inline bool isStashed(StringRef name) { return stashed->getAttr(name); }
+
+    inline VarStack *getCurrFnStack() { return fnvars[fnstack]; }
 
     inline void popBlk(VirtualMachine &vm, size_t count)
     {

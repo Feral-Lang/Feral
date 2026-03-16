@@ -93,19 +93,18 @@ public:
 class StmtSimple : public Stmt
 {
     Variant<String, int64_t, double> val;
-    size_t index;
     lex::Tok tok;
 
 public:
-    StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val, size_t index);
-    StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val, size_t index);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, String &&val);
+    StmtSimple(ModuleLoc loc, lex::TokType tokType, StringRef val);
     StmtSimple(ModuleLoc loc, lex::TokType tokType, int64_t val);
     StmtSimple(ModuleLoc loc, lex::TokType tokType, double val);
     ~StmtSimple();
     static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
-                              String &&val, size_t index);
+                              String &&val);
     static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
-                              StringRef val, size_t index);
+                              StringRef val);
     static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
                               int64_t val);
     static StmtSimple *create(ManagedList &allocator, ModuleLoc loc, lex::TokType tokType,
@@ -123,14 +122,12 @@ public:
     inline StringRef getDataStr() const { return std::get<String>(val); }
     inline int64_t getDataInt() const { return std::get<int64_t>(val); }
     inline double getDataFlt() const { return std::get<double>(val); }
-    inline size_t getIndex() const { return index; }
     inline lex::TokType getTokType() const { return tok.getVal(); }
     inline const lex::Tok &getTok() const { return tok; }
 
     inline bool hasDataStr() const { return std::holds_alternative<String>(val); }
     inline bool hasDataInt() const { return std::holds_alternative<int64_t>(val); }
     inline bool hasDataFlt() const { return std::holds_alternative<double>(val); }
-    inline bool hasIndex() const { return index != -1; }
 };
 
 class StmtFnArgs : public Stmt
@@ -185,16 +182,15 @@ class StmtVar : public Stmt
     String name;
     String doc; // doc string for the var (optional)
     Stmt *in;
-    Stmt *val; // expr or simple
-    size_t index;
+    Stmt *val;  // expr or simple
     bool isarg; // fndef param / fncall arg or not
 
 public:
-    StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, size_t index, bool isarg);
+    StmtVar(ModuleLoc loc, StringRef name, Stmt *in, Stmt *val, bool isarg);
     ~StmtVar();
     // at least one of type or val must be present
     static StmtVar *create(ManagedList &allocator, ModuleLoc loc, StringRef name, Stmt *in,
-                           Stmt *val, size_t index, bool isarg);
+                           Stmt *val, bool isarg);
 
     void disp(bool hasNext);
 
@@ -205,10 +201,8 @@ public:
     inline StringRef getDoc() { return doc; }
     inline Stmt *&getVal() { return val; }
     inline Stmt *&getIn() { return in; }
-    inline size_t getIndex() const { return index; }
     inline bool isArg() { return isarg; }
     inline bool hasDoc() { return !doc.empty(); }
-    inline bool hasIndex() const { return index != -1; }
 };
 
 class StmtFnSig : public Stmt
@@ -216,12 +210,14 @@ class StmtFnSig : public Stmt
     // StmtVar contains name and, optionally, val
     Vector<StmtVar *> args;
     StmtSimple *kwarg, *vaarg;
+    bool createstack;
 
 public:
-    StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg);
+    StmtFnSig(ModuleLoc loc, const Vector<StmtVar *> &args, StmtSimple *kwarg, StmtSimple *vaarg,
+              bool createstack);
     ~StmtFnSig();
     static StmtFnSig *create(ManagedList &allocator, ModuleLoc loc, const Vector<StmtVar *> &args,
-                             StmtSimple *kwarg, StmtSimple *vaarg);
+                             StmtSimple *kwarg, StmtSimple *vaarg, bool createstack);
 
     void disp(bool hasNext);
 
@@ -232,21 +228,18 @@ public:
     inline Vector<StmtVar *> &getArgs() { return args; }
     inline StmtSimple *&getKwArg() { return kwarg; }
     inline StmtSimple *&getVaArg() { return vaarg; }
+    inline bool createStack() { return createstack; }
 };
 
 class StmtFnDef : public Stmt
 {
     StmtFnSig *sig;
     StmtBlock *blk;
-    size_t reqdRegisters;
-    size_t argsStartRegister; // does not include `self`
 
 public:
-    StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk, size_t reqdRegisters,
-              size_t argsStartRegister);
+    StmtFnDef(ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk);
     ~StmtFnDef();
-    static StmtFnDef *create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk,
-                             size_t reqdRegisters, size_t argsStartRegister);
+    static StmtFnDef *create(ManagedList &allocator, ModuleLoc loc, StmtFnSig *sig, StmtBlock *blk);
 
     void disp(bool hasNext);
 
@@ -254,14 +247,11 @@ public:
 
     inline StmtFnSig *&getSig() { return sig; }
     inline StmtBlock *&getBlk() { return blk; }
-    inline size_t getRequiredRegisters() { return reqdRegisters; }
-    inline size_t getArgsStartRegister() { return argsStartRegister; }
 
     inline StmtVar *&getSigArg(size_t idx) { return sig->getArg(idx); }
     inline const Vector<StmtVar *> &getSigArgs() const { return sig->getArgs(); }
     inline StmtSimple *&getKwArg() { return sig->getKwArg(); }
     inline StmtSimple *&getVaArg() { return sig->getVaArg(); }
-    inline bool createStack() { return reqdRegisters != 0; }
 };
 
 class StmtVarDecl : public Stmt

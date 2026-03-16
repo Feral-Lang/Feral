@@ -215,8 +215,11 @@ void VirtualMachine::popModule()
 
 VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
 {
-    VarFn *f = makeVar<VarFn>(loc, nullptr, Vector<Var *>{}, fnObj.argCount, -1, -1,
-                              FnBody{.native = fnObj.fn}, false, fnObj.isVariadic, true);
+    Vector<String> params;
+    for(size_t i = 0; i < fnObj.argCount; ++i) { params.push_back(""); }
+    VarFn *f =
+        makeVar<VarFn>(loc, nullptr, std::move(params), StringMap<Var *>{},
+                       FnBody{.native = fnObj.fn}, "", fnObj.isVariadic ? "." : "", true, false);
     if(!f) return nullptr;
     if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
     return f;

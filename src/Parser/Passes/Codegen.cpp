@@ -61,14 +61,10 @@ bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
 {
-    if(stmt->hasIndex()) {
-        bc.addInstrInt(Opcode::LOAD_FAST, stmt->getLoc(), stmt->getIndex());
-        return true;
-    }
     lex::TokType ty = stmt->getTokType();
     switch(ty) {
     case lex::IDEN:
-        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getDataStr());
+        bc.addInstrIden(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getDataStr(), "");
         return true;
     case lex::STR:
         bc.addInstrStr(Opcode::LOAD_DATA, stmt->getLoc(), utils::fromRawString(stmt->getDataStr()));
@@ -245,13 +241,6 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
         bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), std::move(name), std::move(doc));
         return true;
     }
-    if(stmt->hasIndex()) {
-        if(!stmt->isArg()) {
-            bc.addInstrInt(Opcode::CREATE_FAST, stmt->getLoc(), stmt->getIndex());
-        }
-        return true;
-    }
-    // if the var is a function arg, CREATE instr must not be created
     bc.addInstrStr(stmt->isArg() ? Opcode::LOAD_DATA : Opcode::CREATE, stmt->getLoc(),
                    std::move(name), std::move(doc));
     return true;
@@ -264,6 +253,7 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
     String arginfo;
+    arginfo += stmt->createStack() ? "1" : "0";
     arginfo += stmt->getKwArg() ? "1" : "0";
     arginfo += stmt->getVaArg() ? "1" : "0";
     Vector<StmtVar *> &args = stmt->getArgs();
@@ -299,8 +289,14 @@ bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
     }
     String arginfo = std::move(fndefarginfo.back());
     fndefarginfo.pop_back();
-    bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getArgsStartRegister());
-    bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getRequiredRegisters());
+    if(stmt->getVaArg()) {
+        StmtSimple *va = stmt->getVaArg();
+        bc.addInstrStr(Opcode::LOAD_DATA, va->getLoc(), va->getDataStr());
+    }
+    if(stmt->getKwArg()) {
+        StmtSimple *kw = stmt->getKwArg();
+        bc.addInstrStr(Opcode::LOAD_DATA, kw->getLoc(), kw->getDataStr());
+    }
     bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), std::move(arginfo));
     return true;
 }
