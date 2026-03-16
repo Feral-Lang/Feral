@@ -421,13 +421,14 @@ class VarModule;
 class VarFn : public Var
 {
     VarModule *mod;
-    String kwArg;
-    String varArg;
-    Vector<String> params;
-    StringMap<Var *> assnParams;
+    Vector<Var *> defaultArgs;
+    size_t paramCount;
+    size_t reqdRegisters;
+    size_t argsStartRegister;
     FnBody body;
+    bool withkw;
+    bool withva;
     bool isnative;
-    bool createstack;
 
     void onDestroy(VirtualMachine &vm) override;
 
@@ -436,32 +437,15 @@ class VarFn : public Var
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
-    VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-          size_t paramCount, size_t assnParamsCount, FnBody body, bool isnative, bool createstack);
-
-    inline void pushParam(const String &param) { params.push_back(param); }
-    inline void setParams(Span<String> newparams)
-    {
-        params.assign(newparams.begin(), newparams.end());
-    }
-    inline void insertAssnParam(const String &key, Var *val) { assnParams.insert({key, val}); }
-    inline void setAssnParams(const StringMap<Var *> &newmap) { assnParams = newmap; }
+    VarFn(ModuleLoc loc, VarModule *mod, Vector<Var *> &&defaultArgs, size_t paramCount,
+          size_t reqdRegisters, size_t argsStartRegister, FnBody body, bool withkw, bool withva,
+          bool isnative);
 
     inline VarModule *getModule() { return mod; }
-    inline StringRef getKwArg() { return kwArg; }
-    inline StringRef getVarArg() { return varArg; }
-    inline Vector<String> &getParams() { return params; }
-    inline StringRef getParam(size_t idx) { return params[idx]; }
-    inline StringMap<Var *> &getAssnParam() { return assnParams; }
-    inline Var *getAssnParam(StringRef name)
-    {
-        auto loc = assnParams.find(name);
-        return loc == assnParams.end() ? nullptr : loc->second;
-    }
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
-    inline bool createStack() { return createstack; }
+    inline bool createStack() { return reqdRegisters != 0; }
 };
 
 class VarClosure : public Var
@@ -532,6 +516,7 @@ class VarStack : public Var
     // This is so because otherwise, on vector resize, it will cause the VarFrame object to
     // delete and reconstruct, therefore incorrectly calling the dref() calls
     VarVec *stack; // VarVec<VarMap>
+    VarVec *registers;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
@@ -554,6 +539,17 @@ public:
     // 'break' also uses this
     void popLoop(VirtualMachine &vm);
     void continueLoop(VirtualMachine &vm);
+
+    void initRegisters(VirtualMachine &vm, ModuleLoc loc, size_t registerCount);
+
+    inline Var *getAt(size_t idx) { return registers->at(idx); }
+
+    inline void setAt(VirtualMachine &vm, size_t idx, Var *data, bool iref)
+    {
+        registers->setAt(vm, idx, data, iref);
+    }
+
+    inline size_t getRegisterCount() { return registers ? registers->size() : -1; }
 
     inline void resizeTo(VirtualMachine &vm, size_t count)
     {
@@ -835,7 +831,6 @@ class VarVars : public Var
     // maps function ids to VarStack
     // 0 is the id for global (module) scope
     Map<size_t, VarStack *> fnvars;
-    VarMap *stashed;
     VarVec *modScopeStack; // VarVec<VarStack>
     size_t fnstack;
 
@@ -865,8 +860,8 @@ public:
     void popModScope(VirtualMachine &vm);
     void pushFn(VirtualMachine &vm, VarStack *fn);
     void popFn(VirtualMachine &vm);
-    void stash(VirtualMachine &vm, StringRef name, Var *val, bool iref = true);
-    void unstash(VirtualMachine &vm);
+
+    inline VarStack *getCurrFnStack() { return fnstack > 0 ? fnvars[fnstack] : nullptr; }
 
     inline void popBlk(VirtualMachine &vm, size_t count)
     {

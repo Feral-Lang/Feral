@@ -215,11 +215,10 @@ void VirtualMachine::popModule()
 
 VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
 {
-    VarFn *f = makeVar<VarFn>(loc, nullptr, "", fnObj.isVariadic ? "." : "", fnObj.argCount, 0,
-                              FnBody{.native = fnObj.fn}, true, false);
+    VarFn *f = makeVar<VarFn>(loc, nullptr, Vector<Var *>{}, fnObj.argCount, -1, -1,
+                              FnBody{.native = fnObj.fn}, false, fnObj.isVariadic, true);
     if(!f) return nullptr;
     if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
-    for(size_t i = 0; i < fnObj.argCount; ++i) f->pushParam("");
     return f;
 }
 
