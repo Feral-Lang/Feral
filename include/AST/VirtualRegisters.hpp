@@ -23,7 +23,8 @@ public:
     size_t pushName(StringRef name);
     void setName(size_t index, StringRef name);
 
-    size_t getIndex(StringRef name);
+    size_t getIndex(StringRef name, size_t from = 0);
+    size_t getLastIndex();
 
     inline bool hasFunc() { return !data.empty(); }
 };

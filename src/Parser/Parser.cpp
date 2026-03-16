@@ -247,13 +247,15 @@ bool Parser::parseExpr16(Stmt *&expr)
     ModuleLoc orLoc       = p.peek()->getLoc();
     StringRef orBlkVar    = "_";
     ModuleLoc orBlkVarLoc = orLoc;
-    size_t orBlkVarIndex  = -1;
     p.next();
 
     bool hadFunc = virtualRegisters.hasFunc();
 
-    if(!hadFunc) virtualRegisters.pushFunc();
-    size_t selfIndex = virtualRegisters.getIndex("self");
+    if(hadFunc) virtualRegisters.pushBlk();
+    else virtualRegisters.pushFunc();
+
+    size_t orBlkVarIndex = virtualRegisters.getLastIndex();
+    size_t selfIndex     = virtualRegisters.getIndex("self");
     StmtVar *selfVar =
         StmtVar::create(allocator, start->getLoc(), "self", nullptr, nullptr, selfIndex, true);
 
@@ -266,7 +268,8 @@ bool Parser::parseExpr16(Stmt *&expr)
     if(!parseBlock(orBlk)) return false;
 
     size_t reqdRegisters = 0;
-    if(!hadFunc) reqdRegisters = virtualRegisters.popFunc();
+    if(hadFunc) virtualRegisters.popBlk();
+    else reqdRegisters = virtualRegisters.popFunc();
 
     ensureBlockReturns(orBlk);
 
@@ -885,14 +888,14 @@ bool Parser::parseFnSig(Stmt *&fsig)
                          kwArg->getDataStr(), ")");
                 return false;
             }
-            size_t index = virtualRegisters.pushName(name);
-            kwArg        = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name, index);
+            virtualRegisters.setName(0, name);
+            kwArg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::STR, name, 0);
             p.next();
         } else if(p.peekt(1) == lex::PreVA) {
             p.peek(1)->getTok().setVal(lex::PostVA);
             // no check for multiple variadic as no arg can exist after a variadic
-            size_t index = virtualRegisters.pushName(name);
-            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name, index);
+            virtualRegisters.setName(1, name);
+            vaarg = StmtSimple::create(allocator, p.peek()->getLoc(), lex::IDEN, name, 1);
             p.next();
             p.next();
         } else {

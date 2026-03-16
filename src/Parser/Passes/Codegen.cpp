@@ -61,6 +61,10 @@ bool CodegenPass::visit(StmtBlock *stmt, Stmt **source)
 
 bool CodegenPass::visit(StmtSimple *stmt, Stmt **source)
 {
+    if(stmt->hasIndex()) {
+        bc.addInstrInt(Opcode::LOAD_FAST, stmt->getLoc(), stmt->getIndex());
+        return true;
+    }
     lex::TokType ty = stmt->getTokType();
     switch(ty) {
     case lex::IDEN:
@@ -241,6 +245,12 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
         bc.addInstrStr(Opcode::CREATE_IN, stmt->getLoc(), std::move(name), std::move(doc));
         return true;
     }
+    if(stmt->hasIndex()) {
+        if(!stmt->isArg()) {
+            bc.addInstrInt(Opcode::CREATE_FAST, stmt->getLoc(), stmt->getIndex());
+        }
+        return true;
+    }
     // if the var is a function arg, CREATE instr must not be created
     bc.addInstrStr(stmt->isArg() ? Opcode::LOAD_DATA : Opcode::CREATE, stmt->getLoc(),
                    std::move(name), std::move(doc));
@@ -254,7 +264,6 @@ bool CodegenPass::visit(StmtVar *stmt, Stmt **source)
 bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
 {
     String arginfo;
-    arginfo += '0'; // placeholder for should create stack
     arginfo += stmt->getKwArg() ? "1" : "0";
     arginfo += stmt->getVaArg() ? "1" : "0";
     Vector<StmtVar *> &args = stmt->getArgs();
@@ -266,12 +275,6 @@ bool CodegenPass::visit(StmtFnSig *stmt, Stmt **source)
             return false;
         }
     }
-    if(stmt->getVaArg())
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getVaArg()->getLoc(),
-                       stmt->getVaArg()->getDataStr());
-    if(stmt->getKwArg())
-        bc.addInstrStr(Opcode::LOAD_DATA, stmt->getKwArg()->getLoc(),
-                       stmt->getKwArg()->getDataStr());
     for(auto &a : args) { arginfo += a->getVal() ? "1" : "0"; }
     fndefarginfo.push_back(std::move(arginfo));
     return true;
@@ -296,7 +299,8 @@ bool CodegenPass::visit(StmtFnDef *stmt, Stmt **source)
     }
     String arginfo = std::move(fndefarginfo.back());
     fndefarginfo.pop_back();
-    arginfo[0] = stmt->createStack() ? '1' : '0';
+    bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getArgsStartRegister());
+    bc.addInstrInt(Opcode::LOAD_DATA, stmt->getLoc(), stmt->getRequiredRegisters());
     bc.addInstrStr(Opcode::CREATE_FN, stmt->getLoc(), std::move(arginfo));
     return true;
 }

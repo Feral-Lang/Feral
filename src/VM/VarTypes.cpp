@@ -144,18 +144,29 @@ void Var::dump(String &outStr, VirtualMachine *vm)
     outStr += "<";
     outStr += std::to_string(ref);
     outStr += ">";
-    if(is<VarInt>()) {
-        outStr += "int";
+    if(is<VarNil>()) {
+        outStr += "Nil";
+    } else if(is<VarBool>()) {
+        outStr += "Bool:";
+        outStr += (as<VarBool>(this)->getVal() ? "true" : "false");
+    } else if(is<VarInt>()) {
+        outStr += "Int:";
+        outStr += std::to_string(as<VarInt>(this)->getVal());
     } else if(is<VarFlt>()) {
-        outStr += "flt";
+        outStr += "Flt:";
+        outStr += std::to_string(as<VarFlt>(this)->getVal());
     } else if(is<VarStr>()) {
         outStr += "Str:";
         outStr += as<VarStr>(this)->getVal();
-    } else if(is<VarNil>()) {
-        outStr += "nil";
-    } else if(is<VarBool>()) {
-        outStr += "bool:";
-        outStr += (as<VarBool>(this)->getVal() ? "true" : "false");
+    } else if(is<VarPath>()) {
+        outStr += "Path:";
+        outStr += as<VarPath>(this)->getStr();
+    } else if(is<VarVec>()) {
+        outStr += "Vec:";
+        outStr += std::to_string(as<VarVec>(this)->size());
+    } else if(is<VarMap>()) {
+        outStr += "Map:";
+        outStr += std::to_string(as<VarMap>(this)->size());
     } else if(vm) {
         outStr += vm->getTypeName(this);
     }
@@ -510,28 +521,23 @@ bool VarMapIterator::next(VirtualMachine &vm, ModuleLoc loc, Var *&val)
 ////////////////////////////////////////// VarFn /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFn::VarFn(ModuleLoc loc, VarModule *mod, const String &kwArg, const String &varArg,
-             size_t paramcount, size_t assnParamsCount, FnBody body, bool isnative,
-             bool createstack)
-    : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), kwArg(kwArg), varArg(varArg),
-      body(body), isnative(isnative), createstack(createstack)
-{
-    params.reserve(paramcount);
-    assnParams.reserve(assnParamsCount);
-}
+VarFn::VarFn(ModuleLoc loc, VarModule *mod, Vector<Var *> &&defaultArgs, size_t paramCount,
+             size_t reqdRegisters, size_t argsStartRegister, FnBody body, bool withkw, bool withva,
+             bool isnative)
+    : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), defaultArgs(std::move(defaultArgs)),
+      paramCount(paramCount), reqdRegisters(reqdRegisters), argsStartRegister(argsStartRegister),
+      body(body), withkw(withkw), withva(withva), isnative(isnative)
+{}
 void VarFn::onDestroy(VirtualMachine &vm)
 {
-    for(auto &aa : assnParams) vm.decVarRef(aa.second);
+    for(auto &a : defaultArgs) vm.decVarRef(a);
 }
 Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                    VarStack *existingFnStack, size_t *currentlyAt)
 {
-    if(args.size() < params.size() - assnParams.size() ||
-       (args.size() > params.size() && varArg.empty()))
-    {
-        vm.fail(loc, "arg count required: ", params.size() - 1, " (without default args: ",
-                (int64_t)params.size() - (int64_t)(assnArgs ? assnArgs->size() : 0) - 1,
-                "); received: ", args.size() - 1);
+    if(args.size() < paramCount || (args.size() > paramCount + defaultArgs.size() && !withva)) {
+        vm.fail(loc, "arg count must be within: [", paramCount - 1, ", ",
+                paramCount + defaultArgs.size() - 1, ")", "; received: ", args.size() - 1);
         return nullptr;
     }
     if(isNative()) {
@@ -539,55 +545,50 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
         if(!res) return nullptr;
         return vm.incVarRef(res);
     }
-    VarVars *vars = vm.getVars();
-    // take care of 'self' (always present - either data or nullptr)
-    if(args[0] != nullptr) vars->stash(vm, "self", args[0]);
-    // default arguments
-    Set<StringRef> foundArgs;
-    size_t i = 1;
-    while(i < params.size()) {
-        auto &a = params[i];
-        if(i == args.size()) break;
-        vars->stash(vm, a, args[i++]);
-        foundArgs.insert(a);
+
+    VarVars *vars     = vm.getVars();
+    VarStack *fnstack = nullptr;
+    if(existingFnStack) {
+        fnstack = vm.incVarRef(existingFnStack);
+        if(fnstack->getRegisterCount() == -1) fnstack->initRegisters(vm, loc, reqdRegisters);
+    } else if(reqdRegisters > 0) {
+        fnstack = vm.incVarRef(vm.createVar<VarStack>(loc));
+        fnstack->initRegisters(vm, loc, reqdRegisters);
+    } else {
+        fnstack = vm.incVarRef(vars->getCurrFnStack());
     }
-    // add all default args which have not been overwritten by args
-    for(auto &aa : assnParams) {
-        if(foundArgs.find(aa.first) != foundArgs.end()) continue;
-        Var *cp = vm.copyVar(loc, aa.second);
-        if(!cp) {
-            vm.popModule();
-            return nullptr;
-        }
-        vars->stash(vm, aa.first, cp, false); // copy will make sure there is ref = 1 already
+    if(fnstack == nullptr) {
+        vm.fail(loc, "no func stack found to use");
+        return nullptr;
+    }
+
+    if(args[0] != nullptr) fnstack->setAt(vm, 2, args[0], true);
+    size_t index = argsStartRegister;
+    size_t i     = 1;
+    while(i < args.size() && i < paramCount + defaultArgs.size()) {
+        fnstack->setAt(vm, index++, args[i++], true);
+    }
+    size_t defaultCtr = args.size() - paramCount;
+    while(defaultCtr < defaultArgs.size()) {
+        Var *cp = vm.copyVar(loc, defaultArgs[defaultCtr++]);
+        if(!cp) return nullptr;
+        fnstack->setAt(vm, index++, cp, false);
+        ++i;
     }
     // add all remaining args to variadic args if possible
-    if(!varArg.empty()) {
+    if(withva) {
         VarVec *v = vm.makeVar<VarVec>(loc, args.size(), false);
-        while(i < args.size()) {
-            v->push(vm, args[i], true);
-            ++i;
-        }
-        vars->stash(vm, varArg, v);
+        while(i < args.size()) { v->push(vm, args[i++], true); }
+        fnstack->setAt(vm, 1, v, true);
     }
-    if(!kwArg.empty()) {
-        if(!assnArgs) {
-            vm.popModule();
-            return nullptr;
-        }
-        vars->stash(vm, kwArg, assnArgs, true);
+    if(withkw) {
+        if(!assnArgs) return nullptr;
+        fnstack->setAt(vm, 0, assnArgs, true);
     }
-    VarStack *fnstack = nullptr;
-    Var *ret          = nullptr;
+    Var *ret = nullptr;
     vm.pushModule(mod);
-    if(existingFnStack) fnstack = existingFnStack;
-    else if(createStack()) fnstack = vm.incVarRef(vm.makeVar<VarStack>(loc));
-    if(vm.execute(ret, fnstack, currentlyAt, body.feral.begin, body.feral.end) != 0 &&
-       !vm.isExitCalled())
-    {
-        vars->unstash(vm);
-    }
-    if(!existingFnStack && createStack()) vm.decVarRef(fnstack);
+    vm.execute(ret, fnstack, currentlyAt, body.feral.begin, body.feral.end);
+    vm.decVarRef(fnstack);
     vm.popModule();
     return ret;
 }
@@ -701,7 +702,7 @@ size_t VarModule::getAttrCount()
 ///////////////////////////////////////// VarStack ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStack::VarStack(ModuleLoc loc) : Var(loc, VarInfo::BASIC) {}
+VarStack::VarStack(ModuleLoc loc) : Var(loc, VarInfo::BASIC), registers(nullptr) {}
 
 void VarStack::onCreate(VirtualMachine &vm)
 {
@@ -711,6 +712,7 @@ void VarStack::onCreate(VirtualMachine &vm)
 }
 void VarStack::onDestroy(VirtualMachine &vm)
 {
+    vm.decVarRef(registers);
     popStack(vm, 1);
     vm.decVarRef(stack);
 }
@@ -774,6 +776,13 @@ void VarStack::continueLoop(VirtualMachine &vm)
     LockGuard<RecursiveMutex> _(mtx);
     assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
     if(stack->size() - 1 > loopsFrom.back()) popStack(vm, stack->size() - 1 - loopsFrom.back());
+}
+
+void VarStack::initRegisters(VirtualMachine &vm, ModuleLoc loc, size_t registerCount)
+{
+    LockGuard<RecursiveMutex> _(mtx);
+    registers = vm.incVarRef(vm.makeVar<VarVec>(loc, registerCount, false));
+    for(size_t i = 0; i < registerCount; ++i) { registers->push(vm, nullptr, false); }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1020,14 +1029,9 @@ VarVars::VarVars(ModuleLoc loc) : Var(loc, VarInfo::BASIC | VarInfo::ATTR_BASED)
 
 void VarVars::onCreate(VirtualMachine &vm)
 {
-    stashed       = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), true, false));
     modScopeStack = vm.incVarRef(vm.makeVar<VarVec>(getLoc(), 0, false));
 }
-void VarVars::onDestroy(VirtualMachine &vm)
-{
-    vm.decVarRef(modScopeStack);
-    vm.decVarRef(stashed);
-}
+void VarVars::onDestroy(VirtualMachine &vm) { vm.decVarRef(modScopeStack); }
 
 Var *VarVars::getAttr(StringRef name)
 {
@@ -1040,8 +1044,6 @@ Var *VarVars::getAttr(StringRef name)
 void VarVars::pushBlk(VirtualMachine &vm, ModuleLoc loc, size_t count)
 {
     fnvars[fnstack]->pushStack(vm, loc, count);
-    for(auto &s : stashed->getVal()) { fnvars[fnstack]->setAttr(vm, s.first, s.second, true); }
-    return stashed->clear(vm);
 }
 
 void VarVars::pushModScope(VirtualMachine &vm, VarStack *modScope)
@@ -1075,11 +1077,6 @@ void VarVars::popFn(VirtualMachine &vm)
     fnvars.erase(loc);
     --fnstack;
 }
-void VarVars::stash(VirtualMachine &vm, StringRef name, Var *val, bool iref)
-{
-    stashed->setAttr(vm, name, val, iref);
-}
-void VarVars::unstash(VirtualMachine &vm) { stashed->clear(vm); }
 
 VarVars::ScopedModScope::ScopedModScope(VirtualMachine &vm, VarVars *vars, VarStack *modScope)
     : vars(vars), vm(vm)
