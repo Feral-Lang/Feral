@@ -40,12 +40,6 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
             goto handleErr;
         }
         switch(ins.getOpcode()) {
-        case Opcode::LOAD_FAST: {
-            size_t idx = ins.getDataInt();
-            Var *val   = fnstack->getAt(idx);
-            execstack->push(val);
-            break;
-        }
         case Opcode::LOAD_DATA: {
             if(!ins.isDataIden()) {
                 Var *res = getConst(ins.getLoc(), ins.getData(), ins.getDataType());
@@ -75,19 +69,6 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
                 }
                 execstack->pop();
             }
-            break;
-        }
-        case Opcode::CREATE_FAST: {
-            size_t idx = ins.getDataInt();
-            Var *val   = execstack->pop(false);
-            if(val->getRef() == 1) {
-                fnstack->setAt(*this, idx, val, true);
-            } else {
-                Var *cp = copyVar(ins.getLoc(), val);
-                if(!cp) goto handleErr;
-                fnstack->setAt(*this, idx, cp, false);
-            }
-            decVarRef(val);
             break;
         }
         case Opcode::CREATE: {
@@ -225,25 +206,32 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
             break;
         }
         case Opcode::CREATE_FN: {
-            StringRef arginfo    = ins.getDataStr();
-            bool withkw          = arginfo[0] == '1';
-            bool withva          = arginfo[1] == '1';
-            size_t reqdRegisters = as<VarInt>(execstack->back())->getVal();
-            execstack->pop();
-            size_t argsStartRegister = as<VarInt>(execstack->back())->getVal();
-            execstack->pop();
-            size_t paramCount = 0;
-            Vector<Var *> defaultArgs;
-            for(size_t idx = 2; idx < arginfo.size(); ++idx) {
-                if(arginfo[idx] == '1') {
-                    defaultArgs.push_back(execstack->pop(false));
-                } else {
-                    ++paramCount;
-                }
+            StringRef arginfo = ins.getDataStr();
+            bool createstack  = arginfo[0] == '1';
+            String kw, va;
+            if(arginfo[1] == '1') {
+                kw = as<VarStr>(execstack->back())->getVal();
+                execstack->pop();
             }
-            VarFn *fn = makeVar<VarFn>(ins.getLoc(), varmod, std::move(defaultArgs), paramCount,
-                                       reqdRegisters, argsStartRegister,
-                                       FnBody{.feral = bodies.back()}, withkw, withva, false);
+            if(arginfo[2] == '1') {
+                va = as<VarStr>(execstack->back())->getVal();
+                execstack->pop();
+            }
+            Vector<String> params;
+            params.reserve(arginfo.size() - 3);
+            StringMap<Var *> defaultParams;
+            for(size_t idx = 3; idx < arginfo.size(); ++idx) {
+                String name = as<VarStr>(execstack->back())->getVal();
+                execstack->pop();
+                if(arginfo[idx] == '1') {
+                    Var *val = execstack->pop(false);
+                    defaultParams.insert({name, val});
+                }
+                params.push_back(name);
+            }
+            VarFn *fn =
+                makeVar<VarFn>(ins.getLoc(), varmod, std::move(params), std::move(defaultParams),
+                               FnBody{.feral = bodies.back()}, kw, va, false, createstack);
             bodies.pop_back();
             execstack->push(fn);
             break;
