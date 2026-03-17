@@ -7,6 +7,10 @@
 compile_commands.json
 *.swp
 
+# AI
+CLAUDE*
+.claude/
+
 # Windows trash #
 ##########################
 $null
