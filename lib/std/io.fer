@@ -130,7 +130,7 @@ let scan = fn(.kw, choices...) {
     let input = '';
     let found = false;
     while !found && maxRetries-- > 0 {
-        print('Must provide one of: ', choices.join(' / '));
+        print('Must provide one of: ', choices.join(' / '), ' : ');
         if hidden && term.isTTY() { term.hideInput(true); }
         input = scanNative();
         if hidden && term.isTTY() { term.hideInput(false); }

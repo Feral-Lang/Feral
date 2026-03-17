@@ -115,7 +115,6 @@ FERAL_FUNC(fprintln, 0, true,
 
 FERAL_FUNC(scanNative, 0, false, "")
 {
-    EXPECT(VarBool, args[1], "hide input");
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     std::getline(std::cin, res->getVal());
     if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
