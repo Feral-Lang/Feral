@@ -28,7 +28,6 @@ enum TokType
     WAIT,
     CONTINUE,
     BREAK,
-    FVOID,  // VOID but Windows APIs define a macro with that name
     FTRUE,  // TRUE but Windows APIs define a macro with that name
     FFALSE, // FALSE but Windows APIs define a macro with that name
     NIL,
@@ -135,8 +134,8 @@ public:
 
     inline bool isData() const
     {
-        return val == INT || val == FLT || val == STR || val == IDEN || val == FVOID ||
-               val == FTRUE || val == FFALSE || val == NIL;
+        return val == INT || val == FLT || val == STR || val == IDEN || val == FTRUE ||
+               val == FFALSE || val == NIL;
     }
     inline bool isLiteral() const
     {

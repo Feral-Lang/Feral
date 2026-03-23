@@ -1,0 +1,404 @@
+(* ============================================================
+   Feral Programming Language — EBNF Grammar
+   Derived from src/Lexer.cpp and src/Parser/Parser.cpp
+   ============================================================
+
+   Notation:
+     { x }       zero or more repetitions of x
+     [ x ]       zero or one occurrence of x
+     ( x | y )   alternatives (grouping)
+     'text'      literal terminal
+     UPPER_CASE  named lexical token
+     lower_case  grammar rule
+   ============================================================ *)
+
+
+(* ============================================================
+   LEXICAL GRAMMAR
+   ============================================================ *)
+
+(* --- Whitespace and comments (skipped between tokens) --- *)
+
+line_comment  = '#' { any_char_except_newline } newline ;
+
+block_comment = '/*' { any_char | block_comment } '*/' ;
+(* Block comments are nestable *)
+
+(* --- Identifiers and atoms --- *)
+
+letter       = 'a'..'z' | 'A'..'Z' ;
+digit        = '0'..'9' ;
+ident_start  = letter | '_' ;
+ident_cont   = letter | digit | '_' ;
+
+IDENTIFIER   = ident_start { ident_cont } ;
+
+(* An atom is a dot-prefixed identifier that begins a token.
+   The leading '.' is consumed but NOT part of the stored string value.
+   The lexer only recognises a leading '.' as starting an atom when the
+   previous character is NOT: letter, digit, '_', ')', ']', "'", '"'.
+   Atoms are emitted as STR tokens, e.g.  .ok  .name?  .error  *)
+ATOM         = '.' ident_start { ident_cont } ;
+
+(* Compile-time special identifiers — replaced by STR tokens at lex time *)
+(* __SRC_PATH__   expands to the absolute path of the current source file  *)
+(* __SRC_DIR__    expands to the parent directory of the current source file *)
+
+(* --- Integer literals --- *)
+
+INT_LITERAL  = decimal_int
+             | hex_int
+             | octal_int
+             | binary_int ;
+
+decimal_int  = '0'
+             | '1'..'9' { digit } ;
+
+hex_int      = '0' ( 'x' | 'X' ) { '0'..'9' | 'a'..'f' | 'A'..'F' }+ ;
+
+octal_int    = '0' { '0'..'7' }+ ;
+
+binary_int   = '0' ( 'b' | 'B' ) { '0' | '1' }+ ;
+
+(* --- Floating-point literals --- *)
+
+FLT_LITERAL  = digit+ '.' digit+ ;
+(* Only base-10 floats are supported; no scientific notation *)
+
+(* --- String literals --- *)
+(* Any of three quoting styles: "  '  `
+   Backslash escapes are recognised inside all forms.
+   A single leading newline and a single trailing newline are stripped. *)
+
+STR_LITERAL  = '"'  { str_char | escape_seq } '"'
+             | "'"  { str_char | escape_seq } "'"
+             | '`'  { str_char | escape_seq } '`' ;
+
+escape_seq   = '\' any_char ;
+
+(* --- Keywords (reserved; cannot be used as identifiers) --- *)
+
+(* let  fn  if  elif  else  for  in  while  return  yield
+   await  wait  continue  break  void  true  false  nil
+   or  defer  inline                                       *)
+
+
+(* ============================================================
+   PROGRAM STRUCTURE
+   ============================================================ *)
+
+program      = { statement } ;
+(* A source file is a sequence of statements with no enclosing braces. *)
+
+braced_block = '{' { statement } '}' ;
+
+
+(* ============================================================
+   STATEMENTS
+   ============================================================ *)
+
+statement    = var_decl ';'
+             | conditional                (* no trailing ';' *)
+             | for_loop                   (* no trailing ';' *)
+             | for_in_loop               (* no trailing ';' *)
+             | while_loop                 (* no trailing ';' *)
+             | 'return' [ expr17 ] ';'
+             | 'defer'  expr17 ';'
+             | 'continue' ';'
+             | 'break' ';'
+             | braced_block               (* no trailing ';' *)
+             | expr ';' ;
+(* 'yield' is parsed inside expr01 and therefore appears as:  yield [expr17] ';'
+   'await' / 'wait' are also parsed at expression level (see expr01).             *)
+
+(* --- Variable declaration --- *)
+
+var_decl     = [ STR_LITERAL ] 'let' var_bind { ',' var_bind } ;
+
+var_bind     = var_name [ 'in' expr01 ] '=' expr17 ;
+(* 'in' provides an optional type-annotation expression, evaluated at expr01 level.
+   Only available in let-declarations; NOT available in function parameters.        *)
+
+var_name     = IDENTIFIER | STR_LITERAL | ATOM ;
+(* Using a STR_LITERAL or ATOM as a name creates a "keyed" binding, used
+   when attaching member functions to a type via a struct-creation call.  *)
+
+
+(* --- Function definition (also valid as an expression — see expr01) --- *)
+
+fn_def       = 'fn' '(' fn_params ')' braced_block ;
+
+fn_params    = [ fn_param { ',' fn_param } ] ;
+
+fn_param     = IDENTIFIER '...'                 (* variadic; must be last parameter   *)
+             | STR_LITERAL                       (* keyword-args bundle; at most one   *)
+             | ATOM                              (* keyword-args bundle; at most one   *)
+             | IDENTIFIER [ '=' expr17 ] ;      (* regular parameter, optional default *)
+(* The parser silently inserts 'self' as the first parameter in every function.
+   Users do not write 'self' explicitly.
+   A keyword-args bundle (STR_LITERAL or ATOM parameter) receives a map of
+   named call arguments that do not match any declared parameter.
+   A variadic parameter (IDENTIFIER '...') receives remaining positional arguments.
+   Both keyword and variadic may each appear at most once and variadic appears at last. *)
+
+
+(* --- Conditional statement --- *)
+
+conditional  = [ 'inline' ] 'if' expr16 braced_block
+               { 'elif' expr16 braced_block }
+               [ 'else' braced_block ] ;
+(* 'inline' suppresses PUSH_BLOCK / POP_BLOCK bytecode for the block,
+   causing its variable scope to merge with the enclosing scope.        *)
+
+
+(* --- C-style for loop --- *)
+
+for_loop     = 'for' [ for_init ] ';'
+                     [ expr17 ]   ';'
+                     [ expr ]
+               braced_block ;
+
+for_init     = var_decl   (* note: var_decl does NOT include its trailing ';' here *)
+             | expr ;     (* full comma expression *)
+(* All three clauses (init, condition, increment) are optional.
+   'for ;;  { }' is a valid infinite loop.                          *)
+
+
+(* --- For-in loop (syntactic sugar) --- *)
+
+for_in_loop  = 'for' IDENTIFIER 'in' expr16 braced_block ;
+(* Desugared by the parser into a C-style for loop:
+     let __<ident>N = <iterable>;
+     for ;; {
+         let <ident> = __<ident>N.next();
+         if <ident> == nil { break; }
+         <original body>
+     }
+   The iterator variable name is unambiguously generated; N is a counter.  *)
+
+
+(* --- While loop --- *)
+
+while_loop   = 'while' expr17 braced_block ;
+
+
+(* ============================================================
+   EXPRESSIONS
+   ============================================================
+
+   Precedence levels — listed from lowest (outermost) to highest (innermost).
+   A rule at level N calls the rule at the next higher level as its operand.
+
+   Level  Rule     Operators / description              Associativity
+   -----  -------  -----------------------------------  -------------
+    18    expr18   ,                                    left
+    17    expr17   =                                    right
+    15    expr15   ? :   (ternary)                      none
+    16    expr16   += -= *= /= %= <<= >>= &= |= ~= ^=  left
+                   or-block
+    14    expr14   ??                                   left
+    13    expr13   ||                                   left
+    12    expr12   &&                                   left
+    11    expr11   |                                    left
+    10    expr10   ^                                    left
+     9    expr09   &                                    left
+     8    expr08   == !=                                left
+     7    expr07   < <= > >=                            left
+     6    expr06   << >>                                left
+     5    expr05   + -                                  left
+     4    expr04   * / % ** //                          left
+     3    expr03   ++ -- + - * & ! ~  (unary prefix)   right (applied outermost-last)
+     2    expr02   ++ -- ...          (unary postfix)   —
+     1    expr01   () [] . ->  (primary / suffix chain) left
+
+   Note: the call chain is 18→17→15→16→14→13→...→1
+   (level 15 is sandwiched between 17 and 16 due to how ternary interacts
+    with compound assignment)
+   ============================================================ *)
+
+expr     = expr18 ;
+
+
+(* --- Level 18: Comma --- left-associative *)
+
+expr18   = expr17 { ',' expr17 } ;
+
+
+(* --- Level 17: Assignment --- right-associative *)
+
+expr17   = expr15 { '=' expr15 } ;
+
+
+(* --- Level 15: Ternary --- non-repeating *)
+
+expr15   = expr16 [ '?' expr16 ':' expr16 ] ;
+(* Each branch is evaluated at expr16 level (compound-assign is allowed in branches). *)
+
+
+(* --- Level 16: Compound assignment and or-block --- left-associative *)
+
+expr16   = expr14 { compound_assign_op expr14 } [ or_block ] ;
+
+compound_assign_op = '+=' | '-=' | '*=' | '/=' | '%='
+                   | '<<=' | '>>='
+                   | '&=' | '|=' | '~=' | '^=' ;
+(* '~=' is bitwise-NOT assign; '^=' is bitwise-XOR assign *)
+
+or_block = 'or' [ IDENTIFIER ] braced_block ;
+(* Provides an error-handling clause.  The block is wrapped in an
+   anonymous function that receives two arguments: 'self' (the
+   calling object) and the named identifier (the error value).
+   If no identifier is provided, the name '_' is used.
+   The expression and or-block desugar to:
+     fn(self, errVar) { <block> } or <expr>              *)
+
+
+(* --- Level 14: Nil-coalesce --- left-associative *)
+
+expr14   = expr13 { '??' expr13 } ;
+
+
+(* --- Level 13: Logical OR --- left-associative *)
+
+expr13   = expr12 { '||' expr12 } ;
+
+
+(* --- Level 12: Logical AND --- left-associative *)
+
+expr12   = expr11 { '&&' expr11 } ;
+
+
+(* --- Level 11: Bitwise OR --- left-associative *)
+
+expr11   = expr10 { '|' expr10 } ;
+
+
+(* --- Level 10: Bitwise XOR --- left-associative *)
+
+expr10   = expr09 { '^' expr09 } ;
+
+
+(* --- Level 9: Bitwise AND --- left-associative *)
+
+expr09   = expr08 { '&' expr08 } ;
+
+
+(* --- Level 8: Equality --- left-associative *)
+
+expr08   = expr07 { ( '==' | '!=' ) expr07 } ;
+
+
+(* --- Level 7: Relational --- left-associative *)
+
+expr07   = expr06 { ( '<' | '<=' | '>' | '>=' ) expr06 } ;
+
+
+(* --- Level 6: Bitwise Shift --- left-associative *)
+
+expr06   = expr05 { ( '<<' | '>>' ) expr05 } ;
+
+
+(* --- Level 5: Additive --- left-associative *)
+
+expr05   = expr04 { ( '+' | '-' ) expr04 } ;
+
+
+(* --- Level 4: Multiplicative --- left-associative *)
+
+expr04   = expr03 { ( '*' | '/' | '%' | '**' | '//' ) expr03 } ;
+(* '**' = exponentiation;  '//' = integer square-root *)
+
+
+(* --- Level 3: Unary prefix --- right-associative (zero or more, applied innermost-first) *)
+
+expr03   = { prefix_op } expr02 ;
+
+prefix_op = '++'   (* pre-increment  *)
+          | '--'   (* pre-decrement  *)
+          | '+'    (* unary plus     *)
+          | '-'    (* unary negate   *)
+          | '*'    (* dereference    *)
+          | '&'    (* address-of     *)
+          | '!'    (* logical NOT    *)
+          | '~' ;  (* bitwise NOT    *)
+(* When the operand is an integer or float literal, leading '-' signs are folded
+   into the literal value at parse time.                                          *)
+
+
+(* --- Level 2: Unary postfix --- at most one operator *)
+
+expr02   = expr01 [ postfix_op ] ;
+
+postfix_op = '++'    (* post-increment              *)
+           | '--'    (* post-decrement              *)
+           | '...' ; (* variadic unpack in call args *)
+(* '...' (postfix) is only meaningful inside a function-call argument list. *)
+
+
+(* --- Level 1: Primary expressions and suffix chains --- left-associative *)
+
+expr01   = prefixed_suffixed_literal
+         | '(' expr ')' { suffix }
+         | primary { suffix }
+         | fn_def { suffix }
+         | await_expr { suffix }
+         | yield_expr { suffix } ;
+
+primary  = IDENTIFIER
+         | STR_LITERAL
+         | ATOM
+         | INT_LITERAL
+         | FLT_LITERAL
+         | 'void'
+         | 'true'
+         | 'false'
+         | 'nil' ;
+
+suffix   = '[' expr17 ']'                                  (* subscript     *)
+         | '(' [ call_arg { ',' call_arg } ] ')'           (* function call *)
+         | ( '.' | '->' ) primary                          (* member access *) ;
+(* Suffixes chain left-to-right: foo.bar[0]().baz is valid.
+   Both '.' and '->' produce identical DOT expressions; '->' is an alias. *)
+
+call_arg = ( IDENTIFIER | STR_LITERAL | ATOM ) '=' expr17  (* named argument  *)
+         | expr17 ;                                        (* positional arg  *)
+(* A named argument uses the identifier/string as the argument name; the
+   '...' postfix on expr17 (via expr02) marks an argument for variadic unpack.
+   IDENTIFIER names in named call positions are coerced to STR tokens.        *)
+
+
+(* --- Prefixed / suffixed literal --- *)
+
+prefixed_suffixed_literal
+         = IDENTIFIER ( INT_LITERAL | FLT_LITERAL | STR_LITERAL )
+         | ( INT_LITERAL | FLT_LITERAL | STR_LITERAL ) IDENTIFIER ;
+(* Desugared to a function call:  IDEN(LIT)
+   Examples:  9h     -> h(9)
+              2.5i   -> i(2.5)
+              ref"x" -> ref("x")
+   There must be no whitespace between the identifier and the literal;
+   they must be adjacent tokens.
+   Postfix suffix chains (. [] ()) are NOT available on this form directly. *)
+
+
+(* --- Await / wait expression --- *)
+
+await_expr = ( 'await' | 'wait' ) expr01 ;
+(* The expr01 operand must resolve to a function call.
+   Desugared by the parser:
+     let __futureVarN__ = async(<fn>, <args>...);
+     while !__futureVarN__.done() {
+         yield __futureVarN__();   ('wait' uses a bare call instead of yield)
+     }
+     ... __futureVarN__.result() ...
+   The await/wait expression evaluates to __futureVarN__.result().         *)
+
+
+(* --- Yield expression --- *)
+
+yield_expr = 'yield' [ expr17 ] ;
+(* 'yield' suspends the current coroutine and produces a value.
+   Valid both as a statement (  yield value; ) and as an expression
+   inside a larger expression.  When used as a statement, 'yield'
+   falls through the statement dispatcher and is handled by the
+   expression path — it is NOT a dedicated statement form.          *)

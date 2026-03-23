@@ -28,7 +28,6 @@ const char *TokStrs[_LAST] = {
     "wait",
     "continue",
     "break",
-    "void",
     "true",
     "false",
     "nil",
@@ -344,7 +343,6 @@ TokType classifyStr(StringRef str)
     if(str == TokStrs[WAIT]) return WAIT;
     if(str == TokStrs[CONTINUE]) return CONTINUE;
     if(str == TokStrs[BREAK]) return BREAK;
-    if(str == TokStrs[FVOID]) return FVOID;
     if(str == TokStrs[FTRUE]) return FTRUE;
     if(str == TokStrs[FFALSE]) return FFALSE;
     if(str == TokStrs[NIL]) return NIL;
