@@ -2,10 +2,6 @@
 
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
-#include "FS.hpp" // required for getline()
-#endif
-
 namespace fer
 {
 
