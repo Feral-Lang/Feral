@@ -441,6 +441,7 @@ public:
           FnBody body, StringRef kwArg, StringRef vaArg, bool isnative, bool createstack);
 
     inline VarModule *getModule() { return mod; }
+    inline size_t getParamCount() { return params.size() - 1; } // - 1 for self
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
