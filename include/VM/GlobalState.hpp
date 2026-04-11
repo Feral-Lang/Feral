@@ -66,7 +66,7 @@ public:
 
 #if defined(CORE_OS_WINDOWS)
 extern StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
-bool addDLLDirectory(StringRef dir);
+bool addDLLDirectory(const String &dir);
 void remDLLDirectories();
 #endif
 

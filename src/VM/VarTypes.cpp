@@ -156,7 +156,7 @@ void Var::dump(String &outStr, VirtualMachine *vm)
         outStr += as<VarStr>(this)->getVal();
     } else if(is<VarPath>()) {
         outStr += "Path:";
-        outStr += as<VarPath>(this)->getStr();
+        outStr += as<VarPath>(this)->toStr();
     } else if(is<VarVec>()) {
         outStr += "Vec:";
         outStr += std::to_string(as<VarVec>(this)->size());
@@ -917,7 +917,7 @@ bool VarPath::onSet(VirtualMachine &vm, Var *from)
 
 Path VarPath::normal()
 {
-    String tmp{val};
+    String tmp = val.generic_string();
     utils::stringReplace(tmp, "\\", "/");
     std::error_code ec;
     return Path(tmp).lexically_normal();

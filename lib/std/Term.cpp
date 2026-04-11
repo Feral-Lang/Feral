@@ -22,7 +22,7 @@ FERAL_FUNC(isTTYNative, 1, false,
     EXPECT(VarInt, args[1], "file descriptor");
     bool res =
 #if defined(CORE_OS_WINDOWS)
-        _isatty(fd);
+        _isatty(as<VarInt>(args[1])->getVal());
 #else
         isatty(as<VarInt>(args[1])->getVal());
 #endif

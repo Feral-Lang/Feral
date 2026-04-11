@@ -124,7 +124,13 @@ bool VirtualMachine::loadPrelude()
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
 
-    if(!findImportIn(gs->moduleDirs, gs->prelude, fs::current_path().c_str())) {
+#if defined(CORE_OS_WINDOWS)
+    String currPath = fs::current_path().string();
+#else
+    const String &currPath = fs::current_path().native().c_str();
+#endif
+
+    if(!findImportIn(gs->moduleDirs, gs->prelude, currPath.c_str())) {
         err.fail({}, "Failed to find prelude: ", gs->prelude);
         return 1;
     }
@@ -168,7 +174,11 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
     if(bcFileValid) {
         if(!f->isVirtual()) {
             LOG_INFO("Reading bytecode file: ", bcPath);
-            FILE *f = fopen(bcPath.c_str(), "rb");
+#if defined(CORE_OS_WINDOWS)
+            FILE *f = fopen(bcPath.string().c_str(), "rb");
+#else
+            FILE *f = fopen(bcPath.native().c_str(), "rb");
+#endif
             Bytecode::readFromFile(f, moduleIdCtr, bc);
             fclose(f);
             LOG_INFO("- Read bytecodes: ", bc.size());
@@ -189,7 +199,11 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
                      "; error: ", ec.message());
                 return nullptr;
             }
-            FILE *f = fopen(bcPath.c_str(), "wb");
+#if defined(CORE_OS_WINDOWS)
+            FILE *f = fopen(bcPath.string().c_str(), "wb");
+#else
+            FILE *f = fopen(bcPath.native().c_str(), "wb");
+#endif
             if(!f) {
                 LOG_FATAL("failed to write bytecode file: ", bcPath);
                 fail(loc, "failed to write bytecode file: ", bcPath);
@@ -372,34 +386,34 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext, Strin
             testPath /= name;
             testPath += ext;
             if(fs::exists(testPath)) {
-                name = fs::absolute(testPath);
+                name = fs::absolute(testPath).string();
                 return true;
             }
         }
     } else {
         if(name.front() == '~') {
             name.erase(name.begin());
-            static String home = env::getHome();
+            static String home = env::getHome().string();
             name.insert(name.begin(), home.begin(), home.end());
         } else if(name.front() == '.' && (name.size() == 1 || name[1] != '.')) {
             assert(srcDir.size() > 0 &&
                    "dot based module search cannot be done on empty modulestack");
-            String dir = Path(srcDir).parent_path();
+            String dir = Path(srcDir).parent_path().string();
             name.erase(name.begin());
             name.insert(name.begin(), dir.begin(), dir.end());
         } else if(name.size() > 1 && name[0] == '.' && name[1] == '.') {
             assert(srcDir.size() > 0 &&
                    "dot based module search cannot be done on empty modulestack");
-            String dir = Path(srcDir).parent_path();
+            String dir = Path(srcDir).parent_path().string();
             name.erase(name.begin());
             name.erase(name.begin());
-            String parentdir = Path(dir).parent_path();
+            String parentdir = Path(dir).parent_path().string();
             name.insert(name.begin(), parentdir.begin(), parentdir.end());
         }
         testPath = name;
         testPath += ext;
         if(fs::exists(testPath)) {
-            name = fs::absolute(testPath);
+            name = fs::absolute(testPath).string();
             return true;
         }
     }
@@ -410,7 +424,7 @@ Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dll
 {
 #if defined(CORE_OS_WINDOWS)
     // append the parent dir to dll search paths
-    StringRef parentdir = fs::parentDir(dllpath);
+    String parentdir = Path(dllpath).parent_path().string();
     if(!addDLLDirectory(parentdir)) {
         fail(loc, "unable to add dir: ", parentdir,
              " as a DLL directory while loading module: ", dllpath);

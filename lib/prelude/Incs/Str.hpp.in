@@ -361,7 +361,9 @@ FERAL_FUNC(strSplitNative, 2, false, "")
         return nullptr;
     }
     int64_t _maxDelimCount = as<VarInt>(args[2])->getVal();
-    uint64_t maxDelimCount = std::numeric_limits<uint64_t>().max();
+    // Not using std::numeric_limits<uint64_t>().max() as `max` conflicts with a macro of same name
+    // on Windows.
+    uint64_t maxDelimCount = UINT64_MAX;
     if(_maxDelimCount >= 0) maxDelimCount = _maxDelimCount;
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);

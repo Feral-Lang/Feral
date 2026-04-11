@@ -91,7 +91,7 @@ void *dlopen(const char *filename, int flags)
     // otherwise.
     using namespace fer;
     auto prevdir = fs::current_path();
-    fs::current_path(filename);
+    fs::current_path(Path(filename).parent_path());
     HINSTANCE hInst = LoadLibraryA(filename);
     if(hInst == NULL) {
         var.lasterror = GetLastError();

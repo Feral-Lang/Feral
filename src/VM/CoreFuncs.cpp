@@ -29,7 +29,7 @@ bool loadCommon(VirtualMachine &vm, ModuleLoc loc, Var *modname, bool isImport, 
         vm.fail(loc, "failed to find module: ", as<VarStr>(modname)->getVal());
         return false;
     }
-    result = as<VarPath>(ret)->getVal();
+    result = as<VarPath>(ret)->toStr();
     vm.decVarRef(ret);
 
     if(isImport) {

@@ -82,7 +82,7 @@ bool GlobalState::init(VirtualMachine &vm)
     // Global .modulePaths file.
     // The path of a package is added to it when it's installed from command line via package
     // manager.
-    vm.tryAddModulePathsFromFile(globalModulesPath->getVal().c_str());
+    vm.tryAddModulePathsFromFile(globalModulesPath->toStr().c_str());
 
 #if defined(CORE_OS_WINDOWS)
     for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
@@ -152,10 +152,10 @@ bool GlobalState::deinit(VirtualMachine &vm)
 #if defined(CORE_OS_WINDOWS)
 StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
 
-bool addDLLDirectory(StringRef dir)
+bool addDLLDirectory(const String &dir)
 {
     if(dllDirectories.find(dir) != dllDirectories.end()) return true;
-    DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::toWString(dir).c_str());
+    DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::sToWString(dir.c_str()).c_str());
     if(!dlldir) return false;
     dllDirectories.insert({String(dir), dlldir});
     return true;
