@@ -1,8 +1,13 @@
 #include <chrono>
 #include <fcntl.h>
-#include <unistd.h> // for read(), write(), close() on macOS.
 
 #include "VM/VM.hpp"
+
+#if defined(CORE_OS_WINDOWS)
+#include <io.h> // for read(), write(), close().
+#else
+#include <unistd.h> // for read(), write(), close() on macOS.
+#endif
 
 namespace fer
 {
@@ -21,12 +26,14 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const Path &dir, VarV
     for(const auto &ent : fs::directory_iterator(dir)) {
         if(ent.path() == "." || ent.path() == "..") continue;
         entry.clear();
-        entry += ent.path().generic_string();
-        if((!(mode == WalkEntryMode::RECURSE) || !ent.is_directory()) &&
-           !std::regex_match(entry.native(), regex))
-        {
-            continue;
-        }
+        entry = ent.path();
+        bool regexMatched =
+#if defined(CORE_OS_WINDOWS)
+            std::regex_match(entry.string(), regex);
+#else
+            std::regex_match(entry.native(), regex);
+#endif
+        if((!(mode == WalkEntryMode::RECURSE) || !ent.is_directory()) && !regexMatched) continue;
         if(ent.is_directory()) {
             if(mode == WalkEntryMode::RECURSE) {
                 getEntriesInternal(vm, loc, entry, v, regex, mode);
@@ -46,8 +53,7 @@ FERAL_FUNC(fsFopen, 3, false, "")
     EXPECT(VarPath, args[1], "file path");
     EXPECT(VarStr, args[2], "file open mode");
     EXPECT(VarBool, args[3], "if file should be closed");
-
-    const String &path = as<VarPath>(args[1])->getStr();
+    auto &&path        = as<VarPath>(args[1])->toStr();
     const String &mode = as<VarStr>(args[2])->getVal();
     bool mustClose     = as<VarBool>(args[3])->getVal();
     FILE *file         = fopen(path.c_str(), mode.c_str());
@@ -359,7 +365,7 @@ FERAL_FUNC(fdCreate, 2, false, "")
 {
     EXPECT(VarPath, args[1], "path");
     EXPECT(VarInt, args[2], "mode");
-    String path = as<VarPath>(args[1])->getStr();
+    auto &&path = as<VarPath>(args[1])->toStr();
     int res     = creat(path.c_str(), as<VarInt>(args[2])->getVal());
     if(res < 0) {
         vm.fail(loc, "failed to create file: '", path, "', error: ", strerror(errno));
@@ -372,7 +378,7 @@ FERAL_FUNC(fdOpen, 2, false, "")
 {
     EXPECT(VarPath, args[1], "path");
     EXPECT(VarInt, args[2], "open flags");
-    String path = as<VarPath>(args[1])->getStr();
+    auto &&path = as<VarPath>(args[1])->toStr();
     int res     = open(path.c_str(), as<VarInt>(args[2])->getVal());
     if(res < 0) {
         vm.fail(loc, "failed to open file: '", path, "', error: ", strerror(errno));

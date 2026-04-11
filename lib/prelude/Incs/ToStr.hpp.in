@@ -85,7 +85,7 @@ FERAL_FUNC(pathToStr, 0, false,
            "  var.fn() -> Str\n"
            "Converts the path `var` into a string and returns it.")
 {
-    return vm.makeVar<VarStr>(loc, as<VarPath>(args[0])->getStr());
+    return vm.makeVar<VarStr>(loc, as<VarPath>(args[0])->toStr());
 }
 
 FERAL_FUNC(structToStr, 0, false,

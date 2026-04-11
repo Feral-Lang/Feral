@@ -16,7 +16,7 @@ enum
 
     // runtime attributes
     LOAD_AS_REF = 1 << 3,
-    CONST       = 1 << 4,
+    SET_CONST   = 1 << 4,
     CREATED     = 1 << 5,
     INITIALIZED = 1 << 6,
 };
@@ -123,7 +123,7 @@ public:
     inline bool isCallable() const { return info & VarInfo::CALLABLE; }
     inline bool isAttrBased() const { return info & VarInfo::ATTR_BASED; }
 
-    inline bool isConst() const { return info & VarInfo::CONST; }
+    inline bool isConst() const { return info & VarInfo::SET_CONST; }
 
     inline void setLoadAsRef()
     {
@@ -132,8 +132,8 @@ public:
     }
     inline void unsetLoadAsRef() { info &= ~VarInfo::LOAD_AS_REF; }
 
-    inline void setConst() { info |= VarInfo::CONST; }
-    inline void unsetConst() { info &= ~VarInfo::CONST; }
+    inline void setConst() { info |= VarInfo::SET_CONST; }
+    inline void unsetConst() { info &= ~VarInfo::SET_CONST; }
 
     inline void setCreated() { info |= VarInfo::CREATED; }
     inline void unsetCreated() { info &= ~VarInfo::CREATED; }
@@ -720,7 +720,12 @@ public:
 
     Path normal();
 
-    inline const String &getStr() { return val.native(); }
+    // Use carefully - on Windows, it returns a String, but on *nix, it returns a const String&.
+#if defined(CORE_OS_WINDOWS)
+    inline String toStr() { return val.generic_string(); }
+#else
+    inline const String &toStr() { return val.native(); }
+#endif
 
     inline Path join(StringRef path) { return val / path; }
     inline Path join(Path &path) { return val / path; }
