@@ -76,6 +76,15 @@ FERAL_FUNC(getANSISeq, 1, false,
            "`code` can be:\n"
            "- anchor:link: creates a hyper-link named `anchor`, with `link` as the target\n"
            "- 0: reset formatting\n"
+           "- bold: bold text\n"
+           "- dim: faint text\n"
+           "- italic: slants text\n"
+           "- underline: underlines text\n"
+           "- blink: makes the text blink\n"
+           "- slowblink: makes the text blink slowly - same as blink for now\n"
+           "- fastblink: makes the text blink fast\n"
+           "- invert: inverts the foreground and background colors\n"
+           "- strike: strikethrough the text\n"
            "- r: red color\n"
            "- g: green color\n"
            "- y: yellow color\n"
@@ -83,13 +92,13 @@ FERAL_FUNC(getANSISeq, 1, false,
            "- m: magenta color\n"
            "- c: cyan color\n"
            "- w: white color\n"
-           "- br: bold red color\n"
-           "- bg: bold green color\n"
-           "- by: bold yellow color\n"
-           "- bb: bold blue color\n"
-           "- bm: bold magenta color\n"
-           "- bc: bold cyan color\n"
-           "- bw: bold white color")
+           "- br: bright red color\n"
+           "- bg: bright green color\n"
+           "- by: bright yellow color\n"
+           "- bb: bright blue color\n"
+           "- bm: bright magenta color\n"
+           "- bc: bright cyan color\n"
+           "- bw: bright white color")
 {
     EXPECT(VarStr, args[1], "code");
     StringRef code = as<VarStr>(args[1])->getVal();
@@ -111,7 +120,16 @@ FERAL_FUNC(getANSISeq, 1, false,
     // reset
     if(code == "0") return vm.makeVar<VarStr>(loc, "\033[0m");
 
-    // regular
+    else if(code == "bold") return vm.makeVar<VarStr>(loc, "\033[1m");
+    else if(code == "dim") return vm.makeVar<VarStr>(loc, "\033[2m");
+    else if(code == "italic") return vm.makeVar<VarStr>(loc, "\033[3m");
+    else if(code == "underline") return vm.makeVar<VarStr>(loc, "\033[4m");
+    else if(code == "blink" || code == "slowblink") return vm.makeVar<VarStr>(loc, "\033[5m");
+    else if(code == "fastblink") return vm.makeVar<VarStr>(loc, "\033[6m");
+    else if(code == "invert") return vm.makeVar<VarStr>(loc, "\033[7m");
+    else if(code == "strike") return vm.makeVar<VarStr>(loc, "\033[9m");
+
+    // regular colors
     else if(code == "r") return vm.makeVar<VarStr>(loc, "\033[0;31m");
     else if(code == "g") return vm.makeVar<VarStr>(loc, "\033[0;32m");
     else if(code == "y") return vm.makeVar<VarStr>(loc, "\033[0;33m");
@@ -120,7 +138,7 @@ FERAL_FUNC(getANSISeq, 1, false,
     else if(code == "c") return vm.makeVar<VarStr>(loc, "\033[0;36m");
     else if(code == "w") return vm.makeVar<VarStr>(loc, "\033[0;37m");
 
-    // bold
+    // bright colors
     else if(code == "br") return vm.makeVar<VarStr>(loc, "\033[1;31m");
     else if(code == "bg") return vm.makeVar<VarStr>(loc, "\033[1;32m");
     else if(code == "by") return vm.makeVar<VarStr>(loc, "\033[1;33m");

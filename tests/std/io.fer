@@ -12,6 +12,12 @@ io.cprint('cprint {c}cyan {g}green{0}');
 io.cprintln();
 io.cprintln('cprintln {y}yellow {m}magenta{0}');
 io.cprintln('magenta hyperlink: {m}{here:https://google.com}{0}');
+io.cprintln('{dim}This is dim text{0}');
+io.cprintln('{italic}This is italic text{0}');
+io.cprintln('{underline}This is underlined text{0}');
+io.cprintln('{blink}This is blinking text{0}');
+io.cprintln('{invert}This is inverted text{0}');
+io.cprintln('{strike}This is strikethrough text{0}');
 
 # no need to print on stderr just yet
 # io.cdprint('{c}cyan {g}green{0}');
