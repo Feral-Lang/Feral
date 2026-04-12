@@ -74,6 +74,7 @@ FERAL_FUNC(getANSISeq, 1, false,
            "  fn(code) -> Str\n"
            "Returns the ANSI escape sequence for the `code` or empty string if none found.\n"
            "`code` can be:\n"
+           "- anchor:link: creates a hyper-link named `anchor`, with `link` as the target\n"
            "- 0: reset formatting\n"
            "- r: red color\n"
            "- g: green color\n"
@@ -92,6 +93,20 @@ FERAL_FUNC(getANSISeq, 1, false,
 {
     EXPECT(VarStr, args[1], "code");
     StringRef code = as<VarStr>(args[1])->getVal();
+
+    auto colonPos = code.find(':');
+    if(colonPos != StringRef::npos) {
+        StringRef anchor = code.substr(0, colonPos);
+        StringRef link   = code.substr(colonPos + 1);
+        VarStr *res      = vm.makeVar<VarStr>(loc, "\033]8;;");
+        res->getVal() += link;
+        res->getVal() += "\033\\";
+        res->getVal() += anchor;
+        // Move cursor backward and then forward (\033[1D\033[1C) is here because
+        // `\\` (before that sequence) at the end would cause havoc in string.fmt().
+        res->getVal() += "\033]8;;\033\\\033[1D\033[1C";
+        return res;
+    }
 
     // reset
     if(code == "0") return vm.makeVar<VarStr>(loc, "\033[0m");

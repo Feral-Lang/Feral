@@ -11,6 +11,7 @@ io.fprintln(io.stdout, 'fprintln');
 io.cprint('cprint {c}cyan {g}green{0}');
 io.cprintln();
 io.cprintln('cprintln {y}yellow {m}magenta{0}');
+io.cprintln('magenta hyperlink: {m}{here:https://google.com}{0}');
 
 # no need to print on stderr just yet
 # io.cdprint('{c}cyan {g}green{0}');
