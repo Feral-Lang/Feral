@@ -52,12 +52,13 @@ FERAL_FUNC_DEF(loadFile)
     if(!mod) {
         int res = vm.compileAndRun(loc, file.c_str(), &mod);
         if(res != 0 && !vm.isExitCalled()) {
+            vm.decVarRef(mod);
             vm.fail(args[1]->getLoc(), "could not import: '", file,
                     "', look at error above (exit code: ", res, ")");
             return nullptr;
         }
         vm.decVarRef(mod, false);
-        vm.addLocal(file, "", mod);
+        vm.addGlobal(file, "", mod);
     }
     return mod;
 }
