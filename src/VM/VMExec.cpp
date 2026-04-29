@@ -3,38 +3,32 @@
 namespace fer
 {
 
-int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, size_t begin,
-                            size_t end)
+int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t end)
 {
     ++recurseCount;
     VarModule *varmod  = getCurrModule();
-    VarVars *vars      = getVars();
+    VarStack *vars     = getVars();
     const Bytecode &bc = varmod->getBytecode();
     size_t bcsz        = end == 0 ? bc.size() : end;
-
-    VarVars::ScopedModScope _(*this, vars, varmod->getVarStack());
 
     Vector<FeralFnBody> bodies;
     Vector<Var *> args;
     VarMap *assnArgs   = incVarRef(makeVar<VarMap>({}, true, false));
     size_t currBlkSize = 0;
 
-    if(fnstack) vars->pushFn(*this, fnstack);
-    else currBlkSize = vars->getBlkSize();
-
     if(currentlyAt && *currentlyAt != -1) begin = *currentlyAt;
 
-    for(size_t i = currentlyAt && *currentlyAt != -1 ? *currentlyAt : begin; i < bcsz; ++i) {
+    for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
 #if defined(CORE_BUILD_DEBUG)
-        LOG_DEBUG("[", i, ": ", getCurrModule()->getPath(), "] ", ins.dump(),
-                  " :: ", execstack->dump(this));
+        LOG_DEBUG("[", i, ": ", getCurrModule()->getPath(), "]; ", vars->size() - 1, "; ",
+                  ins.dump(), " :: ", execstack->dump(this));
 #endif
 
         if(shouldStopExecution()) goto fail;
         if(exitCalled) goto done;
 
-        if(fnstack && recurseCount >= getRecurseMax()) {
+        if(recurseCount >= getRecurseMax()) {
             fail(ins.getLoc(), "stack overflow, current max: ", getRecurseMax());
             recurseExceeded = true;
             goto handleErr;
@@ -207,7 +201,7 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
         }
         case Opcode::CREATE_FN: {
             StringRef arginfo = ins.getDataStr();
-            bool createstack  = arginfo[0] == '1';
+            bool isvirtual    = arginfo[0] == '0';
             String kw, va;
             if(arginfo[1] == '1') {
                 kw = as<VarStr>(execstack->back())->getVal();
@@ -231,7 +225,7 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
             }
             VarFn *fn =
                 makeVar<VarFn>(ins.getLoc(), varmod, std::move(params), std::move(defaultParams),
-                               FnBody{.feral = bodies.back()}, kw, va, false, createstack);
+                               FnBody{.feral = bodies.back()}, kw, va, false, isvirtual);
             bodies.pop_back();
             execstack->push(fn);
             break;
@@ -413,16 +407,12 @@ int VirtualMachine::execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt, s
         }
     }
 done:
-    if(fnstack) vars->popFn(*this);
-    else vars->resizeBlkTo(*this, currBlkSize);
     decVarRef(assnArgs);
     --recurseCount;
     return exitcode;
 fail:
     ready = false;
     if(ret) decVarRef(ret);
-    if(fnstack) vars->popFn(*this);
-    else vars->resizeBlkTo(*this, currBlkSize);
     decVarRef(assnArgs);
     --recurseCount;
     return 1;

@@ -9,25 +9,25 @@ valgrind feral -n -e -V testdir tests
 ## Output
 
 ```sh
-==414378== Memcheck, a memory error detector
-==414378== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
-==414378== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
-==414378== Command: feral -n -e -V testdir tests
-==414378==
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/prelude/prelude.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/bin/testdir.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/io.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/term.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/fs.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/os.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/vec.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/fecl.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/map.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/time.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/mutex.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/atomic.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/thread.fer.bc
-[2026-03-16T12:34:12-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/argparse.fer.bc
+==87556== Memcheck, a memory error detector
+==87556== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==87556== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
+==87556== Command: feral -n -e -V testdir tests
+==87556==
+[2026-04-29T12:30:38-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/prelude/prelude.fer.bc
+[2026-04-29T12:30:39-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/bin/testdir.fer.bc
+[2026-04-29T12:30:39-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/io.fer.bc
+[2026-04-29T12:30:39-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/term.fer.bc
+[2026-04-29T12:30:40-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/fs.fer.bc
+[2026-04-29T12:30:40-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/os.fer.bc
+[2026-04-29T12:30:41-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/vec.fer.bc
+[2026-04-29T12:30:41-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/fecl.fer.bc
+[2026-04-29T12:30:41-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/map.fer.bc
+[2026-04-29T12:30:41-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/time.fer.bc
+[2026-04-29T12:30:41-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/mutex.fer.bc
+[2026-04-29T12:30:42-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/atomic.fer.bc
+[2026-04-29T12:30:42-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/thread.fer.bc
+[2026-04-29T12:30:43-0700][INFO]: Writing bytecode file: /tmp/feral.elec/bytecode/home/elec/.feral/lib/feral/std/argparse.fer.bc
 test (1/67): /home/elec/.feral/bin/feral tests/all-combos.fer ^>/dev/null ...
 test (2/67): /home/elec/.feral/bin/feral tests/basic.fer ^>/dev/null ...
 test (3/67): /home/elec/.feral/bin/feral tests/bin-expo.fer ^>/dev/null ...
@@ -95,25 +95,25 @@ test (64/67): /home/elec/.feral/bin/feral tests/std/time.fer ^>/dev/null ...
 test (65/67): /home/elec/.feral/bin/feral tests/std/vec.fer ^>/dev/null ...
 test (66/67): /home/elec/.feral/bin/feral tests/sum-one-to-n.fer ^>/dev/null ...
 test (67/67): /home/elec/.feral/bin/feral tests/while.fer ^>/dev/null ...
-total: 67, passed: 67, failed: 0, time: 712 ms
-[2026-03-16T12:34:13-0700][INFO]: =============== VM::Main memory manager stats: ===============
-[2026-03-16T12:34:13-0700][INFO]: -- Total allocated bytes (pools + otherwise): 843776
-[2026-03-16T12:34:13-0700][INFO]: --                Allocated bytes from pools: 9729792
-[2026-03-16T12:34:13-0700][INFO]: --                             Request count: 69341
-[2026-03-16T12:34:13-0700][INFO]: --                         Chunk Reuse count: 63097
-==414378==
-==414378== HEAP SUMMARY:
-==414378==     in use at exit: 13,625 bytes in 15 blocks
-==414378==   total heap usage: 33,404 allocs, 33,389 frees, 5,416,890 bytes allocated
-==414378==
-==414378== LEAK SUMMARY:
-==414378==    definitely lost: 0 bytes in 0 blocks
-==414378==    indirectly lost: 0 bytes in 0 blocks
-==414378==      possibly lost: 0 bytes in 0 blocks
-==414378==    still reachable: 13,625 bytes in 15 blocks
-==414378==         suppressed: 0 bytes in 0 blocks
-==414378== Rerun with --leak-check=full to see details of leaked memory
-==414378==
-==414378== For lists of detected and suppressed errors, rerun with: -s
-==414378== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+total: 67, passed: 67, failed: 0, time: 699 ms
+[2026-04-29T12:30:43-0700][INFO]: =============== VM::Main memory manager stats: ===============
+[2026-04-29T12:30:43-0700][INFO]: -- Total allocated bytes (pools + otherwise): 819200
+[2026-04-29T12:30:43-0700][INFO]: --                Allocated bytes from pools: 8797184
+[2026-04-29T12:30:43-0700][INFO]: --                             Request count: 60113
+[2026-04-29T12:30:43-0700][INFO]: --                         Chunk Reuse count: 54172
+==87556==
+==87556== HEAP SUMMARY:
+==87556==     in use at exit: 13,625 bytes in 15 blocks
+==87556==   total heap usage: 25,996 allocs, 25,981 frees, 5,221,185 bytes allocated
+==87556==
+==87556== LEAK SUMMARY:
+==87556==    definitely lost: 0 bytes in 0 blocks
+==87556==    indirectly lost: 0 bytes in 0 blocks
+==87556==      possibly lost: 0 bytes in 0 blocks
+==87556==    still reachable: 13,625 bytes in 15 blocks
+==87556==         suppressed: 0 bytes in 0 blocks
+==87556== Rerun with --leak-check=full to see details of leaked memory
+==87556==
+==87556== For lists of detected and suppressed errors, rerun with: -s
+==87556== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```

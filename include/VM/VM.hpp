@@ -90,7 +90,7 @@ class VirtualMachine : public IAllocated
     GlobalState *gs;
     String name;
     Vector<VarModule *> modulestack;
-    VarVars *vars;
+    VarStack *vars;
     FailStack *failstack;
     ExecStack *execstack;
     size_t recurseCount; // how many times execute() has been called by itself
@@ -120,11 +120,9 @@ public:
     int compileAndRun(ModuleLoc loc, const char *file, VarModule **module);
     // Must pushModule, pushFn/pushBlk before calling this function,
     // and popModule, popFn/popBlk after calling it.
-    int execute(Var *&ret, VarStack *fnstack, size_t *currentlyAt = nullptr, size_t begin = 0,
-                size_t end = 0);
+    int execute(Var *&ret, size_t *currentlyAt = nullptr, size_t begin = 0, size_t end = 0);
 
-    VarModule *makeModule(ModuleLoc loc, File *f, bool exprOnly,
-                          VarStack *existingVarStack = nullptr);
+    VarModule *makeModule(ModuleLoc loc, File *f, bool exprOnly, bool isVirtual);
     void pushModule(VarModule *module);
     void popModule();
 
@@ -174,7 +172,7 @@ public:
 
     inline StringRef getName() { return name; }
 
-    inline VarVars *getVars() { return vars; }
+    inline VarStack *getVars() { return vars; }
     inline VarModule *getCurrModule() { return modulestack.back(); }
     inline bool isExitCalled() { return exitCalled; }
     inline bool isReady() { return ready; }

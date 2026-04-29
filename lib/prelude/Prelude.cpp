@@ -49,8 +49,8 @@ FERAL_FUNC(allGetDoc, 0, false,
            "Returns the doc string for `var` "
            "(can be function) if one is defined, `nil` otherwise.")
 {
-    if(!args[1]->hasDoc()) return vm.getNil();
-    return args[1]->getDoc();
+    if(!args[0]->hasDoc()) return vm.getNil();
+    return args[0]->getDoc();
 }
 
 FERAL_FUNC(allSetDoc, 1, false,
@@ -408,7 +408,7 @@ FERAL_FUNC(varExists, 1, true,
         providedMod = true;
         return mod->getAttr(varName) ? vm.getTrue() : vm.getFalse();
     }
-    VarVars *moduleVars = vm.getVars();
+    VarStack *moduleVars = vm.getVars();
     return moduleVars->getAttr(varName) || vm.getGlobal(varName) ? vm.getTrue() : vm.getFalse();
 }
 
