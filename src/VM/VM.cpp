@@ -25,7 +25,7 @@ VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSo
       recurseExceeded(false), exitCalled(false), ownsGlobalState(true), ready(false)
 {
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
-    vars = makeVar<VarVars>({});
+    vars = makeVar<VarStack>({});
     // set vm is ready
     failstack = gs->mem.allocInit<FailStack>(*this);
     execstack = gs->mem.allocInit<ExecStack>(*this);
@@ -39,7 +39,7 @@ VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandle
     : gs(gs), name(name), recurseCount(0), exitcode(0), recurseExceeded(false), exitCalled(false),
       ownsGlobalState(false), ready(false)
 {
-    vars      = makeVar<VarVars>({});
+    vars      = makeVar<VarStack>({});
     failstack = gs->mem.allocInit<FailStack>(*this);
     execstack = gs->mem.allocInit<ExecStack>(*this);
     if(!errHandler) errHandler = gs->basicErrHandler;
@@ -93,7 +93,7 @@ int VirtualMachine::compileAndRun(ModuleLoc loc, const char *file, VarModule **m
         return 1;
     }
 
-    VarModule *tmpMod = makeModule(loc, f, false);
+    VarModule *tmpMod = makeModule(loc, f, false, false);
     if(!tmpMod) {
         err.fail(loc, "Failed to parse module: ", file);
         return 1;
@@ -145,8 +145,7 @@ bool VirtualMachine::loadPrelude()
     return true;
 }
 
-VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
-                                      VarStack *existingVarStack)
+VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly, bool isVirtual)
 {
     LockGuard<RecursiveMutex> globalGuard(gs->mutex);
     static ModuleId moduleIdCtr = 0;
@@ -214,14 +213,19 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly,
         }
     }
     VarModule *mod = makeVar<VarModule>(loc, err.getPathForId(moduleIdCtr), std::move(bc),
-                                        moduleIdCtr, existingVarStack);
+                                        moduleIdCtr, isVirtual);
     gs->modules[moduleIdCtr++] = mod;
     return mod;
 }
-void VirtualMachine::pushModule(VarModule *module) { modulestack.push_back(incVarRef(module)); }
+void VirtualMachine::pushModule(VarModule *module)
+{
+    modulestack.push_back(incVarRef(module));
+    if(!module->isVirtual()) vars->pushMod(*this, module);
+}
 void VirtualMachine::popModule()
 {
     VarModule *back = modulestack.back();
+    if(!back->isVirtual()) vars->popMod(*this);
     modulestack.pop_back();
     ModuleId id = back->getModuleId();
     if(!decVarRef(back)) { gs->modules.erase(id); }
@@ -514,7 +518,7 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
 
     File *f = gs->managedAllocator.alloc<File>(path.c_str(), true);
     f->append(code);
-    VarModule *mod = makeModule(loc, f, isExpr, getVars()->getCurrModScope());
+    VarModule *mod = makeModule(loc, f, isExpr, true);
     if(!mod) {
         fail(loc, "Failed to parse eval code: ", code);
         return nullptr;

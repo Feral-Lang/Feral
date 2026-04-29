@@ -99,7 +99,7 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarFn>({}, "Func", "Builtin type.");
     vm.addGlobalType<VarClosure>({}, "Closure", "Builtin type.");
     vm.addGlobalType<VarAsync>({}, "Async", "Builtin type.");
-    vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
+    vm.addGlobalType<VarFrame>({}, "Frame", "Builtin type.");
     vm.addGlobalType<VarModule>({}, "Module", "Builtin type.");
     vm.addGlobalType<VarTypeID>({}, "TypeID", "Builtin type.");
     vm.addGlobalType<VarDll>({}, "Dll", "Builtin type.");
@@ -108,7 +108,7 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarFailure>({}, "Failure", "Builtin type.");
     vm.addGlobalType<VarPath>({}, "Path", "Builtin type.");
     vm.addGlobalType<VarFile>({}, "File", "Builtin type.");
-    vm.addGlobalType<VarVars>({}, "Vars", "Builtin type.");
+    vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
     vm.addGlobalType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
     vm.addGlobalType<VarIntIterator>({}, "IntIterator", "Builtin type.");
     vm.addGlobalType<VarVecIterator>({}, "VecIterator", "Builtin type.");

@@ -37,7 +37,7 @@ typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
 typedef void (*DllDeinitFn)(VirtualMachine &vm);
 #define DEINIT_DLL(name) extern "C" void Deinit##name(VirtualMachine &vm)
 
-class VarStack;
+class VarFrame;
 class Var : public IAllocated
 {
     ModuleLoc loc;
@@ -83,7 +83,7 @@ class Var : public IAllocated
     virtual bool onSet(VirtualMachine &vm, Var *from);
     // Perform a call using this variable.
     virtual Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                        VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr);
+                        VarVec *stack = nullptr, size_t *currentlyAt = nullptr);
 
 protected:
     Var(ModuleLoc loc, size_t infoFlags);
@@ -92,7 +92,7 @@ protected:
 
 public:
     Var *call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-              VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr);
+              VarVec *stack = nullptr, size_t *currentlyAt = nullptr);
     virtual void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
     virtual void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref);
     virtual bool existsAttr(StringRef name);
@@ -428,17 +428,17 @@ class VarFn : public Var
     String vaArg;
     FnBody body;
     bool isnative;
-    bool createstack;
+    bool isvirtual;
 
     void onDestroy(VirtualMachine &vm) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
+                VarVec *stack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     // args must be pushed to vector separately - this is done to reduce vector copies
     VarFn(ModuleLoc loc, VarModule *mod, Vector<String> &&params, StringMap<Var *> &&defaultParams,
-          FnBody body, StringRef kwArg, StringRef vaArg, bool isnative, bool createstack);
+          FnBody body, StringRef kwArg, StringRef vaArg, bool isnative, bool isvirtual);
 
     inline VarModule *getModule() { return mod; }
     inline size_t getParamCount() { return params.size() - 1; } // - 1 for self
@@ -457,7 +457,7 @@ class VarClosure : public Var
     void onDestroy(VirtualMachine &vm) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
+                VarVec *stack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarClosure(ModuleLoc loc, Var *callable);
@@ -489,7 +489,7 @@ public:
 class VarAsync : public Var
 {
     VarClosure *closure; // closure is required to preserve args.
-    VarStack *fnstack;
+    VarVec *stack;
     size_t currentlyAt;
     Var *returned; // when the callable is finished, this is set to the returned value.
 
@@ -497,7 +497,7 @@ class VarAsync : public Var
     void onDestroy(VirtualMachine &vm) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
+                VarVec *stack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarAsync(ModuleLoc loc, VarClosure *closure);
@@ -506,49 +506,26 @@ public:
     inline Var *getReturned() { return returned; }
 };
 
-class VarStack : public Var
+class VarFrame : public Var
 {
     RecursiveMutex mtx;
-    Vector<size_t> loopsFrom;
-    // each VarFrame is a stack frame
-    // Vector is not used here as VarFrame has to be stored as a pointer.
-    // This is so because otherwise, on vector resize, it will cause the VarFrame object to
-    // delete and reconstruct, therefore incorrectly calling the dref() calls
-    VarVec *stack; // VarVec<VarMap>
+    VarMap *frame;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
 public:
-    VarStack(ModuleLoc loc);
+    VarFrame(ModuleLoc loc);
 
     void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override;
-    inline bool existsAttr(StringRef name) override { return stack->back()->existsAttr(name); }
+    bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
+    void getAttrList(VirtualMachine &vm, VarVec *dest) override;
+    size_t getAttrCount() override;
 
     // use this instead of exists() if the Var* retrieval is actually required
     Var *get(StringRef name);
-
-    void pushStack(VirtualMachine &vm, ModuleLoc loc, size_t count);
-    void popStack(VirtualMachine &vm, size_t count);
-
-    void pushLoop(VirtualMachine &vm, ModuleLoc loc);
-    // 'break' also uses this
-    void popLoop(VirtualMachine &vm);
-    void continueLoop(VirtualMachine &vm);
-
-    inline void resizeTo(VirtualMachine &vm, size_t count)
-    {
-        if(stack->size() > count) return popStack(vm, stack->size() - count);
-    }
-
-    inline VarMap *getFrameAt(size_t index)
-    {
-        return index < stack->size() ? as<VarMap>(stack->at(index)) : nullptr;
-    }
-
-    inline size_t size() { return stack->size(); }
 };
 
 // A VarModule cannot be copied. It will always return self when a copy is attempted.
@@ -557,15 +534,14 @@ class VarModule : public Var
     String path;
     Bytecode bc;
     ModuleId moduleId;
-    VarStack *varStack;
-    bool ownsVars;
+    VarFrame *moduleFrame;
+    bool virtualMod; // if is virtual, no module frame is generated for it
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
 public:
-    VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
-              VarStack *varStack = nullptr);
+    VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId, bool isVirtual);
 
     // not inline because Vars is incomplete type
     void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
@@ -577,7 +553,8 @@ public:
     inline StringRef getPath() { return path; }
     inline const Bytecode &getBytecode() { return bc; }
     inline ModuleId getModuleId() { return moduleId; }
-    inline VarStack *getVarStack() { return varStack; }
+    inline VarFrame *getVarFrame() { return moduleFrame; }
+    inline bool isVirtual() { return virtualMod; }
 };
 
 class VarDll : public Var
@@ -602,7 +579,7 @@ class VarStructDef : public Var
 
     // returns VarStruct
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
-                VarStack *existingFnStack = nullptr, size_t *currentlyAt = nullptr) override;
+                VarVec *stack = nullptr, size_t *currentlyAt = nullptr) override;
 
 public:
     VarStructDef(ModuleLoc loc);
@@ -818,81 +795,49 @@ public:
     inline size_t capacity() { return bufsz; }
 };
 
-class VarVars : public Var
+class VarStack : public Var
 {
-    // maps function ids to VarStack
-    // 0 is the id for global (module) scope
-    Map<size_t, VarStack *> fnvars;
-    VarVec *modScopeStack; // VarVec<VarStack>
-    VarMap *stashed;
-    size_t fnstack;
+    Vector<VarFrame *> stack;
+    Vector<size_t> modulePos; // location of modules in stack
+    Vector<size_t> funcPos;   // location of functions in stack
+    Vector<size_t> loopsFrom;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
 
 public:
-    VarVars(ModuleLoc loc);
+    VarStack(ModuleLoc loc);
 
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
     {
-        return fnvars[fnstack]->setAttr(vm, name, val, iref);
+        return stack.back()->setAttr(vm, name, val, iref);
     }
     inline void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override
     {
-        return fnvars[fnstack]->remAttr(vm, name, found, dref);
+        return stack.back()->remAttr(vm, name, found, dref);
     }
     // checks if variable exists in current scope ONLY
-    inline bool existsAttr(StringRef name) override { return fnvars[fnstack]->existsAttr(name); }
+    inline bool existsAttr(StringRef name) override { return stack.back()->existsAttr(name); }
     // use this instead of exists() if the Var* retrieval is actually required
     // and current scope requirement is not present
     Var *getAttr(StringRef name) override;
 
     void pushBlk(VirtualMachine &vm, ModuleLoc loc, size_t count);
+    void popBlk(VirtualMachine &vm, size_t count);
 
-    void pushModScope(VirtualMachine &vm, VarStack *modScope);
-    void popModScope(VirtualMachine &vm);
-    void pushFn(VirtualMachine &vm, VarStack *fn);
-    void popFn(VirtualMachine &vm);
+    void pushMod(VirtualMachine &vm, VarModule *mod);
+    void popMod(VirtualMachine &vm);
 
-    inline void stash(VirtualMachine &vm, StringRef name, Var *val, bool iref)
-    {
-        stashed->setAttr(vm, name, val, iref);
-    }
-    inline bool isStashed(StringRef name) { return stashed->getAttr(name); }
+    // fnStack can be empty, in which case a new frame will be generated.
+    void pushFn(VirtualMachine &vm, VarVec *loadFrames = nullptr);
+    void popFn(VirtualMachine &vm, VarVec *saveFrames = nullptr);
 
-    inline VarStack *getCurrFnStack() { return fnvars[fnstack]; }
+    void pushLoop(VirtualMachine &vm, ModuleLoc loc);
+    // 'break' also uses this
+    void popLoop(VirtualMachine &vm);
+    void continueLoop(VirtualMachine &vm);
 
-    inline void popBlk(VirtualMachine &vm, size_t count)
-    {
-        return fnvars[fnstack]->popStack(vm, count);
-    }
-    inline size_t getBlkSize() { return fnvars[fnstack]->size(); }
-    inline void resizeBlkTo(VirtualMachine &vm, size_t count)
-    {
-        return fnvars[fnstack]->resizeTo(vm, count);
-    }
-
-    inline VarStack *getCurrModScope()
-    {
-        return modScopeStack->empty() ? nullptr : as<VarStack>(modScopeStack->back());
-    }
-
-    inline void pushLoop(VirtualMachine &vm, ModuleLoc loc)
-    {
-        return fnvars[fnstack]->pushLoop(vm, loc);
-    }
-    inline void popLoop(VirtualMachine &vm) { return fnvars[fnstack]->popLoop(vm); }
-    inline void continueLoop(VirtualMachine &vm) { return fnvars[fnstack]->continueLoop(vm); }
-
-    class ScopedModScope
-    {
-        VarVars *vars;
-        VirtualMachine &vm;
-
-    public:
-        ScopedModScope(VirtualMachine &vm, VarVars *vars, VarStack *modScope);
-        ~ScopedModScope();
-    };
+    inline size_t size() { return stack.size(); }
 };
 
 } // namespace fer
