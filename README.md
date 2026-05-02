@@ -1,6 +1,6 @@
 # About
 
-[![Build Status](https://api.cirrus-ci.com/github/Feral-Lang/Feral.svg?branch=master)](https://cirrus-ci.com/github/Feral-Lang/Feral)
+[![Build Status](https://github.com/Feral-Lang/Feral/actions/workflows/build.yml/badge.svg)](https://github.com/Feral-Lang/Feral/actions/workflows/build.yml)
 
 Feral is a dynamically typed, imperative, interpreted language which revolves (to most extent) around the idea of minimalism.
 
@@ -85,18 +85,6 @@ let structObj3 = structTy(b = 30); # a = 10, b = 30
 To install `Feral`, the following packages are required:
 * CMake (build system - for compiling the project)
 
-## Automated Build (Unix-like OS)
-
-You can automatically build Feral and its standard library by downloading and running `build.sh`.
-It requires [Git](https://git-scm.com/) and the packages listed under [Prerequisites](#prerequisites).
-
-```sh
-# Download the script (example using wget:)
-wget https://raw.githubusercontent.com/Feral-Lang/Feral/master/build.sh
-# Run it!
-sh build.sh
-```
-
 ## Manual Build
 
 Once the prerequisites have been met, clone this repository:
@@ -116,7 +104,7 @@ On Windows, the first cmake command must have this argument as well: ` -DCMAKE_W
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=true # optionally PREFIX_DIR=<dir> can be set before this
 ```
 
-By default, `PREFIX_DIR=$HOME/.feral`.
+By default, `PREFIX_DIR` is `$HOME/.feral` on *nix OS, and `C:\Users\<username>\AppData\Local\Programs\Feral` on Windows.
 Once installation is done, execute the installed `feral` binary (`$PREFIX_DIR/bin/feral`) to use the Feral compiler/interpreter.
 
 ## Post Installation
@@ -135,4 +123,4 @@ Vim: [Feral-Lang/Feral-Vim](https://github.com/Feral-Lang/Feral-Vim)
 
 # For Developers
 
-The `.clang-format` style file is present in the repository: [https://github.com/Electrux/cpp-format](https://github.com/Electrux/cpp-format)
+The `.clang-format` style file is present in the repository: [https://github.com/Chirag-Khandelwal/cpp-format](https://github.com/Chirag-Khandelwal/cpp-format)
