@@ -1255,7 +1255,7 @@ Await transformation:
 ----------------------
 will generate
 ----------------------
-let __futureVar<N>__ = async(<expr>, args...);
+let __futureVar<N>__ = feral.async(<expr>, args...);
 while !__futureVar<N>__.done() {
     yield __futureVar<N>__();
 }
@@ -1290,13 +1290,15 @@ bool Parser::parseAwait(Stmt *&resultCallExpr)
 
     bool isWait = start->getTok().isType(lex::WAIT);
 
-    // async(<expr>, args...)
+    // feral.async(<expr>, args...)
     StmtFnArgs *valExprArgs = as<StmtFnArgs>(as<StmtExpr>(val)->getRHS());
     valExprArgs->insertArg(0, valExpr, false);
-    StmtSimple *asyncLHS = StmtSimple::create(allocator, loc, lex::IDEN, StringRef("async"));
+    StmtSimple *feralMod = StmtSimple::create(allocator, loc, lex::IDEN, StringRef("feral"));
+    StmtSimple *asyncStr = StmtSimple::create(allocator, loc, lex::STR, StringRef("async"));
+    StmtExpr *asyncLHS   = StmtExpr::create(allocator, loc, feralMod, lex::DOT, asyncStr);
     StmtExpr *asyncCall  = StmtExpr::create(allocator, loc, asyncLHS, lex::FNCALL, valExprArgs);
 
-    // let __futureVar<N>__ = async(<expr>, args...);
+    // let __futureVar<N>__ = feral.async(<expr>, args...);
     String futureVarName = "__futureVar" + std::to_string(varCtr++) + "__";
     StmtVar *futureVar = StmtVar::create(allocator, loc, futureVarName, nullptr, asyncCall, false);
     prependBlock.push_back(futureVar);

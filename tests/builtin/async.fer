@@ -14,7 +14,7 @@ let asyncFn = fn() {
     return 'returned';
 };
 
-let future = async(asyncFn);
+let future = feral.async(asyncFn);
 if !future.done() {
     # The first call doesn't take any args since it just starts the function and there is no yield to send the data.
     let yieldResult = future();

@@ -386,7 +386,7 @@ prefixed_suffixed_literal
 await_expr = ( 'await' | 'wait' ) expr01 ;
 (* The expr01 operand must resolve to a function call.
    Desugared by the parser:
-     let __futureVarN__ = async(<fn>, <args>...);
+     let __futureVarN__ = feral.async(<fn>, <args>...);
      while !__futureVarN__.done() {
          yield __futureVarN__();   ('wait' uses a bare call instead of yield)
      }
