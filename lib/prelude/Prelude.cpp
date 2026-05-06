@@ -509,8 +509,6 @@ FERAL_FUNC(
 INIT_DLL(Prelude)
 {
     // global functions
-    vm.addGlobal(loc, "closure", closure);
-    vm.addGlobal(loc, "async", async);
     vm.addGlobal(loc, "ref", reference);
     vm.addGlobal(loc, "unref", unreference);
     vm.addGlobal(loc, "const", constant);
@@ -525,6 +523,8 @@ INIT_DLL(Prelude)
     vm.addLocal(loc, "crash", crash);
     vm.addLocal(loc, "evalCode", evalCode);
     vm.addLocal(loc, "evalExpr", evalExpr);
+    vm.addLocal(loc, "closure", closure);
+    vm.addLocal(loc, "async", async);
     vm.addLocal(loc, "addGlobalModulePaths", addGlobalModulePaths);
     vm.addLocal(loc, "removeGlobalModulePaths", removeGlobalModulePaths);
     vm.addLocal(loc, "exitNative", exitNative);

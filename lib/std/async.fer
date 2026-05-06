@@ -1,0 +1,30 @@
+# Helpers/Utility for the async functionality.
+
+let vec = import('std/vec');
+
+let os = import('./async/os');
+
+let Runner = struct(
+    tasks = vec.new(refs = true)
+);
+Runner.setTypeName('AsyncRunner');
+
+let newRunner = fn() { return Runner(); };
+
+let run in Runner = fn() {
+    while !self.tasks.empty() {
+        for let i = 0; i < self.tasks.len(); ++i {
+            let t = ref(self.tasks[i]);
+            if t.done() {
+                self.tasks.erase(i);
+                --i;
+                continue;
+            }
+            t();
+        }
+    }
+};
+
+let push in Runner = fn(func, args...) {
+    self.tasks.push(feral.async(func, args...));
+};

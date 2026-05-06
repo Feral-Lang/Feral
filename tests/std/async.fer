@@ -1,0 +1,20 @@
+let assert = import('std/assert');
+
+let io = import('std/io');
+let time = import('std/time');
+let async = import('std/async');
+
+let func = fn(id, sleepFor) {
+    io.println('hello ', id);
+    await async.os.sleep(sleepFor);
+    io.println('world ', id);
+};
+
+let runner = async.newRunner();
+runner.push(func, 'a', 10);
+runner.push(func, 'b', 20);
+
+let timeBegin = time.now();
+runner.run();
+let timeTotal = time.now() - timeBegin;
+assert.le(time.resolve(timeTotal, time.milli).round(), 22); # 22 to provide a little headroom
