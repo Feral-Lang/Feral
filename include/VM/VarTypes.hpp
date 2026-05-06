@@ -508,8 +508,16 @@ public:
 
 class VarFrame : public Var
 {
+    enum FrameType
+    {
+        REGULAR,
+        LOOP,
+        FUNC,
+    };
+
     RecursiveMutex mtx;
     VarMap *frame;
+    FrameType frameTy;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
@@ -526,6 +534,12 @@ public:
 
     // use this instead of exists() if the Var* retrieval is actually required
     Var *get(StringRef name);
+
+    inline void makeFunc() { frameTy = FrameType::FUNC; }
+    inline void makeLoop() { frameTy = FrameType::LOOP; }
+
+    inline bool isFunc() { return frameTy == FrameType::FUNC; }
+    inline bool isLoop() { return frameTy == FrameType::LOOP; }
 };
 
 // A VarModule cannot be copied. It will always return self when a copy is attempted.
@@ -799,8 +813,6 @@ class VarStack : public Var
 {
     Vector<VarFrame *> stack;
     Vector<size_t> modulePos; // location of modules in stack
-    Vector<size_t> funcPos;   // location of functions in stack
-    Vector<size_t> loopsFrom;
 
     void onCreate(VirtualMachine &vm) override;
     void onDestroy(VirtualMachine &vm) override;
