@@ -16,6 +16,10 @@ let setResolution = fn(num) {
     resolution = num;
 };
 
+"
+  fn() -> Int
+Returns the current time in microseconds since epoch.
+"
 let now = fn() {
     return systemClockNowNative();
 };

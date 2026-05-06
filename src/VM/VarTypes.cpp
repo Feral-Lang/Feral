@@ -701,7 +701,7 @@ size_t VarModule::getAttrCount()
 ///////////////////////////////////////// VarFrame ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFrame::VarFrame(ModuleLoc loc) : Var(loc, VarInfo::BASIC) {}
+VarFrame::VarFrame(ModuleLoc loc) : Var(loc, VarInfo::BASIC), frameTy(FrameType::REGULAR) {}
 
 void VarFrame::onCreate(VirtualMachine &vm)
 {
@@ -991,15 +991,13 @@ void VarStack::onDestroy(VirtualMachine &vm)
 Var *VarStack::getAttr(StringRef name)
 {
     assert(!stack.empty() && !modulePos.empty());
-    size_t currModulePos = modulePos.back();
-    size_t currFuncPos   = funcPos.empty() ? -1 : funcPos.back();
-    Var *res             = nullptr;
-    int64_t iterLimit    = currFuncPos == -1 ? currModulePos : currFuncPos;
-    for(int64_t i = stack.size() - 1; i >= iterLimit; --i) {
+    int64_t currModulePos = modulePos.back();
+    Var *res              = nullptr;
+    for(int64_t i = stack.size() - 1; i > currModulePos; --i) {
         res = stack[i]->getAttr(name);
-        if(res) break;
+        if(res || stack[i]->isFunc()) break;
     }
-    if(res == nullptr && currFuncPos != -1) { res = stack[currModulePos]->getAttr(name); }
+    if(!res) res = stack[currModulePos]->getAttr(name);
     return res;
 }
 
@@ -1035,9 +1033,9 @@ void VarStack::popMod(VirtualMachine &vm)
 }
 void VarStack::pushFn(VirtualMachine &vm, VarVec *loadFrames)
 {
-    funcPos.push_back(stack.size());
     if(!loadFrames || loadFrames->empty()) {
         pushBlk(vm, {}, 1);
+        as<VarFrame>(stack.back())->makeFunc();
         return;
     }
     for(size_t i = 0; i < loadFrames->size(); ++i) {
@@ -1047,31 +1045,39 @@ void VarStack::pushFn(VirtualMachine &vm, VarVec *loadFrames)
 }
 void VarStack::popFn(VirtualMachine &vm, VarVec *saveFrames)
 {
-    assert(!funcPos.empty());
-    size_t currFuncPos = funcPos.back();
-    while(stack.size() > currFuncPos) {
-        if(saveFrames) saveFrames->insert(vm, 0, stack.back(), true);
+    while(!stack.empty()) {
+        VarFrame *back = as<VarFrame>(stack.back());
+        bool isFunc    = back->isFunc();
+        if(saveFrames) saveFrames->insert(vm, 0, back, true);
         popBlk(vm, 1);
+        if(isFunc) break;
     }
-    funcPos.pop_back();
+    assert(!stack.empty());
 }
 
 void VarStack::pushLoop(VirtualMachine &vm, ModuleLoc loc)
 {
-    loopsFrom.push_back(stack.size());
     pushBlk(vm, loc, 1);
+    as<VarFrame>(stack.back())->makeLoop();
 }
 // 'break' also uses this
 void VarStack::popLoop(VirtualMachine &vm)
 {
-    assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
-    if(stack.size() > loopsFrom.back()) popBlk(vm, stack.size() - loopsFrom.back());
-    loopsFrom.pop_back();
+    while(!stack.empty()) {
+        bool isLoop = as<VarFrame>(stack.back())->isLoop();
+        popBlk(vm, 1);
+        if(isLoop) break;
+    }
+    assert(!stack.empty());
 }
 void VarStack::continueLoop(VirtualMachine &vm)
 {
-    assert(loopsFrom.size() > 0 && "Cannot VarStack::popLoop() from an empty loop stack");
-    if(stack.size() - 1 > loopsFrom.back()) popBlk(vm, stack.size() - 1 - loopsFrom.back());
+    while(!stack.empty()) {
+        bool isLoop = as<VarFrame>(stack.back())->isLoop();
+        if(isLoop) break;
+        popBlk(vm, 1);
+    }
+    assert(!stack.empty());
 }
 
 } // namespace fer
