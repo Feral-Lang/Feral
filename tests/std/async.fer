@@ -1,12 +1,13 @@
 let assert = import('std/assert');
 
 let io = import('std/io');
+let os = import('std/os');
 let time = import('std/time');
 let async = import('std/async');
 
 let func = fn(id, sleepFor) {
     io.println('hello ', id);
-    await async.os.sleep(sleepFor);
+    await os.sleepAsync(sleepFor);
     io.println('world ', id);
 };
 

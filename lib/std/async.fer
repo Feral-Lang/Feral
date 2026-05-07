@@ -2,8 +2,6 @@
 
 let vec = import('std/vec');
 
-let os = import('./async/os');
-
 let Runner = struct(
     tasks = vec.new(refs = true)
 );
