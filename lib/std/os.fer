@@ -3,6 +3,7 @@
 loadlib('std/OS');
 
 let fs = import('std/fs');
+let time = import('std/time');
 
 # OS name, current possible values:
 #   windows
@@ -24,6 +25,17 @@ let name = feral.getOSName();
 #   bsdi
 #   dragonflybsd
 let distro = feral.getOSDistro();
+
+"
+  fn(duration) -> Nil
+Waits asynchronously for `duration` milliseconds.
+"
+let sleepAsync = fn(duration) {
+    let end = time.now() / 1000 + duration;
+    while time.now() / 1000 < end {
+        yield;
+    }
+};
 
 # chmod command wrapper
 inline if name != 'windows' {
