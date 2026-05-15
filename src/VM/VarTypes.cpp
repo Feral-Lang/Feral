@@ -42,22 +42,23 @@ void Var::init(VirtualMachine &vm)
         return;
     }
     Var *fn = vm.getTypeFn(this, "_init_");
-    if(!fn) return;
-    if(!fn->isCallable()) {
-        vm.fail(loc, "`_init_` is not a callable for: ", vm.getTypeName(this),
-                "; it is: ", vm.getTypeName(fn));
-        return;
+    if(fn) {
+        if(!fn->isCallable()) {
+            vm.fail(loc, "`_init_` is not a callable for: ", vm.getTypeName(this),
+                    "; it is: ", vm.getTypeName(fn));
+            return;
+        }
+        Array<Var *, 1> args = {this};
+        Var *ret             = nullptr;
+        iref();
+        bool res = vm.callVarAndExpect<VarNil>(loc, "_init_", fn, ret, args, {});
+        dref();
+        if(!res) {
+            vm.fail(loc, "failed to init var: ", vm.getTypeName(this));
+            return;
+        }
+        vm.decVarRef(ret);
     }
-    Array<Var *, 1> args = {this};
-    Var *ret             = nullptr;
-    iref();
-    bool res = vm.callVarAndExpect<VarNil>(loc, "_init_", fn, ret, args, {});
-    dref();
-    if(!res) {
-        vm.fail(loc, "failed to init var: ", vm.getTypeName(this));
-        return;
-    }
-    vm.decVarRef(ret);
     setInitialized();
 }
 void Var::deinit(VirtualMachine &vm)
