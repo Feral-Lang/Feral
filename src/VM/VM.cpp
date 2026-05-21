@@ -25,8 +25,9 @@ VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSo
       recurseExceeded(false), exitCalled(false), ownsGlobalState(true), ready(false)
 {
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
-    vars = makeVar<VarStack>({});
-    // set vm is ready
+    modulestack.reserve(10);
+    refVars.reserve(20);
+    vars      = makeVar<VarStack>({});
     failstack = gs->mem.allocInit<FailStack>(*this);
     execstack = gs->mem.allocInit<ExecStack>(*this);
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)

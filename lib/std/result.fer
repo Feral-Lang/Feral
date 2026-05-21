@@ -47,5 +47,5 @@ let str in Result = fn() {
     let s = 'Result<';
     s += self.val.str();
     s += '>';
-    return ref(s);
+    return s;
 };

@@ -1,8 +1,69 @@
 loadlib('std/Thread');
 
 let os = import('std/os');
+let vec = import('std/vec');
+let mutex = import('std/mutex');
+let atomic = import('std/atomic');
 
 let run = fn(.kw, args...) {
     let threadName = kw.at('name') ?? 'osExec';
     return new(name = threadName, os.exec, args...);
+};
+
+let ThreadPool = struct(
+    count = 0,
+    threads = vec.new(refs = true),
+    tasks = vec.new(refs = true),
+    taskMtx = mutex.new(),
+    shouldStop = atomic.newBool(false)
+);
+ThreadPool.setTypeName('ThreadPool');
+
+let newPool = fn(count = getConcurrency()) {
+    return ThreadPool(count = count);
+};
+
+let start in ThreadPool = fn() {
+    self.shouldStop.set(false);
+    for let i = 0; i < self.count; ++i {
+        self.threads.push(new(name = 'job-' + i.str(), self.jobRunner));
+    }
+};
+
+let stop in ThreadPool = fn() {
+    self.shouldStop.set(true);
+    self.join();
+};
+
+let push in ThreadPool = fn(callable, args...) {
+    self.taskMtx.lock();
+    self.tasks.push(feral.closure(callable, args...));
+    self.taskMtx.unlock();
+};
+
+let join in ThreadPool = fn() {
+    self.threads.clear(); # since thread joins on delete (C++ JThread), this works as clear will delete the thread instances.
+};
+
+let empty in ThreadPool = fn() {
+    return self.tasks.empty();
+};
+
+let isRunning in ThreadPool = fn() {
+    return !self.threads.empty();
+};
+
+let jobRunner in ThreadPool = fn() {
+    while !self.shouldStop.get() {
+        self.taskMtx.lock();
+        if self.tasks.empty() {
+            self.taskMtx.unlock();
+            os.sleep(1);
+            continue;
+        }
+        let job = ref(self.tasks.front());
+        self.tasks.erase(0);
+        self.taskMtx.unlock();
+        job();
+    }
 };

@@ -18,7 +18,7 @@ FERAL_FUNC(enumNew, 1, true,
 
     for(auto it = assnArgs->begin(); it != assnArgs->end(); assnArgs->next(it)) {
         EXPECT_AND(VarInt, it.val(), "enum field value", vm.decVarRef(res));
-        Var *cp = vm.copyVar(loc, it.val());
+        Var *cp = vm.copyVar(loc, it.val(), false);
         if(!cp) {
             vm.decVarRef(res);
             return nullptr;

@@ -127,7 +127,7 @@ let new = fn(args) {
         parser.argv.push(a);
     }
     parser.addArg('help').addOpts('--help', '-h').setHelp('prints help information for program');
-    return ref(parser);
+    return parser;
 };
 
 "

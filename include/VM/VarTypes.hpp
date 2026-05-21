@@ -64,9 +64,10 @@ class Var : public IAllocated
     void init(VirtualMachine &vm);
     void deinit(VirtualMachine &vm);
     // Copy this variable.
-    // By default - if a custom `copy()` member function is not implemented,
-    // it just increments ref and returns `this`.
-    Var *copy(VirtualMachine &vm, ModuleLoc loc);
+    // If a custom `copy()` member function is not implemented or if `this` is marked to load as ref
+    // in VM, it just increments the ref counter and returns `this`.
+    // If `forceRef` is true, it will return a ref.
+    Var *copy(VirtualMachine &vm, ModuleLoc loc, bool forceRef);
     // Set `this` variable using `from`, which is guaranteed to be of the same type as `this`.
     bool set(VirtualMachine &vm, Var *from);
 

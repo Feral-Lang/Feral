@@ -63,7 +63,7 @@ FERAL_FUNC(allSetDoc, 1, false,
     if(args[1]->is<VarNil>()) {
         args[0]->setDoc(vm, nullptr);
     } else {
-        VarStr *cp = as<VarStr>(vm.copyVar(loc, args[1]));
+        VarStr *cp = as<VarStr>(vm.copyVar(loc, args[1], false));
         if(!cp) return nullptr;
         args[0]->setDoc(vm, cp);
     }
@@ -229,28 +229,17 @@ FERAL_FUNC(async, 1, true,
 // and hence the VM won't create a copy of it when used in creating a new var.
 FERAL_FUNC(reference, 1, false,
            "  fn(var) -> var\n"
-           "Returns the argument itself, but with loadAsRef internal "
-           "variable set as true.\n"
-           "This ensures that the next time a new object is created "
+           "Returns the argument itself, but marked to be stored as a reference.\n"
+           "This ensures that the next time a new object is created through `let`,"
            "using `var` as the value, `var` is not copied.")
 {
     args[1]->setLoadAsRef();
-    return args[1];
+    return vm.markRef(args[1]);
 }
 
-FERAL_FUNC(unreference, 1, false,
-           "  fn(var) -> var\n"
-           "Returns the argument itself, but with loadAsRef "
-           "internal variable set as false.")
-{
-    args[1]->unsetLoadAsRef();
-    return args[1];
-}
 FERAL_FUNC(constant, 1, false,
            "  fn(var) -> var\n"
-           "Returns the argument itself, but with const internal flag set as `true`.\n"
-           "This ensures that the next time a new object is created "
-           "using `var` as the value, `var` is not copied.")
+           "Returns the argument itself, but with const internal flag set as `true`.")
 {
     args[1]->setConst();
     return args[1];
@@ -510,7 +499,6 @@ INIT_DLL(Prelude)
 {
     // global functions
     vm.addGlobal(loc, "ref", reference);
-    vm.addGlobal(loc, "unref", unreference);
     vm.addGlobal(loc, "const", constant);
     vm.addGlobal(loc, "deconst", deconstant);
     vm.addGlobal(loc, "raise", raise);

@@ -87,7 +87,7 @@ let append in StrTy = fn(data...) {
     for item in data.each() {
         self += item;
     }
-    return ref(self);
+    return self;
 };
 
 "

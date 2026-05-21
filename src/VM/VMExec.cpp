@@ -75,14 +75,11 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
             }
             if(ins.hasComment()) { val->setDoc(*this, ins.getLoc(), ins.getComment()); }
             // only copy if reference count > 1 (no point in copying unique values)
-            if(val->getRef() == 1) {
-                vars->setAttr(*this, name, val, true);
-            } else {
-                Var *cp = copyVar(ins.getLoc(), val);
-                if(!cp) goto handleErr;
-                vars->setAttr(*this, name, cp, false);
-            }
+            Var *cp = copyVar(ins.getLoc(), val, val->getRef() == 1);
+            if(!cp) goto handleErr;
+            vars->setAttr(*this, name, cp, false);
             decVarRef(val);
+            clearRefVarsFrame();
             break;
         }
         case Opcode::CREATE_IN: {
@@ -95,13 +92,9 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
             } else if(in->isAttrBased()) {
                 // only copy if reference count > 1 (no point in copying unique
                 // values) or if loadAsRef() of value is false
-                if(val->getRef() == 1) {
-                    in->setAttr(*this, name, val, true);
-                } else {
-                    Var *cp = copyVar(ins.getLoc(), val);
-                    if(!cp) goto createFail;
-                    in->setAttr(*this, name, cp, false);
-                }
+                Var *cp = copyVar(ins.getLoc(), val, val->getRef() == 1);
+                if(!cp) goto createFail;
+                in->setAttr(*this, name, cp, false);
             } else {
                 fail(ins.getLoc(),
                      "cannot add a non-callable to a non attribute based type: ", getTypeName(in));

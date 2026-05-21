@@ -8,12 +8,12 @@ Error.setTypeName('Error');
   var.fn() -> Int
 Returns the code present in the Error `var`.
 "
-let getCode in Error = fn() { return ref(self.code); };
+let getCode in Error = fn() { return self.code; };
 "
   var.fn() -> Str
 Returns the message present in the Error `var`.
 "
-let getMsg in Error = fn() { return ref(self.msg); };
+let getMsg in Error = fn() { return self.msg; };
 
 "
   fn(code, msg...) -> Error
@@ -25,7 +25,7 @@ let new = fn(code, msg...) {
     for m in msg.each() {
         e.msg += m.str();
     }
-    return ref(e);
+    return e;
 };
 
 "
@@ -38,5 +38,5 @@ let str in Error = fn() {
     s += ':';
     s += self.msg;
     s += '>';
-    return ref(s);
+    return s;
 };

@@ -326,7 +326,6 @@ FERAL_FUNC(getIntIteratorNext, 0, false,
     int64_t _res;
     if(!it->next(_res)) return vm.getNil();
     VarInt *res = vm.makeVar<VarInt>(loc, _res);
-    res->setLoadAsRef();
     return res;
 }
 

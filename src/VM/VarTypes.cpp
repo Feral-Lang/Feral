@@ -80,9 +80,10 @@ void Var::deinit(VirtualMachine &vm)
     if(res) vm.decVarRef(ret);
     else vm.fail(loc, "failed to deinit var: ", vm.getTypeName(this));
 }
-Var *Var::copy(VirtualMachine &vm, ModuleLoc loc)
+Var *Var::copy(VirtualMachine &vm, ModuleLoc loc, bool forceRef)
 {
-    if(isLoadAsRef()) {
+    if(forceRef) return vm.incVarRef(this);
+    if(isLoadAsRef() && vm.isMarkedRef(this)) {
         unsetLoadAsRef();
         return vm.incVarRef(this);
     }
@@ -295,15 +296,10 @@ bool VarVec::onSet(VirtualMachine &vm, Var *from) { return setVal(vm, as<VarVec>
 bool VarVec::setVal(VirtualMachine &vm, Span<Var *> newval)
 {
     clear(vm);
-    if(asrefs) {
-        for(auto &v : newval) { vm.incVarRef(v); }
-        val.assign(newval.begin(), newval.end());
-    } else {
-        for(auto &v : newval) {
-            Var *cp = vm.copyVar(getLoc(), v);
-            if(!cp) { return false; }
-            push(vm, cp, false);
-        }
+    for(auto &v : newval) {
+        Var *cp = vm.copyVar(getLoc(), v, asrefs);
+        if(!cp) return false;
+        push(vm, cp, false);
     }
     return true;
 }
@@ -389,14 +385,12 @@ bool VarMap::setVal(VirtualMachine &vm, const StringMap<Var *> &newval, ManagedR
         char *it = nullptr;
         while((it = (char *)order->next(it))) {
             Var *tmp = newval.at(it);
-            if(!asrefs) tmp = vm.copyVar(tmp->getLoc(), tmp);
-            setAttr(vm, it, tmp, asrefs);
+            tmp      = vm.copyVar(tmp->getLoc(), tmp, asrefs);
+            setAttr(vm, it, tmp, false);
         }
     } else {
         for(auto &v : newval) {
-            Var *tmp = v.second;
-            if(asrefs) vm.incVarRef(tmp);
-            else tmp = vm.copyVar(tmp->getLoc(), tmp);
+            Var *tmp = vm.copyVar(v.second->getLoc(), v.second, asrefs);
             val.insert({v.first, tmp});
         }
     }
@@ -555,7 +549,7 @@ Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *
         }
         for(auto &defaultParam : defaultParams) {
             if(vars->getAttr(defaultParam.first)) continue;
-            Var *cp = vm.copyVar(loc, defaultParam.second);
+            Var *cp = vm.copyVar(loc, defaultParam.second, false);
             if(!cp) return nullptr;
             vars->setAttr(vm, defaultParam.first, cp, false);
         }
@@ -785,15 +779,19 @@ Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, V
             vm.fail(arg->getLoc(), "provided more arguments than existing in structure definition");
             goto fail;
         }
-        res->setAttr(vm, it.key(), vm.copyVar(loc, arg), false);
+        res->setAttr(vm, it.key(), vm.copyVar(loc, arg, false), false);
         attrs->next(it);
     }
 
     for(auto aa = assnArgs->begin(); aa != assnArgs->end(); assnArgs->next(aa)) {
-        res->setAttr(vm, aa.key(), vm.copyVar(loc, aa.val()), false);
+        res->setAttr(vm, aa.key(), vm.copyVar(loc, aa.val(), false), false);
     }
     while(it != attrs->end()) {
-        if(!res->existsAttr(it.key())) res->setAttr(vm, it.key(), vm.copyVar(loc, it.val()), false);
+        if(!res->existsAttr(it.key())) {
+            Var *cp = vm.copyVar(loc, it.val(), false);
+            if(!cp) return nullptr;
+            res->setAttr(vm, it.key(), cp, false);
+        }
         attrs->next(it);
     }
 

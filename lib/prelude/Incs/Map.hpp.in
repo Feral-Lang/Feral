@@ -42,17 +42,13 @@ FERAL_FUNC(mapNew, 0, true,
         Array<Var *, 1> tmp{args[i]};
         if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
         StringRef key = as<VarStr>(v)->getVal();
-        if(refs) {
-            res->setAttr(vm, key, args[++i], true);
-        } else {
-            Var *cp = vm.copyVar(loc, args[++i]);
-            if(!cp) {
-                vm.decVarRef(v);
-                vm.decVarRef(res);
-                return nullptr;
-            }
-            res->setAttr(vm, key, cp, false);
+        Var *cp       = vm.copyVar(loc, args[++i], refs);
+        if(!cp) {
+            vm.decVarRef(v);
+            vm.decVarRef(res);
+            return nullptr;
         }
+        res->setAttr(vm, key, cp, false);
         vm.decVarRef(v);
     }
     return res;
@@ -106,16 +102,12 @@ FERAL_FUNC(mapInsert, 2, false,
     Array<Var *, 1> tmp{args[1]};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
     StringRef key = as<VarStr>(v)->getVal();
-    if(map->isRefMap()) {
-        map->setAttr(vm, key, args[2], true);
-    } else {
-        Var *val = vm.copyVar(loc, args[2]);
-        if(!val) {
-            vm.decVarRef(v);
-            return nullptr;
-        }
-        map->setAttr(vm, key, val, false);
+    Var *val      = vm.copyVar(loc, args[2], map->isRefMap());
+    if(!val) {
+        vm.decVarRef(v);
+        return nullptr;
     }
+    map->setAttr(vm, key, val, false);
     vm.decVarRef(v);
     return args[0];
 }
@@ -188,7 +180,6 @@ FERAL_FUNC(mapIteratorNext, 0, false,
     VarMapIterator *it = as<VarMapIterator>(args[0]);
     Var *res           = nullptr;
     if(!it->next(vm, loc, res)) return vm.getNil();
-    res->setLoadAsRef();
     return res;
 }
 

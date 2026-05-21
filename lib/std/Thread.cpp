@@ -110,7 +110,7 @@ FERAL_FUNC(threadNew, 1, true,
         EXPECT(VarStr, namev, "name for new thread");
         name = as<VarStr>(namev)->getVal();
     }
-    VarMap *newAssnArgs = vm.copyVar(loc, assnArgs);
+    VarMap *newAssnArgs = vm.copyVar(loc, assnArgs, false);
     if(!newAssnArgs) return nullptr;
     Var *callable = vm.incVarRef(args[1]);
     Vector<Var *> newArgs;

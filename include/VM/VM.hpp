@@ -90,6 +90,7 @@ class VirtualMachine : public IAllocated
     GlobalState *gs;
     String name;
     Vector<VarModule *> modulestack;
+    Set<Var *> refVars; // vars that are marked for ref.
     VarStack *vars;
     FailStack *failstack;
     ExecStack *execstack;
@@ -170,6 +171,16 @@ public:
     // primarily used for templates
     Var *eval(ModuleLoc loc, StringRef code, bool isExpr);
 
+    inline Var *markRef(Var *var)
+    {
+        refVars.insert(var);
+        return var;
+    }
+
+    inline bool isMarkedRef(Var *var) { return refVars.contains(var); }
+
+    inline void clearRefVarsFrame() { refVars.clear(); }
+
     inline StringRef getName() { return name; }
 
     inline VarStack *getVars() { return vars; }
@@ -215,10 +226,10 @@ public:
 #endif
     }
 
-    template<VarDerived T> T *copyVar(ModuleLoc loc, T *var)
+    template<VarDerived T> T *copyVar(ModuleLoc loc, T *var, bool forceRef)
     {
         if(!var) return nullptr;
-        return as<T>(var->copy(*this, loc));
+        return as<T>(var->copy(*this, loc, forceRef));
     }
     inline bool setVar(Var *dest, Var *src) { return dest->set(*this, src); }
 

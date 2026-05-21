@@ -1165,7 +1165,7 @@ will generate
 ----------------------
 let __e = vec.eachRev();
 for ; ; {
-    let x = __e.next();
+    let x = ref(__e.next());
     if x == nil { break; }
     ...
 }
@@ -1222,15 +1222,17 @@ bool Parser::parseForIn(Stmt *&fin)
     StmtVar *__iterVar = StmtVar::create(allocator, iterLoc, __iterName, nullptr, in, false);
     prependBlock.push_back(__iterVar);
 
-    // let x = __e.next();
+    // let x = ref(__e.next());
     StmtSimple *__iterSimple = StmtSimple::create(allocator, iterLoc, lex::IDEN, __iterName);
     StmtSimple *__iterRHS    = StmtSimple::create(allocator, iterLoc, lex::STR, StringRef("next"));
     StmtExpr *__nextExpr = StmtExpr::create(allocator, iterLoc, __iterSimple, lex::DOT, __iterRHS);
     StmtFnArgs *__args   = StmtFnArgs::create(allocator, iterLoc, {}, {});
     StmtExpr *__iterNextCall =
         StmtExpr::create(allocator, iterLoc, __nextExpr, lex::FNCALL, __args);
-    StmtVar *iterVar =
-        StmtVar::create(allocator, iterLoc, iterName, nullptr, __iterNextCall, false);
+    StmtSimple *refSimple = StmtSimple::create(allocator, iterLoc, lex::IDEN, StringRef("ref"));
+    StmtFnArgs *refArgs   = StmtFnArgs::create(allocator, iterLoc, {__iterNextCall}, {false});
+    StmtExpr *refCall     = StmtExpr::create(allocator, iterLoc, refSimple, lex::FNCALL, refArgs);
+    StmtVar *iterVar      = StmtVar::create(allocator, iterLoc, iterName, nullptr, refCall, false);
 
     // if x == nil { break; }
     StmtSimple *nil        = StmtSimple::create(allocator, iterLoc, lex::NIL, (int64_t)0);
