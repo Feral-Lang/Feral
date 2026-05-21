@@ -9,7 +9,7 @@ namespace fer
 ////////////////////////////////////////// VarAtomicBool /////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarAtomicBool::VarAtomicBool(ModuleLoc loc, bool _val) : Var(loc, 0), val(_val) {}
+VarAtomicBool::VarAtomicBool(ModuleLoc loc, bool _val) : Var(loc), val(_val) {}
 bool VarAtomicBool::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarAtomicBool>(from)->getVal();
@@ -20,8 +20,8 @@ bool VarAtomicBool::onSet(VirtualMachine &vm, Var *from)
 ////////////////////////////////////////// VarAtomicInt //////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarAtomicInt::VarAtomicInt(ModuleLoc loc, int64_t _val) : Var(loc, 0), val(_val) {}
-VarAtomicInt::VarAtomicInt(ModuleLoc loc, const char *_val) : Var(loc, 0), val(std::stoll(_val)) {}
+VarAtomicInt::VarAtomicInt(ModuleLoc loc, int64_t _val) : Var(loc), val(_val) {}
+VarAtomicInt::VarAtomicInt(ModuleLoc loc, const char *_val) : Var(loc), val(std::stoll(_val)) {}
 bool VarAtomicInt::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarAtomicInt>(from)->getVal();

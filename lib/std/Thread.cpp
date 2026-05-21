@@ -26,7 +26,7 @@ size_t ThreadIdToNum(Thread::id id)
 
 VarThread::VarThread(ModuleLoc loc, StringRef name, Var *_callable, Vector<Var *> &&_args,
                      VarMap *_assnArgs)
-    : Var(loc, 0), name(name), callable(_callable), res(nullptr), thread(nullptr),
+    : Var(loc), name(name), callable(_callable), res(nullptr), thread(nullptr),
       args(std::move(_args)), assnArgs(_assnArgs)
 {}
 VarThread::~VarThread() {}

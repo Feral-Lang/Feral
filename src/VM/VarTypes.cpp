@@ -36,7 +36,7 @@ void Var::destroy(VirtualMachine &vm)
 }
 void Var::init(VirtualMachine &vm)
 {
-    if(!vm.isReady() || isBasic()) return;
+    if(!vm.isReady() || !isConstructible()) return;
     if(isInitialized()) {
         vm.fail(loc, "attempted to reinitialize: ", vm.getTypeName(this));
         return;
@@ -63,7 +63,7 @@ void Var::init(VirtualMachine &vm)
 }
 void Var::deinit(VirtualMachine &vm)
 {
-    if(!vm.isReady() || isBasic() || !isInitialized()) return;
+    if(!vm.isReady() || !isConstructible() || !isInitialized()) return;
     unsetInitialized();
     Var *fn = vm.getTypeFn(this, "_deinit_");
     if(!fn) return;
@@ -173,25 +173,25 @@ void Var::dump(String &outStr, VirtualMachine *vm)
 /////////////////////////////////////////// VarAll ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarAll::VarAll(ModuleLoc loc) : Var(loc, VarInfo::BASIC) {}
+VarAll::VarAll(ModuleLoc loc) : Var(loc) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// VarNil ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarNil::VarNil(ModuleLoc loc) : Var(loc, VarInfo::BASIC) {}
+VarNil::VarNil(ModuleLoc loc) : Var(loc) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////// VarTypeID //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarTypeID::VarTypeID(ModuleLoc loc, size_t val) : Var(loc, VarInfo::BASIC), val(val) {}
+VarTypeID::VarTypeID(ModuleLoc loc, size_t val) : Var(loc), val(val) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// VarBool ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBool::VarBool(ModuleLoc loc, bool val) : Var(loc, VarInfo::BASIC), val(val) {}
+VarBool::VarBool(ModuleLoc loc, bool val) : Var(loc), val(val) {}
 bool VarBool::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarBool>(from)->getVal();
@@ -202,8 +202,8 @@ bool VarBool::onSet(VirtualMachine &vm, Var *from)
 ////////////////////////////////////////// VarInt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarInt::VarInt(ModuleLoc loc, int64_t _val) : Var(loc, VarInfo::BASIC), val(_val) {}
-VarInt::VarInt(ModuleLoc loc, const char *_val) : Var(loc, VarInfo::BASIC), val(std::stoll(_val)) {}
+VarInt::VarInt(ModuleLoc loc, int64_t _val) : Var(loc), val(_val) {}
+VarInt::VarInt(ModuleLoc loc, const char *_val) : Var(loc), val(std::stoll(_val)) {}
 bool VarInt::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarInt>(from)->getVal();
@@ -215,11 +215,11 @@ bool VarInt::onSet(VirtualMachine &vm, Var *from)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarIntIterator::VarIntIterator(ModuleLoc loc)
-    : Var(loc, VarInfo::BASIC), started(false), reversed(false), begin(0), end(0), step(0), curr(0)
+    : Var(loc), started(false), reversed(false), begin(0), end(0), step(0), curr(0)
 {}
 VarIntIterator::VarIntIterator(ModuleLoc loc, int64_t _begin, int64_t _end, int64_t _step)
-    : Var(loc, VarInfo::BASIC), started(false), reversed(_step < 0), begin(_begin), end(_end),
-      step(_step), curr(_begin)
+    : Var(loc), started(false), reversed(_step < 0), begin(_begin), end(_end), step(_step),
+      curr(_begin)
 {}
 
 bool VarIntIterator::next(int64_t &val)
@@ -249,8 +249,8 @@ bool VarIntIterator::next(int64_t &val)
 ////////////////////////////////////////// VarFlt ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFlt::VarFlt(ModuleLoc loc, double _val) : Var(loc, VarInfo::BASIC), val(_val) {}
-VarFlt::VarFlt(ModuleLoc loc, const char *_val) : Var(loc, VarInfo::BASIC), val(std::stold(_val)) {}
+VarFlt::VarFlt(ModuleLoc loc, double _val) : Var(loc), val(_val) {}
+VarFlt::VarFlt(ModuleLoc loc, const char *_val) : Var(loc), val(std::stold(_val)) {}
 bool VarFlt::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarFlt>(from)->getVal();
@@ -261,17 +261,15 @@ bool VarFlt::onSet(VirtualMachine &vm, Var *from)
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStr::VarStr(ModuleLoc loc, char val) : Var(loc, VarInfo::BASIC), val(1, val) {}
-VarStr::VarStr(ModuleLoc loc, String &&val) : Var(loc, VarInfo::BASIC), val(std::move(val)) {}
-VarStr::VarStr(ModuleLoc loc, StringRef val) : Var(loc, VarInfo::BASIC), val(val) {}
-VarStr::VarStr(ModuleLoc loc, const char *val) : Var(loc, VarInfo::BASIC), val(val) {}
-VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val) : Var(loc, VarInfo::BASIC)
+VarStr::VarStr(ModuleLoc loc, char val) : Var(loc), val(1, val) {}
+VarStr::VarStr(ModuleLoc loc, String &&val) : Var(loc), val(std::move(val)) {}
+VarStr::VarStr(ModuleLoc loc, StringRef val) : Var(loc), val(val) {}
+VarStr::VarStr(ModuleLoc loc, const char *val) : Var(loc), val(val) {}
+VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val) : Var(loc)
 {
     for(auto &e : _val) val += e;
 }
-VarStr::VarStr(ModuleLoc loc, const char *val, size_t count)
-    : Var(loc, VarInfo::BASIC), val(val, count)
-{}
+VarStr::VarStr(ModuleLoc loc, const char *val, size_t count) : Var(loc), val(val, count) {}
 bool VarStr::onSet(VirtualMachine &vm, Var *from)
 {
     val = as<VarStr>(from)->getVal();
@@ -282,12 +280,12 @@ bool VarStr::onSet(VirtualMachine &vm, Var *from)
 ////////////////////////////////////////// VarVec ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarVec::VarVec(ModuleLoc loc, size_t reservesz, bool asrefs) : Var(loc, 0), asrefs(asrefs)
+VarVec::VarVec(ModuleLoc loc, size_t reservesz, bool asrefs) : Var(loc), asrefs(asrefs)
 {
     val.reserve(reservesz);
 }
 VarVec::VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs)
-    : Var(loc, 0), val(std::move(val)), asrefs(asrefs)
+    : Var(loc), val(std::move(val)), asrefs(asrefs)
 {}
 void VarVec::onDestroy(VirtualMachine &vm)
 {
@@ -347,9 +345,7 @@ void VarVec::pop(VirtualMachine &vm, bool dref)
 ////////////////////////////////////// VarVecIterator ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarVecIterator::VarVecIterator(ModuleLoc loc, VarVec *vec)
-    : Var(loc, VarInfo::BASIC), vec(vec), curr(0)
-{}
+VarVecIterator::VarVecIterator(ModuleLoc loc, VarVec *vec) : Var(loc), vec(vec), curr(0) {}
 void VarVecIterator::onCreate(VirtualMachine &vm) { vm.incVarRef(vec); }
 void VarVecIterator::onDestroy(VirtualMachine &vm) { vm.decVarRef(vec); }
 
@@ -496,8 +492,7 @@ void VarMap::remOrder(StringRef name)
 /////////////////////////////////////// VarMapIterator ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarMapIterator::VarMapIterator(ModuleLoc loc, VarMap *map)
-    : Var(loc, VarInfo::BASIC), map(map), curr(map->begin())
+VarMapIterator::VarMapIterator(ModuleLoc loc, VarMap *map) : Var(loc), map(map), curr(map->begin())
 {}
 void VarMapIterator::onCreate(VirtualMachine &vm) { vm.incVarRef(map); }
 void VarMapIterator::onDestroy(VirtualMachine &vm) { vm.decVarRef(map); }
@@ -521,7 +516,7 @@ bool VarMapIterator::next(VirtualMachine &vm, ModuleLoc loc, Var *&val)
 VarFn::VarFn(ModuleLoc loc, VarModule *mod, Vector<String> &&params,
              StringMap<Var *> &&defaultParams, FnBody body, StringRef kwArg, StringRef vaArg,
              bool isnative, bool isvirtual)
-    : Var(loc, VarInfo::BASIC | VarInfo::CALLABLE), mod(mod), params(std::move(params)),
+    : Var(loc, VarInfo::CALLABLE), mod(mod), params(std::move(params)),
       defaultParams(std::move(defaultParams)), body(body), kwArg(kwArg), vaArg(vaArg),
       isnative(isnative), isvirtual(isvirtual)
 {}
@@ -661,8 +656,8 @@ Var *VarAsync::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMa
 
 VarModule::VarModule(ModuleLoc loc, StringRef path, Bytecode &&bc, ModuleId moduleId,
                      bool isVirtual)
-    : Var(loc, VarInfo::BASIC | VarInfo::ATTR_BASED), path(path), bc(std::move(bc)),
-      moduleId(moduleId), moduleFrame(nullptr), virtualMod(isVirtual)
+    : Var(loc, VarInfo::ATTR_BASED), path(path), bc(std::move(bc)), moduleId(moduleId),
+      moduleFrame(nullptr), virtualMod(isVirtual)
 {}
 void VarModule::onCreate(VirtualMachine &vm)
 {
@@ -702,7 +697,7 @@ size_t VarModule::getAttrCount()
 ///////////////////////////////////////// VarFrame ///////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFrame::VarFrame(ModuleLoc loc) : Var(loc, VarInfo::BASIC), frameTy(FrameType::REGULAR) {}
+VarFrame::VarFrame(ModuleLoc loc) : Var(loc), frameTy(FrameType::REGULAR) {}
 
 void VarFrame::onCreate(VirtualMachine &vm)
 {
@@ -746,7 +741,7 @@ size_t VarFrame::getAttrCount()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarDll::VarDll(ModuleLoc loc, DllInitFn initfn, DllDeinitFn deinitfn)
-    : Var(loc, VarInfo::BASIC), initfn(initfn), deinitfn(deinitfn)
+    : Var(loc), initfn(initfn), deinitfn(deinitfn)
 {}
 void VarDll::onDestroy(VirtualMachine &vm)
 {
@@ -813,10 +808,11 @@ fail:
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarStruct::VarStruct(ModuleLoc loc, VarStructDef *base)
-    : Var(loc, VarInfo::ATTR_BASED), base(base), attrs(nullptr), id(genStructEnumID())
+    : Var(loc, VarInfo::CONSTRUCTIBLE | VarInfo::ATTR_BASED), base(base), attrs(nullptr),
+      id(genStructEnumID())
 {}
 VarStruct::VarStruct(ModuleLoc loc, VarStructDef *base, size_t id)
-    : Var(loc, VarInfo::ATTR_BASED), base(base), attrs(nullptr), id(id)
+    : Var(loc, VarInfo::CONSTRUCTIBLE | VarInfo::ATTR_BASED), base(base), attrs(nullptr), id(id)
 {}
 void VarStruct::onCreate(VirtualMachine &vm)
 {
@@ -845,8 +841,7 @@ bool VarStruct::onSet(VirtualMachine &vm, Var *from)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFailure::VarFailure(ModuleLoc loc, VarFn *handler, size_t popLoc, size_t recurseCount)
-    : Var(loc, VarInfo::BASIC), handler(handler), popLoc(popLoc), recurseCount(recurseCount),
-      handling(false)
+    : Var(loc), handler(handler), popLoc(popLoc), recurseCount(recurseCount), handling(false)
 {}
 
 void VarFailure::onCreate(VirtualMachine &vm) { vm.incVarRef(handler); }
@@ -874,9 +869,9 @@ void VarFailure::reset()
 ///////////////////////////////////////////// VarFile ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarPath::VarPath(ModuleLoc loc, StringRef init) : Var(loc, VarInfo::BASIC), val(init) {}
-VarPath::VarPath(ModuleLoc loc, String &&init) : Var(loc, VarInfo::BASIC), val(std::move(init)) {}
-VarPath::VarPath(ModuleLoc loc, Path init) : Var(loc, VarInfo::BASIC), val(std::move(init)) {}
+VarPath::VarPath(ModuleLoc loc, StringRef init) : Var(loc), val(init) {}
+VarPath::VarPath(ModuleLoc loc, String &&init) : Var(loc), val(std::move(init)) {}
+VarPath::VarPath(ModuleLoc loc, Path init) : Var(loc), val(std::move(init)) {}
 
 void VarPath::onCreate(VirtualMachine &vm) { val = normal(); }
 bool VarPath::onSet(VirtualMachine &vm, Var *from)
@@ -898,7 +893,7 @@ Path VarPath::normal()
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarFile::VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool requiresClosing)
-    : Var(loc, VarInfo::BASIC), file(file), mode(mode), requiresClosing(requiresClosing)
+    : Var(loc), file(file), mode(mode), requiresClosing(requiresClosing)
 {}
 void VarFile::onDestroy(VirtualMachine &vm)
 {
@@ -918,9 +913,7 @@ bool VarFile::onSet(VirtualMachine &vm, Var *from)
 /////////////////////////////////////////// VarFileIterator //////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFileIterator::VarFileIterator(ModuleLoc loc, VarFile *file)
-    : Var(loc, VarInfo::BASIC), file(file)
-{}
+VarFileIterator::VarFileIterator(ModuleLoc loc, VarFile *file) : Var(loc), file(file) {}
 void VarFileIterator::onCreate(VirtualMachine &vm) { vm.incVarRef(file); }
 void VarFileIterator::onDestroy(VirtualMachine &vm) { vm.decVarRef(file); }
 
@@ -947,7 +940,7 @@ bool VarFileIterator::next(VarStr *&val)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const char *buf)
-    : Var(loc, VarInfo::BASIC), buffer(nullptr), bufsz(bufsz), buflen(buflen)
+    : Var(loc), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
     if(bufsz > 0) buffer = (char *)malloc(bufsz);
     if(buflen > 0) memcpy(buffer, buf, buflen);
@@ -981,7 +974,7 @@ void VarBytebuffer::setData(const char *newbuf, size_t newlen)
 ////////////////////////////////////////// VarStack //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStack::VarStack(ModuleLoc loc) : Var(loc, VarInfo::BASIC | VarInfo::ATTR_BASED) {}
+VarStack::VarStack(ModuleLoc loc) : Var(loc, VarInfo::ATTR_BASED) {}
 
 void VarStack::onCreate(VirtualMachine &vm) {}
 void VarStack::onDestroy(VirtualMachine &vm)

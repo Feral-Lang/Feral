@@ -5,7 +5,7 @@
 namespace fer
 {
 
-VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc, 0), val(val) {}
+VarPtr::VarPtr(ModuleLoc loc, Var *val) : Var(loc), val(val) {}
 void VarPtr::onCreate(VirtualMachine &vm) { vm.incVarRef(val); }
 void VarPtr::onDestroy(VirtualMachine &vm) { vm.decVarRef(val); }
 bool VarPtr::onSet(VirtualMachine &vm, Var *from) { return setVal(vm, as<VarPtr>(from)->val); }

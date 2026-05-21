@@ -10,9 +10,10 @@ namespace VarInfo
 enum
 {
     // main attributes
-    BASIC      = 1 << 0, // no _init_/_deinit_ functions
-    CALLABLE   = 1 << 1,
-    ATTR_BASED = 1 << 2,
+    NONE          = 0,
+    CONSTRUCTIBLE = 1 << 0, // with _init_/_deinit_ functions
+    CALLABLE      = 1 << 1,
+    ATTR_BASED    = 1 << 2,
 
     // runtime attributes
     LOAD_AS_REF = 1 << 3,
@@ -86,7 +87,7 @@ class Var : public IAllocated
                         VarVec *stack = nullptr, size_t *currentlyAt = nullptr);
 
 protected:
-    Var(ModuleLoc loc, size_t infoFlags);
+    Var(ModuleLoc loc, size_t infoFlags = VarInfo::NONE);
     // No need to override the destructor. Override onDestroy() instead.
     virtual ~Var();
 
@@ -119,7 +120,7 @@ public:
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 
-    inline bool isBasic() const { return info & VarInfo::BASIC; }
+    inline bool isConstructible() const { return info & VarInfo::CONSTRUCTIBLE; }
     inline bool isCallable() const { return info & VarInfo::CALLABLE; }
     inline bool isAttrBased() const { return info & VarInfo::ATTR_BASED; }
 
