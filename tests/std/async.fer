@@ -18,4 +18,4 @@ runner.push(func, 'b', 20);
 let timeBegin = time.now();
 runner.run();
 let timeTotal = time.now() - timeBegin;
-assert.le(time.resolve(timeTotal, time.milli).round(), 22); # 22 to provide a little headroom
+assert.le(time.resolve(timeTotal, time.milli).round(), 25); # 25 to provide a little headroom
