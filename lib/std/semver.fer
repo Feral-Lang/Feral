@@ -90,6 +90,25 @@ let parse = fn(versionStr) {
     return vers;
 };
 
+let add in SemVer = fn(major, minor, patch) {
+    self.major += major;
+    self.minor += minor;
+    self.patch += patch;
+    return self;
+};
+
+let fixUsingMax in SemVer = fn(minorMax, patchMax) {
+    if patchMax != -1 && self.patch >= patchMax {
+        self.minor += self.patch / patchMax;
+        self.patch %= patchMax;
+    }
+    if minorMax != -1 && self.minor >= minorMax {
+        self.major += self.minor / minorMax;
+        self.minor %= minorMax;
+    }
+    return self;
+};
+
 let '==' in SemVer = fn(other) {
     if other._typeName_() != 'SemVer' {
         raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
