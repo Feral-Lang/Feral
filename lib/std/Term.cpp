@@ -4,6 +4,7 @@
 #include <io.h>
 #include <Windows.h>
 #else
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
 #endif
@@ -14,6 +15,26 @@ namespace fer
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+FERAL_FUNC(getTermSize, 2, false,
+           "  fn(width, height) -> Nil\n"
+           "Gets the current terminal width in `width` and height in `height`.")
+{
+    EXPECT(VarInt, args[1], "terminal width");
+    EXPECT(VarInt, args[2], "terminal height");
+#if defined(CORE_OS_WINDOWS)
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    as<VarInt>(args[1])->setVal(csbi.srWindow.Right - csbi.srWindow.Left + 1);
+    as<VarInt>(args[2])->setVal(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
+#else
+    struct winsize sz;
+    ioctl(0, TIOCGWINSZ, &sz);
+    as<VarInt>(args[1])->setVal(sz.ws_col);
+    as<VarInt>(args[2])->setVal(sz.ws_row);
+#endif
+    return vm.getNil();
+}
 
 FERAL_FUNC(isTTYNative, 1, false,
            "  fn(fd = fs.stdin) -> Bool\n"
@@ -152,6 +173,7 @@ FERAL_FUNC(getANSISeq, 1, false,
 
 INIT_DLL(Term)
 {
+    vm.addLocal(loc, "getSize", getTermSize);
     vm.addLocal(loc, "isTTYNative", isTTYNative);
     vm.addLocal(loc, "hideInputNative", hideInputNative);
     vm.addLocal(loc, "getANSISeq", getANSISeq);

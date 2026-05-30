@@ -2,6 +2,18 @@ loadlib('std/Term');
 
 let fs = import('std/fs');
 
+let getWidth = fn() {
+    let w = 0, h = 0;
+    getSize(w, h);
+    return w;
+};
+
+let getHeight = fn() {
+    let w = 0, h = 0;
+    getSize(w, h);
+    return h;
+};
+
 let isTTY = fn(fd = fs.stdin) {
     return isTTYNative(fd);
 };
