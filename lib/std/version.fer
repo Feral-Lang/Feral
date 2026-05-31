@@ -1,5 +1,5 @@
-# This module implements the SemVer specification for use in software versioning.
-# According to SemVer, a version is denoted as follows:
+# This module implements the Version specification for use in software versioning.
+# According to Version, a version is denoted as follows:
 #  <Major>.<Minor>.<Patch>[-<Build>][+<Metadata>]
 
 let vec = import('std/vec');
@@ -21,34 +21,34 @@ let buildTypeFromStr = fn(str) {
     return buildTypes.Regular;
 };
 
-let SemVer = struct(
+let Version = struct(
     major = 0,
     minor = 0,
     patch = 0,
     build = 0,
     metadata = vec.new() # dot delimited strings
 );
-SemVer.setTypeName('SemVer');
+Version.setTypeName('Version');
 
 let new = fn(major = 0, minor = 0, patch = 0, build = buildTypes.Regular, metadata = '') {
     if major == 0 && minor == 0 && patch == 0 {
-        raise('Invalid semver encountered with major, minor, and patch numbers being zero');
+        raise('Invalid version encountered with major, minor, and patch numbers being zero');
     }
     if !metadata._isType_(VecTy) {
-        return SemVer(major, minor, patch, build, metadata.str().split('.'));
+        return Version(major, minor, patch, build, metadata.str().split('.'));
     }
-    return SemVer(major, minor, patch, build, metadata);
+    return Version(major, minor, patch, build, metadata);
 };
 
 let parse = fn(versionStr) {
-    let vers = SemVer();
+    let vers = Version();
     let chars = versionStr.len();
     let tmp = '';
     let part = 0; # 0 => major, 1 => minor, 2 => patch, 3 => build, 4 => metadata
     for let i = 0; i < chars; ++i {
         if versionStr.isChAt(i, '.') && part < 2 {
             if tmp.empty() {
-                raise('Invalid semver string: ', versionStr);
+                raise('Invalid version string: ', versionStr);
             }
             if part == 0 { vers.major = tmp.int(); }
             elif part == 1 { vers.minor = tmp.int(); }
@@ -59,7 +59,7 @@ let parse = fn(versionStr) {
         }
         if versionStr.isChAt(i, '-') && part == 2 {
             if tmp.empty() {
-                raise('Invalid semver string: ', versionStr);
+                raise('Invalid version string: ', versionStr);
             }
             vers.patch = tmp.int();
             ++part;
@@ -68,7 +68,7 @@ let parse = fn(versionStr) {
         }
         if versionStr.isChAt(i, '+') && (part == 2 || part == 3) {
             if tmp.empty() {
-                raise('Invalid semver string: ', versionStr);
+                raise('Invalid version string: ', versionStr);
             }
             if part == 2 { vers.patch = tmp.int(); }
             elif part == 3 { vers.build = buildTypeFromStr(tmp); }
@@ -79,25 +79,25 @@ let parse = fn(versionStr) {
         tmp += versionStr[i];
     }
     if tmp.empty() {
-        raise('Invalid semver string: ', versionStr);
+        raise('Invalid version string: ', versionStr);
     }
     if part == 2 { vers.patch = tmp.int(); }
     elif part == 3 { vers.build = buildTypeFromStr(tmp); }
     elif part == 4 { vers.metadata = tmp.split('.'); }
     if vers.major == 0 && vers.minor == 0 && vers.patch == 0 {
-        raise('Invalid semver: ', versionStr, ' with major, minor, and patch numbers being zero');
+        raise('Invalid version: ', versionStr, ' with major, minor, and patch numbers being zero');
     }
     return vers;
 };
 
-let add in SemVer = fn(major, minor, patch) {
+let add in Version = fn(major, minor, patch) {
     self.major += major;
     self.minor += minor;
     self.patch += patch;
     return self;
 };
 
-let fixUsingMax in SemVer = fn(minorMax, patchMax) {
+let fixUsingMax in Version = fn(minorMax, patchMax) {
     if patchMax != -1 && self.patch >= patchMax {
         self.minor += self.patch / patchMax;
         self.patch %= patchMax;
@@ -109,20 +109,20 @@ let fixUsingMax in SemVer = fn(minorMax, patchMax) {
     return self;
 };
 
-let '==' in SemVer = fn(other) {
-    if other._typeName_() != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
+let '==' in Version = fn(other) {
+    if other._typeName_() != 'Version' {
+        raise('Expected Version as RHS for comparison, found: ', other._typeName_());
     }
     if self.major != other.major || self.minor != other.minor || self.patch != other.patch || self.build != other.build {
         return false;
     }
     return self.metadata == other.metadata;
 };
-let '!=' in SemVer = fn(other) { return !(self == other); };
+let '!=' in Version = fn(other) { return !(self == other); };
 
-let '>' in SemVer = fn(other) {
-    if other._typeName_() != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
+let '>' in Version = fn(other) {
+    if other._typeName_() != 'Version' {
+        raise('Expected Version as RHS for comparison, found: ', other._typeName_());
     }
     if self.major > other.major { return true; }
     if self.major < other.major { return false; }
@@ -152,11 +152,11 @@ let '>' in SemVer = fn(other) {
     }
     return self.metadata.len() > other.metadata.len();
 };
-let '>=' in SemVer = fn(other) { return self > other || self == other; };
+let '>=' in Version = fn(other) { return self > other || self == other; };
 
-let '<' in SemVer = fn(other) {
-    if other._typeName_() != 'SemVer' {
-        raise('Expected SemVer as RHS for comparison, found: ', other._typeName_());
+let '<' in Version = fn(other) {
+    if other._typeName_() != 'Version' {
+        raise('Expected Version as RHS for comparison, found: ', other._typeName_());
     }
     if self.major > other.major { return false; }
     if self.major < other.major { return true; }
@@ -186,9 +186,9 @@ let '<' in SemVer = fn(other) {
     }
     return self.metadata.len() < other.metadata.len();
 };
-let '<=' in SemVer = fn(other) { return self < other || self == other; };
+let '<=' in Version = fn(other) { return self < other || self == other; };
 
-let str in SemVer = fn(colReset = '', colMajor = '', colMinor = '', colPatch = '', colBuild = '', colMeta = '') {
+let str in Version = fn(colReset = '', colMajor = '', colMinor = '', colPatch = '', colBuild = '', colMeta = '') {
     let res = colMajor;
     res += self.major.str();
     res += colReset;

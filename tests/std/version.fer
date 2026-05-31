@@ -1,0 +1,35 @@
+let assert = import('std/assert');
+
+let version = import('std/version');
+
+let version001 = version.new(0, 0, 1);
+let version010 = version.new(0, 1, 0);
+let versionAlpha = version.new(0, 0, 1, version.buildTypes.Alpha);
+let versionBeta = version.new(0, 0, 1, version.buildTypes.Beta);
+let versionMeta = version.new(0, 0, 1, version.buildTypes.Beta, 'a_git_commit_id');
+
+let parsedVersionSimple = version.parse('0.0.1-beta+a_git_commit_id');
+let parsedVersion1 = version.parse('0.0.1+1');
+let parsedVersion1120 = version.parse('0.0.1+1.120');
+let parsedVersion1121 = version.parse('0.0.1+1.121');
+
+assert.eq(version001, version001);
+assert.ge(version001, version001);
+assert.le(version001, version001);
+assert.gt(version010, version001);
+assert.lt(version001, version010);
+assert.gt(versionBeta, versionAlpha);
+assert.ne(versionMeta, versionBeta);
+assert.ne(versionMeta, version001);
+assert.eq(parsedVersionSimple, versionMeta);
+assert.gt(parsedVersion1120, parsedVersion1);
+assert.gt(parsedVersion1121, parsedVersion1120);
+
+version001.add(0, 9, 12);
+version001.fixUsingMax(10, 10);
+assert.eq(version001, version.new(1, 0, 3));
+
+let invalidVersion = version.parse('0.0.0') or e {
+    assert.eq(e.str(), 'Raised: Invalid version: 0.0.0 with major, minor, and patch numbers being zero');
+    return nil;
+};
