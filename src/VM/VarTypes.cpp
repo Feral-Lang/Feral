@@ -864,7 +864,7 @@ void VarFailure::reset()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////// VarFile ////////////////////////////////////////////
+///////////////////////////////////////////// VarPath ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarPath::VarPath(ModuleLoc loc, StringRef init) : Var(loc), val(init) {}
@@ -890,13 +890,11 @@ Path VarPath::normal()
 ///////////////////////////////////////////// VarFile ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarFile::VarFile(ModuleLoc loc, FILE *const file, const String &mode, const bool requiresClosing)
-    : Var(loc), file(file), mode(mode), requiresClosing(requiresClosing)
+VarFile::VarFile(ModuleLoc loc, FILE *const file, StringRef path, StringRef mode,
+                 const bool requiresClosing)
+    : Var(loc), file(file), path(path), mode(mode), requiresClosing(requiresClosing)
 {}
-void VarFile::onDestroy(VirtualMachine &vm)
-{
-    if(requiresClosing && file) fclose(file);
-}
+void VarFile::onDestroy(VirtualMachine &vm) { close(); }
 
 bool VarFile::onSet(VirtualMachine &vm, Var *from)
 {
@@ -905,6 +903,20 @@ bool VarFile::onSet(VirtualMachine &vm, Var *from)
     file                               = as<VarFile>(from)->file;
     as<VarFile>(from)->requiresClosing = false;
     return true;
+}
+
+FILE *VarFile::open()
+{
+    if(!requiresClosing || file) return file;
+    file = fopen(path.c_str(), mode.c_str());
+    return file;
+}
+
+void VarFile::close()
+{
+    if(!requiresClosing || !file) return;
+    fclose(file);
+    file = nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

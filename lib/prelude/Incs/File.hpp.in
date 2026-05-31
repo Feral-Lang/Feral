@@ -7,6 +7,27 @@ namespace fer
 /////////////////////////////////////////// Functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+FERAL_FUNC(fileOpen, 0, false,
+           "  var.fn() -> Nil\n"
+           "Open the file `var`.")
+{
+    VarFile *f = as<VarFile>(args[0]);
+    if(!f->open()) {
+        vm.fail(loc, "failed to open file '", f->getPath(), "' with mode: ", f->getMode());
+        return nullptr;
+    }
+    return vm.getNil();
+}
+
+FERAL_FUNC(fileClose, 0, false,
+           "  var.fn() -> Nil\n"
+           "Close the file `var`.")
+{
+    VarFile *f = as<VarFile>(args[0]);
+    f->close();
+    return vm.getNil();
+}
+
 FERAL_FUNC(fileFd, 0, false,
            "  var.fn() -> Int\n"
            "Returns the file descriptor for the file `var`.")

@@ -183,9 +183,9 @@ INIT_DLL(IO)
     vm.addLocal(loc, "readChar", readChar);
 
     // stdin, stdout, and stderr cannot be owned by a VarFile
-    vm.makeLocal<VarFile>(loc, "stdin", "The standard input stream.", stdin, "r", false);
-    vm.makeLocal<VarFile>(loc, "stdout", "The standard output stream.", stdout, "w", false);
-    vm.makeLocal<VarFile>(loc, "stderr", "The standard error stream.", stderr, "w", false);
+    vm.makeLocal<VarFile>(loc, "stdin", "Standard input stream.", stdin, "<stdin>", "r", false);
+    vm.makeLocal<VarFile>(loc, "stdout", "Standard output stream.", stdout, "<stdout>", "w", false);
+    vm.makeLocal<VarFile>(loc, "stderr", "Standard error stream.", stderr, "<stderr>", "w", false);
     return true;
 }
 

@@ -763,17 +763,23 @@ public:
 
 class VarFile : public Var
 {
-    FILE *file;
+    String path;
     String mode;
+    FILE *file;
     bool requiresClosing;
 
     void onDestroy(VirtualMachine &vm) override;
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
-    VarFile(ModuleLoc loc, FILE *const file, const String &mode, bool requiresClosing = true);
+    VarFile(ModuleLoc loc, FILE *const file, StringRef path, StringRef mode,
+            bool requiresClosing = true);
+
+    FILE *open();
+    void close();
 
     inline FILE *&getFile() { return file; }
+    inline StringRef getPath() { return path; }
     inline StringRef getMode() { return mode; }
     inline bool mustClose() { return requiresClosing; }
 };

@@ -363,11 +363,12 @@ let fmt in PathTy = fn(fmtStr) {
 # FS
 
 "
-  var.fn(path, mode = 'r') -> var
-On an existing file handle `var`, closes it (if needed) and reopens using `path` and `mode` and returns `var` itself.
+  var.fn() -> var
+On an existing file handle `var`, closes (if needed) and reopens it.
 "
-let reopen in FileTy = fn(file, mode = 'r') {
-    return self.reopenNative(file, mode);
+let reopen in FileTy = fn() {
+    self.close();
+    return self.open();
 };
 
 # Sorting helpers

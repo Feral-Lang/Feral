@@ -850,6 +850,8 @@ INIT_DLL(Prelude)
 
     // file
 
+    vm.addTypeFn<VarFile>(loc, "open", fileOpen);
+    vm.addTypeFn<VarFile>(loc, "close", fileClose);
     vm.addTypeFn<VarFile>(loc, "fd", fileFd);
     vm.addTypeFn<VarFile>(loc, "lines", fileLines);
     vm.addTypeFn<VarFile>(loc, "seek", fileSeek);

@@ -61,7 +61,7 @@ FERAL_FUNC(fsFopen, 3, false, "")
         vm.fail(loc, "failed to open file '", path, "' with mode: ", mode);
         return nullptr;
     }
-    return vm.makeVar<VarFile>(loc, file, mode, mustClose);
+    return vm.makeVar<VarFile>(loc, file, path, mode, mustClose);
 }
 
 FERAL_FUNC(fsWalkDir, 3, false, "")
