@@ -1,293 +1,503 @@
+# std/argparse.fer
+# Full-featured command-line argument parser.
+# Supports long/short opts, positional args, multi-value positionals, and subparsers.
+#
+# Usage:
+#   let argparse = import('std/argparse');
+#   let p = argparse.new('myapp', 'My application description');
+#
+#   p.addFlag('verbose').addOpts('-v', '--verbose').setHelp('Enable verbose output');
+#   p.addOpt('output').addOpts('-o', '--output').setDefault('out.txt').setHelp('Output file');
+#   p.addPos('input').setReqd(true).setHelp('Input file');
+#   p.addPos('extras').setNargs(-1).setHelp('Additional files');
+#
+#   let subs = p.addSubparsers('command');
+#   let run = subs.add('run', 'Run the program');
+#   run.addOpt('target').addOpts('-t', '--target').setHelp('Build target');
+#
+#   p.parse(feral.args, 1);
+#
+#   if p.has('verbose') { ... }
+#   println(p.getValue('output'));
+#   if p.getSubcmd() == 'run' {
+#       let sub = p.getSubparser();
+#       println(sub.getValue('target'));
+#   }
+
 let io = import('std/io');
 let map = import('std/map');
 let vec = import('std/vec');
 
-let Arg = struct(
+################################################################################
+# ArgDef — one argument definition
+################################################################################
+
+let ArgDef = struct(
     name = '',
     help = '',
-    opts = vec.new(),
-    val = '',
-    reqd = false,
-    valReqd = false,
-    found = false
+    opts = vec.new(), # flag strings; empty = positional
+    vals = vec.new(), # collected values after parsing
+    default = '',   # default value (returned if not provided)
+    reqd = false,   # must be provided?
+    found = false,  # was found during parse?
+    isFlag = false, # boolean flag: no value consumed
+    nargs = 1       # 1 = single value, -1 = all remaining positionals, 0 = flag
 );
-Arg.setTypeName('Arg');
+ArgDef.setTypeName('ArgDef');
 
-"
-  var.fn(name) -> var
-Sets the `name` of Arg `var` and returns `var` itself.
-"
-let setName in Arg = fn(name) { self.name = name; return ref(self); };
-"
-  var.fn(help) -> var
-Sets the `help` string of Arg `var` and returns `var` itself.
-"
-let setHelp in Arg = fn(help) { self.help = help; return ref(self); };
-"
-  var.fn(val) -> var
-Sets the `val` of Arg `var` and returns `var` itself.
-"
-let setVal in Arg = fn(val) { self.val = val; return ref(self); };
-"
-  var.fn(reqd) -> var
-Sets the `isRequired` flag of Arg `var` using `reqd` and returns `var` itself.
-"
-let setReqd in Arg = fn(reqd) { self.reqd = reqd; return ref(self); };
-"
-  var.fn(valReqd) -> var
-Sets the `isValueRequired` flag of Arg `var` using `valReqd` and returns `var` itself.
-"
-let setValReqd in Arg = fn(valReqd) { self.valReqd = valReqd; return ref(self); };
-"
-  var.fn(found) -> var
-Sets the `isFound` flag of Arg `var` using `found` and returns `var` itself.
-"
-let setFound in Arg = fn(found) { self.found = found; return ref(self); };
-"
-  var.fn(opts...) -> var
-Adds each of the `opts` in Arg `var` and returns `var` itself.
-Each of the `opts` is expected to be a string.
-"
-let addOpts in Arg = fn(opts...) {
-    for o in opts.each() {
-        self.opts.push(o);
-    }
+# Builder setters — chainable via return ref(self)
+let setHelp in ArgDef = fn(h) { self.help = h; return ref(self); };
+let setDefault in ArgDef = fn(d) { self.default = d; return ref(self); };
+let setReqd in ArgDef = fn(r) { self.reqd = r; return ref(self); };
+let setNargs in ArgDef = fn(n) { self.nargs = n; return ref(self); };
+let addOpts in ArgDef = fn(opts...) {
+    for o in opts.each() { self.opts.push(o); }
     return ref(self);
 };
 
-"
-  var.fn() -> Str
-Returns the name in the Arg `var`.
-"
-let getName in Arg = fn() { return self.name; };
-"
-  var.fn() -> Str
-Returns the help string in the Arg `var`.
-"
-let getHelp in Arg = fn() { return self.help; };
-"
-  var.fn() -> Vec<Str>
-Returns the list of options in the Arg `var`.
-"
-let getOpts in Arg = fn() { return self.opts; };
-"
-  var.fn() -> Str
-Returns the value in the Arg `var`.
-"
-let getVal in Arg = fn() { return self.val; };
-"
-  var.fn() -> Bool
-Returns `true` if Arg `var` is required.
-"
-let isRequired in Arg = fn() { return self.reqd; };
-"
-  var.fn() -> Bool
-Returns `true` if Arg `var` is a positional parameter.
-"
-let isPositional in Arg = fn() { return self.opts.empty(); };
-"
-  var.fn() -> Bool
-Returns `true` if Arg `var` requires a value (ie. it's not a flag).
-"
-let requiresValue in Arg = fn() { return self.valReqd || self.isPositional(); };
-"
-  var.fn() -> Bool
-Returns `true` if Arg `var` is found after parsing.
-"
-let isFound in Arg = fn() { return self.found; };
-"
-  var.fn(index) -> Str | Nil
-Returns the option at the given `index`, or `nil` if `index` is out of bounds.
-"
-let getOpt in Arg = fn(idx) { return self.opts[idx]; };
-"
-  var.fn(opt) -> Bool
-Returns `true` if Arg `var` contains the option string `opt`.
-"
-let hasOpt in Arg = fn(opt) { return self.opts.find(opt); };
+# Internal mutation helpers
+let setFound in ArgDef = fn(f) { self.found = f; return ref(self); };
+let pushVal in ArgDef = fn(v) { self.vals.push(v); return ref(self); };
 
-###############################################################################################
-# ArgParser type
-###############################################################################################
-let ArgParser = struct(
-    argv = vec.new(refs = true),
+# Getters
+let getName in ArgDef = fn() { return self.name; };
+let getHelp in ArgDef = fn() { return self.help; };
+let getDefault in ArgDef = fn() { return self.default; };
+let getOpts in ArgDef = fn() { return ref(self.opts); };
+let getVals in ArgDef = fn() { return ref(self.vals); };
+let isRequired in ArgDef = fn() { return self.reqd; };
+let isFound in ArgDef = fn() { return self.found; };
+let isPositional in ArgDef = fn() { return self.opts.empty(); };
+let getNargs in ArgDef = fn() { return self.nargs; };
+let hasOpt in ArgDef = fn(opt) { return self.opts.find(opt); };
+let takesValue in ArgDef = fn() { return !self.isFlag && self.nargs != 0; };
+
+################################################################################
+# Parser — main parser; also used for subparsers
+#
+# Subparser support is inlined so we avoid nil-typed fields (no _copy_ for
+# VarStruct means fields cannot change type after definition).
+################################################################################
+
+let Parser = struct(
+    prog = '',
+    desc = '',
     argDefs = vec.new(refs = true),
-    lastParsedArg = '',
-    passThroughFrom = -1
+    subsDest = '', # non-empty means subparsers are configured
+    subsReqd = true, # is a subcommand required?
+    subsMap = map.new(), # subcommand name -> Parser
+    subcmd = '', # chosen subcommand after parse
+    passThroughArgs = vec.new(refs = true)
 );
-ArgParser.setTypeName('ArgParser');
+Parser.setTypeName('Parser');
 
-"
-  fn(args) -> ArgParser
-Creates and returns a new ArgParser instance which will parse `args`.
-"
-let new = fn(args) {
-    let parser = ArgParser();
-    for a in args.each() {
-        parser.argv.push(a);
-    }
-    parser.addArg('help').addOpts('--help', '-h').setHelp('prints help information for program');
-    return parser;
+# Set the description (useful for subparsers created via add())
+let setHelp in Parser = fn(h) { self.desc = h; return ref(self); };
+let setSubsReqd in Parser = fn(r) { self.subsReqd = r; return ref(self); };
+
+################################################################################
+# Internal helper — add the built-in --help / -h flag to a parser
+################################################################################
+
+let _addHelpFlag = fn(parser) {
+    let ha = ArgDef(
+        name = 'help',
+        help = 'show this help message and exit',
+        isFlag = true,
+        nargs = 0
+    );
+    ha.opts.push('--help');
+    ha.opts.push('-h');
+    parser.argDefs.push(ha);
 };
 
-"
-  var.fn(name) -> Nil
-Sets the last argument in the ArgParser `var`, after which all arguments are simply stored as a list and not parsed.
-"
-let setLastArg in ArgParser = fn(name) { self.lastParsedArg = name; };
+################################################################################
+# Builder methods — add argument definitions to the parser
+################################################################################
 
 "
-  var.fn(name) -> Arg
-Adds a parameter with name `name` to the ArgParser `var` and returns the added Arg.
-The options, help, etc. for the Arg can be added using this returned object.
+  var.fn(name) -> ArgDef
+Adds a boolean flag named `name` to the parser `var` and returns the ArgDef for chaining.
+Boolean flags take no value; use `has(name)` to test if they were provided.
 "
-let addArg in ArgParser = fn(name) {
-    let a = Arg(name = name);
+let addFlag in Parser = fn(name) {
+    let a = ArgDef(name = name, isFlag = true, nargs = 0);
     self.argDefs.push(a);
     return ref(a);
 };
 
 "
-  var.fn(name) -> Arg | Nil
-Returns the Arg associated with `name` in ArgParser `var`, or `nil` if not found.
+  var.fn(name) -> ArgDef
+Adds an option named `name` to the parser `var` and returns the ArgDef for chaining.
+Options require a value: `--key value` or `--key=value`.
 "
-let getArg in ArgParser = fn(name) {
-    for a in self.argDefs.each() {
-        if a.getName() == name { return ref(a); }
+let addOpt in Parser = fn(name) {
+    let a = ArgDef(name = name);
+    self.argDefs.push(a);
+    return ref(a);
+};
+
+"
+  var.fn(name) -> ArgDef
+Adds a positional argument named `name` to the parser `var` and returns the ArgDef for chaining.
+Positional arguments are matched in definition order.
+Set nargs(-1) to collect all remaining positional arguments into a list.
+"
+let addPos in Parser = fn(name) {
+    let a = ArgDef(name = name);
+    self.argDefs.push(a);
+    return ref(a);
+};
+
+"
+  var.fn(dest, reqd = true) -> Parser
+Configures the parser `var` to accept subcommands stored under the key `dest`.
+Returns a reference to the parser itself so you can call add() on it.
+If `reqd` is true (the default), a subcommand must be provided.
+"
+let addSubparsers in Parser = fn(dest, reqd = true) {
+    self.subsDest = dest;
+    self.subsReqd = reqd;
+    return ref(self);
+};
+
+"
+  var.fn(name, desc = '') -> Parser
+Adds a subcommand named `name` with description `desc` to the parser `var`.
+Returns a reference to the new subparser so you can add arguments to it.
+Only valid after calling addSubparsers().
+"
+let add in Parser = fn(name, desc = '') {
+    let p = Parser(name, desc);
+    _addHelpFlag(p);
+    self.subsMap.insert(name, p);
+    return ref(self.subsMap.at(name));
+};
+
+################################################################################
+# Query methods
+################################################################################
+
+"
+  var.fn(name) -> ArgDef | Nil
+Returns a reference to the ArgDef named `name`, or nil if not found.
+"
+let getArgDef in Parser = fn(name) {
+    for let i = 0; i < self.argDefs.len(); ++i {
+        if self.argDefs[i].getName() == name {
+            return ref(self.argDefs[i]);
+        }
     }
     return nil;
 };
 
 "
   var.fn(name) -> Bool
-Returns `true` if the ArgParser `var` contains an Arg named `name`.
+Returns true if the argument named `name` was found during parsing.
 "
-let has in ArgParser = fn(name) {
-    for a in self.argDefs.each() {
-        if a.getName() != name { continue; }
-        return a.isFound();
-    }
-    return false;
+let has in Parser = fn(name) {
+    let a = self.getArgDef(name);
+    if a == nil { return false; }
+    return a.isFound();
 };
 
 "
-  var.fn(name) -> Str | Nil
-Returns the value for Arg named `name` in ArgParser `var`, or empty string if not found.
+  var.fn(name) -> Str
+Returns the first parsed value for the argument named `name`.
+Returns the argument's default value if it was not provided.
+Returns an empty string if the argument does not exist.
 "
-let getValue in ArgParser = fn(name) {
-    for a in self.argDefs.each() {
-        if a.getName() != name { continue; }
-        return a.getVal();
-    }
-    return "";
+let getValue in Parser = fn(name) {
+    let a = self.getArgDef(name);
+    if a == nil { return ''; }
+    let vals = a.getVals();
+    if vals.empty() { return a.getDefault(); }
+    return vals[0];
 };
 
 "
-  var.fn() -> Vec<Str>
-Returns a list of all passthrough args - all the arguments remaining after last parsed arg to the end.
+  var.fn(name) -> Vec
+Returns all collected values for the argument named `name`.
+Useful for positional arguments with nargs(-1).
 "
-let getPassthrough in ArgParser = fn() {
-    let res = vec.new(refs = true);
-    if self.passThroughFrom == -1 || self.passThroughFrom >= self.argv.len() { return res; }
-    for let i = self.passThroughFrom; i < self.argv.len(); ++i {
-        res.push(self.argv[i]);
-    }
-    return res;
+let getValues in Parser = fn(name) {
+    let a = self.getArgDef(name);
+    if a == nil { return vec.new(); }
+    return ref(a.getVals());
 };
 
 "
-  var.fn(from = 0) -> Nil
-Parse all the arguments in ArgParser `var`, starting with index `from`.
+  var.fn() -> Str
+Returns the name of the subcommand chosen during parsing, or '' if none.
 "
-let parse in ArgParser = fn(from = 0) {
-    let expectKey = '';
-    let expectingValIdx = -1;
-    let stopParsing = false;
-    for let i = from; i < self.argv.len(); ++i {
-        let arg = ref(self.argv[i]);
-        let isOpt = !arg.empty() && arg[0] == '-';
-        if expectingValIdx != -1 {
-            if isOpt {
-                raise('expected value for arg: ', self.argDefs[expectingValIdx].getName(),
-                      ', but found option: ', arg);
+let getSubcmd in Parser = fn() { return self.subcmd; };
+
+"
+  var.fn() -> Parser | Nil
+Returns a reference to the active subparser, or nil if no subcommand was chosen.
+"
+let getSubparser in Parser = fn() {
+    if self.subcmd.empty() { return nil; }
+    return ref(self.subsMap.at(self.subcmd));
+};
+
+"
+  var.fn() -> Vec
+Returns the passthrough arguments collected after a `--` token.
+"
+let getPassthrough in Parser = fn() {
+    return ref(self.passThroughArgs);
+};
+
+################################################################################
+# Internal: find the argDefs index for an option flag string
+################################################################################
+
+let _findOptIdx in Parser = fn(optStr) {
+    for let j = 0; j < self.argDefs.len(); ++j {
+        if self.argDefs[j].isPositional() { continue; }
+        if self.argDefs[j].hasOpt(optStr) { return j; }
+    }
+    return -1;
+};
+
+################################################################################
+# parse() — the main parsing routine
+################################################################################
+
+"
+  var.fn(argv, from = 0) -> Nil
+Parses the argument list `argv` starting at index `from`.
+Typically called as p.parse(feral.args, 1) to skip the program name at index 0.
+Raises on unknown options, missing required arguments, or duplicate options.
+If --help / -h is found, prints usage to stdout and exits the program.
+"
+let parse in Parser = fn(argv, from = 0) {
+    let expectingValFor = -1;
+
+    # Collect positional defs in order for sequential matching
+    let posDefs = vec.new(refs = true);
+    for let i = 0; i < self.argDefs.len(); ++i {
+        if self.argDefs[i].isPositional() {
+            posDefs.push(self.argDefs[i]);
+        }
+    }
+    let posIdx = 0;
+
+    let i = from;
+    while i < argv.len() {
+        let arg = argv[i];
+
+        # End-of-options marker: everything after becomes passthrough
+        if arg == '--' {
+            for let pi = i + 1; pi < argv.len(); ++pi {
+                self.passThroughArgs.push(argv[pi]);
             }
-            self.argDefs[expectingValIdx].setVal(arg);
-            self.argDefs[expectingValIdx].setFound(true);
-            expectingValIdx = -1;
-            if stopParsing {
-                self.passThroughFrom = i + 1;
-                break;
+            break;
+        }
+
+        # Consume a pending value for the previous option
+        if expectingValFor != -1 {
+            if arg.len() >= 2 && arg[0] == '-' {
+                raise('option \'', self.argDefs[expectingValFor].getName(),
+                      '\' expects a value, but got option: ', arg);
             }
+            self.argDefs[expectingValFor].pushVal(arg);
+            self.argDefs[expectingValFor].setFound(true);
+            expectingValFor = -1;
+            ++i;
             continue;
         }
-        if arg == '--' {
-            self.passThroughFrom = i + 1;
-            break;
-        }
-        let matched = -1;
-        for let j = 0; j < self.argDefs.len(); ++j {
-            let a = ref(self.argDefs[j]);
-            if isOpt && a.isPositional() { continue; }
-            if isOpt {
-                if !a.hasOpt(arg) { continue; }
-                if a.isFound() {
-                    raise('found a repeated option: ', arg);
+
+        let isLong  = arg.len() >= 2 && arg[0] == '-' && arg[1] == '-';
+        let isShort = !isLong && arg.len() >= 2 && arg[0] == '-';
+        let isOpt   = isLong || isShort;
+
+        if isOpt {
+            # Find '=' for embedded value: --key=value or -k=value
+            let eqPos   = -1;
+            let scanFrom = isLong ? 2 : 1;
+            for let ci = scanFrom; ci < arg.len(); ++ci {
+                if arg[ci] == '=' { eqPos = ci; break; }
+            }
+
+            let optKey        = arg;
+            let embeddedVal   = '';
+            let hasEmbeddedVal = false;
+            if eqPos != -1 {
+                optKey        = arg.sub(0, eqPos);
+                embeddedVal   = arg.sub(eqPos + 1);
+                hasEmbeddedVal = true;
+            }
+
+            let matched = self._findOptIdx(optKey);
+            if matched == -1 {
+                raise('unknown option: \'', arg, '\'; run with --help for usage.');
+            }
+
+            let argDef = ref(self.argDefs[matched]);
+            if argDef.isFound() {
+                raise('duplicate option: \'', arg, '\'');
+            }
+
+            if argDef.takesValue() {
+                if hasEmbeddedVal {
+                    argDef.pushVal(embeddedVal);
+                    argDef.setFound(true);
+                } else {
+                    expectingValFor = matched;
                 }
-                matched = j;
-                if a.requiresValue() { expectingValIdx = j; }
-                a.setFound(!a.requiresValue());
-                break;
+            } else {
+                argDef.setFound(true);
             }
-            if !a.isPositional() || a.isFound() { continue; }
-            if !a.isFound() {
-                a.setVal(arg);
-                a.setFound(true);
-                matched = j;
-                break;
+            ++i;
+            continue;
+        }
+
+        # Positional: first check if it names a subcommand
+        if !self.subsDest.empty() && self.subcmd.empty() && self.subsMap.find(arg) {
+            self.subcmd = arg;
+            let subp = ref(self.subsMap.at(arg));
+            subp.parse(argv, i + 1);
+            for pt in subp.getPassthrough().each() {
+                self.passThroughArgs.push(pt);
             }
-            raise('found a repeated argument: ', arg);
-        }
-        if matched == -1 {
-            raise('invalid argument: ', arg, ', use --help');
-        }
-        stopParsing = self.argDefs[matched].getName() == self.lastParsedArg;
-        if stopParsing && expectingValIdx == -1 {
-            self.passThroughFrom = i + 1;
             break;
         }
-    }
-    if expectingValIdx != -1 {
-        raise('expected value for argument: ', self.argDefs[expectingValIdx].getName(),
-              ', but there are no more args to parse');
-    }
-    for a in self.argDefs.each() {
-        if !a.isFound() && a.isRequired() {
-            raise('required argument: ', a.getName(), ' was not found');
+
+        if posIdx < posDefs.len() {
+            let posDef = ref(posDefs[posIdx]);
+            if posDef.getNargs() == -1 {
+                # Consume all remaining positionals (and stop at --)
+                while i < argv.len() {
+                    if argv[i] == '--' {
+                        for let pi = i + 1; pi < argv.len(); ++pi {
+                            self.passThroughArgs.push(argv[pi]);
+                        }
+                        break;
+                    }
+                    posDef.pushVal(argv[i]);
+                    ++i;
+                }
+                posDef.setFound(!posDef.getVals().empty());
+                break;
+            }
+            posDef.pushVal(arg);
+            posDef.setFound(true);
+            ++posIdx;
+        } else {
+            raise('unexpected positional argument: \'', arg, '\'; run with --help for usage.');
         }
+        ++i;
+    }
+
+    if expectingValFor != -1 {
+        raise('option \'', self.argDefs[expectingValFor].getName(), '\' requires a value');
+    }
+
+    # Validate required arguments
+    for a in self.argDefs.each() {
+        if !a.isRequired() || a.isFound() { continue; }
+        if a.isPositional() {
+            raise('required positional <', a.getName(), '> was not provided; run with --help for usage.');
+        }
+        raise('required option \'', a.getName(), '\' was not provided; run with --help for usage.');
+    }
+
+    # Validate required subcommand
+    if !self.subsDest.empty() && self.subsReqd && self.subcmd.empty() {
+        raise('a subcommand is required; run with --help for usage.');
+    }
+
+    # Auto-handle --help: print and exit
+    if self.has('help') {
+        self.printHelp(io.stdout);
+        feral.exit(0);
     }
 };
+
+################################################################################
+# printHelp() — formatted usage output
+################################################################################
 
 "
   var.fn(file) -> Nil
-Prints the help message using `file`, which must be an instance of `File` (like io.stdout).
+Prints a formatted help/usage message to `file` (e.g. io.stdout or io.stderr).
 "
-let printHelp in ArgParser = fn(file) {
-    io.fprint(file, 'Usage: <script>');
+let printHelp in Parser = fn(file) {
+    # Build usage line
+    let usage = 'Usage: ' + self.prog;
     for a in self.argDefs.each() {
         if !a.isPositional() { continue; }
-        io.fprint(file, ' ', a.getName());
+        if a.isRequired() { usage += ' <' + a.getName() + '>'; }
+        else { usage += ' [' + a.getName() + ']'; }
+        if a.getNargs() == -1 { usage += '...'; }
     }
-    io.fprint(file, ' <option args>\n\n');
+    if !self.subsDest.empty() {
+        if self.subsReqd { usage += ' <' + self.subsDest + '>'; }
+        else { usage += ' [' + self.subsDest + ']'; }
+    }
+    usage += ' [options]';
+    io.fprintln(file, usage);
+
+    if !self.desc.empty() {
+        io.fprintln(file, '\n', self.desc);
+    }
+
+    # Options
+    io.fprintln(file, '\nOptions:');
     for a in self.argDefs.each() {
-        let opts = ref(a.getOpts());
+        if a.isPositional() { continue; }
+        let opts = a.getOpts();
+        let line = '  ';
         for let i = 0; i < opts.len(); ++i {
-            io.fprint(file, opts[i]);
-            if i != opts.len() - 1 { io.fprint(file, '/'); }
+            line += opts[i];
+            if i < opts.len() - 1 { line += ', '; }
         }
-        if opts.empty() { io.fprint(file, a.getName(), ' (positional)'); }
-        if a.isRequired() { io.fprint(file, ' (required)'); }
-        else { io.fprint(file, ' (optional)'); }
-        if a.requiresValue() { io.fprint(file, ' (requires value)'); }
-        io.fprint(file, '\t\t', a.getHelp(), '\n');
+        if a.takesValue() { line += ' <' + a.getName() + '>'; }
+        if !a.getDefault().empty() { line += '  (default: ' + a.getDefault() + ')'; }
+        if a.isRequired() { line += '  [required]'; }
+        if !a.getHelp().empty() { line += '\n        ' + a.getHelp(); }
+        io.fprintln(file, line);
     }
+
+    # Positional arguments
+    let hasPosArgs = false;
+    for a in self.argDefs.each() { if a.isPositional() { hasPosArgs = true; break; } }
+    if hasPosArgs {
+        io.fprintln(file, '\nPositional Arguments:');
+        for a in self.argDefs.each() {
+            if !a.isPositional() { continue; }
+            let line = '  ' + a.getName();
+            if a.getNargs() == -1 { line += '...'; }
+            if a.isRequired() { line += '  [required]'; }
+            if !a.getHelp().empty() { line += '\n        ' + a.getHelp(); }
+            io.fprintln(file, line);
+        }
+    }
+
+    # Subcommands
+    if !self.subsDest.empty() {
+        io.fprintln(file, '\nSubcommands:');
+        for e in self.subsMap.each() {
+            let line = '  ' + e.0;
+            if !e.1.desc.empty() { line += '\n        ' + e.1.desc; }
+            io.fprintln(file, line);
+        }
+    }
+};
+
+################################################################################
+# new() — module entry point
+################################################################################
+
+"
+  fn(prog, desc = '') -> Parser
+Creates and returns a new Parser for program `prog` with description `desc`.
+The --help / -h flag is added automatically.
+"
+let new = fn(prog, desc = '') {
+    let p = Parser(prog, desc);
+    _addHelpFlag(p);
+    return p;
 };

@@ -23,11 +23,11 @@ let atomic = import('std/atomic');
 let thread = import('std/thread');
 let argparse = import('std/argparse');
 
-let args = argparse.new(feral.args);
-args.addArg('valgrind').addOpts('--valgrind', '-v').setHelp('Run the tests with valgrind - useful for memory information');
-args.addArg('runs').addOpts('--runs', '-r').setValReqd(true).setHelp('Run the tests `n` number of times - useful for a longer multithreading check');
-args.addArg('path').setValReqd(true).setHelp('The directory where the tests are present - can be relative to current working directory');
-args.parse();
+let args = argparse.new('testdir', 'Test all scripts in a given directory using the config.fecl configuration in the directory.');
+args.addFlag('valgrind').addOpts('--valgrind', '-v').setHelp('Run the tests with valgrind - useful for memory information');
+args.addOpt('runs').addOpts('--runs', '-r').setHelp('Run the tests `n` number of times - useful for a longer multithreading check');
+args.addPos('path').setHelp('The directory where the tests are present - can be relative to current working directory');
+args.parse(feral.args);
 
 let fmtWithPath = fn(path, fmtStrs) {
     if fmtStrs.empty() { return nil; }

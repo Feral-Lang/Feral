@@ -1,23 +1,122 @@
+# Tests for std/argparse — full-featured command-line argument parser.
+# Covers: flags, options (long/short, space/equals), positionals,
+#         defaults, nargs=-1, passthrough (--), and subparsers.
+
 let assert = import('std/assert');
 
-let io = import('std/io');
 let vec = import('std/vec');
 let argparse = import('std/argparse');
 
-let argv = vec.new(refs = true, 'mainProg', '--version', '--v1', 'value1', '--v2', 'posVal', '--', 'skipped1', 'skipped2');
+# 1. Basic long flag
+let p1 = argparse.new('prog');
+p1.addFlag('verbose').addOpts('-v', '--verbose');
+p1.parse(vec.new(refs = true, 'prog', '--verbose'), 1);
+assert.eq(p1.has('verbose'), true);
+assert.eq(p1.has('help'), false);
 
-let args = argparse.new(argv);
-# help is present by default.
-args.addArg("version").addOpts('--version', '-v').setHelp("prints program version");
-args.addArg("v1").addOpts('--v1').setValReqd(true).setHelp("Enter value 1");
-args.addArg("v2").addOpts('--v2').setHelp("Just a flag");
-args.addArg("simple").setValReqd(true).setHelp("Positional arg");
-args.parse(1);
+# 2. Short flag
+let p2 = argparse.new('prog');
+p2.addFlag('verbose').addOpts('-v', '--verbose');
+p2.parse(vec.new(refs = true, 'prog', '-v'), 1);
+assert.eq(p2.has('verbose'), true);
 
-assert.ne(args.getArg('help'), nil);
-assert.eq(args.has('version'), true);
-assert.eq(args.has('v1'), true);
-assert.eq(args.has('v2'), true);
-assert.eq(args.getValue('v1'), 'value1');
-assert.eq(args.getValue('simple'), 'posVal');
-assert.eq(args.getPassthrough(), vec.new(refs = true, 'skipped1', 'skipped2'));
+# 3. Long option with space-separated value
+let p3 = argparse.new('prog');
+p3.addOpt('output').addOpts('-o', '--output');
+p3.parse(vec.new(refs = true, 'prog', '--output', 'file.txt'), 1);
+assert.eq(p3.has('output'), true);
+assert.eq(p3.getValue('output'), 'file.txt');
+
+# 4. Long option with embedded = value
+let p4 = argparse.new('prog');
+p4.addOpt('output').addOpts('-o', '--output');
+p4.parse(vec.new(refs = true, 'prog', '--output=result.txt'), 1);
+assert.eq(p4.has('output'), true);
+assert.eq(p4.getValue('output'), 'result.txt');
+
+# 5. Short option with space-separated value
+let p5 = argparse.new('prog');
+p5.addOpt('output').addOpts('-o', '--output');
+p5.parse(vec.new(refs = true, 'prog', '-o', 'out.bin'), 1);
+assert.eq(p5.has('output'), true);
+assert.eq(p5.getValue('output'), 'out.bin');
+
+# 6. Short option with embedded = value
+let p6 = argparse.new('prog');
+p6.addOpt('output').addOpts('-o', '--output');
+p6.parse(vec.new(refs = true, 'prog', '-o=out.bin'), 1);
+assert.eq(p6.has('output'), true);
+assert.eq(p6.getValue('output'), 'out.bin');
+
+# 7. Default value when option is not provided
+let p7 = argparse.new('prog');
+p7.addOpt('output').addOpts('-o', '--output').setDefault('a.out');
+p7.parse(vec.new(refs = true, 'prog'), 1);
+assert.eq(p7.has('output'), false);
+assert.eq(p7.getValue('output'), 'a.out');
+
+# 8. Single required positional argument
+let p8 = argparse.new('prog');
+p8.addPos('input').setReqd(true);
+p8.parse(vec.new(refs = true, 'prog', 'myfile.txt'), 1);
+assert.eq(p8.has('input'), true);
+assert.eq(p8.getValue('input'), 'myfile.txt');
+
+# 9. Multi-value positional argument (nargs = -1)
+let p9 = argparse.new('prog');
+p9.addPos('files').setNargs(-1);
+p9.parse(vec.new(refs = true, 'prog', 'a.txt', 'b.txt', 'c.txt'), 1);
+assert.eq(p9.has('files'), true);
+assert.eq(p9.getValues('files'), vec.new(refs = true, 'a.txt', 'b.txt', 'c.txt'));
+
+# 10. Passthrough arguments after --
+let p10 = argparse.new('prog');
+p10.addFlag('verbose').addOpts('-v', '--verbose');
+p10.parse(vec.new(refs = true, 'prog', '-v', '--', 'extra1', 'extra2'), 1);
+assert.eq(p10.has('verbose'), true);
+assert.eq(p10.getPassthrough(), vec.new(refs = true, 'extra1', 'extra2'));
+
+# 11. Mixed flags, options, and positionals together
+let p11 = argparse.new('prog');
+p11.addFlag('verbose').addOpts('-v', '--verbose');
+p11.addOpt('output').addOpts('-o', '--output').setDefault('out.txt');
+p11.addPos('input').setReqd(true);
+p11.parse(vec.new(refs = true, 'prog', '--verbose', '--output=my.out', 'src.txt'), 1);
+assert.eq(p11.has('verbose'), true);
+assert.eq(p11.getValue('output'), 'my.out');
+assert.eq(p11.getValue('input'), 'src.txt');
+
+# 12. Subparsers: correct subcommand selected and its options parsed
+let p12 = argparse.new('prog');
+let subs12 = p12.addSubparsers('command');
+let push12 = subs12.add('push', 'Push changes');
+push12.addFlag('force').addOpts('-f', '--force');
+push12.addOpt('remote').addOpts('-r', '--remote').setDefault('origin');
+subs12.add('pull', 'Pull changes');
+
+p12.parse(vec.new(refs = true, 'prog', 'push', '--force', '--remote', 'upstream'), 1);
+assert.eq(p12.getSubcmd(), 'push');
+assert.ne(p12.getSubparser(), nil);
+let sub12 = p12.getSubparser();
+assert.eq(sub12.has('force'), true);
+assert.eq(sub12.getValue('remote'), 'upstream');
+
+# 13. Subparser default value when sub-option not provided
+let p13 = argparse.new('prog');
+let subs13 = p13.addSubparsers('command');
+let push13 = subs13.add('push', 'Push changes');
+push13.addOpt('remote').addOpts('-r', '--remote').setDefault('origin');
+
+p13.parse(vec.new(refs = true, 'prog', 'push'), 1);
+assert.eq(p13.getSubcmd(), 'push');
+let sub13 = p13.getSubparser();
+assert.eq(sub13.getValue('remote'), 'origin');
+
+# 14. Optional subcommand: parse succeeds when no subcommand is given
+let p14 = argparse.new('prog');
+p14.addSubparsers('command', false);
+p14.add('run', 'Run the app');
+p14.addFlag('verbose').addOpts('-v', '--verbose');
+p14.parse(vec.new(refs = true, 'prog', '-v'), 1);
+assert.eq(p14.getSubcmd(), '');
+assert.eq(p14.has('verbose'), true);
