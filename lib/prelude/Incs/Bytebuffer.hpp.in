@@ -19,6 +19,18 @@ FERAL_FUNC(bytebufferCopy, 0, false,
     return vm.makeVar<VarBytebuffer>(loc, b->capacity(), b->size(), b->getVal());
 }
 
+FERAL_FUNC(byteBufferAt, 1, false,
+           "  var.fn(position) -> Int | Nil\n"
+           "Returns the byte at index `position` in bytebuffer `var` as int,"
+           " or `nil` if `position` is out of range in `var`.")
+{
+    EXPECT(VarInt, args[1], "index");
+    VarBytebuffer *res = as<VarBytebuffer>(args[0]);
+    size_t pos  = as<VarInt>(args[1])->getVal();
+    if(pos >= res->size()) return vm.getNil();
+    return vm.makeVar<VarInt>(loc, res->at(pos));
+}
+
 FERAL_FUNC(bytebufferCapacity, 0, false,
            "  var.fn() -> Int\n"
            "Returns the capacity in bytes of the Bytebuffer `var`.")

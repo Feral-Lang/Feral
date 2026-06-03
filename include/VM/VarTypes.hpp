@@ -813,6 +813,7 @@ public:
 
     inline void setLen(size_t len) { buflen = len; }
     inline char *&getVal() { return buffer; }
+    inline char &at(size_t index) { return buffer[index]; }
     inline size_t size() { return buflen; }
     inline size_t capacity() { return bufsz; }
 };
