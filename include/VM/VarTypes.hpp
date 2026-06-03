@@ -799,21 +799,22 @@ public:
 
 class VarBytebuffer : public Var
 {
-    char *buffer;
+    unsigned char *buffer;
     size_t bufsz;
     size_t buflen;
 
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
-    VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0, const char *buf = nullptr);
+    VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen = 0,
+                  const unsigned char *buf = nullptr);
     ~VarBytebuffer();
 
-    void setData(const char *newbuf, size_t newlen);
+    void setData(const unsigned char *newbuf, size_t newlen);
 
     inline void setLen(size_t len) { buflen = len; }
-    inline char *&getVal() { return buffer; }
-    inline char &at(size_t index) { return buffer[index]; }
+    inline unsigned char *&getVal() { return buffer; }
+    inline unsigned char &at(size_t index) { return buffer[index]; }
     inline size_t size() { return buflen; }
     inline size_t capacity() { return bufsz; }
 };

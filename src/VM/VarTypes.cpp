@@ -949,10 +949,10 @@ bool VarFileIterator::next(VarStr *&val)
 //////////////////////////////////////////// VarByteBuffer ///////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const char *buf)
+VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const unsigned char *buf)
     : Var(loc), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
-    if(bufsz > 0) buffer = (char *)malloc(bufsz);
+    if(bufsz > 0) buffer = (unsigned char *)malloc(bufsz);
     if(buflen > 0) memcpy(buffer, buf, buflen);
 }
 VarBytebuffer::~VarBytebuffer()
@@ -966,14 +966,14 @@ bool VarBytebuffer::onSet(VirtualMachine &vm, Var *from)
     setData(tmp->buffer, tmp->buflen);
     return true;
 }
-void VarBytebuffer::setData(const char *newbuf, size_t newlen)
+void VarBytebuffer::setData(const unsigned char *newbuf, size_t newlen)
 {
     if(newlen == 0) return;
     if(bufsz > 0 && newlen > bufsz) {
-        buffer = (char *)realloc(buffer, newlen);
+        buffer = (unsigned char *)realloc(buffer, newlen);
         bufsz  = newlen;
     } else if(bufsz == 0) {
-        buffer = (char *)malloc(newlen);
+        buffer = (unsigned char *)malloc(newlen);
         bufsz  = newlen;
     }
     memcpy(buffer, newbuf, newlen);
