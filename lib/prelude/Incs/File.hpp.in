@@ -73,7 +73,7 @@ FERAL_FUNC(fileLines, 0, false,
 FERAL_FUNC(fileSeek, 2, false,
            "  var.fn(offset, origin) -> Int\n"
            "Move the position of File `var` from `origin` by `offset` bytes.\n"
-           "`origin` can be one of SEEK_SET / SEEK_CURR / SEEK_END.")
+           "`origin` can be one of SEEK_SET / SEEK_CURR / SEEK_END. Returns `0` on success.")
 {
     EXPECT(VarInt, args[1], "file seek offset");
     EXPECT(VarInt, args[2], "file seek origin");
@@ -81,6 +81,18 @@ FERAL_FUNC(fileSeek, 2, false,
     long offset      = as<VarInt>(args[1])->getVal();
     int origin       = as<VarInt>(args[2])->getVal();
     return vm.makeVar<VarInt>(loc, fseek(file, offset, origin));
+}
+
+FERAL_FUNC(fileSize, 0, false,
+           "  var.fn() -> Int\n"
+           "Gets the size of the file.")
+{
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    size_t curr = ftell(file);
+    fseek(file, 0, SEEK_END);
+    size_t sz = ftell(file);
+    fseek(file, curr, SEEK_SET);
+    return vm.makeVar<VarInt>(loc, sz);
 }
 
 FERAL_FUNC(fileEachLine, 0, false,
@@ -124,6 +136,18 @@ FERAL_FUNC(fileReadAll, 0, false,
     if(lineptr) free(lineptr);
     fseek(file, 0, SEEK_SET);
     return res;
+}
+
+FERAL_FUNC(fileReadBytes, 1, false,
+           "  var.fn(bytebuffer) -> Int\n"
+           "Reads the file `var` as an array of bytes into `bytebuffer` upto the capacity of it,"
+           " and returns the number of bytes read.")
+{
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    VarBytebuffer *buf = as<VarBytebuffer>(args[1]);
+    size_t read = fread(buf->getVal(), sizeof(VarBytebuffer::InternalType), buf->capacity(), file);
+    buf->setLen(read);
+    return vm.makeVar<VarInt>(loc, read);
 }
 
 FERAL_FUNC(fileReadBlocks, 2, false,

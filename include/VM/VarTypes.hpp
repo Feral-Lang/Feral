@@ -799,7 +799,11 @@ public:
 
 class VarBytebuffer : public Var
 {
-    unsigned char *buffer;
+public:
+    using InternalType = unsigned char;
+
+private:
+    InternalType *buffer;
     size_t bufsz;
     size_t buflen;
 

@@ -857,8 +857,10 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarFile>(loc, "fd", fileFd);
     vm.addTypeFn<VarFile>(loc, "lines", fileLines);
     vm.addTypeFn<VarFile>(loc, "seek", fileSeek);
+    vm.addTypeFn<VarFile>(loc, "len", fileSize);
     vm.addTypeFn<VarFile>(loc, "eachLine", fileEachLine);
     vm.addTypeFn<VarFile>(loc, "readAll", fileReadAll);
+    vm.addTypeFn<VarFile>(loc, "readBytes", fileReadBytes);
     vm.addTypeFn<VarFile>(loc, "readBlocks", fileReadBlocks);
 
     vm.addTypeFn<VarFileIterator>(loc, "next", fileIteratorNext);
