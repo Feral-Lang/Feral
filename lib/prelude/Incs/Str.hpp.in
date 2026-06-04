@@ -596,7 +596,7 @@ FERAL_FUNC(chr, 0, false,
            "  var.fn() -> Str\n"
            "Converts the integer `var` (1 byte) into a character and returns it as a string.")
 {
-    uint8_t byt = (uint8_t)as<VarInt>(args[0])->getVal();
+    unsigned char byt = (unsigned char)as<VarInt>(args[0])->getVal();
     return vm.makeVar<VarStr>(loc, String(1, byt));
 }
 

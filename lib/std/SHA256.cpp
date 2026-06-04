@@ -23,7 +23,7 @@ static constexpr uint32_t K[64] = {
 
 static constexpr uint32_t rotr32(uint32_t x, int n) { return (x >> n) | (x << (32 - n)); }
 
-static void compress(uint32_t H[8], const uint8_t blk[64])
+static void compress(uint32_t H[8], const unsigned char blk[64])
 {
     uint32_t w[64];
     for(int i = 0; i < 16; ++i) {
@@ -89,7 +89,7 @@ void VarSHA256Ctx::reset()
     msgLen     = 0;
 }
 
-void VarSHA256Ctx::update(const uint8_t *data, size_t len)
+void VarSHA256Ctx::update(const unsigned char *data, size_t len)
 {
     msgLen += len;
     for(size_t i = 0; i < len; ++i) {
@@ -105,7 +105,7 @@ String VarSHA256Ctx::finalize() const
 {
     // Work on local copies so the original context is left unmodified.
     uint32_t tmpH[8];
-    uint8_t tmpPending[128]; // at most two 64-byte blocks after padding
+    unsigned char tmpPending[128]; // at most two 64-byte blocks after padding
     size_t tmpLen = pendingLen;
 
     memcpy(tmpH, H, sizeof(H));
@@ -163,7 +163,7 @@ FERAL_FUNC(sha256Update, 1, false,
     VarSHA256Ctx *ctx = as<VarSHA256Ctx>(args[0]);
     if(args[1]->is<VarStr>()) {
         const String &s = as<VarStr>(args[1])->getVal();
-        ctx->update(reinterpret_cast<const uint8_t *>(s.data()), s.size());
+        ctx->update(reinterpret_cast<const unsigned char *>(s.data()), s.size());
     } else if(args[1]->is<VarBytebuffer>()) {
         VarBytebuffer *buf = as<VarBytebuffer>(args[1]);
         ctx->update(buf->getVal(), buf->size());
