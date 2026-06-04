@@ -1,0 +1,39 @@
+# Tests TCP socket: async connect, accept, send, and recv via a loopback echo server.
+let assert = import('std/assert');
+
+# let io = import('std/io');
+let async = import('std/async');
+let bytebuffer = import('std/bytebuffer');
+let socket = import('std/socket');
+
+let PORT = 19880;
+let MSG = 'hello socket';
+
+let serverFn = fn() {
+    let srv = socket.listen('127.0.0.1', PORT);
+    let client = await srv.accept();
+    let buf = bytebuffer.new(256);
+    let n = await client.recv(buf);
+    # io.println('[server] received: ', buf.str(), ' (', n, ')');
+    assert.gt(n, 0);
+    await client.send(buf.str());
+    # io.println('[server] sent: ', buf.str());
+    client.close();
+    srv.close();
+};
+
+let clientFn = fn() {
+    let sock = await socket.connect('127.0.0.1', PORT);
+    await sock.send(MSG);
+    # io.println('[client] sent: ', MSG);
+    let buf = bytebuffer.new(256);
+    let n = await sock.recv(buf);
+    # io.println('[client] received: ', buf.str(), ' (', n, ')');
+    assert.eq(buf.str(), MSG);
+    sock.close();
+};
+
+let runner = async.newRunner();
+runner.push(serverFn);
+runner.push(clientFn);
+runner.run();

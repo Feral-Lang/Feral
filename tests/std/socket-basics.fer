@@ -1,0 +1,25 @@
+# Tests basic socket creation, closure, getFd, getSockName, and newAddr.
+let assert = import('std/assert');
+let socket = import('std/socket');
+
+# Creation and basic properties.
+let sock = socket.new(socket.AF_INET, socket.SOCK_STREAM);
+assert.eq(sock.isClosed(), false);
+assert.gt(sock.getFd(), 0);
+
+# Explicit close.
+sock.close();
+assert.eq(sock.isClosed(), true);
+
+# listen() returns a bound socket; getSockName() is non-empty.
+let srv = socket.listen('127.0.0.1', 19879);
+assert.ne(srv.getSockName(), '');
+srv.close();
+
+# newAddr with host+port resolves to a non-empty string.
+let addr = socket.newAddr('127.0.0.1', 80);
+assert.ne(addr.str(), '');
+
+# newAddr with no args returns an empty address (used as output param for recvFrom).
+let empty = socket.newAddr();
+assert.eq(empty.str(), '');

@@ -1,0 +1,42 @@
+# Tests UDP socket: async sendTo and recvFrom via a loopback echo.
+let assert = import('std/assert');
+
+# let io = import('std/io');
+let async = import('std/async');
+let bytebuffer = import('std/bytebuffer');
+let socket = import('std/socket');
+
+let PORT_SENDER = 19881;
+let PORT_RECEIVER = 19882;
+let MSG = 'udp echo test';
+
+# Receiver runs first so its socket is bound before the sender transmits.
+let receiverFn = fn() {
+    let sock = socket.udp('127.0.0.1', PORT_RECEIVER);
+    let buf = bytebuffer.new(256);
+    let sender = socket.newAddr();
+    let n = await sock.recvFrom(sender, buf);
+    # io.println('[server] received: ', buf.str(), ' (', n, ')');
+    assert.gt(n, 0);
+    await sock.sendTo(sender, buf.str());
+    # io.println('[server] sent: ', buf.str());
+    sock.close();
+};
+
+let senderFn = fn() {
+    let sock = socket.udp('127.0.0.1', PORT_SENDER);
+    let dest = socket.newAddr('127.0.0.1', PORT_RECEIVER);
+    await sock.sendTo(dest, MSG);
+    # io.println('[client] sent: ', MSG);
+    let buf = bytebuffer.new(256);
+    let reply = socket.newAddr();
+    let n = await sock.recvFrom(reply, buf);
+    # io.println('[client] received: ', buf.str(), ' (', n, ')');
+    assert.eq(buf.str(), MSG);
+    sock.close();
+};
+
+let runner = async.newRunner();
+runner.push(receiverFn);
+runner.push(senderFn);
+runner.run();

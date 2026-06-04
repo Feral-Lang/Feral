@@ -1,0 +1,116 @@
+# std/socket - TCP/UDP socket library.
+# Provides async-compatible wrappers around the native Socket module.
+# Use `await` with async functions (accept, send, recv, sendTo, recvFrom)
+# inside other async functions, or `wait` to run them synchronously anywhere.
+
+loadlib('std/Socket');
+
+##################################################### TCP #####################################################
+
+"
+  fn(host, port, domain = AF_INET) -> Socket
+Creates a TCP Socket and connects it to `host`:`port`.
+Yields until the connection is established.
+"
+let connect = fn(host, port, domain = AF_INET) {
+    let sock = new(domain, SOCK_STREAM);
+    sock.connect(host, port);
+    while !sock.connectReady() {
+        yield;
+    }
+    return sock;
+};
+
+"
+  fn(host, port, backlog = 128, domain = AF_INET) -> Socket
+Creates a TCP Socket, sets SO_REUSEADDR, binds to `host`:`port`, and puts it into listening state.
+Pass an empty string for `host` to listen on all interfaces.
+"
+let listen = fn(host, port, backlog = 128, domain = AF_INET) {
+    let sock = new(domain, SOCK_STREAM);
+    sock.setOpt(SOL_SOCKET, SO_REUSEADDR, 1);
+    sock.bind(host, port);
+    sock.listen(backlog);
+    return sock;
+};
+
+"
+  var.fn() -> Socket
+Accepts a pending connection on the listening Socket `var`.
+Yields until a client connects.
+"
+let accept in SocketTy = fn() {
+    while true {
+        let client = self.acceptNative();
+        if client != nil { return client; }
+        yield;
+    }
+};
+
+"
+  var.fn(data) -> Int
+Sends `data` (Str or Bytebuffer) on the Socket `var`.
+Returns the number of bytes sent.
+Yields until the socket is ready to send.
+"
+let send in SocketTy = fn(data) {
+    while true {
+        let n = self.sendNative(data);
+        if n != nil { return n; }
+        yield;
+    }
+};
+
+"
+  var.fn(buf) -> Int
+Receives data from the Socket `var` into the Bytebuffer `buf`.
+Returns the number of bytes received, or 0 if the peer closed the connection.
+Yields until data is available.
+"
+let recv in SocketTy = fn(buf) {
+    while true {
+        let n = self.recvNative(buf);
+        if n != nil { return n; }
+        yield;
+    }
+};
+
+##################################################### UDP #####################################################
+
+"
+  fn(host = '', port = 0, domain = AF_INET) -> Socket
+Creates a UDP Socket. If `port` is non-zero, binds to `host`:`port`.
+"
+let udp = fn(host = '', port = 0, domain = AF_INET) {
+    let sock = new(domain, SOCK_DGRAM);
+    if port != 0 { sock.bind(host, port); }
+    return sock;
+};
+
+"
+  var.fn(addr, data) -> Int
+Sends `data` (Str or Bytebuffer) to `addr` on the UDP Socket `var`.
+Returns the number of bytes sent.
+Yields until the socket is ready to send.
+"
+let sendTo in SocketTy = fn(addr, data) {
+    while true {
+        let n = self.sendToNative(addr, data);
+        if n != nil { return n; }
+        yield;
+    }
+};
+
+"
+  var.fn(addr, buf) -> Int
+Receives a datagram into `buf` on the UDP Socket `var`, writing the sender's address into `addr`.
+Returns the number of bytes received.
+Yields until a datagram is available.
+"
+let recvFrom in SocketTy = fn(addr, buf) {
+    while true {
+        let n = self.recvFromNative(addr, buf);
+        if n != nil { return n; }
+        yield;
+    }
+};
