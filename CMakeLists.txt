@@ -10,6 +10,8 @@ set(PROJECT_VERSION_PATCH "1")
 
 include(FetchContent)
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
+include(CMakePackageConfigHelpers)
 
 if("${DISABLE_INSTALL_MSG}" STREQUAL "true")
     message("-- Install messages are now lazily shown")
@@ -89,8 +91,6 @@ else()
     set(TREE_STATUS "Dirty")
 endif()
 
-include(CheckCXXCompilerFlag)
-
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -134,7 +134,7 @@ endif()
 FetchContent_Declare(
     LibCore
     GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-    GIT_TAG        1.1.8
+    GIT_TAG        1.2.0
 )
 
 FetchContent_MakeAvailable(LibCore)
@@ -151,7 +151,10 @@ target_compile_features(libferal PUBLIC cxx_std_20)
 target_link_libraries(libferal LibCore::LibCore)
 # For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport) depending on
 # if the the DLL is being generated, or is being used.
-target_include_directories(libferal PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(libferal PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/feral>
+)
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
 set_target_properties(libferal
     PROPERTIES
@@ -163,7 +166,29 @@ set_target_properties(libferal
     LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib" # for so (non-windows)
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)
 )
-install(TARGETS libferal)
+install(TARGETS libferal EXPORT FeralTargets)
+install(EXPORT FeralTargets
+    FILE FeralTargets.cmake
+    NAMESPACE Feral::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Feral
+)
+
+configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/FeralConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/FeralConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Feral"
+    PATH_VARS CMAKE_INSTALL_LIBDIR CMAKE_INSTALL_PREFIX
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/FeralConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
+    COMPATIBILITY AnyNewerVersion
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/FeralConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/FeralConfigVersion.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Feral"
+)
 
 # Feral Binary
 add_executable(feral "${PROJECT_SOURCE_DIR}/src/Main.cpp")

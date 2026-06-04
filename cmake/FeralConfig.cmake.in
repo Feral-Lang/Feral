@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(LibCore REQUIRED)
+
+# Expose install paths for package manager use
+set(FERAL_INSTALL_PREFIX  "@PACKAGE_CMAKE_INSTALL_PREFIX@")
+set(FERAL_LIB_DIR         "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+set(FERAL_INCLUDE_DIR     "${FERAL_INSTALL_PREFIX}/include/feral")
+
+include("${CMAKE_CURRENT_LIST_DIR}/FeralTargets.cmake")
+check_required_components(Feral)
