@@ -1,0 +1,110 @@
+# lib/std/pkg.fer
+# Package build-description API, imported in a package's package.fer.
+# Pure data-description: no side effects, no filesystem, no network.
+# The package manager reads the resulting description to resolve, build, and install.
+#
+# API:
+#   pkg.new(...)                                    -> Project    declare a package project
+#   pkg.getProjects()                               -> Vec        get all declared projects
+#   project.requires(name, versionConstraint, .kw) -> Dependency declare a dependency
+#   project.addTarget(name, sources...)             -> Target     declare a build target
+
+let vec = import('std/vec');
+let version = import('std/version');
+
+let Target = struct(
+    name = 'SampleTarget',
+    sources = vec.new()
+);
+Target.setTypeName('Target');
+
+let Dependency = struct(
+    name = 'SampleDependency',
+    constraint = version.parseConstraint('>=0.0.1'),
+    linkAs = 'SampleDependency', # for native libraries (like libcurl), provide the link name (like CURL::libcurl)
+    isFeral = false # false => native library (like libcurl); true => feral package (like LibMP)
+);
+Dependency.setTypeName('Dependency');
+
+let Project = struct(
+    name = 'SampleProject',
+    desc = 'A good but brief description here',
+    version = version.parse('0.0.1'),
+    authors = vec.new(
+        'ProjectAuthor <author@email.com>'
+    ),
+    targets = vec.new(refs = true),
+    dependencies = vec.new(refs = true)
+);
+Project.setTypeName('Project');
+
+let projects = vec.new(refs = true);
+
+"
+  fn() -> Vec
+Returns the vec of all Project values declared via pkg.new() in this session.
+"
+let getProjects = fn() { return ref(projects); };
+
+"
+  fn(.kw) -> Project
+Declares a new package project. Accepts keyword arguments:
+  name    — package name
+  desc    — short description
+  version — version string (e.g. '1.2.3'); validated via version.parse()
+  feral   — Feral interpreter version constraint (e.g. '>=2.0.1');
+            raises immediately if the running interpreter does not satisfy it
+  authors — vec of author strings (e.g. 'Name <email>')
+The created Project is registered in getProjects() and returned.
+"
+let new  = fn(.kw) {
+    if kw['feral'] != nil {
+        let feralConstraint = version.parseConstraint(kw['feral']);
+        let feralVersion = version.parse(feral.version);
+        if !feralConstraint.matches(feralVersion) {
+            raise('package requires Feral `', kw['feral'], '`, but currently running version `', feral.version, '`');
+        }
+    }
+    let project = Project();
+
+    if kw['name'] != nil { project.name = kw['name']; }
+    if kw['desc'] != nil { project.desc = kw['desc']; }
+    if kw['version'] != nil { project.version = version.parse(kw['version']); }
+    if kw['authors'] != nil { project.authors = kw['authors']; }
+
+    projects.push(project);
+    return ref(project);
+};
+
+"
+  project.requires(name, versionConstraint, .kw) -> Dependency
+Declares a dependency for this project. Accepts keyword arguments:
+  linkAs  — CMake link target name for native libraries (e.g. 'CURL::libcurl');
+            defaults to name
+  isFeral — true if this is a Feral package dependency (default: false)
+The constraint string is validated via version.parseConstraint().
+The created Dependency is added to project.dependencies and returned.
+"
+let requires in Project = fn(name, versionConstraint, .kw) {
+    let isFeral = kw['isFeral'] ?? false;
+    let linkAs = kw['linkAs'] ?? name;
+    let dep = Dependency(name, version.parseConstraint(versionConstraint), linkAs, isFeral);
+    self.dependencies.push(dep);
+    return ref(dep);
+};
+
+"
+  project.addTarget(name, sources...) -> Target
+Declares a native C++ build target for this project.
+  name    — target name (used as the CMake target name)
+  sources — one or more C++ source file paths, relative to package.fer
+The created Target is added to project.targets and returned.
+"
+let addTarget in Project = fn(name, sources...) {
+    let target = Target(name);
+    for src in sources.each() {
+        target.sources.push(src);
+    }
+    self.targets.push(target);
+    return ref(target);
+};
