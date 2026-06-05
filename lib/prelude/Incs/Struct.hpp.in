@@ -44,4 +44,14 @@ FERAL_FUNC(structLen, 0, false,
     return vm.makeVar<VarInt>(loc, st->getAttrCount());
 }
 
+FERAL_FUNC(structCopy, 0, false,
+           "  var.fn() -> Struct\n"
+           "Copies the struct data and returns it.")
+{
+    VarStruct *s   = as<VarStruct>(args[0]);
+    VarStruct *res = vm.makeVar<VarStruct>(loc, s->getBase(), s->getSubType());
+    if(!vm.setVar(res, s)) vm.decVarRef(res);
+    return res;
+}
+
 } // namespace fer

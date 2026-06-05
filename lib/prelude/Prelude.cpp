@@ -536,6 +536,7 @@ INIT_DLL(Prelude)
     vm.addLocal("tempPath", "", vm.getTempPath());
     vm.addLocal("libPath", "", vm.getLibPath());
 
+    vm.makeLocal<VarStr>(loc, "version", "", PROJECT_VERSION_STR);
     vm.makeLocal<VarInt>(loc, "versionMajor", "", PROJECT_MAJOR);
     vm.makeLocal<VarInt>(loc, "versionMinor", "", PROJECT_MINOR);
     vm.makeLocal<VarInt>(loc, "versionPatch", "", PROJECT_PATCH);
@@ -570,6 +571,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "_copy_", strCopy);
     vm.addTypeFn<VarVec>(loc, "_copy_", vecCopy);
     vm.addTypeFn<VarMap>(loc, "_copy_", mapCopy);
+    vm.addTypeFn<VarStruct>(loc, "_copy_", structCopy);
     vm.addTypeFn<VarBytebuffer>(loc, "_copy_", bytebufferCopy);
 
     // to bool
