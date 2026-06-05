@@ -227,15 +227,15 @@ foreach(libModule ${libModules})
 endforeach()
 
 # Install C++ Includes
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/" "${CMAKE_SOURCE_DIR}/lib/"
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/include/feral"
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.inl"
 )
 
 # Install Feral Imports
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/feral"
-    FILES_MATCHING PATTERN "*.fer"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral"
+    FILES_MATCHING PATTERN "*.fer" PATTERN "*.hpp"
 )
 
 # Libraries (Optional)
