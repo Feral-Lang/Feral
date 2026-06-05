@@ -5,9 +5,9 @@
 let vec = import('std/vec');
 
 let buildTypes = enum(
+    .Regular,
     .Alpha,
-    .Beta,
-    .Regular
+    .Beta
 );
 
 let buildTypesToStr = fn(buildType) {
@@ -228,4 +228,130 @@ let isNum = fn(str) {
         if byt < zeroByt || byt > nineByt { return false; }
     }
     return true;
+};
+
+############################################################################
+# Constraint — version range expressions
+# Syntax examples: '>=1.0.0', '^1.2.0', '>=1.0.0,<2.0.0', '^1.0.0|>=3.0.0'
+# Operators: >=, <=, >, <, =, !=, ^ (caret), ~ (tilde), * (any version)
+# Comma (,) = AND within a group; pipe (|) = OR between groups
+############################################################################
+
+let Condition = struct(op = '', ver = Version());
+Condition.setTypeName('Condition');
+
+let str in Condition = fn() {
+    return self.op + self.ver.str();
+};
+
+# A Constraint is an OR of groups; each group is an AND of Conditions.
+let Constraint = struct(groups = vec.new(refs = true));
+Constraint.setTypeName('Constraint');
+
+let str in Constraint = fn() {
+    let res = '';
+    for let gi = 0; gi < self.groups.len(); ++gi {
+        let group = ref(self.groups[gi]);
+        for let ci = 0; ci < group.len(); ++ci {
+            res += group[ci].str();
+            if ci < group.len() - 1 { res += ','; }
+        }
+        if gi < self.groups.len() - 1 { res += '|'; }
+    }
+    return res;
+};
+
+let _checkCond = fn(cond, v) {
+    if cond.op == '>=' { return v >= cond.ver; }
+    if cond.op == '<=' { return v <= cond.ver; }
+    if cond.op == '>'  { return v > cond.ver; }
+    if cond.op == '<'  { return v < cond.ver; }
+    if cond.op == '='  { return v == cond.ver; }
+    if cond.op == '!=' { return v != cond.ver; }
+    raise('unknown version constraint operator: ', cond.op);
+};
+
+"
+  var.fn(v) -> Bool
+Returns true if version `v` satisfies the constraint `var`.
+"
+let matches in Constraint = fn(v) {
+    for group in self.groups.each() {
+        let ok = true;
+        for cond in group.each() {
+            if !_checkCond(cond, v) { ok = false; break; }
+        }
+        if ok { return true; }
+    }
+    return false;
+};
+
+# ^major.minor.patch => >=major.minor.patch,<upper
+# upper bumps the leftmost non-zero component.
+let _expandCaret = fn(v) {
+    let conds = vec.new(refs = true);
+    conds.push(Condition('>=', v));
+    if v.major != 0 {
+        conds.push(Condition('<', new(v.major + 1, 0, 0)));
+    } elif v.minor != 0 {
+        conds.push(Condition('<', new(0, v.minor + 1, 0)));
+    } else {
+        conds.push(Condition('<', new(0, 0, v.patch + 1)));
+    }
+    return conds;
+};
+
+# ~major.minor.patch => >=major.minor.patch,<major.(minor+1).0
+let _expandTilde = fn(v) {
+    let conds = vec.new(refs = true);
+    conds.push(Condition('>=', v));
+    conds.push(Condition('<', new(v.major, v.minor + 1, 0)));
+    return conds;
+};
+
+# Parse one condition token (no , or |) into a vec of Condition.
+let _parseConditions = fn(s) {
+    let result = vec.new(refs = true);
+    if s == '*' { return result; }
+
+    let slen = s.len();
+    if slen >= 3 {
+        if s.isChAt(0, '>') && s.isChAt(1, '=') {
+            result.push(Condition('>=', parse(s.sub(2)))); return result;
+        }
+        if s.isChAt(0, '<') && s.isChAt(1, '=') {
+            result.push(Condition('<=', parse(s.sub(2)))); return result;
+        }
+        if s.isChAt(0, '!') && s.isChAt(1, '=') {
+            result.push(Condition('!=', parse(s.sub(2)))); return result;
+        }
+    }
+    if slen >= 2 {
+        if s.isChAt(0, '>') { result.push(Condition('>', parse(s.sub(1)))); return result; }
+        if s.isChAt(0, '<') { result.push(Condition('<', parse(s.sub(1)))); return result; }
+        if s.isChAt(0, '=') { result.push(Condition('=', parse(s.sub(1)))); return result; }
+        if s.isChAt(0, '^') { return _expandCaret(parse(s.sub(1))); }
+        if s.isChAt(0, '~') { return _expandTilde(parse(s.sub(1))); }
+    }
+    result.push(Condition('=', parse(s)));
+    return result;
+};
+
+"
+  fn(s) -> Constraint
+Parses a version constraint string and returns a Constraint.
+Operators: >=, <=, >, <, =, !=, ^ (caret), ~ (tilde), * (any version).
+Use comma (,) for AND within a group, pipe (|) for OR between groups.
+Examples: '>=1.0.0', '^1.2.0', '>=1.0.0,<2.0.0', '^1.0.0|>=3.0.0'
+"
+let parseConstraint = fn(s) {
+    let c = Constraint();
+    for groupStr in s.split('|').each() {
+        let group = vec.new(refs = true);
+        for condStr in groupStr.split(',').each() {
+            group.append(_parseConditions(condStr));
+        }
+        c.groups.push(group);
+    }
+    return c;
 };

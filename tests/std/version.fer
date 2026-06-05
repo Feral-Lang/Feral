@@ -33,3 +33,72 @@ let invalidVersion = version.parse('0.0.0') or e {
     assert.eq(e.str(), 'Raised: Invalid version: 0.0.0 with major, minor, and patch numbers being zero');
     return nil;
 };
+
+# --- Constraint ---
+
+let v003 = version.parse('0.0.3');
+let v023 = version.parse('0.2.3');
+let v100 = version.parse('1.0.0');
+let v120 = version.parse('1.2.0');
+let v123 = version.parse('1.2.3');
+let v130 = version.parse('1.3.0');
+let v199 = version.parse('1.9.9');
+let v200 = version.parse('2.0.0');
+let v300 = version.parse('3.0.0');
+
+# simple operators
+assert.eq(version.parseConstraint('>=1.0.0').matches(v123), true);
+assert.eq(version.parseConstraint('>=1.0.0').matches(version.parse('0.9.0')), false);
+assert.eq(version.parseConstraint('<=1.2.0').matches(v120), true);
+assert.eq(version.parseConstraint('<=1.2.0').matches(v123), false);
+assert.eq(version.parseConstraint('>1.0.0').matches(v123), true);
+assert.eq(version.parseConstraint('>1.0.0').matches(v100), false);
+assert.eq(version.parseConstraint('<2.0.0').matches(v123), true);
+assert.eq(version.parseConstraint('<2.0.0').matches(v200), false);
+assert.eq(version.parseConstraint('=1.2.3').matches(v123), true);
+assert.eq(version.parseConstraint('=1.2.3').matches(v120), false);
+assert.eq(version.parseConstraint('!=1.2.3').matches(v120), true);
+assert.eq(version.parseConstraint('!=1.2.3').matches(v123), false);
+
+# bare version = exact match
+assert.eq(version.parseConstraint('1.2.3').matches(v123), true);
+assert.eq(version.parseConstraint('1.2.3').matches(v120), false);
+
+# wildcard
+assert.eq(version.parseConstraint('*').matches(v100), true);
+assert.eq(version.parseConstraint('*').matches(v300), true);
+
+# caret: ^1.2.0 => >=1.2.0,<2.0.0
+assert.eq(version.parseConstraint('^1.2.0').matches(v123), true);
+assert.eq(version.parseConstraint('^1.2.0').matches(v199), true);
+assert.eq(version.parseConstraint('^1.2.0').matches(v200), false);
+assert.eq(version.parseConstraint('^1.2.0').matches(version.parse('1.1.9')), false);
+# caret: ^0.2.3 => >=0.2.3,<0.3.0
+assert.eq(version.parseConstraint('^0.2.3').matches(v023), true);
+assert.eq(version.parseConstraint('^0.2.3').matches(version.parse('0.2.9')), true);
+assert.eq(version.parseConstraint('^0.2.3').matches(version.parse('0.3.0')), false);
+# caret: ^0.0.3 => >=0.0.3,<0.0.4
+assert.eq(version.parseConstraint('^0.0.3').matches(v003), true);
+assert.eq(version.parseConstraint('^0.0.3').matches(version.parse('0.0.4')), false);
+
+# tilde: ~1.2.0 => >=1.2.0,<1.3.0
+assert.eq(version.parseConstraint('~1.2.0').matches(v123), true);
+assert.eq(version.parseConstraint('~1.2.0').matches(version.parse('1.2.9')), true);
+assert.eq(version.parseConstraint('~1.2.0').matches(v130), false);
+assert.eq(version.parseConstraint('~1.2.0').matches(version.parse('1.1.9')), false);
+
+# AND (comma)
+assert.eq(version.parseConstraint('>=1.0.0,<2.0.0').matches(v123), true);
+assert.eq(version.parseConstraint('>=1.0.0,<2.0.0').matches(v200), false);
+assert.eq(version.parseConstraint('>=1.0.0,<2.0.0').matches(version.parse('0.9.9')), false);
+
+# OR (pipe)
+assert.eq(version.parseConstraint('^1.0.0|>=3.0.0').matches(v123), true);
+assert.eq(version.parseConstraint('^1.0.0|>=3.0.0').matches(v300), true);
+assert.eq(version.parseConstraint('^1.0.0|>=3.0.0').matches(v200), false);
+
+# str: caret/tilde are expanded, so str shows the normalised form
+assert.eq(version.parseConstraint('>=1.0.0,<2.0.0').str(), '>=1.0.0,<2.0.0');
+assert.eq(version.parseConstraint('>=1.0.0|>=3.0.0').str(), '>=1.0.0|>=3.0.0');
+assert.eq(version.parseConstraint('^1.2.0').str(), '>=1.2.0,<2.0.0');
+assert.eq(version.parseConstraint('~1.2.0').str(), '>=1.2.0,<1.3.0');
