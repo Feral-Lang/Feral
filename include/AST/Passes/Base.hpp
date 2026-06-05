@@ -5,7 +5,7 @@
 namespace fer::ast
 {
 
-class Pass
+class FER_API Pass
 {
 protected:
     size_t passid;
@@ -58,7 +58,7 @@ public:
 
 template<typename T> T *as(Pass *t) { return static_cast<T *>(t); }
 
-class PassManager
+class FER_API PassManager
 {
     // Must be a vector to be able to use push_back()
     Vector<Pass *> passes;

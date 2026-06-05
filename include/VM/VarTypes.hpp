@@ -39,7 +39,7 @@ typedef void (*DllDeinitFn)(VirtualMachine &vm);
 #define DEINIT_DLL(name) extern "C" void Deinit##name(VirtualMachine &vm)
 
 class VarFrame;
-class Var : public IAllocated
+class FER_API Var : public IAllocated
 {
     ModuleLoc loc;
     Atomic<ssize_t> ref;
@@ -149,7 +149,7 @@ template<VarDerived T> T *as(Var *data) { return static_cast<T *>(data); }
 template<VarDerived T> size_t typeID() { return typeid(T).hash_code(); }
 
 // dummy type to denote all other types
-class VarAll : public Var
+class FER_API VarAll : public Var
 {
     // No copy() since VarAll contains no value and represents a value in itself.
     // Essentially, creating a new copy of it serves no purpose.
@@ -158,13 +158,13 @@ public:
     VarAll(ModuleLoc loc);
 };
 
-class VarNil : public Var
+class FER_API VarNil : public Var
 {
 public:
     VarNil(ModuleLoc loc);
 };
 
-class VarTypeID : public Var
+class FER_API VarTypeID : public Var
 {
     size_t val;
 
@@ -175,7 +175,7 @@ public:
     inline size_t getVal() { return val; }
 };
 
-class VarBool : public Var
+class FER_API VarBool : public Var
 {
     bool val;
 
@@ -188,7 +188,7 @@ public:
     inline bool getVal() { return val; }
 };
 
-class VarInt : public Var
+class FER_API VarInt : public Var
 {
     int64_t val;
 
@@ -202,7 +202,7 @@ public:
     inline int64_t &getVal() { return val; }
 };
 
-class VarIntIterator : public Var
+class FER_API VarIntIterator : public Var
 {
     int64_t begin, end, step, curr;
     bool started;
@@ -221,7 +221,7 @@ public:
     inline int64_t getCurr() { return curr; }
 };
 
-class VarFlt : public Var
+class FER_API VarFlt : public Var
 {
     double val;
 
@@ -235,7 +235,7 @@ public:
     inline double getVal() { return val; }
 };
 
-class VarStr : public Var
+class FER_API VarStr : public Var
 {
     String val;
 
@@ -253,7 +253,7 @@ public:
     inline String &getVal() { return val; }
 };
 
-class VarVec : public Var
+class FER_API VarVec : public Var
 {
     Vector<Var *> val;
     bool asrefs;
@@ -285,7 +285,7 @@ public:
     inline size_t capacity() { return val.capacity(); }
 };
 
-class VarVecIterator : public Var
+class FER_API VarVecIterator : public Var
 {
     VarVec *vec;
     size_t curr;
@@ -299,7 +299,7 @@ public:
     bool next(Var *&val);
 };
 
-class VarMap : public Var
+class FER_API VarMap : public Var
 {
     StringMap<Var *> val;
     ManagedRawList *keyOrder; // list<str>
@@ -363,7 +363,7 @@ public:
     inline bool empty() { return val.empty(); }
 };
 
-class VarMapIterator : public Var
+class FER_API VarMapIterator : public Var
 {
     VarMap *map;
     VarMap::Iterator curr;
@@ -421,7 +421,7 @@ union FnBody
 
 class VarModule;
 
-class VarFn : public Var
+class FER_API VarFn : public Var
 {
     VarModule *mod;
     Vector<String> params;
@@ -449,7 +449,7 @@ public:
     inline bool isNative() { return isnative; }
 };
 
-class VarClosure : public Var
+class FER_API VarClosure : public Var
 {
     Var *callable;
     VarVec *args;
@@ -488,7 +488,7 @@ public:
     inline void pop(VirtualMachine &vm, bool dref) { return args->pop(vm, dref); }
 };
 
-class VarAsync : public Var
+class FER_API VarAsync : public Var
 {
     VarClosure *closure; // closure is required to preserve args.
     VarVec *stack;
@@ -508,7 +508,7 @@ public:
     inline Var *getReturned() { return returned; }
 };
 
-class VarFrame : public Var
+class FER_API VarFrame : public Var
 {
     enum FrameType
     {
@@ -545,7 +545,7 @@ public:
 };
 
 // A VarModule cannot be copied. It will always return self when a copy is attempted.
-class VarModule : public Var
+class FER_API VarModule : public Var
 {
     String path;
     Bytecode bc;
@@ -573,7 +573,7 @@ public:
     inline bool isVirtual() { return virtualMod; }
 };
 
-class VarDll : public Var
+class FER_API VarDll : public Var
 {
     DllInitFn initfn;
     DllDeinitFn deinitfn;
@@ -584,7 +584,7 @@ public:
     VarDll(ModuleLoc loc, DllInitFn initfn, DllDeinitFn deinitfn);
 };
 
-class VarStructDef : public Var
+class FER_API VarStructDef : public Var
 {
     VarMap *attrs;
     // type id of struct (struct id) which will be used as typeID for struct objects
@@ -623,7 +623,7 @@ public:
     inline void reserveAttrs(size_t count) { return attrs->reserve(count); }
 };
 
-class VarStruct : public Var
+class FER_API VarStruct : public Var
 {
     VarStructDef *base;
     VarMap *attrs;
@@ -661,7 +661,7 @@ public:
     inline void reserveAttrs(size_t count) { return attrs->reserve(count); }
 };
 
-class VarFailure : public Var
+class FER_API VarFailure : public Var
 {
     Vector<ModuleLoc> trace;
     String msg;
@@ -699,7 +699,7 @@ public:
     inline bool isHandling() { return handling; }
 };
 
-class VarPath : public Var
+class FER_API VarPath : public Var
 {
     Path val;
 
@@ -761,7 +761,7 @@ public:
     inline Path &getVal() { return val; }
 };
 
-class VarFile : public Var
+class FER_API VarFile : public Var
 {
     String path;
     String mode;
@@ -784,7 +784,7 @@ public:
     inline bool mustClose() { return requiresClosing; }
 };
 
-class VarFileIterator : public Var
+class FER_API VarFileIterator : public Var
 {
     VarFile *file;
 
@@ -797,7 +797,7 @@ public:
     bool next(VarStr *&val);
 };
 
-class VarBytebuffer : public Var
+class FER_API VarBytebuffer : public Var
 {
 public:
     using InternalType = unsigned char;
@@ -823,7 +823,7 @@ public:
     inline size_t capacity() { return bufsz; }
 };
 
-class VarStack : public Var
+class FER_API VarStack : public Var
 {
     Vector<VarFrame *> stack;
     Vector<size_t> modulePos; // location of modules in stack

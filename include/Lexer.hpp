@@ -125,7 +125,7 @@ enum TokType
  */
 extern const char *TokStrs[_LAST];
 
-class Tok
+class FER_API Tok
 {
     TokType val;
 
@@ -178,7 +178,7 @@ public:
     inline bool isType(TokType other) const { return val == other; }
 };
 
-class Lexeme : public IAllocated
+class FER_API Lexeme : public IAllocated
 {
 public:
     using Data = Variant<String, StringRef, int64_t, double>;
@@ -236,7 +236,7 @@ public:
     inline bool hasString() const { return std::holds_alternative<String>(data); }
 };
 
-bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &toks);
-void dumpTokens(OStream &os, const ManagedList &toks);
+FER_API bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &toks);
+FER_API void dumpTokens(OStream &os, const ManagedList &toks);
 
 } // namespace fer::lex

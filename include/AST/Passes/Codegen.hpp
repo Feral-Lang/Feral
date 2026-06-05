@@ -7,7 +7,7 @@
 namespace fer::ast
 {
 
-class CodegenPass : public Pass
+class FER_API CodegenPass : public Pass
 {
     // argument info string for function definitions
     // needs to be propagated between function signature and definition

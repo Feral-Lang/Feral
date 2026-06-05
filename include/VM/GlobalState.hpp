@@ -13,7 +13,7 @@ namespace fer
 typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef path,
                               StringRef data, bool exprOnly);
 
-class GlobalState
+class FER_API GlobalState
 {
     MemoryManager mem;
     ManagedList managedAllocator;

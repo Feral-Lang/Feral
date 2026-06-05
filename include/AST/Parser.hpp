@@ -69,7 +69,7 @@ public:
 };
 
 // Can modify toks since some stuff requires it (like determining pre/post operators)
-bool parse(ManagedList &allocator, ManagedList &toks, Stmt *&s, bool exprOnly);
-void dumpTree(OStream &os, Stmt *tree);
+FER_API bool parse(ManagedList &allocator, ManagedList &toks, Stmt *&s, bool exprOnly);
+FER_API void dumpTree(OStream &os, Stmt *tree);
 
 } // namespace fer::ast

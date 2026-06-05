@@ -21,7 +21,7 @@ public:
     void applyDefers(Vector<Stmt *> &stmts);
 };
 
-class SimplifyPass : public Pass
+class FER_API SimplifyPass : public Pass
 {
     bool applyConstantFolding(Stmt *&resultStmt, StmtSimple *l, StmtSimple *r, lex::TokType oper);
     DeferStack defers;

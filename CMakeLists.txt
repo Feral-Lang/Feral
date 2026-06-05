@@ -6,7 +6,7 @@ project(Feral
 
 set(PROJECT_VERSION_MAJOR "2")
 set(PROJECT_VERSION_MINOR "0")
-set(PROJECT_VERSION_PATCH "1")
+set(PROJECT_VERSION_PATCH "2")
 
 include(FetchContent)
 include(GNUInstallDirs)
@@ -134,7 +134,7 @@ endif()
 FetchContent_Declare(
     LibCore
     GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-    GIT_TAG        1.2.0
+    GIT_TAG        1.3.0
 )
 
 FetchContent_MakeAvailable(LibCore)
@@ -148,13 +148,13 @@ file(GLOB_RECURSE SRCS RELATIVE "${PROJECT_SOURCE_DIR}" "src/*.cpp")
 list(REMOVE_ITEM SRCS "src/Main.cpp")
 add_library(libferal SHARED ${SRCS} ${INCS})
 target_compile_features(libferal PUBLIC cxx_std_20)
-target_link_libraries(libferal LibCore::LibCore)
-# For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport) depending on
-# if the the DLL is being generated, or is being used.
 target_include_directories(libferal PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/feral>
 )
+target_link_libraries(libferal LibCore::LibCore)
+# For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport)
+# depending on if the the DLL is being generated, or is being used.
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
 set_target_properties(libferal
     PROPERTIES
@@ -258,8 +258,9 @@ if(NOT NOSTDLIB STREQUAL "true")
             CXX_STANDARD_REQUIRED ON
             CXX_EXTENSIONS OFF
             PREFIX "libferal"
-            ARCHIVE_OUTPUT_NAME "libferal${modname}"
             LINK_FLAGS "${EXTRA_LD_FLAGS}"
+            WINDOWS_EXPORT_ALL_SYMBOLS ON
+            ARCHIVE_OUTPUT_NAME "libferal${modname}"
             LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
             RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
             ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)

@@ -5,7 +5,7 @@
 namespace fer
 {
 
-class FailStack : public IAllocated
+class FER_API FailStack : public IAllocated
 {
     Vector<VarFailure *> stack;
     VirtualMachine &vm;

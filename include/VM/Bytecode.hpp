@@ -65,7 +65,7 @@ enum class DataType : uint8_t
     IDEN,
 };
 
-class Instruction
+class FER_API Instruction
 {
 public:
     using Data = Variant<String, int64_t, double, bool>;
@@ -122,7 +122,7 @@ public:
     void writeToFile(FILE *f) const;
 };
 
-class Bytecode
+class FER_API Bytecode
 {
     Vector<Instruction> code;
 

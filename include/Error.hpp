@@ -10,7 +10,7 @@ using ModuleId = uint16_t;
 // Module ID is the group of 16 most significant bits (2 bytes) of the ModuleLoc which is
 // a 64 bit unsigned integer, with the remaining 48 bits denoting the code offset - start and end
 // (24 each). When id is -1, the ModuleLoc is invalid.
-struct ModuleLoc
+struct FER_API ModuleLoc
 {
     uint64_t id       : 16;
     uint64_t offStart : 24;
@@ -29,7 +29,7 @@ struct ModuleLoc
 
 static_assert(sizeof(ModuleLoc) == sizeof(uint64_t));
 
-class ErrorHandler
+class FER_API ErrorHandler
 {
     Map<ModuleId, StringRef> paths;
     Map<ModuleId, File *> files;
@@ -56,6 +56,6 @@ public:
     }
 };
 
-extern DLL_EXPORT ErrorHandler err;
+extern FER_API ErrorHandler err;
 
 } // namespace fer

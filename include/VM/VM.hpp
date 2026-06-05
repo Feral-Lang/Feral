@@ -85,7 +85,7 @@ namespace fer
     }
 
 // Each execution thread. Can spawn more if needed.
-class VirtualMachine : public IAllocated
+class FER_API VirtualMachine : public IAllocated
 {
     GlobalState *gs;
     String name;

@@ -4,6 +4,16 @@
 
 #include "LibCore.hpp"
 
+#if defined(CORE_OS_WINDOWS)
+#if defined(EXPORT_FOR_DLL)
+#define FER_API __declspec(dllexport)
+#else
+#define FER_API __declspec(dllimport)
+#endif
+#else
+#define FER_API
+#endif
+
 namespace fer
 {
 
