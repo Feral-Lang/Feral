@@ -30,6 +30,7 @@ let Project = struct(
     name = 'SampleProject',
     desc = 'A good but brief description here',
     version = version.parse('0.0.1'),
+    license = 'MIT',
     authors = vec.new(
         'ProjectAuthor <author@email.com>'
     ),
@@ -70,6 +71,7 @@ let new  = fn(.kw) {
     if kw['name'] != nil { project.name = kw['name']; }
     if kw['desc'] != nil { project.desc = kw['desc']; }
     if kw['version'] != nil { project.version = version.parse(kw['version']); }
+    if kw['license'] != nil { project.license = kw['license']; }
     if kw['authors'] != nil { project.authors = kw['authors']; }
 
     projects.push(project);

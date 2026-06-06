@@ -10,12 +10,14 @@ let project = pkg.new(
     name = 'TestPkg',
     desc = 'A test package',
     version = '1.2.3',
+    license = 'Apache-2.0',
     authors = vec.new('Author One', 'Author Two')
 );
 
 assert.eq(project.name, 'TestPkg');
 assert.eq(project.desc, 'A test package');
 assert.eq(project.version, version.parse('1.2.3'));
+assert.eq(project.license, 'Apache-2.0');
 assert.eq(project.authors[0], 'Author One');
 assert.eq(project.authors[1], 'Author Two');
 assert.eq(project.dependencies.len(), 0);
@@ -29,6 +31,8 @@ assert.eq(projs[0].name, 'TestPkg');
 # feral version constraint — must match current interpreter
 pkg.new(name = 'FeralOk', version = '0.0.1', feral = '>=0.0.1');
 assert.eq(pkg.getProjects().len(), 2);
+# default license is 'MIT' when not specified
+assert.eq(pkg.getProjects()[1].license, 'MIT');
 
 # feral version constraint — incompatible interpreter raises
 pkg.new(name = 'FeralBad', version = '0.0.1', feral = '>=999.0.0') or e {

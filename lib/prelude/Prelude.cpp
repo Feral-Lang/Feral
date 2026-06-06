@@ -535,6 +535,7 @@ INIT_DLL(Prelude)
     vm.addLocal("installPath", "", vm.getInstallPath());
     vm.addLocal("tempPath", "", vm.getTempPath());
     vm.addLocal("libPath", "", vm.getLibPath());
+    vm.addLocal("globalModulePaths", "", vm.getGlobalModulePathsFile());
 
     vm.makeLocal<VarStr>(loc, "version", "", PROJECT_VERSION_STR);
     vm.makeLocal<VarInt>(loc, "versionMajor", "", PROJECT_MAJOR);

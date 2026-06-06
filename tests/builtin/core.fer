@@ -32,6 +32,7 @@ feral.args;
 feral.installPath;
 feral.binaryPath;
 feral.libPath;
+feral.globalModulePaths;
 
 feral.versionMajor;
 feral.versionMinor;
