@@ -395,6 +395,12 @@ let parse in Parser = fn(argv, from = 0) {
         raise('option \'', self.argDefs[expectingValFor].getName(), '\' requires a value');
     }
 
+    # Auto-handle --help: print and exit
+    if self.has('help') {
+        self.printHelp(io.stdout);
+        feral.exit(0);
+    }
+
     # Validate required arguments
     for a in self.argDefs.each() {
         if !a.isRequired() || a.isFound() { continue; }
@@ -407,12 +413,6 @@ let parse in Parser = fn(argv, from = 0) {
     # Validate required subcommand
     if !self.subsDest.empty() && self.subsReqd && self.subcmd.empty() {
         raise('a subcommand is required; run with --help for usage.');
-    }
-
-    # Auto-handle --help: print and exit
-    if self.has('help') {
-        self.printHelp(io.stdout);
-        feral.exit(0);
     }
 };
 
