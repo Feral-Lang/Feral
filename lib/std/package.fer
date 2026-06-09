@@ -1,13 +1,12 @@
-# lib/std/pkg.fer
+# lib/std/package.fer
 # Package build-description API, imported in a package's package.fer.
 # Pure data-description: no side effects, no filesystem, no network.
 # The package manager reads the resulting description to resolve, build, and install.
 #
 # API:
-#   pkg.new(...)                                    -> Project    declare a package project
-#   pkg.getProjects()                               -> Vec        get all declared projects
-#   project.requires(name, versionConstraint, .kw) -> Dependency declare a dependency
-#   project.addTarget(name, sources...)             -> Target     declare a build target
+#   pkg.new(...)                                    -> Package    declare a package
+#   Package.requires(name, versionConstraint, .kw)  -> Dependency declare a dependency
+#   Package.addTarget(name, sources...)             -> Target     declare a build target
 
 let vec = import('std/vec');
 let version = import('std/version');
@@ -26,10 +25,11 @@ let Dependency = struct(
 );
 Dependency.setTypeName('Dependency');
 
-let Project = struct(
+let Package = struct(
     name = 'SampleProject',
     desc = 'A good but brief description here',
-    version = version.parse('0.0.1'),
+    feral = '*',
+    version = '0.0.1',
     license = 'MIT',
     authors = vec.new(
         'ProjectAuthor <author@email.com>'
@@ -37,15 +37,7 @@ let Project = struct(
     targets = vec.new(refs = true),
     dependencies = vec.new(refs = true)
 );
-Project.setTypeName('Project');
-
-let projects = vec.new(refs = true);
-
-"
-  fn() -> Vec
-Returns the vec of all Project values declared via pkg.new() in this session.
-"
-let getProjects = fn() { return ref(projects); };
+Package.setTypeName('Package');
 
 "
   fn(.kw) -> Project
@@ -59,27 +51,18 @@ Declares a new package project. Accepts keyword arguments:
 The created Project is registered in getProjects() and returned.
 "
 let new  = fn(.kw) {
-    if kw['feral'] != nil {
-        let feralConstraint = version.parseConstraint(kw['feral']);
-        let feralVersion = version.parse(feral.version);
-        if !feralConstraint.matches(feralVersion) {
-            raise('package requires Feral `', kw['feral'], '`, but currently running version `', feral.version, '`');
-        }
-    }
-    let project = Project();
-
-    if kw['name'] != nil { project.name = kw['name']; }
-    if kw['desc'] != nil { project.desc = kw['desc']; }
-    if kw['version'] != nil { project.version = version.parse(kw['version']); }
-    if kw['license'] != nil { project.license = kw['license']; }
-    if kw['authors'] != nil { project.authors = kw['authors']; }
-
-    projects.push(project);
-    return ref(project);
+    let package = Package();
+    if kw['name'] != nil { package.name = kw['name']; }
+    if kw['desc'] != nil { package.desc = kw['desc']; }
+    if kw['feral'] != nil { package.feral = version.parseConstraint(kw['feral']).str(); }
+    if kw['version'] != nil { package.version = version.parse(kw['version']).str(); }
+    if kw['license'] != nil { package.license = kw['license']; }
+    if kw['authors'] != nil { package.authors = kw['authors']; }
+    return package;
 };
 
 "
-  project.requires(name, versionConstraint, .kw) -> Dependency
+  Package.requires(name, versionConstraint, .kw) -> Dependency
 Declares a dependency for this project. Accepts keyword arguments:
   linkAs  — CMake link target name for native libraries (e.g. 'CURL::libcurl');
             defaults to name
@@ -87,7 +70,7 @@ Declares a dependency for this project. Accepts keyword arguments:
 The constraint string is validated via version.parseConstraint().
 The created Dependency is added to project.dependencies and returned.
 "
-let requires in Project = fn(name, versionConstraint, .kw) {
+let requires in Package = fn(name, versionConstraint, .kw) {
     let isFeral = kw['isFeral'] ?? false;
     let linkAs = kw['linkAs'] ?? name;
     let dep = Dependency(name, version.parseConstraint(versionConstraint), linkAs, isFeral);
@@ -96,13 +79,13 @@ let requires in Project = fn(name, versionConstraint, .kw) {
 };
 
 "
-  project.addTarget(name, sources...) -> Target
+  Package.addTarget(name, sources...) -> Target
 Declares a native C++ build target for this project.
   name    — target name (used as the CMake target name)
   sources — one or more C++ source file paths, relative to package.fer
 The created Target is added to project.targets and returned.
 "
-let addTarget in Project = fn(name, sources...) {
+let addTarget in Package = fn(name, sources...) {
     let target = Target(name);
     for src in sources.each() {
         target.sources.push(src);

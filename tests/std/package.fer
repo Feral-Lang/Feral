@@ -1,0 +1,71 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+let version = import('std/version');
+
+let package = import('std/package');
+
+# --- package.new() ---
+
+let pkg = package.new(
+    name = 'TestPkg',
+    desc = 'A test package',
+    feral = '*',
+    version = '1.2.3',
+    license = 'Apache-2.0',
+    authors = vec.new('Author One', 'Author Two')
+);
+
+assert.eq(pkg.name, 'TestPkg');
+assert.eq(pkg.desc, 'A test package');
+assert.eq(pkg.feral, '*');
+assert.eq(pkg.version, '1.2.3');
+assert.eq(pkg.license, 'Apache-2.0');
+assert.eq(pkg.authors[0], 'Author One');
+assert.eq(pkg.authors[1], 'Author Two');
+assert.eq(pkg.dependencies.len(), 0);
+assert.eq(pkg.targets.len(), 0);
+
+# --- Package.requires() ---
+
+let dep = pkg.requires('CURL', '>=3.0.0', linkAs = 'CURL::libcurl');
+assert.eq(pkg.dependencies.len(), 1);
+assert.eq(dep.name, 'CURL');
+assert.eq(dep.constraint.str(), '>=3.0.0');
+assert.eq(dep.linkAs, 'CURL::libcurl');
+assert.eq(dep.isFeral, false);
+
+# default linkAs = name, isFeral = false
+let dep2 = pkg.requires('NativeLib', '>=1.0.0');
+assert.eq(dep2.linkAs, 'NativeLib');
+assert.eq(dep2.isFeral, false);
+
+# isFeral = true
+let dep3 = pkg.requires('Progress', '>=0.0.1', isFeral = true);
+assert.eq(dep3.isFeral, true);
+assert.eq(dep3.linkAs, 'Progress');
+assert.eq(pkg.dependencies.len(), 3);
+
+# returned dep references the same object as in pkg.dependencies
+assert.eq(dep.name, pkg.dependencies[0].name);
+assert.eq(dep.constraint.str(), pkg.dependencies[0].constraint.str());
+
+# invalid constraint raises
+pkg.requires('Bad', '>=') or e { return nil; };
+
+# --- pkg.addTarget() ---
+
+let target = pkg.addTarget('Curl', 'Curl.cpp', 'Extra.cpp');
+assert.eq(pkg.targets.len(), 1);
+assert.eq(target.name, 'Curl');
+assert.eq(target.sources.len(), 2);
+assert.eq(target.sources[0], 'Curl.cpp');
+assert.eq(target.sources[1], 'Extra.cpp');
+
+# returned target references the same object as in pkg.targets
+assert.eq(target.name, pkg.targets[0].name);
+
+# multiple targets
+pkg.addTarget('CurlCLI', 'CLI.cpp');
+assert.eq(pkg.targets.len(), 2);
+assert.eq(pkg.targets[1].name, 'CurlCLI');

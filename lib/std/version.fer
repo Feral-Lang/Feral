@@ -258,6 +258,7 @@ let str in Constraint = fn() {
         }
         if gi < self.groups.len() - 1 { res += '|'; }
     }
+    if res.empty() { return '*'; }
     return res;
 };
 
