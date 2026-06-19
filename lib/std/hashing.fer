@@ -1,0 +1,45 @@
+# lib/std/hashing.fer
+# Cryptographic hash functions, including:
+# - SHA-256: native C++ streaming implementation.
+#
+# API:
+#   hashing.sha256(msg)                -> Str         hash a string in one shot
+#   hashing.sha256File(path)           -> Str         hash a file in 64 KiB chunks
+#   hashing.newSHA256Ctx()             -> SHA256Ctx   create a streaming context
+#   SHA256Ctx:
+#   - SHA256Ctx.update(ctx, s)         -> Nil         feed string data into a context
+#   - SHA256Ctx.updateBytes(ctx, b, n) -> Nil         feed the first n bytes of a Bytebuffer
+#   - SHA256Ctx.final(ctx)             -> Str         finalise and return the 64-char hex digest
+
+loadlib('std/SHA256');
+
+let fs = import('std/fs');
+let bytebuffer = import('std/bytebuffer');
+
+"
+  fn(msg) -> Str
+Computes the SHA-256 hash of string or bytebuffer `msg` and returns it as a 64-character lowercase hex string.
+"
+let sha256 = fn(msg) {
+    let ctx = newSHA256Ctx();
+    ctx.update(msg);
+    return ctx.final();
+};
+
+"
+  fn(path, chunkSize = 65536) -> Str
+Reads the file at `path` in `chunkSize` sized chunks (64 KiB by default) and returns its SHA-256 hash as a
+64-character lowercase hex string.
+"
+let sha256File = fn(path, chunkSize = 65536) {
+    let f = fs.fopen(path, 'rb');
+    let ctx = newSHA256Ctx();
+    let buf = bytebuffer.new(chunkSize);
+    let n = f.readBytes(buf);
+    while n > 0 {
+        ctx.update(buf);
+        n = f.readBytes(buf);
+    }
+    f.close();
+    return ctx.final();
+};

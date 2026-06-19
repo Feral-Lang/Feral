@@ -4,7 +4,7 @@
 # The package manager reads the resulting description to resolve, build, and install.
 #
 # API:
-#   pkg.new(...)                                    -> Package    declare a package
+#   package.new(...)                                -> Package    declare a package
 #   Package.requires(name, versionConstraint, .kw)  -> Dependency declare a dependency
 #   Package.addTarget(name, sources...)             -> Target     declare a build target
 

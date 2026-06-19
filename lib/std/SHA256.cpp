@@ -185,7 +185,7 @@ INIT_DLL(SHA256)
 {
     vm.addLocalType<VarSHA256Ctx>(loc, "SHA256Ctx", "A SHA-256 streaming hash context.");
 
-    vm.addLocal(loc, "newCtx", newSHA256Ctx);
+    vm.addLocal(loc, "newSHA256Ctx", newSHA256Ctx);
 
     vm.addTypeFn<VarSHA256Ctx>(loc, "update", sha256Update);
     vm.addTypeFn<VarSHA256Ctx>(loc, "final", sha256Final);
