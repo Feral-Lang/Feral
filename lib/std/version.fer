@@ -262,16 +262,6 @@ let str in Constraint = fn() {
     return res;
 };
 
-let _checkCond = fn(cond, v) {
-    if cond.op == '>=' { return v >= cond.ver; }
-    if cond.op == '<=' { return v <= cond.ver; }
-    if cond.op == '>'  { return v > cond.ver; }
-    if cond.op == '<'  { return v < cond.ver; }
-    if cond.op == '='  { return v == cond.ver; }
-    if cond.op == '!=' { return v != cond.ver; }
-    raise('unknown version constraint operator: ', cond.op);
-};
-
 "
   var.fn(v) -> Bool
 Returns true if version `v` satisfies the constraint `var`.
@@ -285,6 +275,35 @@ let matches in Constraint = fn(v) {
         if ok { return true; }
     }
     return false;
+};
+
+"
+  fn(s) -> Constraint
+Parses a version constraint string and returns a Constraint.
+Operators: >=, <=, >, <, =, !=, ^ (caret), ~ (tilde), * (any version).
+Use comma (,) for AND within a group, pipe (|) for OR between groups.
+Examples: '>=1.0.0', '^1.2.0', '>=1.0.0,<2.0.0', '^1.0.0|>=3.0.0'
+"
+let parseConstraint = fn(s) {
+    let c = Constraint();
+    for groupStr in s.split('|').each() {
+        let group = vec.new(refs = true);
+        for condStr in groupStr.split(',').each() {
+            group.append(_parseConditions(condStr));
+        }
+        c.groups.push(group);
+    }
+    return c;
+};
+
+let _checkCond = fn(cond, v) {
+    if cond.op == '>=' { return v >= cond.ver; }
+    if cond.op == '<=' { return v <= cond.ver; }
+    if cond.op == '>'  { return v > cond.ver; }
+    if cond.op == '<'  { return v < cond.ver; }
+    if cond.op == '='  { return v == cond.ver; }
+    if cond.op == '!=' { return v != cond.ver; }
+    raise('unknown version constraint operator: ', cond.op);
 };
 
 # ^major.minor.patch => >=major.minor.patch,<upper
@@ -336,23 +355,4 @@ let _parseConditions = fn(s) {
     }
     result.push(Condition('=', parse(s)));
     return result;
-};
-
-"
-  fn(s) -> Constraint
-Parses a version constraint string and returns a Constraint.
-Operators: >=, <=, >, <, =, !=, ^ (caret), ~ (tilde), * (any version).
-Use comma (,) for AND within a group, pipe (|) for OR between groups.
-Examples: '>=1.0.0', '^1.2.0', '>=1.0.0,<2.0.0', '^1.0.0|>=3.0.0'
-"
-let parseConstraint = fn(s) {
-    let c = Constraint();
-    for groupStr in s.split('|').each() {
-        let group = vec.new(refs = true);
-        for condStr in groupStr.split(',').each() {
-            group.append(_parseConditions(condStr));
-        }
-        c.groups.push(group);
-    }
-    return c;
 };
