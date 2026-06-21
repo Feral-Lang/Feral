@@ -111,7 +111,7 @@ let fixUsingMax in Version = fn(minorMax, patchMax) {
 
 let '==' in Version = fn(other) {
     if other._typeName_() != 'Version' {
-        raise('Expected Version as RHS for comparison, found: ', other._typeName_());
+        return false;
     }
     if self.major != other.major || self.minor != other.minor || self.patch != other.patch || self.build != other.build {
         return false;
@@ -296,6 +296,21 @@ let parseConstraint = fn(s) {
     return c;
 };
 
+"
+  fn(constraints) -> Constraint
+Takes a vec of Constraints and returns a single Constraint that is the
+intersection (AND) of all of them.
+"
+let intersect = fn(constraints...) {
+    let result = parseConstraint('*');
+    for let i = 0; i < constraints.len(); ++i {
+        let tmp = _intersectTwo(result, constraints[i]);
+        if tmp == nil { return nil; }
+        result = tmp;
+    }
+    return result;
+};
+
 let _checkCond = fn(cond, v) {
     if cond.op == '>=' { return v >= cond.ver; }
     if cond.op == '<=' { return v <= cond.ver; }
@@ -354,5 +369,103 @@ let _parseConditions = fn(s) {
         if s.isChAt(0, '~') { return _expandTilde(parse(s.sub(1))); }
     }
     result.push(Condition('=', parse(s)));
+    return result;
+};
+
+# Cartesian product of two constraints' groups:
+# (A1|A2) & (B1|B2) = (A1,B1)|(A1,B2)|(A2,B1)|(A2,B2)
+# Each merged group is simplified to its tightest bounds.
+let _intersectTwo = fn(c1, c2) {
+    if c1.groups.empty() { return c2; }
+    if c2.groups.empty() { return c1; }
+    let result = Constraint();
+    for g1 in c1.groups.each() {
+        for g2 in c2.groups.each() {
+            let merged = vec.new(refs = true);
+            merged.append(g1);
+            merged.append(g2);
+            let simplified = _simplifyGroup(merged);
+            if simplified == nil { return nil; }
+            result.groups.push(simplified);
+        }
+    }
+    return result;
+};
+
+# Simplify a group (AND of conditions) to its tightest bounds.
+# Returns an empty vec for unsatisfiable groups.
+let _simplifyGroup = fn(group) {
+    if group.empty() { return group; }
+    let lowerOp = '';
+    let lowerVer = Version();
+    let upperOp = '';
+    let upperVer = Version();
+    let hasEq = false;
+    let eqVer = Version();
+    let neqs = vec.new(refs = true);
+
+    for cond in group.each() {
+        if cond.op == '=' {
+            if !hasEq {
+                hasEq = true;
+                eqVer = cond.ver;
+            } elif eqVer != cond.ver {
+                return nil; # contradictory
+            }
+        } elif cond.op == '!=' {
+            neqs.push(cond.ver);
+        } elif cond.op == '>=' || cond.op == '>' {
+            if lowerOp.empty() || cond.ver > lowerVer ||
+               (cond.ver == lowerVer && cond.op == '>') {
+                lowerOp = cond.op;
+                lowerVer = cond.ver;
+            }
+        } elif cond.op == '<=' || cond.op == '<' {
+            if upperOp.empty() || cond.ver < upperVer ||
+               (cond.ver == upperVer && cond.op == '<') {
+                upperOp = cond.op;
+                upperVer = cond.ver;
+            }
+        }
+    }
+
+    # Exact match overrides range bounds.
+    if hasEq {
+        for v in neqs.each() {
+            if v == eqVer { return nil; }
+        }
+        let result = vec.new(refs = true);
+        result.push(Condition('=', eqVer));
+        return result;
+    }
+
+    # Detect unsatisfiable range.
+    if !lowerOp.empty() && !upperOp.empty() {
+        if lowerVer > upperVer { return nil; }
+        if lowerVer == upperVer && (lowerOp == '>' || upperOp == '<') {
+            return nil;
+        }
+    }
+
+    let result = vec.new(refs = true);
+    if !lowerOp.empty() { result.push(Condition(lowerOp, lowerVer)); }
+    if !upperOp.empty() { result.push(Condition(upperOp, upperVer)); }
+    # Keep only != that fall within the range.
+    for v in neqs.each() {
+        let dominated = false;
+        if !lowerOp.empty() {
+            if (lowerOp == '>=' && v < lowerVer) ||
+               (lowerOp == '>' && v <= lowerVer) {
+                dominated = true;
+            }
+        }
+        if !upperOp.empty() {
+            if (upperOp == '<=' && v > upperVer) ||
+               (upperOp == '<' && v >= upperVer) {
+                dominated = true;
+            }
+        }
+        if !dominated { result.push(Condition('!=', v)); }
+    }
     return result;
 };

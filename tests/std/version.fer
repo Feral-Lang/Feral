@@ -102,3 +102,104 @@ assert.eq(version.parseConstraint('>=1.0.0,<2.0.0').str(), '>=1.0.0,<2.0.0');
 assert.eq(version.parseConstraint('>=1.0.0|>=3.0.0').str(), '>=1.0.0|>=3.0.0');
 assert.eq(version.parseConstraint('^1.2.0').str(), '>=1.2.0,<2.0.0');
 assert.eq(version.parseConstraint('~1.2.0').str(), '>=1.2.0,<1.3.0');
+
+# --- Intersect ---
+
+let vec = import('std/vec');
+
+# Basic: tightest lower and upper bounds win.
+let i1 = version.intersect(
+    version.parseConstraint('>=1.0.0,<4.0.0'),
+    version.parseConstraint('>=2.0.0,<3.0.0')
+);
+assert.eq(i1.str(), '>=2.0.0,<3.0.0');
+assert.eq(i1.matches(version.parse('2.5.0')), true);
+assert.eq(i1.matches(v100), false);
+assert.eq(i1.matches(v300), false);
+
+# Intersecting carets narrows the range.
+let i2 = version.intersect(
+    version.parseConstraint('^1.0.0'),
+    version.parseConstraint('^1.2.0')
+);
+assert.eq(i2.str(), '>=1.2.0,<2.0.0');
+assert.eq(i2.matches(v123), true);
+assert.eq(i2.matches(v100), false);
+assert.eq(i2.matches(v200), false);
+
+# Strict > takes precedence over >= at the same version.
+let i3 = version.intersect(
+    version.parseConstraint('>=1.0.0'),
+    version.parseConstraint('>1.0.0')
+);
+assert.eq(i3.str(), '>1.0.0');
+assert.eq(i3.matches(v100), false);
+assert.eq(i3.matches(v123), true);
+
+# Strict < takes precedence over <= at the same version.
+let i4 = version.intersect(
+    version.parseConstraint('<=2.0.0'),
+    version.parseConstraint('<2.0.0')
+);
+assert.eq(i4.str(), '<2.0.0');
+assert.eq(i4.matches(v200), false);
+assert.eq(i4.matches(v199), true);
+
+# Unsatisfiable intersection produces empty constraint (matches nothing).
+let i5 = version.intersect(
+    version.parseConstraint('>=3.0.0'),
+    version.parseConstraint('<2.0.0')
+);
+assert.eq(i5, nil);
+
+# Intersect with wildcard returns the other constraint.
+let i6 = version.intersect(
+    version.parseConstraint('*'),
+    version.parseConstraint('^1.2.0')
+);
+assert.eq(i6.str(), '>=1.2.0,<2.0.0');
+
+# Single constraint returns itself.
+let i7 = version.intersect(
+    version.parseConstraint('>=1.0.0,<2.0.0')
+);
+assert.eq(i7.str(), '>=1.0.0,<2.0.0');
+
+# Empty list returns wildcard.
+let i8 = version.intersect();
+assert.eq(i8.str(), '*');
+assert.eq(i8.matches(v100), true);
+
+# Three constraints.
+let i9 = version.intersect(
+    version.parseConstraint('>=1.0.0'),
+    version.parseConstraint('<3.0.0'),
+    version.parseConstraint('>=1.2.0')
+);
+assert.eq(i9.str(), '>=1.2.0,<3.0.0');
+
+# != is preserved when inside range.
+let i10 = version.intersect(
+    version.parseConstraint('>=1.0.0,<2.0.0'),
+    version.parseConstraint('!=1.2.3')
+);
+assert.eq(i10.matches(v123), false);
+assert.eq(i10.matches(v120), true);
+
+# != outside range is dropped.
+let i11 = version.intersect(
+    version.parseConstraint('>=2.0.0'),
+    version.parseConstraint('!=1.0.0')
+);
+assert.eq(i11.str(), '>=2.0.0');
+
+# OR groups: (>=1.0.0,<2.0.0 | >=3.0.0) & (>=1.5.0,<4.0.0)
+# => (>=1.5.0,<2.0.0) | (>=3.0.0,<4.0.0)
+let i12 = version.intersect(
+    version.parseConstraint('>=1.0.0,<2.0.0|>=3.0.0'),
+    version.parseConstraint('>=1.5.0,<4.0.0')
+);
+assert.eq(i12.matches(version.parse('1.6.0')), true);
+assert.eq(i12.matches(v120), false);
+assert.eq(i12.matches(version.parse('3.5.0')), true);
+assert.eq(i12.matches(version.parse('4.0.0')), false);
