@@ -328,9 +328,11 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
             if(inbase->isAttrBased()) val = inbase->getAttr(attr);
             if(!val) {
                 val = getTypeFn(inbase, attr);
-                // Make the type func into a closure with inbase as `self`.
-                val = makeVar<VarClosure>(ins.getLoc(), val);
-                as<VarClosure>(val)->setSelf(*this, inbase, true);
+                if(val) {
+                    // Make the type func into a closure with inbase as `self`.
+                    val = makeVar<VarClosure>(ins.getLoc(), val);
+                    as<VarClosure>(val)->setSelf(*this, inbase, true);
+                }
             }
             if(!val) {
                 fail(ins.getLoc(), "type ", getTypeName(inbase),

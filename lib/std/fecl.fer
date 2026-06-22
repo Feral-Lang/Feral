@@ -223,6 +223,7 @@ let GetIden = fn(data, i, end) {
         if !ch.isAlpha() && !ch.isDigit() && ch != '_' && ch != '-' { break; }
         res += ch; ++i;
     }
+    if !res.empty() { --i; }
     return res;
 };
 
@@ -291,6 +292,10 @@ let ParseInternal = fn(toks, sz, i) {
     if toks.getType(i) == TokType.STR { return toks.getData(i); }
     if toks.getType(i) == TokType.INT { return toks.getData(i).int(); }
     if toks.getType(i) == TokType.FLT { return toks.getData(i).flt(); }
+    if toks.getType(i) == TokType.IDEN {
+        if toks.getData(i) == 'true' { return true; }
+        if toks.getData(i) == 'false' { return false; }
+    }
 
     if i > 0 {
         raise('invalid token: ', TokStr[toks.getType(i)], ' at index: ', i, ' encountered after: ', TokStr[toks.getType(i - 1)]);
