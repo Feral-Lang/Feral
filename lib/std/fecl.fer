@@ -405,6 +405,10 @@ let feclString in MapTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
     return res;
 };
 
+let feclString in AllTy = fn(indentLevel = -1, indentWith = ' ', top = false) {
+    return '"' + self.str() + '"';
+};
+
 let stringifyIfNeeded = fn(data) {
     let len = data.len();
     let stringify = false;
