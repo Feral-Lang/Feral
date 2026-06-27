@@ -1,0 +1,74 @@
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let result = import('std/result');
+let version = import('std/version');
+let platform = import('std/platform');
+
+let VCPKGFinder = struct(
+    exe = ''.path()
+);
+VCPKGFinder.setTypeName('VCPKGFinder');
+
+let new = fn() {
+    if os.name != 'windows' { return result.err(-1, 'Only usable on Windows'); }
+    let exe = os.findExec('vcpkg.exe');
+    if exe != nil { return result.ok(VCPKGFinder(exe)); }
+    let vcpkgRoot = os.getEnv('VCPKG_ROOT');
+    if vcpkgRoot == nil { return result.err(-1, 'No `VCPKG_ROOT` environment variable set'); }
+    let exePath = vcpkgRoot / 'vcpkg.exe';
+    if fs.exists(exePath) { return result.ok(VCPKGFinder(exePath)); }
+    return result.err(-1, 'Could not find vcpkg.exe');
+};
+
+let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
+    let isDebug = kw['debug'] ?? false;
+    let versConstraint = kw['version'] ?? '*';
+    let out = vec.new(refs = true);
+    os.exec(out = out, self.exe, 'list', pkgName);
+    if out.empty() { return result.err(-1, 'Library ', pkgName, ' is not installed via vcpkg'); }
+    out.clear();
+    os.exec(out = out, self.exe, 'depend-info', pkgName);
+    let deps = vec.new(refs = true);
+    for o in out.each() {
+        if o.startsWith('vcpkg') { continue; }
+        let split = o.split(':');
+        let pkgLower = pkgName.lower();
+        if split[0] == pkgLower || split[0].startsWith(pkgLower + '[') { continue; }
+        deps.push(split[0].split('[')[0]);
+    }
+    out.clear();
+    os.exec(out = out, self.exe, 'owns', pkgName);
+    let lib = platform.Library(pkgName);
+    if !self.addOutputInLib(lib, out, isDebug) { return result.err(-1, 'Could not add vcpkg owns output into library object'); }
+    for d in deps.each() {
+        let depLib = self.findLibrary(d, isDebug);
+        if depLib.isErr() { return depLib; }
+        lib.append(depLib.getVal());
+    }
+    return result.ok(lib);
+};
+
+let addOutputInLib in VCPKGFinder = fn(lib, out, isDebug) {
+    if out.empty() { return false; }
+    let installedRoot = self.exe.parent() / 'installed';
+    lib.addIncludeDirs(installedRoot / 'x64-windows' / 'include');
+    if isDebug {
+        lib.addLibraryDirs(installedRoot / 'x64-windows' / 'debug' / 'lib');
+    } else {
+        lib.addLibraryDirs(installedRoot / 'x64-windows' / 'lib');
+    }
+    for o in out.each() {
+        let file = o.split(': ')[1];
+        if file.find('bin/') >= 0 || file.find('lib/') >= 0 {
+            let fileDebug = file.find('debug/') >= 0;
+            if isDebug != fileDebug { continue; }
+        }
+        if file.endsWith('.dll') {
+            lib.addDllPaths(installedRoot / file);
+        } elif file.endsWith('.lib') {
+            lib.addLibraryFlags(file.path().file());
+        }
+    }
+    return true;
+};

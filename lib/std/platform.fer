@@ -3,7 +3,183 @@
 
 let fs = import('std/fs');
 let os = import('std/os');
+let map = import('std/map');
 let vec = import('std/vec');
+let result = import('std/result');
+
+####################################################################################################
+########################################## Compiler ################################################
+####################################################################################################
+
+let Compiler = struct(
+    id = '',
+    c = ''.path(),
+    cpp = ''.path(),
+    version = '',
+    env = map.new()
+);
+Compiler.setTypeName('Compiler');
+
+let compiler = Compiler();
+
+let getCompiler = fn() {
+    if !compiler.id.empty() { return result.ok(compiler); }
+    if os.name == 'windows' {
+        let vsPath = getVSInstallPath();
+        if vsPath == nil { return result.err(-1, 'Visual Studio must be installed to get the CXX compiler on Windows'); }
+        let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
+        let out = vec.new(refs = true);
+        if os.exec(out = out, 'cmd', '/c', '`"' + vcvarsPath.str() + '`" x64 && set', '^2>&1') != 0 {
+            return result.err(-1, 'Could not get env information from vcvarsall: ', out);
+        }
+        compiler.id = 'msvc';
+        for o in out.each() {
+            if !o.find('=') { continue; }
+            let split = o.split('=', 1);
+            compiler.env.insert(split[0], split[1]);
+        }
+        out.clear();
+        os.exec(out = out, env = compiler.env, 'where cl.exe');
+        compiler.c = out.join('').path();
+        compiler.cpp = compiler.c;
+        out.clear();
+        os.exec(out = out, env = compiler.env, compiler.c, '^2>&1');
+        for o in out.each() {
+            if !o.find('C/C++ Optimizing Compiler Version ') { continue; }
+            let split = o.split('Compiler Version ');
+            compiler.version = split[1].split(' ')[0];
+            break;
+        }
+        return result.ok(compiler);
+    }
+    let cExe = os.findExec('gcc');
+    let cppExe = os.findExec('g++');
+    if cExe == nil && cppExe == nil {
+        cExe = os.findExec('clang');
+        cppExe = os.findExec('clang++');
+    }
+    if cppExe == nil {
+        return result.err(-1, 'Found C compiler `', cExe, '`, but could not find the equivalent C++ compiler');
+    }
+    compiler.id = cExe.fileName().str();
+    compiler.c = cExe;
+    compiler.cpp = cppExe;
+    let out = vec.new(refs = true);
+    os.exec(out = out, compiler.c, '--version');
+    compiler.version = out[0].split(' ')[2];
+    return result.ok(compiler);
+};
+
+####################################################################################################
+####################################### Native Library #############################################
+####################################################################################################
+
+let Library = struct(
+    name = '',
+    version = '',
+    includeDirs = vec.new(refs = true),
+    libraryDirs = vec.new(refs = true),
+    libraryFlags = vec.new(refs = true),
+    dllPaths = vec.new(refs = true) # For Windows
+);
+Library.setTypeName('Library');
+
+let str in Library = fn() {
+    let s = 'Library{ name = ' + self.name + '; ';
+    if !self.version.empty() { s += 'version = ' + self.version + '; '; }
+    if !self.includeDirs.empty() { s += 'includeDirs = ' + self.includeDirs.str() + '; '; }
+    if !self.libraryDirs.empty() { s += 'libraryDirs = ' + self.libraryDirs.str() + '; '; }
+    if !self.libraryFlags.empty() { s += 'libraryFlags = ' + self.libraryFlags.str() + '; '; }
+    if !self.dllPaths.empty() { s += 'dllPaths = ' + self.dllPaths.str() + '; '; }
+    s += '}';
+    return s;
+};
+
+let getCompilerArgs in Library = fn(res) {
+    let isWindows = os.name == 'windows';
+    for incDir in self.includeDirs.each() {
+        if isWindows {
+            res.push('/I"' + incDir.str() + '"');
+        } else {
+            res.push('-I' + incDir.str());
+        }
+    }
+    return true;
+};
+let getLinkerArgs in Library = fn(res) {
+    let isWindows = os.name == 'windows';
+    for libDir in self.libraryDirs.each() {
+        if isWindows {
+            res.push('/LIBPATH:"' + libDir.str() + '"');
+        } else {
+            res.push('-L' + libDir.str());
+        }
+    }
+    for libFlag in self.libraryFlags.each() {
+        res.push(libFlag);
+    }
+    return true;
+};
+
+let append in Library = fn(other) {
+    for incDir in other.includeDirs.each() {
+        self.addIncludeDirs(incDir);
+    }
+    for libDir in other.libraryDirs.each() {
+        self.addLibraryDirs(libDir);
+    }
+    for libFlag in other.libraryFlags.each() {
+        self.addLibraryFlags(libFlag);
+    }
+    for dllPath in other.dllPaths.each() {
+        self.addDllPaths(dllPath);
+    }
+};
+
+let addIncludeDirs in Library = fn(incDirs...) {
+    for incDir in incDirs.each() {
+        if self.includeDirs.find(incDir) { continue; }
+        self.includeDirs.push(incDir);
+    }
+};
+
+let addLibraryDirs in Library = fn(libDirs...) {
+    for libDir in libDirs.each() {
+        if self.libraryDirs.find(libDir) { continue; }
+        self.libraryDirs.push(libDir);
+    }
+};
+
+let addLibraryFlags in Library = fn(libFlags...) {
+    for libFlag in libFlags.each() {
+        if self.libraryFlags.find(libFlag) { continue; }
+        self.libraryFlags.push(libFlag);
+    }
+};
+
+let addDllPaths in Library = fn(dllPaths...) {
+    for dllPath in dllPaths.each() {
+        if self.dllPaths.find(dllPath) { continue; }
+        self.dllPaths.push(dllPath);
+    }
+};
+
+####################################################################################################
+######################################## Feral Library #############################################
+####################################################################################################
+
+let feralLib = Library('feral', feral.version);
+feralLib.addIncludeDirs(feral.installPath / 'include' / 'feral');
+feralLib.addLibraryDirs(feral.libPath);
+feralLib.addLibraryFlags('-lferal');
+
+let getFeralLibrary = fn() {
+    return feralLib;
+};
+
+####################################################################################################
+##################################### Windows Shenanigans ##########################################
+####################################################################################################
 
 inline if os.name == 'windows' {
 
@@ -11,53 +187,16 @@ let vsWhereCmd = vec.new(refs = true, 'C:\\Program Files (x86)\\Microsoft Visual
 
 let getVSInstallPath = fn() {
     let out = '';
-    os.exec(vsWhereCmd, out = out);
-    return out;
+    if os.exec(out = out, vsWhereCmd) != 0 { return nil; }
+    return out.path();
 };
 
 let getMSBuildPath = fn() {
     let vs = getVSInstallPath();
-    if vs.empty() { return ''; }
+    if vs == nil { return nil; }
     let msbuild = vs / 'MSBuild' / 'Current' / 'Bin' / 'msbuild.exe';
     if !fs.exists(msbuild) { return ''; }
     return msbuild;
 };
 
 }
-
-# show a notification
-let notify = fn(title, body = '') {
-    title = '\'' + title + '\'';
-    if !body.empty() { body = '\'' + body + '\''; }
-    let cmd = vec.new(refs = true);
-    if os.name == 'linux' {
-        let notify = os.findExec('notify-send');
-        if notify == nil {
-            raise('notification requires notify-send on Linux (could not find in $PATH)');
-        }
-        cmd.push(notify, '-u', 'normal', '-t', '5000', title, body);
-    } elif os.name == 'macos' {
-        let notify = os.findExec('osascript');
-        if notify == nil {
-            raise('notification requires osascript on macOS (could not find in $PATH)');
-        }
-        cmd.push(notify, '-e');
-        if body.empty() {
-            cmd.push('display notification ' + title);
-        } else {
-            cmd.push('display notification ' + body + ' with title ' + title);
-        }
-    } elif os.name == 'android' {
-        let notify = os.findExec('termux-notification');
-        if notify == nil {
-            raise('notification requires termux-notification on Android (could not find in $PATH)');
-        }
-        cmd.push(notify, '--title', title);
-        if !body.empty() {
-            cmd.push('--content', body);
-        }
-    } else {
-        raise('notifications unimplemented for this OS');
-    }
-    return os.exec(cmd);
-};

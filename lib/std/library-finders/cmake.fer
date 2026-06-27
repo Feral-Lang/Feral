@@ -1,0 +1,72 @@
+raise('TODO: Not implemented');
+
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let result = import('std/result');
+let version = import('std/version');
+let platform = import('std/platform');
+
+let CMakeFinder = struct(
+    exe = ''.path()
+);
+CMakeFinder.setTypeName('CMakeFinder');
+
+let cmakeScriptDir = feral.tempPath / 'lib-finder' / 'cmake';
+
+let cmakeScript =
+`
+cmake_minimum_required(VERSION $<<feral.minCmakeVersion>>)
+project(check)
+find_package(${PKG} REQUIRED)
+get_cmake_property(_vars VARIABLES)
+foreach(v IN LISTS _vars)
+    if(v MATCHES "${PKG}")
+        message("${v} = ${${v}}")
+    endif()
+endforeach()
+`;
+
+let new = fn() {
+    let exe = os.name == 'windows' ? os.findExec('cmake.exe') : os.findExec('cmake');
+    if exe == nil { return result.err(-1, 'Could not find cmake in PATH'); }
+    fs.mkdir(cmakeScriptDir);
+    let f = fs.fopen(cmakeScriptDir / 'CMakeLists.txt', 'w+');
+    io.fprintln(f, cmakeScript.fmt());
+    return result.ok(CMakeFinder(exe));
+};
+
+let findLibrary in CMakeFinder = fn(pkgName, .kw) {
+    let isDebug = kw['debug'] ?? false;
+    let versConstraint = kw['version'] ?? '*';
+    let out = vec.new(refs = true);
+    let buildDir = cmakeScriptDir / 'build' / pkgName;
+    let res = os.exec(out = out, self.exe, '-DPKG=' + pkgName, '-S', cmakeScriptDir, '-B', buildDir, '^2>&1');
+    if res != 0 {
+        out.clear();
+        res = os.exec(out = out, self.exe, '-DPKG=' + pkgName.upper(), '-S', cmakeScriptDir, '-B', buildDir, '^2>&1');
+    }
+    if res != 0 {
+        return result.err(-1, 'Could not find package ', pkgName, ' using CMake');
+    }
+    io.println(out.join('\n'));
+    return result.ok();
+};
+
+let addOutputInLib in CMakeFinder = fn(pkgName, lib, out, isDebug) {
+    if out.empty() { return false; }
+    let foundAny = false;
+    let lowerName = pkgName.lower();
+    let versKey = lowerName + '_version';
+    let incDirsKey = lowerName + '_include_dirs';
+    for oline in out.each() {
+        let split = oline.split(' = ');
+        let key = split[0].lower();
+        let val = ref(split[1]);
+        if key == ''
+        if key == '' {
+            if val == 'TRUE' {}
+        }
+    }
+};

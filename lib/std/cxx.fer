@@ -1,0 +1,125 @@
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let result = import('std/result');
+let logging = import('std/logging');
+let platform = import('std/platform');
+
+####################################################################################################
+######################################## Library Finders ###########################################
+####################################################################################################
+
+# let cmakeFinder = import('std/library-finders/cmake');
+# let brewFinder = import('std/library-finders/brew');
+let vcpkgFinder = import('std/library-finders/vcpkg');
+let pkgConfigFinder = import('std/library-finders/pkg-config');
+
+let libraryFinders = vec.new(refs = true);
+
+# let r = cmakeFinder.new();
+# if r.isOk() { libraryFinders.push(r.getVal()); }
+# let r = brewFinder.new();
+# if r.isOk() { libraryFinders.push(r.getVal()); }
+let r = vcpkgFinder.new();
+if r.isOk() { libraryFinders.push(r.getVal()); }
+let r = pkgConfigFinder.new();
+if r.isOk() { libraryFinders.push(r.getVal()); }
+
+let findLibrary = fn(.kw, names...) {
+    for finder in libraryFinders.each() {
+        for name in names.each() {
+            let r = finder.findLibrary(name, kw...);
+            if r.isOk() || r.getVal().getCode() >= 0 { return r; }
+        }
+    }
+    return result.err(-1, 'Could not find library with name(s) ', names.join(', '));
+};
+
+####################################################################################################
+########################################### Extension ##############################################
+####################################################################################################
+
+let Extension = struct(
+    name = '',
+    debug = false,
+    defines = vec.new(),
+    srcs = vec.new(),
+    deps = vec.new(refs = true)
+);
+Extension.setTypeName('Extension');
+
+let newExt = fn(name, .kw) {
+    let res = Extension(name);
+    res.debug = kw['debug'] ?? false;
+    res.requires(platform.getFeralLibrary());
+    return res;
+};
+
+let addSources in Extension = fn(paths...) {
+    self.srcs.append(paths);
+};
+
+let addDefines in Extension = fn(defs...) {
+    self.defines.append(defs);
+};
+
+let requires in Extension = fn(deps...) {
+    self.deps.append(deps);
+};
+
+# The commands will be pushed to commandList if it's not nil
+let build in Extension = fn(outDir, command = nil, .kw) {
+    let dry = kw['dry'] ?? false;
+    let cRes = platform.getCompiler();
+    if cRes.isErr() { return cRes; }
+    let c = cRes.getVal();
+    if !dry && !outDir.str().empty() {
+        fs.mkdir(outDir);
+    }
+    let cmd = vec.new(refs = true, c.cpp);
+    if os.name == 'windows' {
+        cmd.push(self.debug ? '/LDd' : '/LD');
+        cmd.push(self.debug ? '/Od' : '/O2');
+    } else {
+        cmd.push(self.debug ? '-Og' : '-O2');
+        cmd.push('-fPIC');
+        cmd.push('-shared');
+    }
+    for d in self.deps.each() {
+        d.getCompilerArgs(cmd);
+    }
+    for src in self.srcs.each() {
+        cmd.push(src);
+    }
+    if os.name == 'windows' {
+        let outDirStr = outDir.str().replace('/', '\\');
+        if !outDirStr.empty() { outDirStr += '\\'; }
+        cmd.push('/Fe"' + outDirStr + 'libferal' + self.name + '.dll"');
+        if !self.deps.empty() {
+            cmd.push('/link');
+        }
+    } elif os.name == 'macos' {
+        let outDirStr = outDir.str();
+        if !outDirStr.empty() { outDirStr += '/'; }
+        cmd.push('-o');
+        cmd.push(outDirStr + 'libferal' + self.name + '.dylib');
+    } else {
+        let outDirStr = outDir.str();
+        if !outDirStr.empty() { outDirStr += '/'; }
+        cmd.push('-o');
+        cmd.push(outDirStr + 'libferal' + self.name + '.so');
+    }
+    for d in self.deps.each() {
+        d.getLinkerArgs(cmd);
+    }
+    if command != nil {
+        command = cmd.join(' ');
+    }
+    if dry { return result.ok(); }
+    let out = vec.new(refs = true);
+    let res = os.exec(out = out, cmd..., '^2>&1');
+    if res != 0 {
+        return result.err(res, 'Failed to build ', self.name, ':\n', out.join('\n'));
+    }
+    return result.ok();
+};

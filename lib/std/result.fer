@@ -40,6 +40,26 @@ Returns the value contained in the Result `var` as a reference.
 let getVal in Result = fn() { return ref(self.val); };
 
 "
+  var.fn() -> Var
+Returns the value in Result if `isOk() == true`.
+Raises an error if an error value is present.
+"
+let ok in Result = fn() {
+    if self.isOk() { return self.getVal(); }
+    raise('Result contains error value: ', self.getVal());
+};
+
+"
+  var.fn() -> Var
+Returns the value in Result if `isErr() == true`.
+Raises an error if an ok value is present.
+"
+let err in Result = fn() {
+    if self.isErr() { return self.getVal(); }
+    raise('Result contains ok value: ', self.getVal());
+};
+
+"
   var.fn() -> Str
 Returns a string representation of the Result `var`.
 "
