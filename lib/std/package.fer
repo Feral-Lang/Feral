@@ -20,7 +20,6 @@ Target.setTypeName('Target');
 let Dependency = struct(
     name = 'SampleDependency',
     constraint = version.parseConstraint('>=0.0.1'),
-    linkAs = 'SampleDependency', # for native libraries (like libcurl), provide the link name (like CURL::libcurl)
     isFeral = false # false => native library (like libcurl); true => feral package (like LibMP)
 );
 Dependency.setTypeName('Dependency');
@@ -64,16 +63,13 @@ let new  = fn(.kw) {
 "
   Package.requires(name, versionConstraint, .kw) -> Dependency
 Declares a dependency for this project. Accepts keyword arguments:
-  linkAs  — CMake link target name for native libraries (e.g. 'CURL::libcurl');
-            defaults to name
   isFeral — true if this is a Feral package dependency (default: false)
 The constraint string is validated via version.parseConstraint().
 The created Dependency is added to project.dependencies and returned.
 "
 let requires in Package = fn(name, versionConstraint, .kw) {
     let isFeral = kw['isFeral'] ?? false;
-    let linkAs = kw['linkAs'] ?? name;
-    let dep = Dependency(name, version.parseConstraint(versionConstraint), linkAs, isFeral);
+    let dep = Dependency(name, version.parseConstraint(versionConstraint), isFeral);
     self.dependencies.push(dep);
     return ref(dep);
 };

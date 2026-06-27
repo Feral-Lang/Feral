@@ -28,22 +28,19 @@ assert.eq(pkg.targets.len(), 0);
 
 # --- Package.requires() ---
 
-let dep = pkg.requires('CURL', '>=3.0.0', linkAs = 'CURL::libcurl');
+let dep = pkg.requires('CURL', '>=3.0.0');
 assert.eq(pkg.dependencies.len(), 1);
 assert.eq(dep.name, 'CURL');
 assert.eq(dep.constraint.str(), '>=3.0.0');
-assert.eq(dep.linkAs, 'CURL::libcurl');
 assert.eq(dep.isFeral, false);
 
-# default linkAs = name, isFeral = false
+# default isFeral = false
 let dep2 = pkg.requires('NativeLib', '>=1.0.0');
-assert.eq(dep2.linkAs, 'NativeLib');
 assert.eq(dep2.isFeral, false);
 
 # isFeral = true
 let dep3 = pkg.requires('Progress', '>=0.0.1', isFeral = true);
 assert.eq(dep3.isFeral, true);
-assert.eq(dep3.linkAs, 'Progress');
 assert.eq(pkg.dependencies.len(), 3);
 
 # returned dep references the same object as in pkg.dependencies

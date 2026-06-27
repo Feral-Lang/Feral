@@ -428,17 +428,17 @@ FERAL_FUNC(
         auto &arg = args[i];
         EXPECT(VarPath, arg, "path");
     }
-    const char *modulePathsFile = vm.getGlobalModulePathsFile()->toStr().c_str();
+    auto &&modulePathsFile = vm.getGlobalModulePathsFile()->toStr();
     if(!fs::exists(modulePathsFile)) {
-        FILE *f = fopen(modulePathsFile, "w");
+        FILE *f = fopen(modulePathsFile.c_str(), "w");
         fclose(f);
     }
     String data;
     Vector<StringRef> existingData;
-    if(File::readFile(modulePathsFile, data).getCode()) {
+    if(File::readFile(modulePathsFile.c_str(), data).getCode()) {
         existingData = utils::stringDelim(data, "\n");
     }
-    FILE *f      = fopen(modulePathsFile, "a+");
+    FILE *f      = fopen(modulePathsFile.c_str(), "a+");
     size_t added = 0;
     for(size_t i = 1; i < args.size(); ++i) {
         VarPath *path  = as<VarPath>(args[i]);
@@ -466,14 +466,14 @@ FERAL_FUNC(
         auto &arg = args[i];
         EXPECT(VarPath, arg, "path");
     }
-    const char *modulePathsFile = vm.getGlobalModulePathsFile()->toStr().c_str();
+    auto &&modulePathsFile = vm.getGlobalModulePathsFile()->toStr();
     if(!fs::exists(modulePathsFile)) {
-        FILE *f = fopen(modulePathsFile, "w");
+        FILE *f = fopen(modulePathsFile.c_str(), "w");
         fclose(f);
     }
     String data;
     Vector<StringRef> existingData;
-    if(File::readFile(modulePathsFile, data).getCode()) {
+    if(File::readFile(modulePathsFile.c_str(), data).getCode()) {
         existingData = utils::stringDelim(data, "\n");
     }
     size_t removed = 0;
@@ -486,7 +486,7 @@ FERAL_FUNC(
         ++removed;
         --i;
     }
-    FILE *f = fopen(modulePathsFile, "w+");
+    FILE *f = fopen(modulePathsFile.c_str(), "w+");
     for(auto &data : existingData) {
         fwrite(data.data(), sizeof(char), data.size(), f);
         fwrite("\n", sizeof(char), 1, f);
