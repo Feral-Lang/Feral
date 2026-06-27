@@ -94,7 +94,7 @@ INIT_DLL(Regex)
     vm.makeLocal<VarInt>(loc, "egrep", "Use `grep -E` grammer - consider newlines as whitespace.",
                          std::regex_constants::egrep);
     // Not sure why but multiline is undefined on Windows MSVC at the moment.
-#if !defined(CORE_OS_WINDOWS) && (__cplusplus >= 201703L || !defined __STRICT_ANSI__)
+#if !defined(FER_OS_WINDOWS) && (__cplusplus >= 201703L || !defined __STRICT_ANSI__)
     vm.makeLocal<VarInt>(loc, "multiline",
                          "Makes `^` and `$` work on each line and not the whole input.",
                          std::regex_constants::multiline);

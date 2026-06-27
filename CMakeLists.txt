@@ -130,15 +130,6 @@ endif()
 
 # Finally! The sources!!!!!
 
-# Fetch LibCore
-FetchContent_Declare(
-    LibCore
-    GIT_REPOSITORY https://github.com/Chirag-Khandelwal/LibCore.git
-    GIT_TAG        1.3.0
-)
-
-FetchContent_MakeAvailable(LibCore)
-
 # Set Config.inl.in template
 configure_file("${PROJECT_SOURCE_DIR}/include/Config.inl.in" "${PROJECT_SOURCE_DIR}/include/Config.inl" @ONLY)
 
@@ -152,7 +143,7 @@ target_include_directories(libferal PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/feral>
 )
-target_link_libraries(libferal LibCore::LibCore)
+target_link_libraries(libferal)
 # For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport)
 # depending on if the the DLL is being generated, or is being used.
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)

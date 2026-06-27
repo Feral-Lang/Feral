@@ -1,7 +1,7 @@
 #include "VM/VM.hpp"
 
-// These headers are below the Feral headers (above), because CORE_OS_WINDOWS is defined in them.
-#if defined(CORE_OS_WINDOWS)
+// These headers are below the Feral headers (above), because FER_OS_WINDOWS is defined in them.
+#if defined(FER_OS_WINDOWS)
 #include <io.h>
 #else
 #include <dirent.h>
@@ -316,15 +316,15 @@ FERAL_FUNC(getOSName, 0, false,
            "- macos")
 {
     String name;
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     name = "windows";
-#elif defined(CORE_OS_LINUX)
+#elif defined(FER_OS_LINUX)
     name = "linux";
-#elif defined(CORE_OS_ANDROID)
+#elif defined(FER_OS_ANDROID)
     name = "android";
-#elif defined(CORE_OS_BSD)
+#elif defined(FER_OS_BSD)
     name = "bsd";
-#elif defined(CORE_OS_APPLE)
+#elif defined(FER_OS_APPLE)
     name = "macos";
 #endif
     return vm.makeVar<VarStr>(loc, name);
@@ -345,31 +345,31 @@ FERAL_FUNC(getOSDistro, 0, false,
            "- bsd (if none of the above BSD options work)")
 {
     String distro;
-#if defined(CORE_OS_WINDOWS)
-#if defined(CORE_OS_WINDOWS64)
+#if defined(FER_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS64)
     distro = "windows64";
 #else
     distro = "windows";
 #endif
-#elif defined(CORE_OS_LINUX)
+#elif defined(FER_OS_LINUX)
     distro = "linux"; // arch,ubuntu,etc.
-#elif defined(CORE_OS_ANDROID)
+#elif defined(FER_OS_ANDROID)
     distro = "android"; // version name - lollipop, marshmellow, etc.
-#elif defined(CORE_OS_BSD)
-#if defined(CORE_OS_FREEBSD)
+#elif defined(FER_OS_BSD)
+#if defined(FER_OS_FREEBSD)
     distro = "freebsd";
-#elif defined(CORE_OS_NETBSD)
+#elif defined(FER_OS_NETBSD)
     distro = "netbsd";
-#elif defined(CORE_OS_OPENBSD)
+#elif defined(FER_OS_OPENBSD)
     distro = "openbsd";
-#elif defined(CORE_OS_BSDI)
+#elif defined(FER_OS_BSDI)
     distro = "bsdi";
-#elif defined(CORE_OS_DRAGONFLYBSD)
+#elif defined(FER_OS_DRAGONFLYBSD)
     distro = "dragonflybsd";
 #else
     distro = "bsd";
 #endif
-#elif defined(CORE_OS_APPLE)
+#elif defined(FER_OS_APPLE)
     distro = "macos";
 #endif
     return vm.makeVar<VarStr>(loc, distro);

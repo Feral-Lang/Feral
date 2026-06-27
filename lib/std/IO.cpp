@@ -2,7 +2,7 @@
 
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <io.h>
 #include <Windows.h>
 #else

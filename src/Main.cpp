@@ -1,6 +1,7 @@
 #include "AST/Parser.hpp"
 #include "AST/Passes/Codegen.hpp"
 #include "AST/Passes/Simplify.hpp"
+#include "Logger.hpp"
 #include "VM/VM.hpp"
 
 using namespace fer;

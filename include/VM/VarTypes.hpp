@@ -714,7 +714,7 @@ public:
     Path normal();
 
     // Use carefully - on Windows, it returns a String, but on *nix, it returns a const String&.
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     inline String toStr() { return val.generic_string(); }
 #else
     inline const String &toStr() { return val.native(); }

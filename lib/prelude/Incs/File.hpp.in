@@ -34,7 +34,7 @@ FERAL_FUNC(fileFd, 0, false,
 {
     FILE *file = as<VarFile>(args[0])->getFile();
     int fd =
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
         _fileno(file);
 #else
         fileno(file);

@@ -23,7 +23,7 @@ GlobalState::~GlobalState() {}
 
 bool GlobalState::init(VirtualMachine &vm)
 {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_SYSTEM32 |
                              LOAD_LIBRARY_SEARCH_USER_DIRS);
@@ -37,7 +37,7 @@ bool GlobalState::init(VirtualMachine &vm)
     moduleFinders   = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));
 
     tempPath = vm.incVarRef(vm.makeVar<VarPath>({}, fs::temp_directory_path()));
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     tempPath->append("feral." + env::get("USERNAME"));
 #else
     tempPath->append("feral." + env::get("USER"));
@@ -84,7 +84,7 @@ bool GlobalState::init(VirtualMachine &vm)
     // manager.
     vm.tryAddModulePathsFromFile(globalModulesPath->toStr().c_str());
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
 #endif
 
@@ -137,7 +137,7 @@ bool GlobalState::deinit(VirtualMachine &vm)
     vm.decVarRef(basicErrHandler);
     for(auto &typefn : typefns) { vm.decVarRef(typefn.second); }
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     remDLLDirectories();
 #endif
 
@@ -149,7 +149,7 @@ bool GlobalState::deinit(VirtualMachine &vm)
 //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
 
 bool addDLLDirectory(const String &dir)

@@ -4,7 +4,7 @@
 
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
@@ -13,7 +13,7 @@
 #define sockInProgress() (WSAGetLastError() == WSAEWOULDBLOCK)
 #define PollFd WSAPOLLFD
 #define sockPoll(fds, n, ms) WSAPoll(fds, n, ms)
-static core::String sockErrStr() { return "WSA error " + std::to_string(WSAGetLastError()); }
+static fer::String sockErrStr() { return "WSA error " + std::to_string(WSAGetLastError()); }
 #else
 #include <arpa/inet.h>
 #include <errno.h>
@@ -27,7 +27,7 @@ static core::String sockErrStr() { return "WSA error " + std::to_string(WSAGetLa
 #define sockInProgress() (errno == EINPROGRESS)
 #define PollFd struct pollfd
 #define sockPoll(fds, n, ms) poll(fds, n, ms)
-static core::String sockErrStr() { return strerror(errno); }
+static fer::String sockErrStr() { return strerror(errno); }
 #endif
 
 namespace fer
@@ -39,7 +39,7 @@ namespace fer
 
 static bool setNonBlocking(int fd)
 {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     u_long mode = 1;
     return ioctlsocket(fd, FIONBIO, &mode) == 0;
 #else
@@ -74,7 +74,7 @@ static bool resolveAddr(VirtualMachine &vm, ModuleLoc loc, const String &host, u
     std::snprintf(portStr, sizeof(portStr) / sizeof(portStr[0]), "%" PRIu16, port);
     int res = getaddrinfo(host.empty() ? nullptr : host.c_str(), portStr, &hints, result);
     if(res != 0) {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
         vm.fail(loc, "failed to resolve '", host, "': error ", WSAGetLastError());
 #else
         vm.fail(loc, "failed to resolve '", host, "': ", gai_strerror(res));
@@ -266,7 +266,7 @@ FERAL_FUNC(socketConnectReady, 0, false,
 {
     VarSocket *sock = as<VarSocket>(args[0]);
     PollFd pfd      = {};
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     pfd.fd = (SOCKET)sock->getFd();
 #else
     pfd.fd = sock->getFd();
@@ -505,7 +505,7 @@ FERAL_FUNC(addrStr, 0, false,
 
 INIT_DLL(Socket)
 {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     WSADATA wsaData;
     if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         vm.fail(loc, "WSAStartup failed");
@@ -544,7 +544,7 @@ INIT_DLL(Socket)
     // Address family
     vm.makeLocal<VarInt>(loc, "AF_INET", "IPv4 address family.", AF_INET);
     vm.makeLocal<VarInt>(loc, "AF_INET6", "IPv6 address family.", AF_INET6);
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
     vm.makeLocal<VarInt>(loc, "AF_UNIX", "Unix domain socket address family.", AF_UNIX);
 #endif
 
@@ -554,7 +554,7 @@ INIT_DLL(Socket)
     vm.makeLocal<VarInt>(loc, "SOCK_DGRAM", "Connectionless datagram socket (UDP).", SOCK_DGRAM);
 
     // Shutdown modes
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     vm.makeLocal<VarInt>(loc, "SHUT_RD", "Shut down the receive half.", SD_RECEIVE);
     vm.makeLocal<VarInt>(loc, "SHUT_WR", "Shut down the send half.", SD_SEND);
     vm.makeLocal<VarInt>(loc, "SHUT_RDWR", "Shut down both halves.", SD_BOTH);
@@ -577,7 +577,7 @@ INIT_DLL(Socket)
     vm.makeLocal<VarInt>(loc, "SO_SNDBUF", "Size of the send buffer.", SO_SNDBUF);
     vm.makeLocal<VarInt>(loc, "TCP_NODELAY", "Disable Nagle's algorithm (send immediately).",
                          TCP_NODELAY);
-#if defined(CORE_OS_LINUX)
+#if defined(FER_OS_LINUX)
     vm.makeLocal<VarInt>(loc, "SO_REUSEPORT", "Allow multiple sockets to bind the same port.",
                          SO_REUSEPORT);
 #endif
@@ -587,7 +587,7 @@ INIT_DLL(Socket)
 
 DEINIT_DLL(Socket)
 {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     WSACleanup();
 #endif
 }

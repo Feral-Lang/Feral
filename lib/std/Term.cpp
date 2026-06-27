@@ -1,6 +1,6 @@
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <io.h>
 #include <Windows.h>
 #else
@@ -22,7 +22,7 @@ FERAL_FUNC(getTermSize, 2, false,
 {
     EXPECT(VarInt, args[1], "terminal width");
     EXPECT(VarInt, args[2], "terminal height");
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     as<VarInt>(args[1])->setVal(csbi.srWindow.Right - csbi.srWindow.Left + 1);
@@ -42,7 +42,7 @@ FERAL_FUNC(isTTYNative, 1, false,
 {
     EXPECT(VarInt, args[1], "file descriptor");
     bool res =
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
         _isatty(as<VarInt>(args[1])->getVal());
 #else
         isatty(as<VarInt>(args[1])->getVal());
@@ -56,7 +56,7 @@ FERAL_FUNC(hideInputNative, 1, false,
 {
     EXPECT(VarBool, args[1], "should hide");
     bool hidden = as<VarBool>(args[1])->getVal();
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
     DWORD mode;
     if(!GetConsoleMode(hStdin, &mode)) {

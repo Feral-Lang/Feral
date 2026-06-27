@@ -113,6 +113,7 @@ let getLinkerArgs in Library = fn(res) {
             res.push('/LIBPATH:"' + libDir.str() + '"');
         } else {
             res.push('-L' + libDir.str());
+            res.push('-Wl,-rpath=' + libDir.str());
         }
     }
     for libFlag in self.libraryFlags.each() {
@@ -170,7 +171,7 @@ let addDllPaths in Library = fn(dllPaths...) {
 
 let feralLib = Library('feral', feral.version);
 feralLib.addIncludeDirs(feral.installPath / 'include' / 'feral');
-feralLib.addLibraryDirs(feral.libPath);
+feralLib.addLibraryDirs(feral.installPath / 'lib');
 feralLib.addLibraryFlags('-lferal');
 
 let getFeralLibrary = fn() {

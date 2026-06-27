@@ -3,7 +3,7 @@
 
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <io.h> // for read(), write(), close().
 #else
 #include <unistd.h> // for read(), write(), close() on macOS.
@@ -28,7 +28,7 @@ void getEntriesInternal(VirtualMachine &vm, ModuleLoc loc, const Path &dir, VarV
         entry.clear();
         entry = ent.path();
         bool regexMatched =
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
             std::regex_match(entry.string(), regex);
 #else
             std::regex_match(entry.native(), regex);
@@ -508,16 +508,16 @@ INIT_DLL(FS)
     vm.makeLocal<VarInt>(loc, "O_RDWR", "", O_RDWR);
     vm.makeLocal<VarInt>(loc, "O_APPEND", "", O_APPEND);
     vm.makeLocal<VarInt>(loc, "O_CREAT", "", O_CREAT);
-#if defined(CORE_OS_LINUX) || defined(CORE_OS_APPLE)
+#if defined(FER_OS_LINUX) || defined(FER_OS_APPLE)
     vm.makeLocal<VarInt>(loc, "O_DSYNC", "", O_DSYNC);
 #endif
     vm.makeLocal<VarInt>(loc, "O_EXCL", "", O_EXCL);
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
     vm.makeLocal<VarInt>(loc, "O_NOCTTY", "", O_NOCTTY);
     vm.makeLocal<VarInt>(loc, "O_NONBLOCK", "", O_NONBLOCK);
     vm.makeLocal<VarInt>(loc, "O_SYNC", "", O_SYNC);
 #endif
-#if defined(CORE_OS_LINUX)
+#if defined(FER_OS_LINUX)
     vm.makeLocal<VarInt>(loc, "O_RSYNC", "", O_RSYNC);
 #endif
     vm.makeLocal<VarInt>(loc, "O_TRUNC", "", O_TRUNC);

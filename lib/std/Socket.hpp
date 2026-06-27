@@ -2,7 +2,7 @@
 
 #include "VM/VarTypes.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else

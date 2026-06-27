@@ -1,11 +1,13 @@
 #include "VM/VM.hpp"
 
+#include "Env.hpp"
 #include "Error.hpp"
+#include "Logger.hpp"
 #include "Utils.hpp"
 #include "VM/CoreFuncs.hpp"
 #include "VM/DynLib.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 #include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
 #include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
 #endif
@@ -125,7 +127,7 @@ bool VirtualMachine::loadPrelude()
     // loadlib must be setup here because it is needed to load even the core module from
     // <prelude>.
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     String currPath = fs::current_path().string();
 #else
     const String &currPath = fs::current_path().native().c_str();
@@ -155,7 +157,7 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly, boo
     if(!f->isVirtual()) {
         bcPath = getTempPath()->getVal();
         bcPath /= "bytecode";
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
         String drive = srcPath.root_name().string();
         utils::stringReplace(drive, ":", "");
         bcPath /= drive;
@@ -174,7 +176,7 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly, boo
     if(bcFileValid) {
         if(!f->isVirtual()) {
             LOG_INFO("Reading bytecode file: ", bcPath);
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
             FILE *f = fopen(bcPath.string().c_str(), "rb");
 #else
             FILE *f = fopen(bcPath.native().c_str(), "rb");
@@ -199,7 +201,7 @@ VarModule *VirtualMachine::makeModule(ModuleLoc loc, File *f, bool exprOnly, boo
                      "; error: ", ec.message());
                 return nullptr;
             }
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
             FILE *f = fopen(bcPath.string().c_str(), "wb");
 #else
             FILE *f = fopen(bcPath.native().c_str(), "wb");
@@ -427,7 +429,7 @@ bool VirtualMachine::findFileIn(VarVec *dirs, String &name, StringRef ext, Strin
 
 Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dllStr)
 {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     // append the parent dir to dll search paths
     String parentdir = Path(dllpath).parent_path().string();
     if(!addDLLDirectory(parentdir)) {

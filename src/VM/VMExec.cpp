@@ -20,7 +20,7 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
 
     for(size_t i = begin; i < bcsz; ++i) {
         const Instruction &ins = bc.getInstrAt(i);
-#if defined(CORE_BUILD_DEBUG)
+#if defined(FER_BUILD_DEBUG)
         LOG_DEBUG("[", i, ": ", getCurrModule()->getPath(), "]; ", vars->size() - 1, "; ",
                   ins.dump(), " :: ", execstack->dump(this));
 #endif

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Allocator.hpp"
 #include "ExecStack.hpp"
 #include "FailStack.hpp"
 #include "GlobalState.hpp"
@@ -101,7 +102,7 @@ class FER_API VirtualMachine : public IAllocated
     bool ownsGlobalState;
     bool ready; // if not ready, _init_() and _deinit_() won't be called
 
-    friend class core::MemoryManager;
+    friend class MemoryManager;
 
     bool loadPrelude();
 
@@ -217,9 +218,9 @@ public:
     inline StringRef getFeralImportExtension() { return ".fer"; }
     inline StringRef getNativeModuleExtension()
     {
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
         return ".dll";
-#elif defined(CORE_OS_APPLE)
+#elif defined(FER_OS_APPLE)
         return ".dylib";
 #else
         return ".so";

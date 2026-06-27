@@ -7,7 +7,7 @@
 #include "Env.hpp"
 #include "VM/VM.hpp"
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
@@ -20,7 +20,7 @@
 namespace fer
 {
 
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 // only used for chmod
 int execInternal(const String &file);
 #endif
@@ -93,7 +93,7 @@ FERAL_FUNC(
         if(!isArgOperator) cmd += "\"";
         vm.decVarRef(v);
     }
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     // Apparently, popen on Windows eradicates the outermost quotes.
     // If this is not present, any argument with space (including program name), will not be
     // read as a single string.
@@ -162,7 +162,7 @@ FERAL_FUNC(
         for(auto &item : existingEnv) { env::set(item.first.c_str(), item.second.c_str(), true); }
     }
 
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
     res = WEXITSTATUS(res);
 #endif
     return vm.makeVar<VarInt>(loc, res);
@@ -177,7 +177,7 @@ FERAL_FUNC(systemCustom, 1, false,
     const String &cmd = as<VarStr>(args[1])->getVal();
 
     int res = std::system(cmd.c_str());
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
     res = WEXITSTATUS(res);
 #endif
     return vm.makeVar<VarInt>(loc, res);
@@ -218,7 +218,7 @@ FERAL_FUNC(osSetCWD, 1, false,
     return vm.getNil();
 }
 
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 FERAL_FUNC(
     osChmod, 3, false,
     "  fn(dest, mode = '0755', recursive = true) -> Int\n"
@@ -254,14 +254,14 @@ INIT_DLL(OS)
     vm.addLocal(loc, "getCWD", osGetCWD);
     vm.addLocal(loc, "setCWD", osSetCWD);
 
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
     vm.addLocal(loc, "chmodNative", osChmod);
 #endif
 
     return true;
 }
 
-#if !defined(CORE_OS_WINDOWS)
+#if !defined(FER_OS_WINDOWS)
 int execInternal(const String &cmd)
 {
     FILE *pipe = popen(cmd.c_str(), "r");
@@ -274,7 +274,7 @@ int execInternal(const String &cmd)
     free(line);
     int res = pclose(pipe);
 
-#if defined(CORE_OS_WINDOWS)
+#if defined(FER_OS_WINDOWS)
     return res;
 #else
     return WEXITSTATUS(res);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "File.hpp"
 
 namespace fer
 {
