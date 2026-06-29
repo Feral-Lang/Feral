@@ -67,7 +67,7 @@ let requires in Extension = fn(deps...) {
     self.deps.append(deps);
 };
 
-# The commands will be pushed to commandList if it's not nil
+# The generated command will be set as `command` if it's not nil
 let build in Extension = fn(outDir, command = nil, .kw) {
     let dry = kw['dry'] ?? false;
     let cRes = platform.getCompiler();

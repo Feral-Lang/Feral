@@ -19,7 +19,7 @@ Target.setTypeName('Target');
 
 let Dependency = struct(
     name = 'SampleDependency',
-    constraint = version.parseConstraint('>=0.0.1'),
+    constraint = '*',
     isFeral = false # false => native library (like libcurl); true => feral package (like LibMP)
 );
 Dependency.setTypeName('Dependency');
@@ -61,15 +61,17 @@ let new  = fn(.kw) {
 };
 
 "
-  Package.requires(name, versionConstraint, .kw) -> Dependency
+  Package.requires(name, .kw) -> Dependency
 Declares a dependency for this project. Accepts keyword arguments:
-  isFeral — true if this is a Feral package dependency (default: false)
+  version - version constraint for the required package (default '*')
+  feral — true if this is a Feral package dependency (default: false)
 The constraint string is validated via version.parseConstraint().
 The created Dependency is added to project.dependencies and returned.
 "
-let requires in Package = fn(name, versionConstraint, .kw) {
-    let isFeral = kw['isFeral'] ?? false;
-    let dep = Dependency(name, version.parseConstraint(versionConstraint), isFeral);
+let requires in Package = fn(name, .kw) {
+    let versionConstraint = kw['version'] ?? '*';
+    let isFeral = kw['feral'] ?? false;
+    let dep = Dependency(name, version.parseConstraint(versionConstraint).str(), isFeral);
     self.dependencies.push(dep);
     return ref(dep);
 };

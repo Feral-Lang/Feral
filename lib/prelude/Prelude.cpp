@@ -416,11 +416,9 @@ FERAL_FUNC(getMaxRecursion, 0, false,
 }
 
 FERAL_FUNC(
-    addGlobalModulePaths, 1, true,
-    "  fn(paths...) -> int\n"
-    "Adds each of the provided paths to the global module paths' file.\n"
-    "Feral searches each of the paths in this file for modules when the `import()` function is "
-    "called.\n"
+    addToModulePaths, 2, true,
+    "  fn(modulePathsFile, paths...) -> Int\n"
+    "Adds each of the provided paths to the `modulePathsFile` file.\n"
     "Returns the total number of paths added. If the path already exists in the module file, it "
     "doesn't count.")
 {
@@ -428,7 +426,7 @@ FERAL_FUNC(
         auto &arg = args[i];
         EXPECT(VarPath, arg, "path");
     }
-    auto &&modulePathsFile = vm.getGlobalModulePathsFile()->toStr();
+    auto &&modulePathsFile = as<VarPath>(args[1])->toStr();
     if(!fs::exists(modulePathsFile)) {
         FILE *f = fopen(modulePathsFile.c_str(), "w");
         fclose(f);
@@ -440,7 +438,7 @@ FERAL_FUNC(
     }
     FILE *f      = fopen(modulePathsFile.c_str(), "a+");
     size_t added = 0;
-    for(size_t i = 1; i < args.size(); ++i) {
+    for(size_t i = 2; i < args.size(); ++i) {
         VarPath *path  = as<VarPath>(args[i]);
         auto &&pathStr = path->toStr();
         auto exists    = std::find(existingData.begin(), existingData.end(), pathStr);
@@ -454,11 +452,9 @@ FERAL_FUNC(
 }
 
 FERAL_FUNC(
-    removeGlobalModulePaths, 1, true,
-    "  fn(paths...) -> int\n"
-    "Removes each of the provided paths from the global module paths' file.\n"
-    "Feral searches each of the paths in this file for modules when the `import()` function is "
-    "called.\n"
+    removeFromModulePaths, 2, true,
+    "  fn(modulePathsFile, paths...) -> Int\n"
+    "Removes each of the provided paths from the `modulePathsFile` file.\n"
     "Returns the total number of paths removed. If the path isn't present in the module file, it "
     "doesn't count.")
 {
@@ -466,7 +462,7 @@ FERAL_FUNC(
         auto &arg = args[i];
         EXPECT(VarPath, arg, "path");
     }
-    auto &&modulePathsFile = vm.getGlobalModulePathsFile()->toStr();
+    auto &&modulePathsFile = as<VarPath>(args[1])->toStr();
     if(!fs::exists(modulePathsFile)) {
         FILE *f = fopen(modulePathsFile.c_str(), "w");
         fclose(f);
@@ -477,7 +473,7 @@ FERAL_FUNC(
         existingData = utils::stringDelim(data, "\n");
     }
     size_t removed = 0;
-    for(size_t i = 1; i < args.size(); ++i) {
+    for(size_t i = 2; i < args.size(); ++i) {
         VarPath *path  = as<VarPath>(args[i]);
         auto &&pathStr = path->toStr();
         auto exists    = std::find(existingData.begin(), existingData.end(), pathStr);
@@ -513,8 +509,8 @@ INIT_DLL(Prelude)
     vm.addLocal(loc, "evalExpr", evalExpr);
     vm.addLocal(loc, "closure", closure);
     vm.addLocal(loc, "async", async);
-    vm.addLocal(loc, "addGlobalModulePaths", addGlobalModulePaths);
-    vm.addLocal(loc, "removeGlobalModulePaths", removeGlobalModulePaths);
+    vm.addLocal(loc, "addToModulePaths", addToModulePaths);
+    vm.addLocal(loc, "removeFromModulePaths", removeFromModulePaths);
     vm.addLocal(loc, "exitNative", exitNative);
     vm.addLocal(loc, "setMaxRecursionNative", setMaxRecursionNative);
     vm.addLocal(loc, "getMaxRecursion", getMaxRecursion);

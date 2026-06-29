@@ -28,18 +28,18 @@ assert.eq(pkg.targets.len(), 0);
 
 # --- Package.requires() ---
 
-let dep = pkg.requires('CURL', '>=3.0.0');
+let dep = pkg.requires('CURL', version =  '>=3.0.0');
 assert.eq(pkg.dependencies.len(), 1);
 assert.eq(dep.name, 'CURL');
 assert.eq(dep.constraint.str(), '>=3.0.0');
 assert.eq(dep.isFeral, false);
 
 # default isFeral = false
-let dep2 = pkg.requires('NativeLib', '>=1.0.0');
+let dep2 = pkg.requires('NativeLib', version = '>=1.0.0');
 assert.eq(dep2.isFeral, false);
 
 # isFeral = true
-let dep3 = pkg.requires('Progress', '>=0.0.1', isFeral = true);
+let dep3 = pkg.requires('Progress', version = '>=0.0.1', feral = true);
 assert.eq(dep3.isFeral, true);
 assert.eq(pkg.dependencies.len(), 3);
 
