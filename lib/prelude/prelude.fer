@@ -21,6 +21,26 @@ let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
     setMaxRecursionNative(size);
 };
 
+"
+  fn(paths...) -> Int
+Adds each of the provided paths to the global module paths' file.
+Feral searches each of the paths in this file for modules when the `import()` function is called.
+Returns the total number of paths added. If the path already exists in the module file, it doesn't count.
+"
+let addGlobalModulePaths = fn(paths...) {
+    return addToModulePaths(globalModulePaths, paths...);
+};
+
+"
+  fn(paths...) -> Int
+Removes each of the provided paths from the global module paths' file.
+Feral searches each of the paths in this file for modules when the `import()` function is called.
+Returns the total number of paths removed. If the path isn't present in the module file, it doesn't count.
+"
+let removeGlobalModulePaths = fn(paths...) {
+    return removeFromModulePaths(globalModulePaths, paths...);
+};
+
 ################################ Types ################################
 
 # Str

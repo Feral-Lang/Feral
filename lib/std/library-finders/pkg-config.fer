@@ -20,6 +20,8 @@ let new = fn() {
 let findLibrary in PkgConfigFinder = fn(pkgName, .kw) {
     let isDebug = kw['debug'] ?? false;
     let versConstraint = kw['version'] ?? '*';
+    let isFeral = kw['feral'] ?? false;
+    if isFeral { return result.err(-1, 'PkgConfigFinder cannot be used to find Feral libraries'); }
     let out = vec.new(refs = true);
     let res = os.exec(out = out, self.exe, pkgName);
     if res != 0 { return result.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }

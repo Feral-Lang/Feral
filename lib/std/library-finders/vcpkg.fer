@@ -24,6 +24,8 @@ let new = fn() {
 let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
     let isDebug = kw['debug'] ?? false;
     let versConstraint = kw['version'] ?? '*';
+    let isFeral = kw['feral'] ?? false;
+    if isFeral { return result.err(-1, 'VCPKGFinder cannot be used to find Feral libraries'); }
     let out = vec.new(refs = true);
     os.exec(out = out, self.exe, 'list', pkgName);
     if out.empty() { return result.err(-1, 'Library ', pkgName, ' is not installed via vcpkg'); }
