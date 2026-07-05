@@ -5,7 +5,8 @@ let vec = import('std/vec');
 let logging = import('std/logging');
 
 let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
-let pkgVersion = '0.0.7';
+let pkgIndexRepo = 'https://github.com/Feral-Lang/PkgIndex';
+let pkgVersion = '0.1.0';
 
 let pkgExePath = feral.libPath / 'bin' / 'pkg.fer';
 
@@ -61,21 +62,21 @@ logging.info('Git repository successfully retrieved');
 let pkgBasePath = feral.libPath / 'pkg';
 if fs.exists(pkgBasePath) { fs.remove(pkgBasePath); }
 
-let pkgInstallPath = pkgBasePath / 'installed' / 'Pkg' / pkgVersion;
+let pkgInstallPath = pkgBasePath / 'installed' / ('pkg--' + pkgVersion);
 
 logging.info('Installing Pkg to: ', pkgInstallPath);
 io.println('Installing Pkg to: ', pkgInstallPath);
 fs.mkdir(pkgInstallPath);
 # Copy stuff
 let srcBinPath = pkgRepoPath / 'bin';
-let srcIncPath = pkgRepoPath / 'include';
 let destBinPath = pkgInstallPath / 'bin';
-let destIncPath = pkgInstallPath / 'pkg';
+let srcLibPath = pkgRepoPath / 'lib';
+let destLibPath = pkgInstallPath / 'pkg';
 logging.info('Copying files ...');
 logging.trace('-- ', srcBinPath, ' -> ', destBinPath);
 fs.copy(srcBinPath, destBinPath);
-logging.trace('-- ', srcIncPath, ' -> ', destIncPath);
-fs.copy(srcIncPath, destIncPath);
+logging.trace('-- ', srcLibPath, ' -> ', destLibPath);
+fs.copy(srcLibPath, destLibPath);
 # Don't setup configs - let pkg itself take care of that when it's run for the first time.
 # Create the binary hook
 let pkgBinaryPath = destBinPath / 'pkg.fer';
@@ -87,5 +88,12 @@ feral.addGlobalModulePaths(pkgInstallPath);
 logging.trace('Removing Pkg download path ...');
 fs.remove(pkgRepoPath);
 logging.info('Successfully installed Pkg!');
+
+logging.info('Adding primary index ...');
+let index = import('pkg/index');
+if !index.add(pkgIndexRepo) {
+    logging.fatal('Failed to add index!');
+    raise('Failed to add index: ', pkgIndexRepo);
+}
 
 io.println('Pkg bootstrap completed successfully! Use `feral pkg` to get started with the Feral package manager!');
