@@ -25,6 +25,7 @@ let argparse = import('std/argparse');
 
 let args = argparse.new('testdir', 'Test all scripts in a given directory using the config.fecl configuration in the directory.');
 args.addFlag('valgrind').addOpts('--valgrind', '-v').setHelp('Run the tests with valgrind - useful for memory information');
+args.addFlag('valgrind-on-err').addOpts('--valgrind-on-err', '-E').setHelp('Redirect valgrind output to stderr instead of stdout');
 args.addOpt('runs').addOpts('--runs', '-r').setHelp('Run the tests `n` number of times - useful for a longer multithreading check');
 args.addPos('path').setHelp('The directory where the tests are present - can be relative to current working directory');
 args.parse(feral.args);
@@ -89,7 +90,9 @@ if args.has('valgrind') {
     # don't have to redirect entire stderr to io.null
     valgrindCmd.push(valgrindExec);
     valgrindCmd.push('--fair-sched=yes');
-    valgrindCmd.push('--log-fd=1');
+    if !args.has('valgrind-on-err') {
+        valgrindCmd.push('--log-fd=1');
+    }
     valgrindCmd.push('--leak-check=full');
     valgrindCmd.push('--show-leak-kinds=all');
 }

@@ -28,6 +28,7 @@ Feral searches each of the paths in this file for modules when the `import()` fu
 Returns the total number of paths added. If the path already exists in the module file, it doesn't count.
 "
 let addGlobalModulePaths = fn(paths...) {
+    moduleDirs.append(paths);
     return addToModulePaths(globalModulePaths, paths...);
 };
 
@@ -38,6 +39,9 @@ Feral searches each of the paths in this file for modules when the `import()` fu
 Returns the total number of paths removed. If the path isn't present in the module file, it doesn't count.
 "
 let removeGlobalModulePaths = fn(paths...) {
+    for p in paths.each() {
+        moduleDirs.remove(p);
+    }
     return removeFromModulePaths(globalModulePaths, paths...);
 };
 

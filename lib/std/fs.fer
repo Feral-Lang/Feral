@@ -67,7 +67,10 @@ Creates a symbolic link at `destination` from `source`.
 "
 let mklink = fn(src, dest) {
     if exists(dest) { remove(dest); }
-    if exists(src) && isDir(src) {
+    if !exists(src) {
+        raise('source for mklink `', src, '` does not exist!');
+    }
+    if isDir(src) {
         mklinkDir(src, dest);
     } else {
         mklinkFile(src, dest);

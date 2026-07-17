@@ -16,6 +16,10 @@ let logFilePath = feral.tempPath / 'feralPkgBootstrap.log';
 logging.addTargetByPath(logFilePath, logging.Levels.TRACE, false);
 io.println('Writing full logs to: ', logFilePath);
 
+if feral.args.find('-V') {
+    logging.addTarget(io.stderr, logging.Levels.TRACE, false);
+}
+
 logging.trace('Checking if path exists: ', pkgExePath);
 if fs.exists(pkgExePath) && !feral.args.find('--force') {
     logging.info('Feral pkg already exists in: ', pkgExePath, '; Use `feral pkg` to manage packages');
@@ -80,7 +84,11 @@ fs.copy(srcLibPath, destLibPath);
 # Don't setup configs - let pkg itself take care of that when it's run for the first time.
 # Create the binary hook
 let pkgBinaryPath = destBinPath / 'pkg.fer';
-let pkgBinaryLinkPath = feral.libPath / 'bin' / 'pkg.fer';
+let pkgBinaryLinkDir = feral.libPath / 'bin';
+let pkgBinaryLinkPath = pkgBinaryLinkDir / 'pkg.fer';
+if !fs.exists(pkgBinaryLinkDir) {
+    fs.mkdir(pkgBinaryLinkDir);
+}
 logging.trace('Generating symlink for binary: ', pkgBinaryPath, ' -> ', pkgBinaryLinkPath);
 fs.mklink(pkgBinaryPath, pkgBinaryLinkPath);
 logging.trace('Adding Pkg path to the global module paths file ...');

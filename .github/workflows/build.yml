@@ -65,10 +65,16 @@ jobs:
         working-directory: ${{ github.workspace }}
         # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ${{ steps.strings.outputs.build-output-dir }}/bin/feral ${{ github.workspace }}/utils/testdir.fer ${{ github.workspace }}/tests --valgrind
+        run: ${{ steps.strings.outputs.build-output-dir }}/bin/feral ${{ github.workspace }}/utils/testdir.fer ${{ github.workspace }}/tests --valgrind --valgrind-on-err
 
       - name: Test x100
         working-directory: ${{ github.workspace }}
         # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ${{ steps.strings.outputs.build-output-dir }}/bin/feral ${{ github.workspace }}/utils/testdir.fer ${{ github.workspace }}/tests --runs 100
+
+      - name: Test pkgbootstrap
+        working-directory: ${{ github.workspace }}
+        # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ${{ steps.strings.outputs.build-output-dir }}/bin/feral ${{ github.workspace }}/utils/pkgbootstrap.fer -V --force
