@@ -12,17 +12,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-26.04, macos-26, windows-latest]
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: macos-26
             c_compiler: clang
             cpp_compiler: clang++
         exclude:
@@ -30,7 +33,11 @@ jobs:
             c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
+            c_compiler: cl
+          - os: macos-26
+            c_compiler: gcc
+          - os: macos-26
             c_compiler: cl
 
     steps:
