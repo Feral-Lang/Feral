@@ -106,9 +106,8 @@ FERAL_FUNC(fsLastWriteTime, 1, false,
 {
     EXPECT(VarPath, args[1], "path");
     std::error_code ec;
-    auto ftime  = fs::last_write_time(as<VarPath>(args[1])->getVal(), ec);
-    auto t      = std::chrono::clock_cast<std::chrono::system_clock>(ftime).time_since_epoch();
-    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(t).count();
+    auto ftime  = fs::last_write_time(as<VarPath>(args[1])->getVal(), ec).time_since_epoch();
+    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(ftime).count();
     return vm.makeVar<VarInt>(loc, sec);
 }
 
