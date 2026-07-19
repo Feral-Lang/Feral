@@ -34,9 +34,9 @@ class VarMap;
 template<typename T> concept VarDerived = std::is_base_of_v<Var, T>;
 
 typedef bool (*DllInitFn)(VirtualMachine &vm, ModuleLoc loc);
-#define INIT_DLL(name) extern "C" bool Init##name(VirtualMachine &vm, ModuleLoc loc)
+#define INIT_DLL(name) extern "C" FER_API_EXPORT bool Init##name(VirtualMachine &vm, ModuleLoc loc)
 typedef void (*DllDeinitFn)(VirtualMachine &vm);
-#define DEINIT_DLL(name) extern "C" void Deinit##name(VirtualMachine &vm)
+#define DEINIT_DLL(name) extern "C" FER_API_EXPORT void Deinit##name(VirtualMachine &vm)
 
 class VarFrame;
 class FER_API Var : public IAllocated

@@ -29,23 +29,25 @@ let getCompiler = fn() {
         if vsPath == nil { return result.err(-1, 'Visual Studio must be installed to get the CXX compiler on Windows'); }
         let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
         let out = vec.new(refs = true);
-        if os.exec(out = out, 'cmd', '/c', '`"' + vcvarsPath.str() + '`" x64 && set', '^2>&1') != 0 {
-            return result.err(-1, 'Could not get env information from vcvarsall: ', out);
+        if os.exec(out = out, '^"' + vcvarsPath.str() + '" x64 && set', '^2>&1') != 0 {
+            return result.err(-1, 'Could not get env information from vcvarsall:\n', out.join('\n'), '\nUsed vcvarspath = `', vcvarsPath.str(), '`');
         }
         compiler.id = 'msvc';
         for o in out.each() {
-            if !o.find('=') { continue; }
+            if o.find('=') < 0 { continue; }
             let split = o.split('=', 1);
             compiler.env.insert(split[0], split[1]);
         }
         out.clear();
-        os.exec(out = out, env = compiler.env, 'where cl.exe');
+        if os.exec(out = out, env = compiler.env, 'where', 'cl.exe') != 0 {
+            return result.err(-1, 'Could not find `cl.exe` using Windows\' `where` command');
+        }
         compiler.c = out.join('').path();
         compiler.cpp = compiler.c;
         out.clear();
         os.exec(out = out, env = compiler.env, compiler.c, '^2>&1');
         for o in out.each() {
-            if !o.find('C/C++ Optimizing Compiler Version ') { continue; }
+            if o.find('C/C++ Optimizing Compiler Version ') < 0 { continue; }
             let split = o.split('Compiler Version ');
             compiler.version = split[1].split(' ')[0];
             break;
@@ -172,7 +174,11 @@ let addDllPaths in Library = fn(dllPaths...) {
 let feralLib = Library('feral', feral.version);
 feralLib.addIncludeDirs(feral.installPath / 'include' / 'feral');
 feralLib.addLibraryDirs(feral.installPath / 'lib');
-feralLib.addLibraryFlags('-lferal');
+if os.name == 'windows' {
+    feralLib.addLibraryFlags('libferal.lib');
+} else {
+    feralLib.addLibraryFlags('-lferal');
+}
 
 let getFeralLibrary = fn() {
     return feralLib;

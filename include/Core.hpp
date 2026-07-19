@@ -64,12 +64,16 @@
 #endif
 
 #if defined(FER_OS_WINDOWS)
+#define FER_API_EXPORT __declspec(dllexport)
+#define FER_API_IMPORT __declspec(dllimport)
 #if defined(EXPORT_FOR_DLL)
-#define FER_API __declspec(dllexport)
+#define FER_API FER_API_EXPORT
 #else
-#define FER_API __declspec(dllimport)
+#define FER_API FER_API_IMPORT
 #endif
 #else
+#define FER_API_EXPORT
+#define FER_API_IMPORT
 #define FER_API
 #endif
 

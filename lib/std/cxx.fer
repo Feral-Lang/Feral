@@ -78,9 +78,12 @@ let build in Extension = fn(outDir, command = nil, .kw) {
     }
     let cmd = vec.new(refs = true, c.cpp);
     if os.name == 'windows' {
+        cmd.push('/std:c++20');
+        cmd.push('/EHsc'); # to prevent: warning C4530: C++ exception handler used, but unwind semantics are not enabled
         cmd.push(self.debug ? '/LDd' : '/LD');
         cmd.push(self.debug ? '/Od' : '/O2');
     } else {
+        cmd.push('-std=c++20');
         cmd.push(self.debug ? '-Og' : '-O2');
         cmd.push('-fPIC');
         cmd.push('-shared');
@@ -117,7 +120,7 @@ let build in Extension = fn(outDir, command = nil, .kw) {
     }
     if dry { return result.ok(); }
     let out = vec.new(refs = true);
-    let res = os.exec(out = out, cmd..., '^2>&1');
+    let res = os.exec(out = out, env = c.env, cmd..., '^2>&1');
     if res != 0 {
         return result.err(res, 'Failed to build ', self.name, ':\n', out.join('\n'));
     }
