@@ -23,7 +23,7 @@ FERAL_FUNC(structDefSetTypeName, 1, false,
 {
     EXPECT(VarStr, args[1], "struct name");
     VarStructDef *def  = as<VarStructDef>(args[0]);
-    const String &name = as<VarStr>(args[1])->getVal();
+    StringRef name = as<VarStr>(args[1])->getVal();
     vm.setTypeName(def->getID(), name);
     return vm.getNil();
 }
@@ -34,6 +34,19 @@ FERAL_FUNC(structDefLen, 0, false,
 {
     VarStructDef *def = as<VarStructDef>(args[0]);
     return vm.makeVar<VarInt>(loc, def->getAttrCount());
+}
+
+FERAL_FUNC(structSetTypeName, 1, false,
+           "  var.fn(name) -> Nil\n"
+           "Sets a `name` for the Enum `var` in the Feral virtual machine.\n"
+           "This is used mainly to provide better error messages but its always best to set it for "
+           "any Enum.")
+{
+    EXPECT(VarStr, args[1], "enum name");
+    VarStruct *st = as<VarStruct>(args[0]);
+    StringRef name = as<VarStr>(args[1])->getVal();
+    vm.setTypeName(st->getSubType(), name);
+    return vm.getNil();
 }
 
 FERAL_FUNC(structLen, 0, false,

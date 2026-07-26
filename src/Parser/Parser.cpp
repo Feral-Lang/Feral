@@ -190,12 +190,12 @@ bool Parser::parseExpr17(Stmt *&expr)
 
     lex::Lexeme *start = p.peek();
 
-    if(!parseExpr15(rhs)) { return false; }
+    if(!parseExpr16(rhs)) { return false; }
 
     while(p.accept(lex::ASSN)) {
         oper = p.peekt();
         p.next();
-        if(!parseExpr15(lhs)) { return false; }
+        if(!parseExpr16(lhs)) { return false; }
         rhs = StmtExpr::create(allocator, start->getLoc(), lhs, oper, rhs);
         lhs = nullptr;
     }
@@ -204,12 +204,47 @@ bool Parser::parseExpr17(Stmt *&expr)
     return true;
 }
 // Left Associative
+// ?:
+bool Parser::parseExpr16(Stmt *&expr)
+{
+    expr = nullptr;
+
+    Vector<Conditional> cvec;
+    Stmt *cond    = nullptr;
+    Stmt *blkStmt = nullptr;
+
+    lex::Lexeme *start = p.peek();
+
+    if(!parseExpr15(cond)) { return false; }
+    if(!p.acceptn(lex::QUEST)) {
+        expr = cond;
+        return true;
+    }
+
+    if(!parseExpr15(blkStmt)) { return false; }
+    if(!p.acceptn(lex::COL)) {
+        err.fail(p.peek()->getLoc(),
+                 "expected ':' for ternary operator, found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+    blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
+    as<StmtBlock>(blkStmt)->setUnload(false);
+    cvec.emplace_back(cond, as<StmtBlock>(blkStmt));
+    blkStmt = nullptr;
+    if(!parseExpr15(blkStmt)) { return false; }
+    blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
+    as<StmtBlock>(blkStmt)->setUnload(false);
+    cvec.emplace_back(nullptr, as<StmtBlock>(blkStmt));
+    expr = StmtCond::create(allocator, cond->getLoc(), cvec);
+    return true;
+}
+// Left Associative
 // += -= *=
 // /= %= <<=
 // >>= &= |=
 // ~= ^=
 // or-block
-bool Parser::parseExpr16(Stmt *&expr)
+bool Parser::parseExpr15(Stmt *&expr)
 {
     expr = nullptr;
 
@@ -266,41 +301,6 @@ bool Parser::parseExpr16(Stmt *&expr)
 
     // expr with or blk's format is: <fndef> <OR> <expr>
     expr = StmtExpr::create(allocator, orLoc, fndef, lex::OR, expr);
-    return true;
-}
-// Left Associative
-// ?:
-bool Parser::parseExpr15(Stmt *&expr)
-{
-    expr = nullptr;
-
-    Vector<Conditional> cvec;
-    Stmt *cond    = nullptr;
-    Stmt *blkStmt = nullptr;
-
-    lex::Lexeme *start = p.peek();
-
-    if(!parseExpr16(cond)) { return false; }
-    if(!p.acceptn(lex::QUEST)) {
-        expr = cond;
-        return true;
-    }
-
-    if(!parseExpr16(blkStmt)) { return false; }
-    if(!p.acceptn(lex::COL)) {
-        err.fail(p.peek()->getLoc(),
-                 "expected ':' for ternary operator, found: ", p.peek()->getTok().cStr());
-        return false;
-    }
-    blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
-    as<StmtBlock>(blkStmt)->setUnload(false);
-    cvec.emplace_back(cond, as<StmtBlock>(blkStmt));
-    blkStmt = nullptr;
-    if(!parseExpr16(blkStmt)) { return false; }
-    blkStmt = StmtBlock::create(allocator, blkStmt->getLoc(), {blkStmt}, true);
-    as<StmtBlock>(blkStmt)->setUnload(false);
-    cvec.emplace_back(nullptr, as<StmtBlock>(blkStmt));
-    expr = StmtCond::create(allocator, cond->getLoc(), cvec);
     return true;
 }
 // Left Associative
@@ -657,6 +657,8 @@ bool Parser::parseExpr02(Stmt *&expr)
     expr = lhs;
     return true;
 }
+// (), [], .?
+// await, wait, yield
 bool Parser::parseExpr01(Stmt *&expr)
 {
     expr = nullptr;
@@ -779,6 +781,42 @@ beginBrack:
         lhs = StmtExpr::create(allocator, dotLoc, lhs, lex::DOT, rhs);
         rhs = nullptr;
     }
+
+    if(p.acceptn(lex::RESULT_ERR_RETURN)) {
+        static size_t nameCtr = 0;
+        String nameStr        = "__tmpRes" + std::to_string(nameCtr++);
+        StmtSimple *name      = StmtSimple::create(allocator, start->getLoc(), lex::IDEN, nameStr);
+        // let __tmpRes<XXX> = ref(<expr>);
+        StmtSimple *ref =
+            StmtSimple::create(allocator, start->getLoc(), lex::IDEN, StringRef("ref"));
+        StmtFnArgs *refArgs = StmtFnArgs::create(allocator, start->getLoc(), {lhs}, {false});
+        StmtExpr *refCall = StmtExpr::create(allocator, start->getLoc(), ref, lex::FNCALL, refArgs);
+        StmtVar *resVar =
+            StmtVar::create(allocator, start->getLoc(), nameStr, nullptr, refCall, false);
+        // if __tmpRes<XXX>.isErr() { return __tmpRes<XXX>; }
+        StmtRetYield *retRes = StmtRetYield::create(allocator, start->getLoc(), name, false);
+        StmtBlock *isErrBlk  = StmtBlock::create(allocator, start->getLoc(), {retRes}, false);
+        StmtSimple *isErr =
+            StmtSimple::create(allocator, start->getLoc(), lex::STR, StringRef("isErr"));
+        StmtExpr *isErrDot    = StmtExpr::create(allocator, start->getLoc(), name, lex::DOT, isErr);
+        StmtFnArgs *isErrArgs = StmtFnArgs::create(allocator, start->getLoc(), {}, {});
+        StmtExpr *isErrCall =
+            StmtExpr::create(allocator, start->getLoc(), isErrDot, lex::FNCALL, isErrArgs);
+        Conditional cond(isErrCall, isErrBlk);
+        StmtCond *c = StmtCond::create(allocator, start->getLoc(), {cond});
+        //
+        prependBlock.push_back(resVar);
+        prependBlock.push_back(c);
+        //
+        StmtSimple *getVal =
+            StmtSimple::create(allocator, start->getLoc(), lex::STR, StringRef("getVal"));
+        StmtExpr *getValExpr = StmtExpr::create(allocator, start->getLoc(), name, lex::DOT, getVal);
+        StmtFnArgs *getValArgs = StmtFnArgs::create(allocator, start->getLoc(), {}, {});
+        StmtExpr *getValCall =
+            StmtExpr::create(allocator, start->getLoc(), getValExpr, lex::FNCALL, getValArgs);
+        lhs = getValCall;
+    }
+
     expr = lhs;
     return true;
 }
@@ -969,7 +1007,7 @@ cond:
         return false;
     }
 
-    if(!parseExpr16(c.getCond())) {
+    if(!parseExpr15(c.getCond())) {
         err.fail(p.peek()->getLoc(), "failed to parse condition for if/else if statement");
         return false;
     }
@@ -1202,7 +1240,7 @@ bool Parser::parseForIn(Stmt *&fin)
         return false;
     }
 
-    if(!parseExpr16(in)) {
+    if(!parseExpr15(in)) {
         err.fail(p.peek()->getLoc(), "failed to parse expression for 'in'");
         return false;
     }

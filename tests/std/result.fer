@@ -10,3 +10,19 @@ assert.eq(ok.isOk(), true);
 
 assert.eq(err.getVal().getMsg(), 'this is an error message; 1 + 2 = 3');
 assert.eq(ok.getVal(), 5);
+
+# `.?` operator
+let f = fn() {
+    let r = result.err(-1, 'test');
+    return r;
+};
+
+let t = fn() {
+    let a = f().?;
+    # can't reach here
+    assert.eq(true, false);
+};
+
+let out = t();
+assert.eq(out.isErr(), true);
+assert.eq(out.getVal().getMsg(), 'test');

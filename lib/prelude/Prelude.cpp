@@ -128,17 +128,13 @@ FERAL_FUNC(allSetAttr, 2, false,
 FERAL_FUNC(allGetType, 0, false,
            "  var.fn() -> TypeID\n"
            "Returns the type ID of `var`.")
-{
-    return vm.makeVar<VarTypeID>(loc, args[0]->getType());
-}
+{ return vm.makeVar<VarTypeID>(loc, args[0]->getType()); }
 
 FERAL_FUNC(allGetSubType, 0, false,
            "  var.fn() -> TypeID\n"
            "Returns the subtype ID of `var`.\n"
            "For example, a struct instance's definition's type.")
-{
-    return vm.makeVar<VarTypeID>(loc, args[0]->getSubType());
-}
+{ return vm.makeVar<VarTypeID>(loc, args[0]->getSubType()); }
 
 FERAL_FUNC(allIsType, 1, false,
            "  var.fn(type) -> Bool\n"
@@ -159,30 +155,22 @@ FERAL_FUNC(allIsSubType, 1, false,
 FERAL_FUNC(allGetTypeName, 0, false,
            "  var.fn() -> Str\n"
            "Returns the name of the type of `var`.")
-{
-    return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0]));
-}
+{ return vm.makeVar<VarStr>(loc, vm.getTypeName(args[0])); }
 
 FERAL_FUNC(allEq, 1, false,
            "  var.fn(other) -> bool\n"
            "Checks if the types of `var` and `other` are same.")
-{
-    return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse();
-}
+{ return args[0]->getType() == args[1]->getType() ? vm.getTrue() : vm.getFalse(); }
 
 FERAL_FUNC(allNe, 1, false,
            "  var.fn(other) -> bool\n"
            "Checks if the types of `var` and `other` are not same.")
-{
-    return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse();
-}
+{ return args[0]->getType() != args[1]->getType() ? vm.getTrue() : vm.getFalse(); }
 
 FERAL_FUNC(allNilCoalesce, 1, false,
            "  var.fn(other) -> this | other\n"
            "If `var` is nil, return `other`, otherwise return `var`.")
-{
-    return !args[0]->is<VarNil>() ? args[0] : args[1];
-}
+{ return !args[0]->is<VarNil>() ? args[0] : args[1]; }
 
 FERAL_FUNC(closure, 1, true,
            "  fn(callable, ...) -> Closure\n"
@@ -302,9 +290,7 @@ FERAL_FUNC(evalExpr, 1, false,
 FERAL_FUNC(getCurrModule, 0, false,
            "  fn() -> Module\n"
            "Returns the current module.")
-{
-    return vm.getCurrModule();
-}
+{ return vm.getCurrModule(); }
 
 FERAL_FUNC(getOSName, 0, false,
            "  fn() -> str\n"
@@ -411,9 +397,7 @@ FERAL_FUNC(setMaxRecursionNative, 1, false, "")
 FERAL_FUNC(getMaxRecursion, 0, false,
            "  fn() -> int\n"
            "Gets the maximum recursion limit for `VirtualMachine::execute()`.")
-{
-    return vm.makeVar<VarInt>(loc, vm.getRecurseMax());
-}
+{ return vm.makeVar<VarInt>(loc, vm.getRecurseMax()); }
 
 FERAL_FUNC(
     addToModulePaths, 2, true,
@@ -802,6 +786,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName);
     vm.addTypeFn<VarStructDef>(loc, "len", structDefLen);
 
+    vm.addTypeFn<VarStruct>(loc, "setTypeName", structSetTypeName);
     vm.addTypeFn<VarStruct>(loc, "str", structToStr);
     vm.addTypeFn<VarStruct>(loc, "len", structLen);
 

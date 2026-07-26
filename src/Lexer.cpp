@@ -48,9 +48,8 @@ const char *TokStrs[_LAST] = {
     "*=",
     "/=",
     "%=",
-    "**",   // power
-    "//",   // root
-    "\?\?", // nil-coalesce
+    "**", // power
+    "//", // root
     // Post/Pre Inc/Dec
     "x++",
     "++x",
@@ -86,6 +85,9 @@ const char *TokStrs[_LAST] = {
     ">>",
     "<<=",
     ">>=",
+    // Special
+    "\?\?", // nil-coalesce
+    ".?",   // result-err-return
 
     "[]",
     "()",
@@ -646,12 +648,14 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
     case '\t': SET_OP_TYPE_BRK(TAB);
     case '\n': SET_OP_TYPE_BRK(NEWL);
     case '.':
-        if(i < len - 1 && NEXT == '.') {
+        if(i < len - 1 && (NEXT == '?' || NEXT == '.')) {
             ++i;
-            if(i < len - 1 && NEXT == '.') {
+            if(CURR == '?') opType = RESULT_ERR_RETURN;
+            else if(CURR == '.' && i < len - 1 && NEXT == '.') {
                 ++i;
                 SET_OP_TYPE_BRK(PreVA);
             }
+            break;
         }
         SET_OP_TYPE_BRK(DOT);
     case '?':

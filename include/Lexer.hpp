@@ -48,9 +48,8 @@ enum TokType
     MUL_ASSN,
     DIV_ASSN,
     MOD_ASSN,
-    POWER,        // **
-    ROOT,         // //
-    NIL_COALESCE, // ??
+    POWER, // **
+    ROOT,  // //
     // Post/Pre Inc/Dec
     XINC,
     INCX,
@@ -86,6 +85,9 @@ enum TokType
     RSHIFT,
     LSHIFT_ASSN,
     RSHIFT_ASSN,
+    // Special
+    NIL_COALESCE,      // ??
+    RESULT_ERR_RETURN, // .?
 
     SUBS,
 
@@ -138,9 +140,7 @@ public:
                val == FFALSE || val == NIL;
     }
     inline bool isLiteral() const
-    {
-        return val == INT || val == FLT || val == STR || val == FTRUE || val == FFALSE;
-    }
+    { return val == INT || val == FLT || val == STR || val == FTRUE || val == FFALSE; }
 
     inline bool isOper() const { return val >= ASSN && val <= RBRACK; }
 
@@ -153,9 +153,7 @@ public:
     inline bool isUnaryPost() const { return val == XINC || val == XDEC; }
 
     inline bool isComparison() const
-    {
-        return val == EQ || val == LT || val == GT || val == LE || val == GE || val == NE;
-    }
+    { return val == EQ || val == LT || val == GT || val == LE || val == GE || val == NE; }
 
     inline bool isAssign() const
     {
@@ -201,9 +199,7 @@ public:
     String str(int64_t pad = 10) const;
 
     inline bool operator==(const Lexeme &other) const
-    {
-        return tok == other.tok && cmpData(other, tok.getVal());
-    }
+    { return tok == other.tok && cmpData(other, tok.getVal()); }
     inline bool operator!=(const Lexeme &other) const { return *this == other ? false : true; }
 
     inline void setDataStr(String &&str) { data = std::move(str); }
@@ -211,9 +207,7 @@ public:
     inline void setDataInt(int64_t i) { data = i; }
     inline void setDataFlt(double f) { data = f; }
     template<typename... Args> void setDataStr(Args... args)
-    {
-        data = utils::toString(std::forward<Args>(args)...);
-    }
+    { data = utils::toString(std::forward<Args>(args)...); }
 
     inline void appendDataStr(StringRef str)
     {
@@ -222,9 +216,7 @@ public:
     }
 
     inline StringRef getDataStr() const
-    {
-        return hasString() ? std::get<String>(data) : std::get<StringRef>(data);
-    }
+    { return hasString() ? std::get<String>(data) : std::get<StringRef>(data); }
     inline int64_t getDataInt() const { return std::get<int64_t>(data); }
     inline double getDataFlt() const { return std::get<double>(data); }
 
