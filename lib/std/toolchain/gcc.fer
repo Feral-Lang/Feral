@@ -1,0 +1,33 @@
+let map = import('std/map');
+
+let GCC = struct(
+    id = '',
+    version = '',
+    env = map.new(),
+    c = ''.path(),
+    cxx = ''.path(),
+    log = nil # log func
+);
+GCC.setTypeName('GCC');
+
+"
+  var.fn(.kw, dest, srcs...) -> Result<Path>
+Compiles each of the given `srcs` and generates a `dest` object file from them.
+Preferably, use full paths for `dest` and `srcs`.
+Takes a bunch of keyword arguments:
+* `cmd = <str>` - writes the command to compile in `str`.
+* `performed = <bool>` - writes `true` to `bool` if the command to compile was actually run. `false` otherwise.
+* `dry = true/false` - if `true`, does not execute the command.
+* `force = true/false` - if `true`, will compile even if `dest` is already newer than `srcs`.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
+* `opt = Opt` - optimization level, one of the values in `Opt` enum. Defaults to `Opt.None`.
+* `defs = Map` - a map of preprocessor definitions to be provided.
+* `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
+* `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
+"
+let compile in GCC = fn() {};
+
+let link in GCC = fn() {};
+
+let archive in GCC = fn() {};

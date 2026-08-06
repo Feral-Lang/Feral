@@ -8,71 +8,6 @@ let vec = import('std/vec');
 let result = import('std/result');
 
 ####################################################################################################
-########################################## Compiler ################################################
-####################################################################################################
-
-let Compiler = struct(
-    id = '',
-    c = ''.path(),
-    cpp = ''.path(),
-    version = '',
-    env = map.new()
-);
-Compiler.setTypeName('Compiler');
-
-let compiler = Compiler();
-
-let getCompiler = fn() {
-    if !compiler.id.empty() { return result.ok(compiler); }
-    if os.name == 'windows' {
-        let vsPath = getVSInstallPath();
-        if vsPath == nil { return result.err(-1, 'Visual Studio must be installed to get the CXX compiler on Windows'); }
-        let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
-        let out = vec.new(refs = true);
-        if os.exec(out = out, '^"' + vcvarsPath.str() + '" x64 && set', '^2>&1') != 0 {
-            return result.err(-1, 'Could not get env information from vcvarsall:\n', out.join('\n'), '\nUsed vcvarspath = `', vcvarsPath.str(), '`');
-        }
-        compiler.id = 'msvc';
-        for o in out.each() {
-            if o.find('=') < 0 { continue; }
-            let split = o.split('=', 1);
-            compiler.env.insert(split[0], split[1]);
-        }
-        out.clear();
-        if os.exec(out = out, env = compiler.env, 'where', 'cl.exe') != 0 {
-            return result.err(-1, 'Could not find `cl.exe` using Windows\' `where` command');
-        }
-        compiler.c = out.join('').path();
-        compiler.cpp = compiler.c;
-        out.clear();
-        os.exec(out = out, env = compiler.env, compiler.c, '^2>&1');
-        for o in out.each() {
-            if o.find('C/C++ Optimizing Compiler Version ') < 0 { continue; }
-            let split = o.split('Compiler Version ');
-            compiler.version = split[1].split(' ')[0];
-            break;
-        }
-        return result.ok(compiler);
-    }
-    let cExe = os.findExec('gcc');
-    let cppExe = os.findExec('g++');
-    if cExe == nil && cppExe == nil {
-        cExe = os.findExec('clang');
-        cppExe = os.findExec('clang++');
-    }
-    if cppExe == nil {
-        return result.err(-1, 'Found C compiler `', cExe, '`, but could not find the equivalent C++ compiler');
-    }
-    compiler.id = cExe.fileName().str();
-    compiler.c = cExe;
-    compiler.cpp = cppExe;
-    let out = vec.new(refs = true);
-    os.exec(out = out, compiler.c, '--version');
-    compiler.version = out[0].split(' ')[2];
-    return result.ok(compiler);
-};
-
-####################################################################################################
 ####################################### Native Library #############################################
 ####################################################################################################
 
@@ -183,27 +118,3 @@ if os.name == 'windows' {
 let getFeralLibrary = fn() {
     return feralLib;
 };
-
-####################################################################################################
-##################################### Windows Shenanigans ##########################################
-####################################################################################################
-
-inline if os.name == 'windows' {
-
-let vsWhereCmd = vec.new(refs = true, 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-latest', '-property', 'installationPath');
-
-let getVSInstallPath = fn() {
-    let out = '';
-    if os.exec(out = out, vsWhereCmd) != 0 { return nil; }
-    return out.path();
-};
-
-let getMSBuildPath = fn() {
-    let vs = getVSInstallPath();
-    if vs == nil { return nil; }
-    let msbuild = vs / 'MSBuild' / 'Current' / 'Bin' / 'msbuild.exe';
-    if !fs.exists(msbuild) { return ''; }
-    return msbuild;
-};
-
-}
