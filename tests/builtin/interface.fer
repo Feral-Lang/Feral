@@ -1,0 +1,55 @@
+let assert = import('std/assert');
+
+# Interface
+let Stringify = struct();
+Stringify.setTypeName('Stringify');
+let str in Stringify = fn() {};
+
+# Integer implements .str()
+let e = '';
+if !5._implements_(err = e, Stringify) {
+    assert.eq(false, true);
+}
+
+# X doesn't implement .str()
+let X = struct();
+X.setTypeName('X');
+
+if !X._implements_(err = e, Stringify) {
+    assert.eq(e, "object of type `X` doesn't provide any functions which are required by interface `Stringify`");
+} else {
+    assert.eq(true, false);
+}
+
+# Y implements .str() with incorrect parameters
+let Y = struct();
+Y.setTypeName('Y');
+let str in Y = fn(x = 5) { return x; };
+
+if !Y._implements_(err = e, Stringify) {
+    assert.eq(e, "function `str` in `Y` expects 1 argument(s), but the interface `Stringify` expected 0");
+} else {
+    assert.eq(false, true);
+}
+
+# Z implements .str() as keywords accepting
+let Z = struct();
+Z.setTypeName('Z');
+let str in Z = fn(.kw) { return kw['x'] ?? 0; };
+
+if !Z._implements_(err = e, Stringify) {
+    assert.eq(e, "interface `Stringify` expects function `str` to be non-keyword-accepting but the function in `Z` is keyword-accepting");
+} else {
+    assert.eq(true, false);
+}
+
+# A implements .str() as variadic
+let A = struct();
+A.setTypeName('A');
+let str in A = fn(args...) { return args.len(); };
+
+if !A._implements_(err = e, Stringify) {
+    assert.eq(e, "interface `Stringify` expects function `str` to be non-variadic but the function in `A` is variadic");
+} else {
+    assert.eq(false, true);
+}

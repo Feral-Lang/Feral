@@ -138,7 +138,9 @@ public:
     void addLocal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
 
     void addTypeFn(size_t _typeid, StringRef name, Var *callable, bool iref);
+
     Var *getTypeFn(Var *var, StringRef name);
+    VarMap *getTypeFns(Var *var);
 
     void setTypeName(size_t _typeid, StringRef name);
     StringRef getTypeName(size_t _typeid);

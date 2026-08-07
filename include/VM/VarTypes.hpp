@@ -447,6 +447,8 @@ public:
     inline NativeFn getNativeFn() { return body.native; }
     inline FeralFnBody getFeralFnBody() { return body.feral; }
     inline bool isNative() { return isnative; }
+    inline bool isVariadic() { return !vaArg.empty(); }
+    inline bool isKWAccepted() { return !kwArg.empty(); }
 };
 
 class FER_API VarClosure : public Var

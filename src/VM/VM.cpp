@@ -299,6 +299,12 @@ Var *VirtualMachine::getTypeFn(Var *var, StringRef name)
     }
     return nullptr;
 }
+VarMap *VirtualMachine::getTypeFns(Var *var)
+{
+    auto loc = gs->typefns.find(var->getSubType());
+    if(loc == gs->typefns.end()) return nullptr;
+    return loc->second;
+}
 
 void VirtualMachine::setTypeName(size_t _typeid, StringRef name) { gs->typenames[_typeid] = name; }
 StringRef VirtualMachine::getTypeName(size_t _typeid)

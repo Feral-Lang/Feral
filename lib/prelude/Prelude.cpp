@@ -186,6 +186,93 @@ FERAL_FUNC(allNilCoalesce, 1, false,
     return !args[0]->is<VarNil>() ? args[0] : args[1];
 }
 
+FERAL_FUNC(allImplements, 1, true,
+           "  var.fn(.kw, interfaces...) -> Result\n"
+           "Returns `Result.ok()` if `var` has functions implemented by each of `interfaces`.\n"
+           "`Result.err(code, msg)` otherwise.\n"
+           "Accepts keyword arguments:\n"
+           "* `err = <stringVar>` to get the error details in `stringVar`.")
+{
+    VarStr *err = nullptr;
+    if(Var *errVar = assnArgs->getAttr("err")) {
+        EXPECT(VarStr, errVar, "error output string");
+        err = as<VarStr>(errVar);
+        err->setVal("");
+    }
+
+    VarMap *objfns = vm.getTypeFns(args[0]);
+    for(size_t i = 1; i < args.size(); ++i) {
+        VarMap *interfacefns = vm.getTypeFns(args[i]);
+        if(interfacefns && !objfns) {
+            if(err) {
+                utils::appendToString(
+                    err->getVal(), "object of type `", vm.getTypeName(args[0]),
+                    "` doesn't provide any functions which are required by interface `",
+                    vm.getTypeName(args[i]), "`");
+            }
+            return vm.getFalse();
+        }
+        if(!interfacefns) continue;
+        for(auto fit = interfacefns->begin(); fit != interfacefns->end(); interfacefns->next(fit)) {
+            Var *of = objfns->getAttr(fit.key());
+            if(!of) {
+                if(err) {
+                    utils::appendToString(
+                        err->getVal(), "object of type `", vm.getTypeName(args[0]),
+                        "` doesn't implement a function `", fit.key(),
+                        "` required by the interface `", vm.getTypeName(args[i]), "`");
+                }
+                return vm.getFalse();
+            }
+            Var *f = fit.val();
+            if(of->getSubType() != f->getSubType()) {
+                if(err) {
+                    utils::appendToString(
+                        err->getVal(), "function `", fit.key(), "` in `", vm.getTypeName(args[0]),
+                        "` is of type `", vm.getTypeName(of), "`, but the interface `",
+                        vm.getTypeName(args[i]), "` expects a `", vm.getTypeName(f), "`");
+                }
+                return vm.getFalse();
+            }
+            if(!of->is<VarFn>() || !f->is<VarFn>()) continue;
+            VarFn *offn = as<VarFn>(of);
+            VarFn *ffn  = as<VarFn>(f);
+            if(offn->getParamCount() != ffn->getParamCount()) {
+                if(err) {
+                    utils::appendToString(
+                        err->getVal(), "function `", fit.key(), "` in `", vm.getTypeName(args[0]),
+                        "` expects ", offn->getParamCount(), " argument(s), but the interface `",
+                        vm.getTypeName(args[i]), "` expected ", ffn->getParamCount());
+                }
+                return vm.getFalse();
+            }
+            if(offn->isVariadic() != ffn->isVariadic()) {
+                if(err) {
+                    utils::appendToString(err->getVal(), "interface `", vm.getTypeName(args[i]),
+                                          "` expects function `", fit.key(), "` to be ",
+                                          ffn->isVariadic() ? "variadic" : "non-variadic",
+                                          " but the function in `", vm.getTypeName(args[0]),
+                                          "` is ",
+                                          offn->isVariadic() ? "variadic" : "non-variadic");
+                }
+                return vm.getFalse();
+            }
+            if(offn->isKWAccepted() != ffn->isKWAccepted()) {
+                if(err) {
+                    utils::appendToString(
+                        err->getVal(), "interface `", vm.getTypeName(args[i]),
+                        "` expects function `", fit.key(), "` to be ",
+                        ffn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting",
+                        " but the function in `", vm.getTypeName(args[0]), "` is ",
+                        offn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting");
+                }
+                return vm.getFalse();
+            }
+        }
+    }
+    return vm.getTrue();
+}
+
 FERAL_FUNC(closure, 1, true,
            "  fn(callable, ...) -> Closure\n"
            "Creates and returns a closure using the `callable` as well as any arguments (including "
@@ -564,6 +651,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarAll>(loc, "_isType_", allIsType);
     vm.addTypeFn<VarAll>(loc, "_isSubType_", allIsSubType);
     vm.addTypeFn<VarAll>(loc, "_typeName_", allGetTypeName);
+    vm.addTypeFn<VarAll>(loc, "_implements_", allImplements);
 
     // copy
     vm.addTypeFn<VarBool>(loc, "_copy_", boolCopy);
