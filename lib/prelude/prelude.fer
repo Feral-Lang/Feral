@@ -395,6 +395,30 @@ let reopen in FileTy = fn() {
     return self.open();
 };
 
+# Result
+
+"
+  var.fn() -> Var
+Returns value in `var` if it's an okay value, raises an error otherwise.
+"
+let ok in ResultTy = fn() {
+    if self.isErr() {
+        raise('result contains error value: ', self.val());
+    }
+    return self.val();
+};
+
+"
+  var.fn() -> Var
+Returns value in `var` if it's an error value, raises an error otherwise.
+"
+let err in ResultTy = fn() {
+    if self.isOk() {
+        raise('result contains okay value: ', self.val());
+    }
+    return self.val();
+};
+
 # Sorting helpers
 
 let sortCmp = fn(a, b) { return a < b; };

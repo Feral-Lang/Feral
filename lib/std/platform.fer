@@ -5,7 +5,6 @@ let fs = import('std/fs');
 let os = import('std/os');
 let map = import('std/map');
 let vec = import('std/vec');
-let result = import('std/result');
 
 ####################################################################################################
 ########################################## Compiler ################################################
@@ -23,14 +22,14 @@ Compiler.setTypeName('Compiler');
 let compiler = Compiler();
 
 let getCompiler = fn() {
-    if !compiler.id.empty() { return result.ok(compiler); }
+    if !compiler.id.empty() { return feral.ok(compiler); }
     if os.name == 'windows' {
         let vsPath = getVSInstallPath();
-        if vsPath == nil { return result.err(-1, 'Visual Studio must be installed to get the CXX compiler on Windows'); }
+        if vsPath == nil { return feral.err(-1, 'Visual Studio must be installed to get the CXX compiler on Windows'); }
         let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
         let out = vec.new(refs = true);
         if os.exec(out = out, '^"' + vcvarsPath.str() + '" x64 && set', '^2>&1') != 0 {
-            return result.err(-1, 'Could not get env information from vcvarsall:\n', out.join('\n'), '\nUsed vcvarspath = `', vcvarsPath.str(), '`');
+            return feral.err(-1, 'Could not get env information from vcvarsall:\n', out.join('\n'), '\nUsed vcvarspath = `', vcvarsPath.str(), '`');
         }
         compiler.id = 'msvc';
         for o in out.each() {
@@ -40,7 +39,7 @@ let getCompiler = fn() {
         }
         out.clear();
         if os.exec(out = out, env = compiler.env, 'where', 'cl.exe') != 0 {
-            return result.err(-1, 'Could not find `cl.exe` using Windows\' `where` command');
+            return feral.err(-1, 'Could not find `cl.exe` using Windows\' `where` command');
         }
         compiler.c = out.join('').path();
         compiler.cpp = compiler.c;
@@ -52,7 +51,7 @@ let getCompiler = fn() {
             compiler.version = split[1].split(' ')[0];
             break;
         }
-        return result.ok(compiler);
+        return feral.ok(compiler);
     }
     let cExe = os.findExec('gcc');
     let cppExe = os.findExec('g++');
@@ -61,7 +60,7 @@ let getCompiler = fn() {
         cppExe = os.findExec('clang++');
     }
     if cppExe == nil {
-        return result.err(-1, 'Found C compiler `', cExe, '`, but could not find the equivalent C++ compiler');
+        return feral.err(-1, 'Found C compiler `', cExe, '`, but could not find the equivalent C++ compiler');
     }
     compiler.id = cExe.fileName().str();
     compiler.c = cExe;
@@ -69,7 +68,7 @@ let getCompiler = fn() {
     let out = vec.new(refs = true);
     os.exec(out = out, compiler.c, '--version');
     compiler.version = out[0].split(' ')[2];
-    return result.ok(compiler);
+    return feral.ok(compiler);
 };
 
 ####################################################################################################

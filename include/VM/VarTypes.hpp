@@ -866,4 +866,31 @@ public:
     inline size_t size() { return stack.size(); }
 };
 
+class FER_API VarError : public Var
+{
+    int64_t code;
+    String msg;
+
+public:
+    VarError(ModuleLoc loc, int64_t code, String &&msg);
+
+    inline int64_t getCode() { return code; }
+    inline StringRef getMsg() { return msg; }
+};
+
+class FER_API VarResult : public Var
+{
+    Var *val;
+    bool isok;
+
+    void onCreate(VirtualMachine &vm) override;
+    void onDestroy(VirtualMachine &vm) override;
+
+public:
+    VarResult(ModuleLoc loc, Var *val, bool isok);
+
+    inline Var *getVal() { return val; }
+    inline bool isOk() { return isok; }
+};
+
 } // namespace fer

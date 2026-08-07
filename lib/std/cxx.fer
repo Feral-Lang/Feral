@@ -1,7 +1,6 @@
 let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
-let result = import('std/result');
 let logging = import('std/logging');
 let platform = import('std/platform');
 
@@ -17,22 +16,22 @@ let pkgConfigFinder = import('std/library-finders/pkg-config');
 let libraryFinders = vec.new(refs = true);
 
 # let r = cmakeFinder.new();
-# if r.isOk() { libraryFinders.push(r.getVal()); }
+# if r.isOk() { libraryFinders.push(r.val()); }
 # let r = brewFinder.new();
-# if r.isOk() { libraryFinders.push(r.getVal()); }
+# if r.isOk() { libraryFinders.push(r.val()); }
 let r = vcpkgFinder.new();
-if r.isOk() { libraryFinders.push(r.getVal()); }
+if r.isOk() { libraryFinders.push(r.val()); }
 let r = pkgConfigFinder.new();
-if r.isOk() { libraryFinders.push(r.getVal()); }
+if r.isOk() { libraryFinders.push(r.val()); }
 
 let findLibrary = fn(.kw, names...) {
     for finder in libraryFinders.each() {
         for name in names.each() {
             let r = finder.findLibrary(name, kw...);
-            if r.isOk() || r.getVal().getCode() >= 0 { return r; }
+            if r.isOk() || r.val().code() >= 0 { return r; }
         }
     }
-    return result.err(-1, 'Could not find library with name(s) ', names.join(', '));
+    return feral.err(-1, 'Could not find library with name(s) ', names.join(', '));
 };
 
 ####################################################################################################
@@ -70,9 +69,7 @@ let requires in Extension = fn(deps...) {
 # The generated command will be set as `command` if it's not nil
 let build in Extension = fn(outDir, command = nil, .kw) {
     let dry = kw['dry'] ?? false;
-    let cRes = platform.getCompiler();
-    if cRes.isErr() { return cRes; }
-    let c = cRes.getVal();
+    let c = platform.getCompiler().?;
     if !dry && !outDir.str().empty() {
         fs.mkdir(outDir);
     }
@@ -118,11 +115,11 @@ let build in Extension = fn(outDir, command = nil, .kw) {
     if command != nil {
         command = cmd.join(' ');
     }
-    if dry { return result.ok(); }
+    if dry { return feral.ok(); }
     let out = vec.new(refs = true);
     let res = os.exec(out = out, env = c.env, cmd..., '^2>&1');
     if res != 0 {
-        return result.err(res, 'Failed to build ', self.name, ':\n', out.join('\n'));
+        return feral.err(res, 'Failed to build ', self.name, ':\n', out.join('\n'));
     }
-    return result.ok();
+    return feral.ok();
 };

@@ -1,0 +1,58 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(resultNewOk, 0, true,
+           "  fn(val = nil) -> Result\n"
+           "Creates a new Result<Okay> variant, containing `val`.")
+{
+    return vm.makeVar<VarResult>(loc, args.size() < 2 ? vm.getNil() : args[1], true);
+}
+
+FERAL_FUNC(resultNewErr, 1, true,
+           "  fn(code, msg...) -> Result\n"
+           "Creates a new Result<Error> variant, containing integral `code` and `msg`.")
+{
+    EXPECT(VarInt, args[1], "code");
+    int64_t code = as<VarInt>(args[1])->getVal();
+    String msg;
+    for(size_t i = 2; i < args.size(); ++i) {
+        auto &a = args[i];
+        if(a->is<VarStr>()) {
+            msg += as<VarStr>(a)->getVal();
+            continue;
+        }
+        Var *v = nullptr;
+        Array<Var *, 1> tmp{a};
+        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+        msg += as<VarStr>(v)->getVal();
+        vm.decVarRef(v);
+    }
+    return vm.makeVar<VarResult>(loc, vm.makeVar<VarError>(loc, code, std::move(msg)), false);
+}
+
+FERAL_FUNC(resultGetVal, 0, false,
+           "  var.fn() -> Var\n"
+           "Returns a reference to the result variable contained in `var`.")
+{
+    Var *v = as<VarResult>(args[0])->getVal();
+    v->setLoadAsRef();
+    return v;
+}
+
+FERAL_FUNC(resultIsOk, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if `var` holds an <Okay> variant.")
+{
+    return as<VarResult>(args[0])->isOk() ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(resultIsErr, 0, false,
+           "  var.fn() -> Bool\n"
+           "Returns `true` if `var` holds an <Error> variant.")
+{
+    return as<VarResult>(args[0])->isOk() ? vm.getFalse() : vm.getTrue();
+}
+
+} // namespace fer

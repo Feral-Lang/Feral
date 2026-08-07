@@ -1,7 +1,6 @@
 let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
-let result = import('std/result');
 let version = import('std/version');
 let platform = import('std/platform');
 
@@ -11,24 +10,24 @@ let VCPKGFinder = struct(
 VCPKGFinder.setTypeName('VCPKGFinder');
 
 let new = fn() {
-    if os.name != 'windows' { return result.err(-1, 'Only usable on Windows'); }
+    if os.name != 'windows' { return feral.err(-1, 'Only usable on Windows'); }
     let exe = os.findExec('vcpkg.exe');
-    if exe != nil { return result.ok(VCPKGFinder(exe)); }
+    if exe != nil { return feral.ok(VCPKGFinder(exe)); }
     let vcpkgRoot = os.getEnv('VCPKG_ROOT');
-    if vcpkgRoot == nil { return result.err(-1, 'No `VCPKG_ROOT` environment variable set'); }
+    if vcpkgRoot == nil { return feral.err(-1, 'No `VCPKG_ROOT` environment variable set'); }
     let exePath = vcpkgRoot / 'vcpkg.exe';
-    if fs.exists(exePath) { return result.ok(VCPKGFinder(exePath)); }
-    return result.err(-1, 'Could not find vcpkg.exe');
+    if fs.exists(exePath) { return feral.ok(VCPKGFinder(exePath)); }
+    return feral.err(-1, 'Could not find vcpkg.exe');
 };
 
 let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
     let isDebug = kw['debug'] ?? false;
     let versConstraint = kw['version'] ?? '*';
     let isFeral = kw['feral'] ?? false;
-    if isFeral { return result.err(-1, 'VCPKGFinder cannot be used to find Feral libraries'); }
+    if isFeral { return feral.err(-1, 'VCPKGFinder cannot be used to find Feral libraries'); }
     let out = vec.new(refs = true);
     os.exec(out = out, self.exe, 'list', pkgName);
-    if out.empty() { return result.err(-1, 'Library ', pkgName, ' is not installed via vcpkg'); }
+    if out.empty() { return feral.err(-1, 'Library ', pkgName, ' is not installed via vcpkg'); }
     out.clear();
     os.exec(out = out, self.exe, 'depend-info', pkgName);
     let deps = vec.new(refs = true);
@@ -42,13 +41,12 @@ let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
     out.clear();
     os.exec(out = out, self.exe, 'owns', pkgName);
     let lib = platform.Library(pkgName);
-    if !self.addOutputInLib(lib, out, isDebug) { return result.err(-1, 'Could not add vcpkg owns output into library object'); }
+    if !self.addOutputInLib(lib, out, isDebug) { return feral.err(-1, 'Could not add vcpkg owns output into library object'); }
     for d in deps.each() {
-        let depLib = self.findLibrary(d, isDebug);
-        if depLib.isErr() { return depLib; }
-        lib.append(depLib.getVal());
+        let depLib = self.findLibrary(d, isDebug).?;
+        lib.append(depLib);
     }
-    return result.ok(lib);
+    return feral.ok(lib);
 };
 
 let addOutputInLib in VCPKGFinder = fn(lib, out, isDebug) {

@@ -809,7 +809,7 @@ beginBrack:
         prependBlock.push_back(c);
         //
         StmtSimple *getVal =
-            StmtSimple::create(allocator, start->getLoc(), lex::STR, StringRef("getVal"));
+            StmtSimple::create(allocator, start->getLoc(), lex::STR, StringRef("val"));
         StmtExpr *getValExpr = StmtExpr::create(allocator, start->getLoc(), name, lex::DOT, getVal);
         StmtFnArgs *getValArgs = StmtFnArgs::create(allocator, start->getLoc(), {}, {});
         StmtExpr *getValCall =

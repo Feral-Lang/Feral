@@ -1,0 +1,42 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(errorNew, 1, true,
+           "  fn(code, msg...) -> Error\n"
+           "Creates a new Error, containing integral `code` and `msg`.")
+{
+    EXPECT(VarInt, args[1], "code");
+    int64_t code = as<VarInt>(args[1])->getVal();
+    String msg;
+    for(size_t i = 2; i < args.size(); ++i) {
+        auto &a = args[i];
+        if(a->is<VarStr>()) {
+            msg += as<VarStr>(a)->getVal();
+            continue;
+        }
+        Var *v = nullptr;
+        Array<Var *, 1> tmp{a};
+        if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+        msg += as<VarStr>(v)->getVal();
+        vm.decVarRef(v);
+    }
+    return vm.makeVar<VarResult>(loc, vm.makeVar<VarError>(loc, code, std::move(msg)), false);
+}
+
+FERAL_FUNC(errorGetCode, 0, false,
+           "  var.fn() -> Int\n"
+           "Returns the error code in `var`.")
+{
+    return vm.makeVar<VarInt>(loc, as<VarError>(args[0])->getCode());
+}
+
+FERAL_FUNC(errorGetMsg, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the error code in `var`.")
+{
+    return vm.makeVar<VarStr>(loc, as<VarError>(args[0])->getMsg());
+}
+
+} // namespace fer

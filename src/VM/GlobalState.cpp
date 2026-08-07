@@ -109,6 +109,8 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarPath>({}, "Path", "Builtin type.");
     vm.addGlobalType<VarFile>({}, "File", "Builtin type.");
     vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
+    vm.addGlobalType<VarError>({}, "Error", "Builtin type.");
+    vm.addGlobalType<VarResult>({}, "Result", "Builtin type.");
     vm.addGlobalType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
     vm.addGlobalType<VarIntIterator>({}, "IntIterator", "Builtin type.");
     vm.addGlobalType<VarVecIterator>({}, "VecIterator", "Builtin type.");

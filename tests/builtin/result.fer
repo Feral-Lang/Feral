@@ -1,0 +1,26 @@
+let assert = import('std/assert');
+
+let err = feral.err(1, 'this is an error message; 1 + 2 = ', 1 + 2);
+let ok = feral.ok(5);
+
+assert.eq(err.isOk(), false);
+assert.eq(ok.isOk(), true);
+
+assert.eq(err.val().msg(), 'this is an error message; 1 + 2 = 3');
+assert.eq(ok.val(), 5);
+
+# `.?` operator
+let f = fn() {
+    let r = feral.err(-1, 'test');
+    return r;
+};
+
+let t = fn() {
+    let a = f().?;
+    # can't reach here
+    assert.eq(true, false);
+};
+
+let out = t();
+assert.eq(out.isErr(), true);
+assert.eq(out.val().msg(), 'test');

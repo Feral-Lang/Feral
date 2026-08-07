@@ -119,6 +119,40 @@ FERAL_FUNC(structToStr, 0, false,
     return res;
 }
 
+FERAL_FUNC(errorToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the string representation of the error `var`.")
+{
+    VarError *e = as<VarError>(args[0]);
+    String res;
+    res.reserve(e->getMsg().size() + 15);
+    res += "Error<";
+    res += std::to_string(e->getCode());
+    res += ": ";
+    res += e->getMsg();
+    res += ">";
+    return vm.makeVar<VarStr>(loc, std::move(res));
+}
+
+FERAL_FUNC(resultToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns the string representation of the Result `var`.")
+{
+    VarResult *r = as<VarResult>(args[0]);
+    String res;
+    res.reserve(20);
+    res += "Result.";
+    res += r->isOk() ? "Ok" : "Err";
+    res += "<";
+    Var *v = nullptr;
+    Array<Var *, 1> tmp{r->getVal()};
+    if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
+    res += as<VarStr>(v)->getVal();
+    vm.decVarRef(v);
+    res += ">";
+    return vm.makeVar<VarStr>(loc, std::move(res));
+}
+
 } // namespace fer
 
 // TODO: vecToStr() must be done in feral code as Var::toStr() does not exist

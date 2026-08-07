@@ -1,7 +1,6 @@
 let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
-let result = import('std/result');
 let version = import('std/version');
 let platform = import('std/platform');
 
@@ -11,27 +10,27 @@ let PkgConfigFinder = struct(
 PkgConfigFinder.setTypeName('PkgConfigFinder');
 
 let new = fn() {
-    if os.name == 'windows' { return result.err(-1, 'pkg-config doesn\'t exist on Windows'); }
+    if os.name == 'windows' { return feral.err(-1, 'pkg-config doesn\'t exist on Windows'); }
     let exe = os.findExec('pkg-config');
-    if exe == nil { return result.err(-1, 'Could not find pkg-config in PATH'); }
-    return result.ok(PkgConfigFinder(exe));
+    if exe == nil { return feral.err(-1, 'Could not find pkg-config in PATH'); }
+    return feral.ok(PkgConfigFinder(exe));
 };
 
 let findLibrary in PkgConfigFinder = fn(pkgName, .kw) {
     let isDebug = kw['debug'] ?? false;
     let versConstraint = kw['version'] ?? '*';
     let isFeral = kw['feral'] ?? false;
-    if isFeral { return result.err(-1, 'PkgConfigFinder cannot be used to find Feral libraries'); }
+    if isFeral { return feral.err(-1, 'PkgConfigFinder cannot be used to find Feral libraries'); }
     let out = vec.new(refs = true);
     let res = os.exec(out = out, self.exe, pkgName);
-    if res != 0 { return result.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }
+    if res != 0 { return feral.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }
     out.clear();
     let lib = platform.Library(pkgName);
     # get version
     if os.exec(out = out, self.exe, pkgName, '--print-provides') == 0 && !out.empty() {
         lib.version = out[0].split(' = ')[1];
         if !version.parseConstraint(versConstraint).matches(version.parse(lib.version)) {
-            return result.err(0, 'Found library ', pkgName, '@', lib.version, ' but it doesn\'t satisfy the constraint ', versConstraint);
+            return feral.err(0, 'Found library ', pkgName, '@', lib.version, ' but it doesn\'t satisfy the constraint ', versConstraint);
         }
     }
     out.clear();
@@ -55,5 +54,5 @@ let findLibrary in PkgConfigFinder = fn(pkgName, .kw) {
             lib.addLibraryFlags(o);
         }
     }
-    return result.ok(lib);
+    return feral.ok(lib);
 };
