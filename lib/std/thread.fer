@@ -15,7 +15,9 @@ let ThreadPool = struct(
     threads = vec.new(refs = true),
     tasks = vec.new(refs = true),
     taskMtx = mutex.new(),
-    shouldStop = atomic.newBool(false)
+    shouldStop = atomic.newBool(false),
+    shouldFinish = atomic.newBool(false),
+    waitingThreads = atomic.newInt(0)
 );
 ThreadPool.setTypeName('ThreadPool');
 
@@ -25,6 +27,8 @@ let newPool = fn(count = getConcurrency()) {
 
 let start in ThreadPool = fn() {
     self.shouldStop.set(false);
+    self.shouldFinish.set(false);
+    self.waitingThreads.set(0);
     for let i = 0; i < self.count; ++i {
         self.threads.push(new(name = 'job-' + i.str(), self.jobRunner));
     }
@@ -33,6 +37,16 @@ let start in ThreadPool = fn() {
 let stop in ThreadPool = fn() {
     self.shouldStop.set(true);
     self.join();
+};
+
+let finish in ThreadPool = fn() {
+    self.shouldFinish.set(true);
+    self.join();
+};
+
+let waitAll in ThreadPool = fn() {
+    os.sleep(1); # in case the threads have been waiting to get scheduled because of the current thread.
+    while self.waitingThreads.get() != self.count { os.sleep(1); }
 };
 
 let push in ThreadPool = fn(callable, args...) {
@@ -54,12 +68,22 @@ let isRunning in ThreadPool = fn() {
 };
 
 let jobRunner in ThreadPool = fn() {
+    let wasWaiting = false;
     while !self.shouldStop.get() {
         self.taskMtx.lock();
         if self.tasks.empty() {
+            if !wasWaiting {
+                wasWaiting = true;
+                self.waitingThreads.set(self.waitingThreads.get() + 1);
+            }
             self.taskMtx.unlock();
+            if self.shouldFinish.get() { break; }
             os.sleep(1);
             continue;
+        }
+        if wasWaiting {
+            wasWaiting = false;
+            self.waitingThreads.set(self.waitingThreads.get() - 1);
         }
         let job = ref(self.tasks.front());
         self.tasks.erase(0);

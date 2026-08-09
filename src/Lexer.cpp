@@ -300,10 +300,10 @@ bool tokenize(ModuleId moduleId, StringRef path, StringRef data, ManagedList &to
         // const strings
         if(CURR == '\"' || CURR == '\'' || CURR == '`') {
             StringRef buf;
-            size_t startloc = i + 1;
+            size_t startloc = i;
             char quoteType  = 0;
             if(!getConstStr(moduleId, data, quoteType, i, line, lineStart, buf)) return false;
-            toks.alloc<Lexeme>(ModuleLoc(moduleId, startloc, i), STR, buf);
+            toks.alloc<Lexeme>(ModuleLoc(moduleId, startloc, i - 1), STR, buf);
             continue;
         }
 

@@ -1,0 +1,47 @@
+let vec = import('std/vec');
+
+# ToolchainInterface
+let ToolchainInterface = struct();
+ToolchainInterface.setTypeName('ToolchainInterface');
+
+let getId in ToolchainInterface = fn() {}; # -> Str
+let getEnv in ToolchainInterface = fn() {}; # -> Map<Str>
+let getVersion in ToolchainInterface = fn() {}; # -> Str
+let getCompileInfo in ToolchainInterface = fn(.kw, destPath, srcs...) {}; # -> Result<CompileInfo>
+let getLinkInfo in ToolchainInterface = fn(.kw, destPath, objs...) {}; # -> Result<Vec<Str>>
+
+# CompilationOutput
+let CompileOutput = struct(
+    dest = ''.path(),
+    performed = false
+);
+CompileOutput.setTypeName('CompileOutput');
+
+# LinkOutput
+let LinkOutput = struct(
+    dest = ''.path(),
+    performed = false
+);
+LinkOutput.setTypeName('LinkOutput');
+
+# Optimization
+let Opt = enum(
+    .None,
+    .WithDebInfo,
+    .Most,
+    .Full,
+    .Unknown
+);
+Opt.setTypeName('Opt');
+
+let CompileInfo = struct(
+    cmd = vec.new(refs = true),
+    dest = ''.path()
+);
+CompileInfo.setTypeName('CompileInfo');
+
+let LinkInfo = struct(
+    cmd = vec.new(refs = true),
+    dest = ''.path()
+);
+LinkInfo.setTypeName('LinkInfo');

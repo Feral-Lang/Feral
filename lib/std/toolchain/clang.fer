@@ -4,32 +4,32 @@ let vec = import('std/vec');
 
 let core = import('std/toolchain/core');
 
-let GCC = struct(
-    id = 'gcc',
+let Clang = struct(
+    id = 'clang',
     version = '',
     c = ''.path(),
     cxx = ''.path(),
     ar = ''.path()
 );
-GCC.setTypeName('GCC');
+Clang.setTypeName('Clang');
 
 let new = fn() {
-    let gccExe = os.findExec('gcc');
-    let gxxExe = os.findExec('g++');
-    let arExe = os.findExec('ar');
-    let tc = GCC();
-    if gccExe == nil && gxxExe == nil {
-        return feral.err(-1, 'could not find gcc/g++ toolchain in $PATH');
-    } elif gccExe == nil {
-        return feral.err(-1, 'found g++ at `', gxxExe, '`, but could not find gcc');
-    } elif gxxExe == nil {
-        return feral.err(-1, 'found gcc at `', gccExe, '`, but could not find g++');
+    let clangExe = os.findExec('clang');
+    let clangxxExe = os.findExec('clang++');
+    let arExe = os.findExec('llvm-ar');
+    let tc = Clang();
+    if clangExe == nil && clangxxExe == nil {
+        return feral.err(-1, 'could not find clang/clang++ toolchain in $PATH');
+    } elif clangExe == nil {
+        return feral.err(-1, 'found clang++ at `', clangxxExe, '`, but could not find clang');
+    } elif clangxxExe == nil {
+        return feral.err(-1, 'found clang at `', clangExe, '`, but could not find clang++');
     }
     if arExe == nil {
         return feral.err(-1, 'could not find gcc\'s archive utility in $PATH');
     }
-    tc.c = gccExe;
-    tc.cxx = gxxExe;
+    tc.c = clangExe;
+    tc.cxx = clangxxExe;
     tc.ar = arExe;
     let out = vec.new(refs = true);
     os.exec(out = out, tc.c, '--version');
@@ -37,9 +37,9 @@ let new = fn() {
     return feral.ok(tc);
 };
 
-let getId in GCC = fn() { return self.id; };
-let getEnv in GCC = fn() { return map.new(); };
-let getVersion in GCC = fn() { return self.version; };
+let getId in Clang = fn() { return self.id; };
+let getEnv in Clang = fn() { return map.new(); };
+let getVersion in Clang = fn() { return self.version; };
 
 "
   var.fn(.kw, dest, srcs...) -> Result<core.CompileInfo>
@@ -55,7 +55,7 @@ Takes a bunch of keyword arguments:
 * `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
 * `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
 "
-let getCompileInfo in GCC = fn(.kw, destPath, srcs...) {
+let getCompileInfo in Clang = fn(.kw, destPath, srcs...) {
     let dry = kw['dry'];
     let force = kw['force'];
     let lang = kw['lang'];
@@ -120,7 +120,7 @@ Takes a bunch of keyword arguments:
 * `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
 * `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
 "
-let getLinkInfo in GCC = fn(.kw, destPath, objs...) {
+let getLinkInfo in Clang = fn(.kw, destPath, objs...) {
     let lang = kw['lang'];
     let libDirs = ref(kw['libDirs']);
     let libs = ref(kw['libs']);
