@@ -148,6 +148,7 @@ target_link_libraries(libferal)
 # For MSVC. It requires externed variables to be specified as __declspec(dllexport/dllimport)
 # depending on if the the DLL is being generated, or is being used.
 target_compile_definitions(libferal PRIVATE EXPORT_FOR_DLL=true)
+target_compile_definitions(libferal PUBLIC BUILDING_WITH_CMAKE=true)
 set_target_properties(libferal
     PROPERTIES
     CXX_STANDARD_REQUIRED ON
