@@ -1,6 +1,7 @@
 let io = import('std/io');
 let fs = import('std/fs');
 let vec = import('std/vec');
+let term = import('std/term');
 let time = import('std/time');
 
 let Levels = enum(
@@ -13,16 +14,16 @@ let Levels = enum(
 
 # red, yellow, magenta, cyan, green
 # param type: Level (int)
-let lvlColToStr = fn(lvl) {
-    if lvl == Levels.FATAL { return '{r}'; }
-    if lvl == Levels.WARN { return '{y}'; }
-    if lvl == Levels.INFO { return '{g}'; }
-    if lvl == Levels.DEBUG { return '{c}'; }
-    if lvl == Levels.TRACE { return '{m}'; }
+let levelColorToStr = fn(lvl) {
+    if lvl == Levels.FATAL { return term.red; }
+    if lvl == Levels.WARN { return term.yellow; }
+    if lvl == Levels.INFO { return term.green; }
+    if lvl == Levels.DEBUG { return term.cyan; }
+    if lvl == Levels.TRACE { return term.magenta; }
     return '';
 };
 
-let lvlToStr = fn(lvl) {
+let levelToStr = fn(lvl) {
     if lvl == Levels.FATAL { return 'FATAL'; }
     if lvl == Levels.WARN { return 'WARN'; }
     if lvl == Levels.INFO { return 'INFO'; }
@@ -34,40 +35,87 @@ let lvlToStr = fn(lvl) {
 let FileInfo = struct(
     f = nil,
     level = Levels.WARN,
-    withCol = true
+    prefix = '', # default set using `Logger.addTarget()`
+    depthPrefix = '' # default set using `Logger.addTarget()`
 );
 FileInfo.setTypeName('FileInfo');
 
-# list of FileInfo
-let targets = vec.new(refs = true);
+####################################################################################################
+########################################### Logger #################################################
+####################################################################################################
 
-let addTarget = fn(target, level = Levels.WARN, withCol = true) {
-    targets.push(FileInfo(target, level, withCol));
+let Logger = struct(
+    targets = vec.new(refs = true),
+    tagStack = vec.new(),
+    depth = 0
+);
+
+let newLogger = fn() { return Logger(); };
+
+let addTarget in Logger = fn(.kw, target) {
+    let level = kw['level'] ?? Levels.WARN;
+    let prefix = kw['prefix'] ?? '[$<<timeStr>>][$<<levelColor>>$<<levelStr>>' + term.reset + ']$<<tag>>: ';
+    let depthPrefix = kw['depthPrefix'] ?? '-';
+    self.targets.push(FileInfo(ref(target), level, prefix, depthPrefix));
 };
 
-let addTargetByPath = fn(path, level = Levels.WARN, withCol = true, mustClose = true) {
+let addTargetByPath in Logger = fn(.kw, path) {
+    let level = kw['level'] ?? Levels.WARN;
+    let prefix = kw['prefix'] ?? '[$<<timeStr>>][$<<levelColor>>$<<levelStr>>' + term.reset + ']$<<tag>>: ';
+    let depthPrefix = kw['depthPrefix'] ?? '-';
+    let mustClose = kw['close'] ?? true;
     let file = fs.fopen(path, 'w+', mustClose);
-    targets.push(FileInfo(ref(file), level, withCol));
+    self.targets.push(FileInfo(ref(file), level, prefix, depthPrefix));
 };
 
-let log = fn(lvl, data...) {
-    let lvlCol = lvlColToStr(lvl);
-    let lvlStr = lvlToStr(lvl);
+let log in Logger = fn(lvl, data...) {
+    let levelColor = levelColorToStr(lvl);
+    let levelStr = levelToStr(lvl);
     let timeStr = time.format(time.now());
-    let prefix = ''.append('[', timeStr, '][', lvlStr, ']: ');
-    let prefixCol = ''.append('{0}[', timeStr, '][', lvlCol, lvlStr, '{0}]: ');
-    for t in targets.each() {
+    let tag = self.tagStack.empty() ? '' : '[' + self.tagStack.back() + ']';
+    for t in self.targets.each() {
         if t.level < lvl { continue; }
-        if t.withCol {
-            io.fcprintln(t.f, prefixCol, data...);
-        } else {
-            io.fprintln(t.f, prefix, data...);
-        }
+        io.fprintln(t.f, t.prefix.fmt(), t.depthPrefix * self.depth, ' ', data...);
     }
 };
 
-let fatal = fn(data...) { log(Levels.FATAL, data...); };
-let warn = fn(data...) { log(Levels.WARN, data...); };
-let info = fn(data...) { log(Levels.INFO, data...); };
-let debug = fn(data...) { log(Levels.DEBUG, data...); };
-let trace = fn(data...) { log(Levels.TRACE, data...); };
+let pushTag in Logger = fn(tag) { self.tagStack.push(tag); };
+let popTag in Logger = fn() { self.tagStack.pop(); };
+
+let pushDepth in Logger = fn() { ++self.depth; };
+let popDepth in Logger = fn() { --self.depth; };
+
+let scopedTag in Logger = fn(tag) {
+    return ScopedTag(self, tag);
+};
+
+let scopedDepth in Logger = fn() {
+    return ScopedDepth(self);
+};
+
+let fatal in Logger = fn(data...) { return self.log(Levels.FATAL, data...); };
+let warn in Logger = fn(data...) { return self.log(Levels.WARN, data...); };
+let info in Logger = fn(data...) { return self.log(Levels.INFO, data...); };
+let debug in Logger = fn(data...) { return self.log(Levels.DEBUG, data...); };
+let trace in Logger = fn(data...) { return self.log(Levels.TRACE, data...); };
+
+let defaultLogger = newLogger();
+defaultLogger.addTarget(io.stderr, prefix = '');
+
+let fatal = fn(data...) { defaultLogger.fatal(data...); };
+let warn = fn(data...) { defaultLogger.warn(data...); };
+let info = fn(data...) { defaultLogger.info(data...); };
+let debug = fn(data...) { defaultLogger.debug(data...); };
+let trace = fn(data...) { defaultLogger.trace(data...); };
+
+####################################################################################################
+######################################### Utilities ################################################
+####################################################################################################
+
+let ScopedTag = struct(logger = nil, tag = '');
+let _init_ in ScopedTag = fn() { self.logger.pushTag(self.tag); };
+let _deinit_ in ScopedTag = fn() { self.logger.popTag(); };
+
+let ScopedDepth = struct(logger = nil);
+let _init_ in ScopedDepth = fn() { self.logger.pushDepth(); };
+let _deinit_ in ScopedDepth = fn() { self.logger.popDepth(); };

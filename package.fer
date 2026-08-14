@@ -5,7 +5,7 @@ let vec = import('std/vec');
 let package = import('std/package');
 
 let configure = fn(info) {
-    let pkg = package.new(name = 'Feral', version = '2.3.0');
+    let pkg = package.new('Feral', version = '2.3.0', binary = true);
 
     info.toolchain.tryAddCompileFlag('--gdwarf-5'); # should be handled by `pkg build --gdwarf`
 
