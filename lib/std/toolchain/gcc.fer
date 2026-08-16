@@ -141,14 +141,9 @@ let getLinkInfo in GCC = fn(.kw, destPath, objs...) {
 
     if static && !binary {
         info.cmd.push(self.ar, '-rcs');
-    } else {
-        info.cmd.push(lang == 'c' ? self.c : self.cxx);
-    }
-
-    # destination
-    if static && !binary {
         info.cmd.push(info.dest.str());
     } else {
+        info.cmd.push(lang == 'c' ? self.c : self.cxx);
         info.cmd.push('-o', info.dest.str());
     }
 

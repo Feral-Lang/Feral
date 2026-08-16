@@ -2,7 +2,7 @@ let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
 let version = import('std/version');
-let platform = import('std/platform');
+let toolchainCore = import('std/toolchain/core');
 
 let VCPKGFinder = struct(
     exe = ''.path()
@@ -40,8 +40,8 @@ let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
     }
     out.clear();
     os.exec(out = out, self.exe, 'owns', pkgName);
-    let lib = platform.Library(pkgName);
-    if !self.addOutputInLib(lib, out, isDebug) { return feral.err(-1, 'Could not add vcpkg owns output into library object'); }
+    let lib = toolchainCore.Library(pkgName);
+    if !self.addOutputInLib(lib, out, isDebug) { return feral.err(-1, 'Could not add output of `vcpkg owns` into library object'); }
     for d in deps.each() {
         let depLib = self.findLibrary(d, isDebug).?;
         lib.append(depLib);

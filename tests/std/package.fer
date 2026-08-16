@@ -8,7 +8,7 @@ let package = import('std/package');
 # --- package.new() ---
 
 let pkg = package.new(
-    name = 'TestPkg',
+    'TestPkg',
     desc = 'A test package',
     feral = '*',
     version = '1.2.3',
@@ -18,8 +18,8 @@ let pkg = package.new(
 
 assert.eq(pkg.name, 'TestPkg');
 assert.eq(pkg.desc, 'A test package');
-assert.eq(pkg.feral, '*');
-assert.eq(pkg.version, '1.2.3');
+assert.eq(pkg.feral.str(), '*');
+assert.eq(pkg.version.str(), '1.2.3');
 assert.eq(pkg.license, 'Apache-2.0');
 assert.eq(pkg.authors[0], 'Author One');
 assert.eq(pkg.authors[1], 'Author Two');
@@ -48,21 +48,24 @@ assert.eq(dep.name, pkg.dependencies[0].name);
 assert.eq(dep.constraint.str(), pkg.dependencies[0].constraint.str());
 
 # invalid constraint raises
-pkg.requires('Bad', '>=') or e { return nil; };
+let num = pkg.requires('Bad', '>=') or e { return 1; };
+assert.eq(num, 1);
 
 # --- pkg.addTarget() ---
 
-let target = pkg.addTarget('Curl', 'Curl.cpp', 'Extra.cpp');
+let target = pkg.addTarget('Curl');
+target.addSources('Curl.cpp'.path(), 'Extra.cpp'.path());
 assert.eq(pkg.targets.len(), 1);
 assert.eq(target.name, 'Curl');
 assert.eq(target.sources.len(), 2);
-assert.eq(target.sources[0], 'Curl.cpp');
-assert.eq(target.sources[1], 'Extra.cpp');
+assert.eq(target.sources[0].str(), 'Curl.cpp');
+assert.eq(target.sources[1].str(), 'Extra.cpp');
 
 # returned target references the same object as in pkg.targets
 assert.eq(target.name, pkg.targets[0].name);
 
 # multiple targets
-pkg.addTarget('CurlCLI', 'CLI.cpp');
+let target2 = pkg.addTarget('CurlCLI');
+target2.addSources('CurlCLI.cpp'.path());
 assert.eq(pkg.targets.len(), 2);
 assert.eq(pkg.targets[1].name, 'CurlCLI');

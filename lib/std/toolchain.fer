@@ -7,6 +7,7 @@ let core = import('std/toolchain/core');
 
 # let cmakeFinder = import('std/library-finders/cmake');
 # let brewFinder = import('std/library-finders/brew');
+let feralFinder = import('std/library-finders/feral');
 let vcpkgFinder = import('std/library-finders/vcpkg');
 let pkgConfigFinder = import('std/library-finders/pkg-config');
 
@@ -22,6 +23,8 @@ let libraryFinders = vec.new(refs = true);
 # if r.isOk() { libraryFinders.push(r.val()); }
 # let r = brewFinder.new();
 # if r.isOk() { libraryFinders.push(r.val()); }
+let r = feralFinder.new();
+if r.isOk() { libraryFinders.push(r.val()); }
 let r = vcpkgFinder.new();
 if r.isOk() { libraryFinders.push(r.val()); }
 let r = pkgConfigFinder.new();
@@ -47,7 +50,7 @@ if os.name == 'windows' {
 }
 
 let getFeralLibrary = fn() {
-    return feralLib;
+    return ref(feralLib);
 };
 
 ####################################################################################################

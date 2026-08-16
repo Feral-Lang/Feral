@@ -3,6 +3,7 @@ let os = import('std/os');
 let vec = import('std/vec');
 let package = import('std/package');
 let version = import('std/version');
+let toolchainCore = import('std/toolchain/core');
 
 let FeralFinder = struct();
 FeralFinder.setTypeName('FeralFinder');
@@ -12,42 +13,47 @@ let new = fn() {
 };
 
 let findLibrary in FeralFinder = fn(pkgName, .kw) {
-    let versConstraint = kw['version'] ?? '*';
+    let versConstraint = version.parseConstraint(kw['version'] ?? '*');
     let isFeral = kw['feral'] ?? true;
     if !isFeral { return feral.err(-1, 'FeralFinder cannot be used to find non-Feral libraries'); }
-    let pkgInstallPrefix = package.getInstallPath(pkgName, '');
-    let installedPkgs = fs.walkDir(package.installRoot, fs.WALK_DIRS);
-    let out = vec.new(refs = true);
-    let res = os.exec(out = out, self.exe, pkgName);
-    if res != 0 { return feral.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }
-    out.clear();
-    let lib = platform.Library(pkgName);
-    # get version
-    if os.exec(out = out, self.exe, pkgName, '--print-provides') == 0 && !out.empty() {
-        lib.version = out[0].split(' = ')[1];
-        if !version.parseConstraint(versConstraint).matches(version.parse(lib.version)) {
-            return feral.err(0, 'Found library ', pkgName, '@', lib.version, ' but it doesn\'t satisfy the constraint ', versConstraint);
+    let pkgInstallPrefix = package.getInstallPath(pkgName, '').str();
+    let installedPkgDirs = fs.walkDir(package.installRoot, fs.WALK_DIRS, '(.*)' + pkgName + '(.*)');
+    let installedVersions = vec.new(refs = true);
+    for d in installedPkgDirs.each() {
+        installedVersions.push(version.parse(d.str().replace(pkgInstallPrefix, '')));
+    }
+    installedVersions.sort(rev = true);
+    if installedVersions.empty() {
+        return feral.err(-1, 'no version of `', pkgName, '` is installed');
+    }
+    let viableVersion = '';
+    for v in installedVersions.each() {
+        if versConstraint.matches(v.str()) { viableVersion = v.str(); break; }
+    }
+    if viableVersion.empty() {
+        return feral.err(-1, 'no viable version of `', pkgName, '` is installed that satisfies constraint `', versConstraint, '`');
+    }
+    let installDir = package.getInstallPath(pkgName, viableVersion);
+
+    let lib = toolchainCore.Library(pkgName, viableVersion);
+
+    let headers = fs.walkDir(installDir, fs.WALK_RECURSE, '(.*).hpp');
+    if !headers.empty() {
+        for h in headers.each() {
+            lib.addIncludeDirs(h.parent());
         }
     }
-    out.clear();
-    os.exec(out = out, self.exe, pkgName, '--cflags-only-I');
-    for oline in out.each() {
-        for o in oline.split(' ').each() {
-            lib.addIncludeDirs(o.replace('-I', ''));
+    let libFiles = fs.walkDir(installDir, fs.WALK_RECURSE, '(.*).lib|(.*).so|(.*).dylib|(.*).dll');
+    for f in libFiles.each() {
+        lib.addLibraryDirs(f.parent());
+        if f.str().endsWith('.dll') {
+            lib.addDllPaths(f);
+            continue;
         }
-    }
-    out.clear();
-    os.exec(out = out, self.exe, pkgName, '--libs-only-L');
-    for oline in out.each() {
-        for o in oline.split(' ').each() {
-            lib.addLibraryDirs(o.replace('-L', ''));
-        }
-    }
-    out.clear();
-    os.exec(out = out, self.exe, pkgName, '--libs-only-l');
-    for oline in out.each() {
-        for o in oline.split(' ').each() {
-            lib.addLibraryFlags(o);
+        if os.name == 'windows' {
+            lib.addLibraryFlags(f.fileName().str());
+        } else {
+            lib.addLibraryFlags(f.fileName().str().replace('lib', ''));
         }
     }
     return feral.ok(lib);

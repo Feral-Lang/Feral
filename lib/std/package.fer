@@ -63,7 +63,7 @@ let setGlobalConfigVar = fn(name, val) {
 let Target = struct(
     name = 'SampleTarget',
     static = false,
-    binary = true,
+    binary = false,
     headers = vec.new(),
     sources = vec.new(),
     definitions = map.new(refs = true),
@@ -215,7 +215,7 @@ let new  = fn(.kw, name) {
     if kw['license'] != nil { package.license = kw['license']; }
     if kw['authors'] != nil { package.authors = kw['authors']; }
     if kw['binary'] != nil { package.binary = kw['binary']; }
-    package.installRoot = getIntallPath(name, package.version);
+    package.installRoot = getInstallPath(name, package.version.str());
     package.setConfigVar('TIMESTAMP', time.format(time.now()));
     return package;
 };
@@ -246,7 +246,7 @@ The created Target is added to project.targets and returned.
 "
 let addTarget in Package = fn(.kw, name) {
     let static = kw['static'] ?? false;
-    let binary = kw['binary'] ?? true;
+    let binary = kw['binary'] ?? false;
     let target = Target(name, static, binary);
     self.targets.push(target);
     return ref(target);

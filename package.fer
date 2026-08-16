@@ -27,13 +27,13 @@ let configure = fn(pkgRoot) {
 
     pkg.addConfigFile(pkgRoot / 'include' / 'Config.inl.in', pkgRoot / 'include' / 'Config.inl').?;
 
-    let feralLib = pkg.addTarget('feral', binary = false);
+    let feralLib = pkg.addTarget('feral');
     feralLib.findHeaders(pkgRoot / 'include', '(.*).hpp');
     feralLib.addHeaders(pkgRoot / 'include' / 'Config.inl.in');
     feralLib.findSources(pkgRoot / 'src', '(.*).cpp', skip = vec.new('src/Main.cpp'));
     feralLib.addDefinition('EXPORT_FOR_DLL', 'true');
 
-    let feralBin = pkg.addTarget('feral', shared = false);
+    let feralBin = pkg.addTarget('feral', shared = false, binary = true);
     feralBin.findHeaders(pkgRoot / 'include', '(.*).hpp'); # headers are installed as well.
     feralBin.addSources(pkgRoot / 'src' / 'Main.cpp');
     feralBin.requires(feralLib);

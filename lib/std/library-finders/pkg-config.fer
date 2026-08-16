@@ -2,7 +2,7 @@ let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
 let version = import('std/version');
-let platform = import('std/platform');
+let toolchainCore = import('std/toolchain/core');
 
 let PkgConfigFinder = struct(
     exe = ''.path()
@@ -25,7 +25,7 @@ let findLibrary in PkgConfigFinder = fn(pkgName, .kw) {
     let res = os.exec(out = out, self.exe, pkgName);
     if res != 0 { return feral.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }
     out.clear();
-    let lib = platform.Library(pkgName);
+    let lib = toolchainCore.Library(pkgName);
     # get version
     if os.exec(out = out, self.exe, pkgName, '--print-provides') == 0 && !out.empty() {
         lib.version = out[0].split(' = ')[1];
