@@ -30,6 +30,27 @@ let new = fn(interface = nil, logger = nil) {
 };
 
 "
+  var.fn() -> Str
+Returns the ID of the toolchain, like:
+* gcc
+* clang
+* msvc
+"
+let getId in Toolchain = fn() {
+    return self.iface.getId();
+};
+
+"
+  var.fn() -> Str
+Returns the version of the toolchain, like:
+* 16.1.1
+* 12.0.6
+"
+let getVersion in Toolchain = fn() {
+    return self.iface.getVersion();
+};
+
+"
   var.fn(.kw, dest, srcs...) -> Result<core.CompileOutput>
 Compiles each of the given `srcs` and generates a `dest` object file from them.
 Preferably, use full paths for `dest` and `srcs`.

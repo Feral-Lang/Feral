@@ -405,6 +405,61 @@ FERAL_FUNC(strEndsWith, 1, false,
     return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
 }
 
+FERAL_FUNC(strFit, 1, false,
+           "  var.fn(count) -> Str\n"
+           "Fits the string `var` in `count` characters.\n"
+           "If `var.len()` exceeds `count`, any excess + 3 characters will be trimmed off and a "
+           "`...` will be appended.\n"
+           "Otherwise, all remaining characters will be filled with `fillChar`.\n"
+           "The alignment will be based on `align` parameter.\n"
+           "Takes the following keyword parameters:\n"
+           "* `fillChar = ' '` - char to fill `var.len() - count` characters. (default: ' ')\n"
+           "* `align = 0/1/2` - 0: left; 1: center; 2: right. (default: 2)")
+{
+    EXPECT(VarInt, args[1], "max char count");
+    int64_t count = as<VarInt>(args[1])->getVal();
+    char fillChar = ' ';
+    int align     = 2;
+    if(Var *fillCharVar = assnArgs->getAttr("fillChar")) {
+        EXPECT(VarStr, fillCharVar, "fill character");
+        StringRef fillCharStr = as<VarStr>(fillCharVar)->getVal();
+        if(fillCharStr.empty()) {
+            vm.fail(loc, "provided fill character is empty");
+            return nullptr;
+        }
+        fillChar = fillCharStr[0];
+    }
+    if(Var *alignVar = assnArgs->getAttr("align")) {
+        EXPECT(VarInt, alignVar, "alignment (0/1/2)");
+        align = as<VarInt>(alignVar)->getVal();
+    }
+    String res = as<VarStr>(args[0])->getVal();
+    if(res.size() > count) {
+        if(count >= 3) {
+            res[count - 1] = '.';
+            res[count - 2] = '.';
+            res[count - 3] = '.';
+        } else {
+            res.erase(res.begin() + 2);
+        }
+    } else if(res.size() < count) {
+        res.reserve(count);
+        if(align == 0) { // left align
+            while(res.size() < count) { res += fillChar; }
+        } else if(align == 1) {
+            bool left = true;
+            while(res.size() < count) {
+                if(left) res += fillChar;
+                else res.insert(res.begin(), fillChar);
+                left = ~left;
+            }
+        } else if(align == 2) {
+            while(res.size() < count) { res.insert(res.begin(), fillChar); }
+        }
+    }
+    return vm.makeVar<VarStr>(loc, std::move(res));
+}
+
 FERAL_FUNC(strFormat, 0, true,
            "  var.fn(start = '$<<', end = '>>', callback = feral.evalExpr) -> Str\n"
            "Uses `var` as a template and replaces variables in it by calling `callback` and using "

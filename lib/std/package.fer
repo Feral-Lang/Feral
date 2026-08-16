@@ -16,6 +16,33 @@ let time = import('std/time');
 let version = import('std/version');
 
 ################################################################################
+# Main setup
+################################################################################
+
+let home = feral.libPath / 'pkg';
+let tmpRoot = feral.tempPath / 'pkg';
+let indexRoot = home / 'indexes';
+let installRoot = home / 'installed';
+
+fs.mkdir(tmpRoot, indexRoot, installRoot);
+
+let getInstallPath = fn(name, vers) {
+    return installRoot / (name.lower() + '--' + vers);
+};
+
+let getTempPath = fn(name, vers) {
+    return tmpRoot / (name.lower() + '--' + vers);
+};
+
+let getLockPath = fn(dir) {
+    return dir / 'package.lock';
+};
+
+let getScriptPath = fn(dir) {
+    return dir / 'package.fer';
+};
+
+################################################################################
 # Global config
 ################################################################################
 
@@ -157,6 +184,7 @@ let Package = struct(
     ),
     binary = false,
     configVars = map.new(refs = true),
+    configFiles = map.new(refs = true), # source -> dest
     definitions = map.new(refs = true),
     headers = vec.new(refs = true),
     targets = vec.new(refs = true),
@@ -264,11 +292,13 @@ let applyConfig in Package = fn(name) {
 };
 
 "
-  Package.configureFile(srcPath, destPath) -> Result<>
-Takes `srcPath` as a template file, substituting all variables between `$<<` and `>>` in it.
-Writes the substituted data in `destPath`.
+  Package.addConfigFile(srcPath, destPath) -> Nil
+Adds `srcPath` and `destPath` in the list of files to be configured.
+The process of configuring considers `srcPath` as a template file, substituting all variables between `$<<` and `>>` in it.
+Then it writes the substituted data in `destPath`.
 "
-let configureFile in Package = fn(srcPath, destPath) {
+let addConfigFile in Package = fn(srcPath, destPath) {
+    self.configFiles.insert(srcPath.str(), destPath.str());
     if !fs.exists(srcPath) { return feral.err(-1, 'source path `', srcPath, '` does not exist'); }
     if fs.exists(destPath) && fs.lastWriteTime(destPath) > fs.lastWriteTime(srcPath) { return feral.ok(); }
     let src = fs.fopen(srcPath, 'r').readAll();
@@ -276,5 +306,25 @@ let configureFile in Package = fn(srcPath, destPath) {
     let destFile = fs.fopen(destPath, 'w+');
     io.fprint(destFile, dest);
     self.addHeaders(srcPath, destPath);
+    return feral.ok();
+};
+
+"
+  Package.configureFiles() -> Result<>
+Configures all files provided through `Package.addConfigFile()`.
+The destination files are added to the header list in the `Package`.
+"
+let configureFiles in Package = fn() {
+    for f in self.configFiles.each() {
+        let srcPath = f.0.path();
+        let destPath = f.1.path();
+        if !fs.exists(srcPath) { return feral.err(-1, 'source path `', srcPath, '` does not exist'); }
+        if fs.exists(destPath) && fs.lastWriteTime(destPath) > fs.lastWriteTime(srcPath) { continue; }
+        let src = fs.fopen(srcPath, 'r').readAll();
+        let dest = src.fmt('$<<', '>>', self.applyConfig);
+        let destFile = fs.fopen(destPath, 'w+');
+        io.fprint(destFile, dest);
+        self.addHeaders(destPath);
+    }
     return feral.ok();
 };

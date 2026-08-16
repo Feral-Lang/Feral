@@ -4,6 +4,9 @@ let vec = import('std/vec');
 let term = import('std/term');
 let time = import('std/time');
 
+let defaultColoredPrefix = '[$<<timeStr>>]$<<tag>>[$<<levelColor>>$<<levelStr>>' + term.reset + ']:';
+let defaultPrefix = '[$<<timeStr>>]$<<tag>>[$<<levelStr>>]:';
+
 let Levels = enum(
     .FATAL,
     .WARN,
@@ -25,8 +28,8 @@ let levelColorToStr = fn(lvl) {
 
 let levelToStr = fn(lvl) {
     if lvl == Levels.FATAL { return 'FATAL'; }
-    if lvl == Levels.WARN { return 'WARN'; }
-    if lvl == Levels.INFO { return 'INFO'; }
+    if lvl == Levels.WARN  { return 'WARN '; }
+    if lvl == Levels.INFO  { return 'INFO '; }
     if lvl == Levels.DEBUG { return 'DEBUG'; }
     if lvl == Levels.TRACE { return 'TRACE'; }
     return 'INVALID';
@@ -47,6 +50,7 @@ FileInfo.setTypeName('FileInfo');
 let Logger = struct(
     targets = vec.new(refs = true),
     tagStack = vec.new(),
+    maxTagLen = 20,
     depth = 0
 );
 
@@ -54,14 +58,22 @@ let newLogger = fn() { return Logger(); };
 
 let addTarget in Logger = fn(.kw, target) {
     let level = kw['level'] ?? Levels.WARN;
-    let prefix = kw['prefix'] ?? '[$<<timeStr>>][$<<levelColor>>$<<levelStr>>' + term.reset + ']$<<tag>>: ';
+    let colorize = kw['colorize'] ?? false;
+    let prefix = colorize ? defaultColoredPrefix : defaultPrefix;
+    if kw['prefix'] != nil {
+        prefix = kw['prefix'];
+    }
     let depthPrefix = kw['depthPrefix'] ?? '-';
     self.targets.push(FileInfo(ref(target), level, prefix, depthPrefix));
 };
 
 let addTargetByPath in Logger = fn(.kw, path) {
     let level = kw['level'] ?? Levels.WARN;
-    let prefix = kw['prefix'] ?? '[$<<timeStr>>][$<<levelColor>>$<<levelStr>>' + term.reset + ']$<<tag>>: ';
+    let colorize = kw['colorize'] ?? false;
+    let prefix = colorize ? defaultColoredPrefix : defaultPrefix;
+    if kw['prefix'] != nil {
+        prefix = kw['prefix'];
+    }
     let depthPrefix = kw['depthPrefix'] ?? '-';
     let mustClose = kw['close'] ?? true;
     let file = fs.fopen(path, 'w+', mustClose);
@@ -72,12 +84,14 @@ let log in Logger = fn(lvl, data...) {
     let levelColor = levelColorToStr(lvl);
     let levelStr = levelToStr(lvl);
     let timeStr = time.format(time.now());
-    let tag = self.tagStack.empty() ? '' : '[' + self.tagStack.back() + ']';
+    let tag = self.tagStack.empty() ? ''.fit(self.maxTagLen) : '[' + self.tagStack.back().fit(self.maxTagLen - 2) + ']';
     for t in self.targets.each() {
         if t.level < lvl { continue; }
         io.fprintln(t.f, t.prefix.fmt(), t.depthPrefix * self.depth, ' ', data...);
     }
 };
+
+let setMaxTagLen in Logger = fn(len) { self.maxTagLen = len; };
 
 let pushTag in Logger = fn(tag) { self.tagStack.push(tag); };
 let popTag in Logger = fn() { self.tagStack.pop(); };
@@ -86,11 +100,11 @@ let pushDepth in Logger = fn() { ++self.depth; };
 let popDepth in Logger = fn() { --self.depth; };
 
 let scopedTag in Logger = fn(tag) {
-    return ScopedTag(self, tag);
+    return ScopedTag(ref(self), tag);
 };
 
 let scopedDepth in Logger = fn() {
-    return ScopedDepth(self);
+    return ScopedDepth(ref(self));
 };
 
 let fatal in Logger = fn(data...) { return self.log(Levels.FATAL, data...); };
