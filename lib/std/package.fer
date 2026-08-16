@@ -60,13 +60,19 @@ let setGlobalConfigVar = fn(name, val) {
 # Target
 ################################################################################
 
+let Definition = struct(
+    value = nil,
+    private = true
+);
+Definition.setTypeName('Definition');
+
 let Target = struct(
     name = 'SampleTarget',
     static = false,
     binary = false,
     headers = vec.new(),
     sources = vec.new(),
-    definitions = map.new(refs = true),
+    definitions = map.new(refs = true), # <key> = <Definition>
     dependencies = vec.new(refs = true) # can only be of type Target
 );
 Target.setTypeName('Target');
@@ -143,11 +149,14 @@ let findSources in Target = fn(.kw, path, searchRegex = '(.*).cpp') {
 };
 
 "
-  Target.addDefinition(name, val = '') -> Nil
+  Target.addDefinition(.kw, name, val = '') -> Nil
 Add definitions to be available when compiling the target.
+Accepts the following keyword arguments:
+* `private = true/false` - if `true`, the definition is not transitive - ie, not applied to any dependent. (default: true)
 "
-let addDefinition in Target = fn(name, val = '') {
-    self.definitions.insert(name, val);
+let addDefinition in Target = fn(.kw, name, val = '') {
+    let private = kw['private'] ?? true;
+    self.definitions.insert(name, Definition(ref(val), private));
 };
 
 "
@@ -186,7 +195,7 @@ let Package = struct(
     binary = false,
     configVars = map.new(refs = true),
     configFiles = map.new(refs = true), # source -> dest
-    definitions = map.new(refs = true),
+    definitions = map.new(refs = true), # <key> = <Definition> (no use of `private` field)
     headers = vec.new(refs = true),
     targets = vec.new(refs = true),
     dependencies = vec.new(refs = true) # can only be of type Dependency
@@ -266,7 +275,7 @@ let setConfigVar in Package = fn(name, val) {
 Add definitions to be available when compiling the package.
 "
 let addDefinition in Package = fn(name, val = '') {
-    self.definitions.insert(name, val);
+    self.definitions.insert(name, Definition(ref(val)));
 };
 
 "

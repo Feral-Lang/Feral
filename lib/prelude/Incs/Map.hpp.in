@@ -9,9 +9,10 @@ FERAL_FUNC(mapNew, 0, true,
            "The args (optional) are key-value pairs to initialize the map with, and hence must be "
            "even in number.\n"
            "Can also accept the following named arguments:\n"
-           "  `cap = n` where `n` is the initial capacity of the map\n"
+           "  `cap = n` where `n` is the initial capacity of the map.\n"
            "  `refs = true` which makes it so that any value inserted in the map is stored as a "
-           "reference.")
+           "reference.\n"
+           "  `ordered = true` which makes the map ordered - traversal is in the same sequence as insertion.")
 {
     if((args.size() - 1) % 2 != 0) {
         vm.fail(loc, "argument count must be even to create a map");

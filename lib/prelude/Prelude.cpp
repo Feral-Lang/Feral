@@ -303,7 +303,7 @@ FERAL_FUNC(async, 1, true,
            "arguments required by the function.\n"
            "This gives the foundation of being able to resume functions later.\n"
            "To use the Async, these methods are provided: Async.done(), Async(value = nil) -> "
-           "YieldedObject, Async.finish() -> Object.")
+           "YieldedObject, Async.result() -> Object.")
 {
     EXPECT_CALLABLE(args[1], "first arg");
     VarClosure *cl  = as<VarClosure>(FERAL_FUNC_CALL(closure, vm, loc, args, assnArgs));
