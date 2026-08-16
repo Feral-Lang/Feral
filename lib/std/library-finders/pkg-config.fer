@@ -51,7 +51,7 @@ let findLibrary in PkgConfigFinder = fn(pkgName, .kw) {
     os.exec(out = out, self.exe, pkgName, '--libs-only-l');
     for oline in out.each() {
         for o in oline.split(' ').each() {
-            lib.addLibraryFlags(o);
+            lib.addLibraryFlags(o.replace('-l', ''));
         }
     }
     return feral.ok(lib);

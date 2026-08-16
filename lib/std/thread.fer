@@ -49,9 +49,9 @@ let waitAll in ThreadPool = fn() {
     while self.waitingThreads.get() != self.count { os.sleep(1); }
 };
 
-let push in ThreadPool = fn(callable, args...) {
+let push in ThreadPool = fn(callable, .kwArgs, args...) {
     self.taskMtx.lock();
-    self.tasks.push(feral.closure(callable, args...));
+    self.tasks.push(feral.closure(callable, kwArgs..., args...));
     self.taskMtx.unlock();
 };
 
