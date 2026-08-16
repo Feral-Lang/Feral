@@ -1,0 +1,54 @@
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let package = import('std/package');
+let version = import('std/version');
+
+let FeralFinder = struct();
+FeralFinder.setTypeName('FeralFinder');
+
+let new = fn() {
+    return feral.ok(FeralFinder());
+};
+
+let findLibrary in FeralFinder = fn(pkgName, .kw) {
+    let versConstraint = kw['version'] ?? '*';
+    let isFeral = kw['feral'] ?? true;
+    if !isFeral { return feral.err(-1, 'FeralFinder cannot be used to find non-Feral libraries'); }
+    let pkgInstallPrefix = package.getInstallPath(pkgName, '');
+    let installedPkgs = fs.walkDir(package.installRoot, fs.WALK_DIRS);
+    let out = vec.new(refs = true);
+    let res = os.exec(out = out, self.exe, pkgName);
+    if res != 0 { return feral.err(-1, 'Library ', pkgName, ' is not installed via pkg-config'); }
+    out.clear();
+    let lib = platform.Library(pkgName);
+    # get version
+    if os.exec(out = out, self.exe, pkgName, '--print-provides') == 0 && !out.empty() {
+        lib.version = out[0].split(' = ')[1];
+        if !version.parseConstraint(versConstraint).matches(version.parse(lib.version)) {
+            return feral.err(0, 'Found library ', pkgName, '@', lib.version, ' but it doesn\'t satisfy the constraint ', versConstraint);
+        }
+    }
+    out.clear();
+    os.exec(out = out, self.exe, pkgName, '--cflags-only-I');
+    for oline in out.each() {
+        for o in oline.split(' ').each() {
+            lib.addIncludeDirs(o.replace('-I', ''));
+        }
+    }
+    out.clear();
+    os.exec(out = out, self.exe, pkgName, '--libs-only-L');
+    for oline in out.each() {
+        for o in oline.split(' ').each() {
+            lib.addLibraryDirs(o.replace('-L', ''));
+        }
+    }
+    out.clear();
+    os.exec(out = out, self.exe, pkgName, '--libs-only-l');
+    for oline in out.each() {
+        for o in oline.split(' ').each() {
+            lib.addLibraryFlags(o);
+        }
+    }
+    return feral.ok(lib);
+};
