@@ -1,0 +1,361 @@
+let fs = import('std/fs');
+let os = import('std/os');
+let map = import('std/map');
+let vec = import('std/vec');
+
+let core = import('std/toolchain/core');
+
+# let cmakeFinder = import('std/library-finders/cmake');
+# let brewFinder = import('std/library-finders/brew');
+let vcpkgFinder = import('std/library-finders/vcpkg');
+let pkgConfigFinder = import('std/library-finders/pkg-config');
+
+let Opt = ref(core.Opt); # Just a helper for external code. Not used in this module.
+
+####################################################################################################
+######################################## Library Finders ###########################################
+####################################################################################################
+
+let libraryFinders = vec.new(refs = true);
+
+# let r = cmakeFinder.new();
+# if r.isOk() { libraryFinders.push(r.val()); }
+# let r = brewFinder.new();
+# if r.isOk() { libraryFinders.push(r.val()); }
+let r = vcpkgFinder.new();
+if r.isOk() { libraryFinders.push(r.val()); }
+let r = pkgConfigFinder.new();
+if r.isOk() { libraryFinders.push(r.val()); }
+
+let findLibrary = fn(.kw, names...) {
+    for finder in libraryFinders.each() {
+        for name in names.each() {
+            let r = finder.findLibrary(name, kw...);
+            if r.isOk() || r.val().code() >= 0 { return r; }
+        }
+    }
+    return feral.err(-1, 'Could not find library with name(s) ', names.join(', '));
+};
+
+let feralLib = core.Library('feral', feral.version);
+feralLib.addIncludeDirs(feral.installPath / 'include' / 'feral');
+feralLib.addLibraryDirs(feral.installPath / 'lib');
+if os.name == 'windows' {
+    feralLib.addLibraryFlags('libferal.lib');
+} else {
+    feralLib.addLibraryFlags('feral');
+}
+
+let getFeralLibrary = fn() {
+    return feralLib;
+};
+
+####################################################################################################
+########################################## Toolchain ###############################################
+####################################################################################################
+
+let Toolchain = struct(
+    iface = nil, # interface
+    logger = nil
+);
+Toolchain.setTypeName('Toolchain');
+
+let new = fn(interface = nil, logger = nil) {
+    if interface == nil {
+        let iface = get().?;
+        return feral.ok(Toolchain(ref(iface), ref(logger)));
+    }
+    let e = '';
+    if !interface._implements_(err = e, core.ToolchainInterface) {
+        return feral.err(-1, e);
+    }
+    return feral.ok(Toolchain(ref(interface), ref(logger)));
+};
+
+"
+  var.fn() -> Str
+Returns the ID of the toolchain, like:
+* gcc
+* clang
+* msvc
+"
+let getId in Toolchain = fn() {
+    return self.iface.getId();
+};
+
+"
+  var.fn() -> Str
+Returns the version of the toolchain, like:
+* 16.1.1
+* 12.0.6
+"
+let getVersion in Toolchain = fn() {
+    return self.iface.getVersion();
+};
+
+"
+  var.fn(.kw, dest, srcs...) -> Result<Path>
+Compiles each of the given `srcs` and generates a `dest` object file from them.
+Returns the path to the created/expected object, wrapped in `Result`.
+Preferably, use full paths for `dest` and `srcs`.
+Takes a bunch of keyword arguments:
+* `cmd = <str>` - writes the command to compile in `str`.
+* `dry = true/false` - if `true`, does not execute the command.
+* `performed = <bool>` - if the command is performed, `<bool>` variable is set as `true`.
+* `force = true/false` - if `true`, will compile even if `dest` is already newer than `srcs`.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
+* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.Opt.None`.
+* `defs = Map` - a map of preprocessor definitions to be provided.
+* `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
+* `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
+* `depends = Vec<Path>` - if any of the files in this list is modified, triggers a recompilation.
+"
+let compile in Toolchain = fn(.kw, destPath, srcs...) {
+    if srcs.empty() {
+        return feral.err(-1, 'No source provided to compile');
+    }
+    let tmpLang = 'c';
+    let tmpStd = 11;
+    # Figure out lang/std
+    for s in srcs.each() {
+        let ext = s.fileExt().str();
+        if ext == '.cpp' {
+            tmpLang = 'cpp';
+            tmpStd = 20;
+            break;
+        }
+    }
+    let cmdOut = ref(kw['cmd']);
+    let dry = kw['dry'] ?? false;
+    let force = kw['force'] ?? false;
+    let lang = kw['lang'] ?? tmpLang;
+    let std = kw['std'] ?? tmpStd;
+    let opt = kw['opt'] ?? core.Opt.None;
+    let defs = ref(kw['defs']) ?? map.new();
+    let incDirs = ref(kw['incDirs']) ?? vec.new();
+    let depends = ref(kw['depends']) ?? vec.new();
+    let native = kw['native'] ?? false;
+
+    if opt < core.Opt.None || opt >= core.Opt.Unknown { return feral.err(-1, 'Unknown optimization level `', opt, '`'); }
+
+    # Generate the command(info) to run.
+    let info = self.iface.getCompileInfo(dry = dry, force = force, lang = lang, std = std, opt = opt,
+                                         defs = defs, incDirs = incDirs, native = native,
+                                         destPath, srcs...).?;
+
+    if cmdOut != nil { cmdOut = info.cmd.join(' '); }
+
+    if dry { return feral.ok(info.dest); }
+
+    for s in srcs.each() {
+        if !fs.exists(s) {
+            return feral.err(-1, 'Could not find source file `', s, '`');
+        }
+    }
+
+    let destIsLatest = fs.exists(info.dest);
+
+    if destIsLatest && force {
+        fs.remove(info.dest);
+        destIsLatest = false;
+    }
+
+    let destWriteTime = fs.lastWriteTime(info.dest);
+    if destIsLatest {
+        for d in depends.each() {
+            if destWriteTime <= fs.lastWriteTime(d) {
+                destIsLatest = false;
+                break;
+            }
+        }
+    }
+    if destIsLatest {
+        for s in srcs.each() {
+            if destWriteTime <= fs.lastWriteTime(s) {
+                destIsLatest = false;
+                break;
+            }
+        }
+    }
+    if !destIsLatest {
+        if kw['performed'] != nil {
+            kw['performed'] = true;
+        }
+        if !fs.exists(info.dest.parent()) {
+            fs.mkdir(info.dest.parent());
+        }
+        let out = vec.new(refs = true);
+        let res = os.exec(out = out, env = self.iface.getEnv(), info.cmd..., '^2>&1');
+        if res != 0 {
+            return feral.err(res, 'Failed to compile `' + info.dest.str() + '`:\n', out.join('\n'));
+        }
+    }
+    return feral.ok(info.dest);
+};
+
+"
+  fn(.kw, dest, objs...) -> Result<Path>
+Links each of the given `objs` and generates a `dest` binary/library from them.
+Returns the path to the created/expected library/binary, wrapped in `Result`.
+Preferably, use full paths for `dest` and `objs`.
+Takes a bunch of keyword arguments:
+* `cmd = <str>` - writes the command to link in `str`.
+* `dry = true/false` - if `true`, does not execute the command. defaults to `false`.
+* `performed = <bool>` - if the command is performed, `<bool>` variable is set as `true`.
+* `force = true/false` - if `true`, will compile even if `dest` is already newer than `srcs`. defaults to `false`.
+* `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
+* `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
+* `libs = Vec<Str>` - a vector of strings to specify libraries to link against.
+* `rpaths = Vec<Str>` - a vector of strings to specify rpaths to be added to the generated binary/library.
+* `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
+* `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
+"
+let link in Toolchain = fn(.kw, destPath, objs...) {
+    if objs.empty() {
+        return feral.err(-1, 'No objects provided to compile');
+    }
+    let cmdOut = ref(kw['cmd']);
+    let dry = kw['dry'] ?? false;
+    let force = kw['force'] ?? false;
+    let lang = kw['lang'] ?? 'c';
+    let libDirs = ref(kw['libDirs']) ?? vec.new();
+    let libs = ref(kw['libs']) ?? vec.new();
+    let rpaths = ref(kw['rpaths']) ?? vec.new();
+    let static = kw['static'] ?? false;
+    let binary = kw['binary'] ?? true;
+
+    # Generate the command(info) to run.
+    let info = self.iface.getLinkInfo(dry = dry, force = force, lang = lang, libDirs = libDirs,
+                                      libs = libs, rpaths = rpaths, static = static, binary = binary,
+                                      destPath, objs...).?;
+
+    if cmdOut != nil { cmdOut = info.cmd.join(' '); }
+
+    if dry { return feral.ok(info.dest); }
+
+    for o in objs.each() {
+        if !fs.exists(o) {
+            return feral.err(-1, 'Could not find object file `', o, '`');
+        }
+    }
+
+    let destIsLatest = fs.exists(info.dest);
+
+    if destIsLatest && force {
+        fs.remove(info.dest);
+        destIsLatest = false;
+    }
+
+    let destWriteTime = fs.lastWriteTime(info.dest);
+    if destIsLatest {
+        for o in objs.each() {
+            if destWriteTime <= fs.lastWriteTime(o) {
+                destIsLatest = false;
+                break;
+            }
+        }
+    }
+    if !destIsLatest {
+        if kw['performed'] != nil {
+            kw['performed'] = true;
+        }
+        if !fs.exists(info.dest.parent()) {
+            fs.mkdir(info.dest.parent());
+        }
+        let out = vec.new(refs = true);
+        let res = os.exec(out = out, env = self.iface.getEnv(), info.cmd..., '^2>&1');
+        if res != 0 {
+            return feral.err(res, 'Failed to link `' + info.dest.str() + '`:\n', out.join('\n'));
+        }
+    }
+    return feral.ok(info.dest);
+};
+
+####################################################################################################
+################################## ToolchainInterface Utils ########################################
+####################################################################################################
+
+"
+  fn() -> ToolchainInterface
+Retrieves the default toolchain for the platform.
+This is a cached value so calling this repeatedly is cheap.
+"
+let get = fn() { return ref(defaultToolchainInterface); };
+
+"
+  fn() -> Result<ToolchainInterface>
+Searches for the installed toolchain (C/C++ compilers) and returns a result containing the toolchain.
+If not found, returns an error result.
+"
+let getDefault = fn() {
+    if os.name == 'windows' {
+        let msvc = import('std/toolchain/msvc');
+        return msvc.new();
+    }
+
+    # Order (for non-windows):
+    # 1. CC/CXX variables
+    # 2. cc/c++ executables
+    # 3. gcc/g++ executables
+    # 4. clang/clang++ executables
+
+    # option 1: $CC/$CXX
+    let cc = os.getEnv('CC');
+    let cxx = os.getEnv('CXX');
+    if cc != nil && cxx == nil {
+        return feral.err(-1, 'found $CC as `', cc, '`, but could not find $CXX');
+    } elif cc == nil && cxx != nil {
+        return feral.err(-1, 'found $CXX as `', cxx, '`, but could not find $CC');
+    } elif cc != nil && cxx != nil {
+        return identifyCompiler(cc, cxx);
+    }
+    # option 2: cc/c++ executables
+    let cc = os.findExec('cc');
+    let cxx = os.findExec('c++');
+    if cc != nil && cxx == nil {
+        return feral.err(-1, 'found $CC as `', cc, '`, but could not find $CXX');
+    } elif cc == nil && cxx != nil {
+        return feral.err(-1, 'found $CXX as `', cxx, '`, but could not find $CC');
+    } elif cc != nil && cxx != nil {
+        return identifyCompiler(cc, cxx);
+    }
+    # option 3: gcc/g++ executables
+    let gcc = import('std/toolchain/gcc');
+    let tcRes = gcc.new();
+    if tcRes.isOk() { return tcRes; }
+    # option 4: clang/clang++ executables
+    let clang = import('std/toolchain/clang');
+    let tcRes = clang.new();
+    if tcRes.isOk() { return tcRes; }
+    return feral.err(-1, 'could not find any of [$CC/$CXX, cc/c++, gcc/g++, clang/clang++] to use as the C/C++ compilers');
+};
+
+"
+  fn(cc, cxx) -> Result<ToolchainInterface>
+Identifies compiler using `cc` path and returns the equivalent ToolchainInterface.
+Only works on clang and gcc for now.
+"
+let identifyCompiler = fn(cc, cxx) {
+    let out = '';
+    os.exec(out = out, cc, '--version');
+    if out.find('GCC') >= 0 {
+        let gcc = import('std/toolchain/gcc');
+        return gcc.new();
+    }
+    if out.find('clang') >= 0 {
+        let clang = import('std/toolchain/clang');
+        return clang.new();
+    }
+    return feral.err(-1, 'unknown compilers: [', cc, ', ', cxx, ']');
+};
+
+# Default compiler for the platform
+let defaultToolchainInterface = getDefault();
+if defaultToolchainInterface.isOk() {
+    let e = '';
+    let tc = defaultToolchainInterface.val();
+    if !tc._implements_(err = e, core.ToolchainInterface) {
+        raise('default toolchain ', tc.id, ' is not ToolchainInterface compliant: ', e);
+    }
+}

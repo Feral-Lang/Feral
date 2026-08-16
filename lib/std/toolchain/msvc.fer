@@ -1,0 +1,139 @@
+let os = import('std/os');
+let map = import('std/map');
+let vec = import('std/vec');
+
+let core = import('std/toolchain/core');
+
+let MSVC = struct(
+    id = 'msvc',
+    version = '',
+    c = ''.path(),
+    cxx = ''.path(),
+    env = map.new(refs = true)
+);
+MSVC.setTypeName('MSVC');
+
+let new = fn() {
+    if os.name != 'windows' { return feral.err('MSVC toolchain is available only on Windows'); }
+
+    let vsPath = getVSInstallPath();
+    if vsPath == nil { return feral.err(-1, 'Visual Studio must be installed to get the toolchain information on Windows'); }
+    let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
+    let out = vec.new(refs = true);
+    if os.exec(out = out, '^"' + vcvarsPath.str() + '" x64 && set', '^2>&1') != 0 {
+        return feral.err(-1, 'Could not get env information from vcvarsall:\n', out.join('\n'), '\nUsed vcvarspath = `', vcvarsPath.str(), '`');
+    }
+    let tc = MSVC();
+    for o in out.each() {
+        if o.find('=') < 0 { continue; }
+        let split = o.split('=', 1);
+        tc.env.insert(split[0], split[1]);
+    }
+    out.clear();
+    if os.exec(out = out, env = tc.env, 'where', 'cl.exe') != 0 {
+        return feral.err(-1, 'Could not find `cl.exe` using Windows\' `where` command');
+    }
+    tc.c = out.join('').path();
+    tc.cxx = tc.c;
+    out.clear();
+    os.exec(out = out, env = tc.env, tc.c, '^2>&1');
+    for o in out.each() {
+        if o.find('C/C++ Optimizing Compiler Version ') < 0 { continue; }
+        let split = o.split('Compiler Version ');
+        tc.version = split[1].split(' ')[0];
+        break;
+    }
+    return feral.ok(tc);
+};
+
+let getId in MSVC = fn() { return self.id; };
+let getEnv in MSVC = fn() { return self.env; };
+let getVersion in MSVC = fn() { return self.version; };
+
+"
+  var.fn(.kw, dest, srcs...) -> Result<Path>
+Compiles each of the given `srcs` and generates a `dest` object file from them.
+Preferably, use full paths for `dest` and `srcs`.
+Takes a bunch of keyword arguments:
+* `dry = true/false` - if `true`, does not execute the command.
+* `force = true/false` - if `true`, will compile even if `dest` is already newer than `srcs`.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
+* `opt = Opt` - optimization level, one of the values in `Opt` enum. Defaults to `Opt.None`.
+* `defs = Map` - a map of preprocessor definitions to be provided.
+* `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
+"
+let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
+    let dry = kw['dry'];
+    let force = kw['force'];
+    let lang = kw['lang'];
+    let std = kw['std'];
+    let opt = kw['opt'];
+    let defs = ref(kw['defs']);
+    let incDirs = ref(kw['incDirs']);
+
+    # Generate the CompileInfo.
+
+    let info = core.CompileInfo();
+    info.dest = (destPath.str() + '.obj').path();
+
+    info.cmd.push('/EHsc'); # to prevent: warning C4530: C++ exception handler used, but unwind semantics are not enabled
+    info.cmd.push(lang == 'c' ? '/std:c' + std.str() : '/std:c++' + std.str());
+    info.cmd.push('/c');
+
+    # optimization
+    if opt == core.Opt.None { info.cmd.push('/Od'); }
+    elif opt == core.Opt.Most { info.cmd.push('/O2'); }
+    elif opt == core.Opt.Full { info.cmd.push('/O3'; }
+    elif opt == core.Opt.WithDebInfo { info.cmd.push('/Ob2'); }
+    if opt != core.Opt.None {
+        defs.insert('NDEBUG', '');
+    }
+
+    # include dirs
+    for incDir in incDirs.each() {
+        info.cmd.push('/I"' + incDir.str() + '"');
+    }
+
+    # definitions
+    for d in defs.each() {
+        let flag = '/D:';
+        flag += d.0;
+        if !d.1._isType_(StrTy) || !d.1.empty() {
+            flag += '=' + d.1.str();
+        }
+        info.cmd.push(flag);
+    }
+
+    # sources
+    info.cmd.append(srcs);
+
+    # destination
+    info.cmd.push('/Fo"' + dest.str().replace('/', '\\') + '"');
+
+    return feral.ok(info);
+};
+
+####################################################################################################
+##################################### Windows Shenanigans ##########################################
+####################################################################################################
+
+inline if os.name == 'windows' {
+
+let vsWhereCmd = vec.new(refs = true, 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-latest', '-property', 'installationPath');
+
+let getVSInstallPath = fn() {
+    let out = '';
+    if os.exec(out = out, vsWhereCmd) != 0 { return nil; }
+    return out.path();
+};
+
+let getMSBuildPath = fn() {
+    let vs = getVSInstallPath();
+    if vs == nil { return nil; }
+    let msbuild = vs / 'MSBuild' / 'Current' / 'Bin' / 'msbuild.exe';
+    if !fs.exists(msbuild) { return ''; }
+    return msbuild;
+};
+
+}

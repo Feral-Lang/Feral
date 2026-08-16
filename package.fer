@@ -1,0 +1,42 @@
+let io = import('std/io');
+let fs = import('std/fs');
+let os = import('std/os');
+let vec = import('std/vec');
+let package = import('std/package');
+
+let configure = fn(pkgRoot) {
+    let pkg = package.new('Feral', version = '2.3.0', binary = true);
+
+    # info.toolchain.tryAddCompileFlag('--gdwarf-5'); # should be handled by `pkg build --gdwarf`
+
+    let repoUrl = '', commitId = '', treeStatus = '';
+    if os.exec(out = repoUrl, 'git', '-C', pkgRoot, 'config', '--get', 'remote.origin.url', '^2>&1') != 0 {
+        return feral.err(-1, 'failed to get repo URL:\n', repoUrl);
+    }
+    if os.exec(out = commitId, 'git', '-C', pkgRoot, 'log', '--format=%H', '-n', '1', '^2>&1') != 0 {
+        return feral.err(-1, 'failed to get repo commit ID:\n', commitId);
+    }
+    if os.exec(out = treeStatus, 'git', '-C', pkgRoot, 'config', '--get', 'remote.origin.url', '^2>&1') == 0 {
+        treeStatus = 'Clean';
+    } else {
+        treeStatus = 'Dirty';
+    }
+    pkg.setConfigVar('REPO_URL', repoUrl);
+    pkg.setConfigVar('COMMIT_ID', commitId);
+    pkg.setConfigVar('TREE_STATUS', treeStatus);
+
+    pkg.addConfigFile(pkgRoot / 'include' / 'Config.inl.in', pkgRoot / 'include' / 'Config.inl').?;
+
+    let feralLib = pkg.addTarget('feral', binary = false);
+    feralLib.findHeaders(pkgRoot / 'include', '(.*).hpp');
+    feralLib.addHeaders(pkgRoot / 'include' / 'Config.inl.in');
+    feralLib.findSources(pkgRoot / 'src', '(.*).cpp', skip = vec.new('src/Main.cpp'));
+    feralLib.addDefinition('EXPORT_FOR_DLL', 'true');
+
+    let feralBin = pkg.addTarget('feral', shared = false);
+    feralBin.findHeaders(pkgRoot / 'include', '(.*).hpp'); # headers are installed as well.
+    feralBin.addSources(pkgRoot / 'src' / 'Main.cpp');
+    feralBin.requires(feralLib);
+
+    return feral.ok(pkg);
+};

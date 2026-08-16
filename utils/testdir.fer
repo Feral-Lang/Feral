@@ -139,7 +139,8 @@ for let i = 0; i < runCount; ++i {
         tpool.push(exec, file);
     }
 }
-while !tpool.empty() { os.sleep(1); }
+
+tpool.waitAll();
 
 let totalTime = time.now() - timeBegin;
 
@@ -148,9 +149,8 @@ if !cleanCmd.empty() {
         tpool.push(clean, file);
     }
 }
-while !tpool.empty() { os.sleep(1); }
 
-tpool.stop();
+tpool.finish();
 
 for f in failed.each() {
     if !valgrindCmd.empty() {

@@ -117,6 +117,7 @@ Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *as
 
 void Var::setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) {}
 void Var::remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) {}
+bool Var::replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) { return false; }
 bool Var::existsAttr(StringRef name) { return false; }
 Var *Var::getAttr(StringRef name) { return nullptr; }
 void Var::getAttrList(VirtualMachine &vm, VarVec *dest) {}
@@ -429,6 +430,14 @@ void VarMap::remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref)
     if(dref) vm.decVarRef(loc->second);
     val.erase(loc);
 }
+bool VarMap::replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
+{
+    auto loc = this->val.find(name);
+    if(loc == this->val.end()) return false;
+    vm.decVarRef(loc->second);
+    loc->second = iref ? vm.incVarRef(val) : val;
+    return true;
+}
 bool VarMap::existsAttr(StringRef name) { return this->val.find(name) != this->val.end(); }
 Var *VarMap::getAttr(StringRef name)
 {
@@ -666,6 +675,11 @@ void VarModule::setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
     assert(moduleFrame);
     moduleFrame->setAttr(vm, name, val, iref);
 }
+bool VarModule::replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
+{
+    assert(moduleFrame);
+    return moduleFrame->replaceAttr(vm, name, val, iref);
+}
 bool VarModule::existsAttr(StringRef name)
 {
     assert(moduleFrame);
@@ -708,6 +722,11 @@ void VarFrame::remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dre
 {
     LockGuard<RecursiveMutex> _(mtx);
     return frame->remAttr(vm, name, found, dref);
+}
+bool VarFrame::replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
+{
+    LockGuard<RecursiveMutex> _(mtx);
+    return frame->replaceAttr(vm, name, val, iref);
 }
 bool VarFrame::existsAttr(StringRef name)
 {
@@ -990,6 +1009,17 @@ void VarStack::onCreate(VirtualMachine &vm) {}
 void VarStack::onDestroy(VirtualMachine &vm)
 {
     for(auto it = stack.rbegin(); it != stack.rend(); ++it) { vm.decVarRef(*it); }
+}
+
+bool VarStack::replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
+{
+    assert(!stack.empty() && !modulePos.empty());
+    int64_t currModulePos = modulePos.back();
+    for(int64_t i = stack.size() - 1; i > currModulePos; --i) {
+        if(stack[i]->replaceAttr(vm, name, val, iref)) return true;
+        if(stack[i]->isFunc()) break;
+    }
+    return stack[currModulePos]->replaceAttr(vm, name, val, iref);
 }
 
 Var *VarStack::getAttr(StringRef name)

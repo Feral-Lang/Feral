@@ -1,0 +1,182 @@
+let os = import('std/os');
+let map = import('std/map');
+let vec = import('std/vec');
+
+let core = import('std/toolchain/core');
+
+let GCC = struct(
+    id = 'gcc',
+    version = '',
+    c = ''.path(),
+    cxx = ''.path(),
+    ar = ''.path()
+);
+GCC.setTypeName('GCC');
+
+let new = fn() {
+    let gccExe = os.findExec('gcc');
+    let gxxExe = os.findExec('g++');
+    let arExe = os.findExec('ar');
+    let tc = GCC();
+    if gccExe == nil && gxxExe == nil {
+        return feral.err(-1, 'could not find gcc/g++ toolchain in $PATH');
+    } elif gccExe == nil {
+        return feral.err(-1, 'found g++ at `', gxxExe, '`, but could not find gcc');
+    } elif gxxExe == nil {
+        return feral.err(-1, 'found gcc at `', gccExe, '`, but could not find g++');
+    }
+    if arExe == nil {
+        return feral.err(-1, 'could not find gcc\'s archive utility in $PATH');
+    }
+    tc.c = gccExe;
+    tc.cxx = gxxExe;
+    tc.ar = arExe;
+    let out = vec.new(refs = true);
+    os.exec(out = out, tc.c, '--version');
+    tc.version = out[0].split(' ')[2];
+    return feral.ok(tc);
+};
+
+let getId in GCC = fn() { return self.id; };
+let getEnv in GCC = fn() { return map.new(); };
+let getVersion in GCC = fn() { return self.version; };
+
+"
+  var.fn(.kw, dest, srcs...) -> Result<core.CompileInfo>
+Compiles each of the given `srcs` and generates a `dest` object file from them.
+Preferably, use full paths for `dest` and `srcs`.
+Takes a bunch of keyword arguments:
+* `dry = true/false` - if `true`, does not execute the command.
+* `force = true/false` - if `true`, will compile even if `dest` is already newer than `srcs`.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
+* `opt = Opt` - optimization level, one of the values in `Opt` enum. Defaults to `Opt.None`.
+* `defs = Map` - a map of preprocessor definitions to be provided.
+* `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
+* `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
+"
+let getCompileInfo in GCC = fn(.kw, destPath, srcs...) {
+    let dry = kw['dry'];
+    let force = kw['force'];
+    let lang = kw['lang'];
+    let std = kw['std'];
+    let opt = kw['opt'];
+    let defs = ref(kw['defs']);
+    let incDirs = ref(kw['incDirs']);
+    let native = kw['native'];
+
+    if opt == core.Opt.WithDebInfo { return feral.err(-1, 'Optimization with debug info is not available for non Windows platforms'); }
+
+    # Generate the CompileInfo.
+
+    let info = core.CompileInfo();
+    info.dest = (destPath.str() + '.o').path();
+
+    info.cmd.push(lang == 'c' ? self.c : self.cxx);
+    info.cmd.push(lang == 'c' ? '-std=c' + std.str() : '-std=c++' + std.str(), '-fPIC', '-c');
+    if native { info.cmd.push('-march=native'); }
+
+    # optimization
+    if opt == core.Opt.None { info.cmd.push('-Og'); }
+    elif opt == core.Opt.Most { info.cmd.push('-O2'); }
+    elif opt == core.Opt.Full { info.cmd.push('-O3'); }
+    if opt != core.Opt.None {
+        defs.insert('NDEBUG', '');
+    }
+
+    # include dirs
+    for incDir in incDirs.each() {
+        info.cmd.push('-I' + incDir.str());
+    }
+
+    # definitions
+    for d in defs.each() {
+        let flag = '-D';
+        flag += d.0;
+        if !d.1._isType_(StrTy) || !d.1.empty() {
+            flag += '=' + d.1.str();
+        }
+        info.cmd.push(flag);
+    }
+
+    # sources
+    info.cmd.append(srcs);
+
+    # destination
+    info.cmd.push('-o', info.dest.str());
+
+    return feral.ok(info);
+};
+
+"
+  fn(.kw, dest, objs...) -> Result<core.LinkInfo>
+Links each of the given `objs` and generates a `dest` object file from them.
+Preferably, use full paths for `dest` and `objs`.
+Takes a bunch of keyword arguments:
+* `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
+* `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
+* `libs = Vec<Str>` - a vector of strings to specify libraries to link against.
+* `rpaths = Vec<Str>` - a vector of strings to specify rpaths to be added to the generated binary/library.
+* `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
+* `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
+"
+let getLinkInfo in GCC = fn(.kw, destPath, objs...) {
+    let lang = kw['lang'];
+    let libDirs = ref(kw['libDirs']);
+    let libs = ref(kw['libs']);
+    let rpaths = ref(kw['rpaths']);
+    let static = kw['static'];
+    let binary = kw['binary'];
+
+    let info = core.LinkInfo();
+    if binary {
+        info.dest = destPath;
+    } elif static {
+        let libDestFile = 'lib' + destPath.file().str() + '.a';
+        info.dest = destPath.parent() / libDestFile;
+    } else {
+        let libDestFile = 'lib' + destPath.file().str() + '.so';
+        info.dest = destPath.parent() / libDestFile;
+    }
+
+    if static && !binary {
+        info.cmd.push(self.ar, '-rcs');
+    } else {
+        info.cmd.push(lang == 'c' ? self.c : self.cxx);
+    }
+
+    # destination
+    if static && !binary {
+        info.cmd.push(info.dest.str());
+    } else {
+        info.cmd.push('-o', info.dest.str());
+    }
+
+    # sources
+    info.cmd.append(objs);
+
+    if binary {
+        if static { info.cmd.push('-static'); }
+    } else {
+        if !static { info.cmd.push('-shared'); }
+    }
+
+    if binary || !static {
+        # library dirs
+        for libDir in libDirs.each() {
+            info.cmd.push('-L' + libDir.str());
+        }
+
+        # libraries
+        for lib in libs.each() {
+            info.cmd.push('-l' + lib);
+        }
+
+        # rpaths
+        for rpath in rpaths.each() {
+            info.cmd.push('-Wl,-rpath,' + rpath.str());
+        }
+    }
+
+    return feral.ok(info);
+};

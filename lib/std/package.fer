@@ -8,14 +8,159 @@
 #   Package.requires(name, versionConstraint, .kw)  -> Dependency declare a dependency
 #   Package.addTarget(name, sources...)             -> Target     declare a build target
 
+let io = import('std/io');
+let fs = import('std/fs');
+let map = import('std/map');
 let vec = import('std/vec');
+let time = import('std/time');
 let version = import('std/version');
+
+################################################################################
+# Main setup
+################################################################################
+
+let home = feral.libPath / 'pkg';
+let tmpRoot = feral.tempPath / 'pkg';
+let indexRoot = home / 'indexes';
+let installRoot = home / 'installed';
+
+fs.mkdir(tmpRoot, indexRoot, installRoot);
+
+let getInstallPath = fn(name, vers) {
+    return installRoot / (name.lower() + '--' + vers);
+};
+
+let getTempPath = fn(name, vers) {
+    return tmpRoot / (name.lower() + '--' + vers);
+};
+
+let getLockPath = fn(dir) {
+    return dir / 'package.lock';
+};
+
+let getScriptPath = fn(dir) {
+    return dir / 'package.fer';
+};
+
+################################################################################
+# Global config
+################################################################################
+
+let globalConfigVars = map.new(refs = true);
+
+"
+  fn(name, val) -> Nil
+Set the global config `name` as value `val`.
+"
+let setGlobalConfigVar = fn(name, val) {
+    globalConfigVars.insert(name, val);
+};
+
+################################################################################
+# Target
+################################################################################
 
 let Target = struct(
     name = 'SampleTarget',
-    sources = vec.new()
+    static = false,
+    binary = true,
+    headers = vec.new(),
+    sources = vec.new(),
+    definitions = map.new(refs = true),
+    dependencies = vec.new(refs = true) # can only be of type Target
 );
 Target.setTypeName('Target');
+
+"
+  Target.addHeaders(headers...) -> Nil
+Add headers as dependencies for compilation.
+Unlike sources, these are not passed to the toolchain compiler.
+"
+let addHeaders in Target = fn(headers...) {
+    self.headers.append(headers);
+};
+
+"
+  Target.addSources(sources...) -> Nil
+Add sources for compilation. These are passed to the compiler.
+"
+let addSources in Target = fn(sources...) {
+    self.sources.append(sources);
+};
+
+"
+  Target.findHeaders(.kw, path, searchRegex = '(.*).hpp') -> Nil
+Find all headers in `path` using `searchRegex` and add in the headers list.
+Takes the following keyword arguments:
+* `skip = Vec<Str>` - ignore all the paths that have any of these (sub)strings.
+"
+let findHeaders in Target = fn(.kw, path, searchRegex = '(.*).hpp') {
+    if !fs.exists(path) {
+        raise('provided path for searching for headers: ', path, ' does not exist');
+    }
+    let skip = ref(kw['skip']) ?? vec.new();
+    let files = fs.walkDir(path, fs.WALK_RECURSE, searchRegex);
+    files.sort();
+    for let i = 0; i < files.len(); ++i {
+        let fstr = files[i].str();
+        let found = false;
+        for s in skip.each() {
+            if fstr.find(s) < 0 { continue; }
+            found = true;
+            break;
+        }
+        if !found { continue; }
+        files.erase(i--);
+    }
+    self.addHeaders(files...);
+};
+
+"
+  Target.findSources(.kw, path, searchRegex = '(.*).cpp') -> Nil
+Find all sources in `path` using `searchRegex` and add in the sources list.
+Takes the following keyword arguments:
+* `skip = Vec<Str>` - ignore all the paths that have any of these (sub)strings.
+"
+let findSources in Target = fn(.kw, path, searchRegex = '(.*).cpp') {
+    if !fs.exists(path) {
+        raise('provided path for searching for sources: ', path, ' does not exist');
+    }
+    let skip = ref(kw['skip']) ?? vec.new();
+    let files = fs.walkDir(path, fs.WALK_RECURSE, searchRegex);
+    files.sort();
+    for let i = 0; i < files.len(); ++i {
+        let fstr = files[i].str();
+        let found = false;
+        for s in skip.each() {
+            if fstr.find(s) < 0 { continue; }
+            found = true;
+            break;
+        }
+        if !found { continue; }
+        files.erase(i--);
+    }
+    self.addSources(files...);
+};
+
+"
+  Target.addDefinition(name, val = '') -> Nil
+Add definitions to be available when compiling the target.
+"
+let addDefinition in Target = fn(name, val = '') {
+    self.definitions.insert(name, val);
+};
+
+"
+  Target.requires(targets...) -> Nil
+Make this target depend on each of `targets`.
+"
+let requires in Target = fn(targets...) {
+    self.dependencies.append(targets);
+};
+
+################################################################################
+# Dependency
+################################################################################
 
 let Dependency = struct(
     name = 'SampleDependency',
@@ -24,39 +169,54 @@ let Dependency = struct(
 );
 Dependency.setTypeName('Dependency');
 
+################################################################################
+# Package
+################################################################################
+
 let Package = struct(
     name = 'SampleProject',
     desc = 'A good but brief description here',
-    feral = '*',
-    version = '0.0.1',
+    feral = version.parseConstraint('*'),
+    version = version.parse('0.0.1'),
     license = 'MIT',
     authors = vec.new(
         'ProjectAuthor <author@email.com>'
     ),
+    installRoot = ''.path(),
+    binary = false,
+    configVars = map.new(refs = true),
+    configFiles = map.new(refs = true), # source -> dest
+    definitions = map.new(refs = true),
+    headers = vec.new(refs = true),
     targets = vec.new(refs = true),
-    dependencies = vec.new(refs = true)
+    dependencies = vec.new(refs = true) # can only be of type Dependency
 );
 Package.setTypeName('Package');
 
 "
-  fn(.kw) -> Project
-Declares a new package project. Accepts keyword arguments:
-  name    — package name
+  fn(.kw, name) -> Project
+Declares a new package project with name as `name`. Accepts keyword arguments:
   desc    — short description
-  version — version string (e.g. '1.2.3'); validated via version.parse()
+  version — version string (e.g. '1.2.3'); validated via version.parse() (default: 0.0.1)
+  binary  - if true, package is expected to emit an executable (feral/otherwise)
+            which is then installed globally in feral paths. (default: false)
+            Only 1 version of this type of package may be installed.
   feral   — Feral interpreter version constraint (e.g. '>=2.0.1');
             raises immediately if the running interpreter does not satisfy it
   authors — vec of author strings (e.g. 'Name <email>')
 The created Project is registered in getProjects() and returned.
 "
-let new  = fn(.kw) {
+let new  = fn(.kw, name) {
     let package = Package();
-    if kw['name'] != nil { package.name = kw['name']; }
+    package.name = name;
     if kw['desc'] != nil { package.desc = kw['desc']; }
-    if kw['feral'] != nil { package.feral = version.parseConstraint(kw['feral']).str(); }
-    if kw['version'] != nil { package.version = version.parse(kw['version']).str(); }
+    if kw['feral'] != nil { package.feral = version.parseConstraint(kw['feral']); }
+    if kw['version'] != nil { package.version = version.parse(kw['version']); }
     if kw['license'] != nil { package.license = kw['license']; }
     if kw['authors'] != nil { package.authors = kw['authors']; }
+    if kw['binary'] != nil { package.binary = kw['binary']; }
+    package.installRoot = getIntallPath(name, package.version);
+    package.setConfigVar('TIMESTAMP', time.format(time.now()));
     return package;
 };
 
@@ -77,17 +237,96 @@ let requires in Package = fn(name, .kw) {
 };
 
 "
-  Package.addTarget(name, sources...) -> Target
+  Package.addTarget(.kw, name) -> Target
 Declares a native C++ build target for this project.
-  name    — target name (used as the CMake target name)
-  sources — one or more C++ source file paths, relative to package.fer
+  name    — target name
+  static  - create a static or dynamic binary/library (default: false)
+  binary  - create an executable or library (default: true)
 The created Target is added to project.targets and returned.
 "
-let addTarget in Package = fn(name, sources...) {
-    let target = Target(name);
-    for src in sources.each() {
-        target.sources.push(src);
-    }
+let addTarget in Package = fn(.kw, name) {
+    let static = kw['static'] ?? false;
+    let binary = kw['binary'] ?? true;
+    let target = Target(name, static, binary);
     self.targets.push(target);
     return ref(target);
+};
+
+"
+  Package.setConfigVar(name, val) -> Nil
+Adds `name` with value as `val` in the config vars map.
+Can be used for config substitution in `Str.fmt()` through `Package.applyConfig()`.
+"
+let setConfigVar in Package = fn(name, val) {
+    self.configVars.insert(name, val);
+};
+
+"
+  Package.addDefinition(name, val = '') -> Nil
+Add definitions to be available when compiling the package.
+"
+let addDefinition in Package = fn(name, val = '') {
+    self.definitions.insert(name, val);
+};
+
+"
+  Package.addHeaders(headers...) -> Nil
+Add `headers` as dependencies for compilation for all targets.
+"
+let addHeaders in Target = fn(headers...) {
+    self.headers.append(headers);
+};
+
+"
+  Package.applyConfig(name) -> Var
+For the given `name`, returns the equivalent value in `Package.configVars`.
+If `name` is not found, returns `nil`.
+"
+let applyConfig in Package = fn(name) {
+    if name == 'PACKAGE_NAME' { return self.name; }
+    elif name == 'PACKAGE_DESC' { return self.desc; }
+    elif name == 'PACKAGE_VERSION_MAJOR' { return self.version.major; }
+    elif name == 'PACKAGE_VERSION_MINOR' { return self.version.minor; }
+    elif name == 'PACKAGE_VERSION_PATCH' { return self.version.patch; }
+    let v = ref(self.configVars[name]);
+    if v != nil { return v; }
+    return globalConfigVars[name];
+};
+
+"
+  Package.addConfigFile(srcPath, destPath) -> Nil
+Adds `srcPath` and `destPath` in the list of files to be configured.
+The process of configuring considers `srcPath` as a template file, substituting all variables between `$<<` and `>>` in it.
+Then it writes the substituted data in `destPath`.
+"
+let addConfigFile in Package = fn(srcPath, destPath) {
+    self.configFiles.insert(srcPath.str(), destPath.str());
+    if !fs.exists(srcPath) { return feral.err(-1, 'source path `', srcPath, '` does not exist'); }
+    if fs.exists(destPath) && fs.lastWriteTime(destPath) > fs.lastWriteTime(srcPath) { return feral.ok(); }
+    let src = fs.fopen(srcPath, 'r').readAll();
+    let dest = src.fmt('$<<', '>>', self.applyConfig);
+    let destFile = fs.fopen(destPath, 'w+');
+    io.fprint(destFile, dest);
+    self.addHeaders(srcPath, destPath);
+    return feral.ok();
+};
+
+"
+  Package.configureFiles() -> Result<>
+Configures all files provided through `Package.addConfigFile()`.
+The destination files are added to the header list in the `Package`.
+"
+let configureFiles in Package = fn() {
+    for f in self.configFiles.each() {
+        let srcPath = f.0.path();
+        let destPath = f.1.path();
+        if !fs.exists(srcPath) { return feral.err(-1, 'source path `', srcPath, '` does not exist'); }
+        if fs.exists(destPath) && fs.lastWriteTime(destPath) > fs.lastWriteTime(srcPath) { continue; }
+        let src = fs.fopen(srcPath, 'r').readAll();
+        let dest = src.fmt('$<<', '>>', self.applyConfig);
+        let destFile = fs.fopen(destPath, 'w+');
+        io.fprint(destFile, dest);
+        self.addHeaders(destPath);
+    }
+    return feral.ok();
 };

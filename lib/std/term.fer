@@ -22,3 +22,33 @@ let hideInput = fn(shouldHide) {
     if !isTTY() { return; }
     return hideInputNative(shouldHide);
 };
+
+#################################################
+# getANSISeq shorthands
+#################################################
+
+let link = fn(anchor, link) { return getANSISeq(anchor.str() + ':' + link.str()); };
+let reset = const(getANSISeq('0'));
+let bold = const(getANSISeq('bold'));
+let dim = const(getANSISeq('dim'));
+let italic = const(getANSISeq('italic'));
+let underline = const(getANSISeq('underline'));
+let blink = const(getANSISeq('blink'));
+let slowblink = const(getANSISeq('slowblink'));
+let fastblink = const(getANSISeq('fastblink'));
+let invert = const(getANSISeq('invert'));
+let strike = const(getANSISeq('strike'));
+let red = const(getANSISeq('r'));
+let green = const(getANSISeq('g'));
+let yellow = const(getANSISeq('y'));
+let blue = const(getANSISeq('b'));
+let magenta = const(getANSISeq('m'));
+let cyan = const(getANSISeq('c'));
+let white = const(getANSISeq('w'));
+let boldRed = const(getANSISeq('br'));
+let boldGreen = const(getANSISeq('bg'));
+let boldYellow = const(getANSISeq('by'));
+let boldBlue = const(getANSISeq('bb'));
+let boldMagenta = const(getANSISeq('bm'));
+let boldCyan = const(getANSISeq('bc'));
+let boldWhite = const(getANSISeq('bw'));

@@ -97,6 +97,7 @@ public:
               VarVec *stack = nullptr, size_t *currentlyAt = nullptr);
     virtual void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
     virtual void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref);
+    virtual bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref);
     virtual bool existsAttr(StringRef name);
     virtual Var *getAttr(StringRef name);
     virtual void getAttrList(VirtualMachine &vm, VarVec *dest);
@@ -341,6 +342,7 @@ public:
     // not inline because Var is incomplete type
     void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override;
+    bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
@@ -474,6 +476,10 @@ public:
     {
         return assnArgs->remAttr(vm, name, found, dref);
     }
+    inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return assnArgs->replaceAttr(vm, name, val, iref);
+    }
     inline bool existsAttr(StringRef name) override { return assnArgs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return assnArgs->getAttr(name); }
     inline size_t getAttrCount() override { return args->size() + assnArgs->size(); }
@@ -531,6 +537,7 @@ public:
 
     void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override;
+    bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
@@ -563,6 +570,7 @@ public:
 
     // not inline because Vars is incomplete type
     void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
+    bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     bool existsAttr(StringRef name) override;
     Var *getAttr(StringRef name) override;
     void getAttrList(VirtualMachine &vm, VarVec *dest) override;
@@ -607,6 +615,10 @@ public:
     {
         return attrs->setAttr(vm, name, val, iref);
     }
+    inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return attrs->replaceAttr(vm, name, val, iref);
+    }
     inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
     inline void getAttrList(VirtualMachine &vm, VarVec *dest) override
@@ -644,6 +656,10 @@ public:
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
     {
         return attrs->setAttr(vm, name, val, iref);
+    }
+    inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
+    {
+        return attrs->replaceAttr(vm, name, val, iref);
     }
     inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
@@ -844,6 +860,7 @@ public:
     {
         return stack.back()->remAttr(vm, name, found, dref);
     }
+    bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     // checks if variable exists in current scope ONLY
     inline bool existsAttr(StringRef name) override { return stack.back()->existsAttr(name); }
     // use this instead of exists() if the Var* retrieval is actually required

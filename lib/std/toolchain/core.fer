@@ -1,0 +1,111 @@
+let vec = import('std/vec');
+
+################################################################################
+# ToolchainInterface Stuff
+################################################################################
+
+# Used by ToolchainInterface's implementations
+let CompileInfo = struct(
+    cmd = vec.new(refs = true),
+    dest = ''.path()
+);
+CompileInfo.setTypeName('CompileInfo');
+
+# Used by ToolchainInterface's implementations
+let LinkInfo = struct(
+    cmd = vec.new(refs = true),
+    dest = ''.path()
+);
+LinkInfo.setTypeName('LinkInfo');
+
+# ToolchainInterface
+let ToolchainInterface = struct();
+ToolchainInterface.setTypeName('ToolchainInterface');
+
+let getId in ToolchainInterface = fn() {}; # -> Str
+let getEnv in ToolchainInterface = fn() {}; # -> Map<Str>
+let getVersion in ToolchainInterface = fn() {}; # -> Str
+let getCompileInfo in ToolchainInterface = fn(.kw, destPath, srcs...) {}; # -> Result<CompileInfo>
+let getLinkInfo in ToolchainInterface = fn(.kw, destPath, objs...) {}; # -> Result<LinkInfo>
+
+################################################################################
+# Utility
+################################################################################
+
+# Optimization
+let Opt = enum(
+    .None,
+    .WithDebInfo,
+    .Most,
+    .Full,
+    .Unknown
+);
+Opt.setTypeName('Opt');
+
+################################################################################
+# LibraryFinder Stuff
+################################################################################
+
+let Library = struct(
+    name = '',
+    version = '',
+    includeDirs = vec.new(refs = true),
+    libraryDirs = vec.new(refs = true),
+    libraryFlags = vec.new(refs = true),
+    dllPaths = vec.new(refs = true) # For Windows
+);
+Library.setTypeName('Library');
+
+let str in Library = fn() {
+    let s = 'Library{ name = ' + self.name + '; ';
+    if !self.version.empty() { s += 'version = ' + self.version + '; '; }
+    if !self.includeDirs.empty() { s += 'includeDirs = ' + self.includeDirs.str() + '; '; }
+    if !self.libraryDirs.empty() { s += 'libraryDirs = ' + self.libraryDirs.str() + '; '; }
+    if !self.libraryFlags.empty() { s += 'libraryFlags = ' + self.libraryFlags.str() + '; '; }
+    if !self.dllPaths.empty() { s += 'dllPaths = ' + self.dllPaths.str() + '; '; }
+    s += '}';
+    return s;
+};
+
+let append in Library = fn(other) {
+    for incDir in other.includeDirs.each() {
+        self.addIncludeDirs(incDir);
+    }
+    for libDir in other.libraryDirs.each() {
+        self.addLibraryDirs(libDir);
+    }
+    for libFlag in other.libraryFlags.each() {
+        self.addLibraryFlags(libFlag);
+    }
+    for dllPath in other.dllPaths.each() {
+        self.addDllPaths(dllPath);
+    }
+};
+
+let addIncludeDirs in Library = fn(incDirs...) {
+    for incDir in incDirs.each() {
+        if self.includeDirs.find(incDir) { continue; }
+        self.includeDirs.push(incDir);
+    }
+};
+
+let addLibraryDirs in Library = fn(libDirs...) {
+    for libDir in libDirs.each() {
+        if self.libraryDirs.find(libDir) { continue; }
+        self.libraryDirs.push(libDir);
+    }
+};
+
+let addLibraryFlags in Library = fn(libFlags...) {
+    for libFlag in libFlags.each() {
+        if self.libraryFlags.find(libFlag) { continue; }
+        self.libraryFlags.push(libFlag);
+    }
+};
+
+let addDllPaths in Library = fn(dllPaths...) {
+    for dllPath in dllPaths.each() {
+        if self.dllPaths.find(dllPath) { continue; }
+        self.dllPaths.push(dllPath);
+    }
+};

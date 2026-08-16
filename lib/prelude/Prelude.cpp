@@ -78,7 +78,7 @@ FERAL_FUNC(allHasAttr, 1, false,
            "Requires `var` to be attribute based (like Module / Struct).")
 {
     EXPECT_ATTR_BASED(args[0], "var");
-    EXPECT(VarStr, args[1], "doc string");
+    EXPECT(VarStr, args[1], "attribute name");
     Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     return in->existsAttr(attr) ? vm.getTrue() : vm.getFalse();
@@ -90,7 +90,7 @@ FERAL_FUNC(allGetAttr, 1, false,
            "Requires `var` to be attribute based (like Module / Struct).")
 {
     EXPECT_ATTR_BASED(args[0], "var");
-    EXPECT(VarStr, args[1], "doc string");
+    EXPECT(VarStr, args[1], "attribute name");
     Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     Var *res       = in->getAttr(attr);
@@ -120,7 +120,7 @@ FERAL_FUNC(allSetAttr, 2, false,
            "Returns the provided `value`.")
 {
     EXPECT_ATTR_BASED(args[0], "var");
-    EXPECT(VarStr, args[1], "doc string");
+    EXPECT(VarStr, args[1], "attribute name");
     Var *in        = args[0];
     StringRef attr = as<VarStr>(args[1])->getVal();
     in->setAttr(vm, attr, args[2], true);
@@ -490,6 +490,25 @@ FERAL_FUNC(varExists, 1, true,
     return moduleVars->getAttr(varName) || vm.getGlobal(varName) ? vm.getTrue() : vm.getFalse();
 }
 
+FERAL_FUNC(varReplace, 2, true,
+           "  fn(name, newValue, inVar = nil) -> Bool\n"
+           "Given the variable `name`, replaces its value with `newValue`.\n"
+           "If `inVar` is provided, `name` is considered an attribute in `inVar`.\n"
+           "Returns `true` on success, `false` if there is no variable with `name`.")
+{
+    EXPECT(VarStr, args[1], "variable name");
+    StringRef varName = as<VarStr>(args[1])->getVal();
+    Var *in           = vm.getVars();
+    if(args.size() > 3 && args[3]->isAttrBased()) in = args[3];
+    Var *cp = vm.copyVar(loc, args[2], false);
+    if(!cp) return nullptr;
+    if(!in->replaceAttr(vm, varName, cp, true)) {
+        vm.decVarRef(cp);
+        return vm.getFalse();
+    }
+    return vm.getTrue();
+}
+
 FERAL_FUNC(setMaxRecursionNative, 1, false, "")
 {
     EXPECT(VarInt, args[1], "max recursion count");
@@ -608,6 +627,7 @@ INIT_DLL(Prelude)
     vm.addLocal(loc, "getOSDistro", getOSDistro);
     // variadic as there can be no proxy for this function (to make args[2] (VarModule) optional)
     vm.addLocal(loc, "varExists", varExists);
+    vm.addLocal(loc, "varReplace", varReplace);
     vm.addLocal(loc, "vecNew", vecNew);
     vm.addLocal(loc, "mapNew", mapNew);
     vm.addLocal(loc, "bytebufferNew", bytebufferNew);
@@ -842,6 +862,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "splitNative", strSplitNative);
     vm.addTypeFn<VarStr>(loc, "startsWith", strStartsWith);
     vm.addTypeFn<VarStr>(loc, "endsWith", strEndsWith);
+    vm.addTypeFn<VarStr>(loc, "fit", strFit);
     vm.addTypeFn<VarStr>(loc, "fmt", strFormat);
     vm.addTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr);
     vm.addTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr);
