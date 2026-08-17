@@ -3,17 +3,18 @@ let fs = import('std/fs');
 let os = import('std/os');
 let vec = import('std/vec');
 let logging = import('std/logging');
+let package = import('std/package');
 
 let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
 let pkgIndexRepo = 'https://github.com/Feral-Lang/PkgIndex';
-let pkgVersion = '0.1.0';
+let pkgVersion = '0.2.0';
 
 let pkgExePath = feral.libPath / 'bin' / 'pkg.fer';
 
 if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
 
 let logFilePath = feral.tempPath / 'feralPkgBootstrap.log';
-logging.addTargetByPath(logFilePath, logging.Levels.TRACE, false);
+logging.defaultLogger.addTargetByPath(logFilePath, level = logging.Levels.TRACE, colorize = false);
 io.println('Writing full logs to: ', logFilePath);
 
 if feral.args.find('-V') {
@@ -66,7 +67,7 @@ logging.info('Git repository successfully retrieved');
 let pkgBasePath = feral.libPath / 'pkg';
 if fs.exists(pkgBasePath) { fs.remove(pkgBasePath); }
 
-let pkgInstallPath = pkgBasePath / 'installed' / ('pkg--' + pkgVersion);
+let pkgInstallPath = package.getInstallPath('pkg', pkgVersion);
 
 logging.info('Installing Pkg to: ', pkgInstallPath);
 io.println('Installing Pkg to: ', pkgInstallPath);

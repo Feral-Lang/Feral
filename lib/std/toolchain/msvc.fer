@@ -9,6 +9,7 @@ let MSVC = struct(
     version = '',
     c = ''.path(),
     cxx = ''.path(),
+    ar = ''.path(),
     env = map.new(refs = true)
 );
 MSVC.setTypeName('MSVC');
@@ -16,8 +17,7 @@ MSVC.setTypeName('MSVC');
 let new = fn() {
     if os.name != 'windows' { return feral.err('MSVC toolchain is available only on Windows'); }
 
-    let vsPath = getVSInstallPath();
-    if vsPath == nil { return feral.err(-1, 'Visual Studio must be installed to get the toolchain information on Windows'); }
+    let vsPath = getVSInstallPath().?;
     let vcvarsPath = vsPath / 'VC' / 'Auxiliary' / 'Build' / 'vcvarsall.bat';
     let out = vec.new(refs = true);
     if os.exec(out = out, '^"' + vcvarsPath.str() + '" x64 && set', '^2>&1') != 0 {
@@ -36,6 +36,11 @@ let new = fn() {
     tc.c = out.join('').path();
     tc.cxx = tc.c;
     out.clear();
+    if os.exec(out = out, env = tc.env, 'where', 'link.exe') != 0 {
+        return feral.err(-1, 'Could not find `link.exe` using Windows\' `where` command');
+    }
+    tc.ar = out.join('').path();
+    out.clear();
     os.exec(out = out, env = tc.env, tc.c, '^2>&1');
     for o in out.each() {
         if o.find('C/C++ Optimizing Compiler Version ') < 0 { continue; }
@@ -51,7 +56,7 @@ let getEnv in MSVC = fn() { return self.env; };
 let getVersion in MSVC = fn() { return self.version; };
 
 "
-  var.fn(.kw, dest, srcs...) -> Result<Path>
+  var.fn(.kw, dest, srcs...) -> Result<core.CompileInfo>
 Compiles each of the given `srcs` and generates a `dest` object file from them.
 Preferably, use full paths for `dest` and `srcs`.
 Takes a bunch of keyword arguments:
@@ -77,15 +82,19 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
     let info = core.CompileInfo();
     info.dest = (destPath.str() + '.obj').path();
 
+    if opt == core.Opt.None || opt == core.Opt.WithDebInfo {
+        info.cmd.push('/Z7'); # embed debug info in the object/exe
+    }
+
     info.cmd.push('/EHsc'); # to prevent: warning C4530: C++ exception handler used, but unwind semantics are not enabled
     info.cmd.push(lang == 'c' ? '/std:c' + std.str() : '/std:c++' + std.str());
     info.cmd.push('/c');
 
     # optimization
     if opt == core.Opt.None { info.cmd.push('/Od'); }
-    elif opt == core.Opt.Most { info.cmd.push('/O2'); }
-    elif opt == core.Opt.Full { info.cmd.push('/O3'; }
+    elif opt == core.Opt.Full { info.cmd.push('/O3'); }
     elif opt == core.Opt.WithDebInfo { info.cmd.push('/Ob2'); }
+    elif opt == core.Opt.Size { info.cmd.push('/O2'); }
     if opt != core.Opt.None {
         defs.insert('NDEBUG', '');
     }
@@ -114,6 +123,59 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
     return feral.ok(info);
 };
 
+"
+  fn(.kw, dest, objs...) -> Result<core.LinkInfo>
+Links each of the given `objs` and generates a `dest` object file from them.
+Preferably, use full paths for `dest` and `objs`.
+Takes a bunch of keyword arguments:
+* `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
+* `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
+* `libs = Vec<Str>` - a vector of strings to specify libraries to link against. Note that the dependencies must come first before the libraries that use them.
+* `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
+* `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
+"
+let getLinkInfo in MSVC = fn(.kw, destPath, objs...) {
+    let lang = kw['lang'];
+    let libDirs = ref(kw['libDirs']);
+    let libs = ref(kw['libs']);
+    let rpaths = ref(kw['rpaths']);
+    let static = kw['static'];
+    let binary = kw['binary'];
+
+    let info = core.LinkInfo();
+    if binary {
+        info.dest = (destPath.str() + '.exe').path();
+    } else {
+        let libDestFile = destPath.file().str() + '.lib';
+        info.dest = destPath.parent() / libDestFile;
+    }
+
+    if binary {
+        info.cmd.push(lang == 'c' ? self.c : self.cxx);
+        info.cmd.push(static ? '/MT' : '/MD');
+        info.cmd.push('/OUT:"' + info.dest.str() + '"');
+    } elif static {
+        info.cmd.push(self.ar, '/OUT:"' + info.dest.str() + '"');
+    } else {
+        info.cmd.push(self.ar, '/DLL', '/OUT:"' + info.dest.str().replace('.lib', '.dll') + '"', '/IMPLIB:"' + info.dest.str() + '"');
+    }
+
+    # sources
+    info.cmd.append(objs);
+
+    # library dirs
+    for libDir in libDirs.each() {
+        info.cmd.push('/LIBPATH:"' + libDir.str() + '"');
+    }
+
+    # libraries
+    for lib in libs.each() {
+        info.cmd.push(lib);
+    }
+
+    return feral.ok(info);
+};
+
 ####################################################################################################
 ##################################### Windows Shenanigans ##########################################
 ####################################################################################################
@@ -124,16 +186,15 @@ let vsWhereCmd = vec.new(refs = true, 'C:\\Program Files (x86)\\Microsoft Visual
 
 let getVSInstallPath = fn() {
     let out = '';
-    if os.exec(out = out, vsWhereCmd) != 0 { return nil; }
-    return out.path();
+    if os.exec(out = out, vsWhereCmd) != 0 { return feral.err(-1, '`vswhere.exe` does not exist at `', vsWhereCmd[0], '`'); }
+    return feral.ok(out.path());
 };
 
 let getMSBuildPath = fn() {
-    let vs = getVSInstallPath();
-    if vs == nil { return nil; }
+    let vs = getVSInstallPath().?;
     let msbuild = vs / 'MSBuild' / 'Current' / 'Bin' / 'msbuild.exe';
-    if !fs.exists(msbuild) { return ''; }
-    return msbuild;
+    if !fs.exists(msbuild) { return feral.err(-1, '`msbuild.exe` does not exist at `', msbuild, '`'); }
+    return feral.ok(msbuild);
 };
 
 }

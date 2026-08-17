@@ -549,7 +549,8 @@ FERAL_FUNC(
     for(size_t i = 2; i < args.size(); ++i) {
         VarPath *path  = as<VarPath>(args[i]);
         auto &&pathStr = path->toStr();
-        auto exists    = std::find(existingData.begin(), existingData.end(), pathStr);
+        if(pathStr.empty()) continue;
+        auto exists = std::find(existingData.begin(), existingData.end(), pathStr);
         if(exists != existingData.end()) continue;
         fwrite(pathStr.c_str(), sizeof(char), pathStr.size(), f);
         fwrite("\n", sizeof(char), 1, f);
@@ -592,11 +593,31 @@ FERAL_FUNC(
     }
     FILE *f = fopen(modulePathsFile.c_str(), "w+");
     for(auto &data : existingData) {
+        if(data.empty()) continue;
         fwrite(data.data(), sizeof(char), data.size(), f);
         fwrite("\n", sizeof(char), 1, f);
     }
     fclose(f);
     return vm.makeVar<VarInt>(loc, removed);
+}
+
+FERAL_FUNC(getFromModulePaths, 1, false,
+           "  fn(modulePathsFile) -> Vec<Path>\n"
+           "Fetches all the module paths in the file `modulePathsFile`.")
+{
+    EXPECT(VarPath, args[1], "module paths file");
+    auto &&modulePathsFile = as<VarPath>(args[1])->toStr();
+
+    VarVec *res = vm.makeVar<VarVec>(loc, true, 3);
+    if(fs::exists(modulePathsFile)) {
+        String data;
+        Vector<StringRef> paths;
+        if(File::readFile(modulePathsFile.c_str(), data).getCode()) {
+            paths = utils::stringDelim(data, "\n");
+        }
+        for(auto &p : paths) res->push(vm, vm.makeVar<VarPath>(loc, p), true);
+    }
+    return res;
 }
 
 INIT_DLL(Prelude)
@@ -619,6 +640,7 @@ INIT_DLL(Prelude)
     vm.addLocal(loc, "async", async);
     vm.addLocal(loc, "addToModulePaths", addToModulePaths);
     vm.addLocal(loc, "removeFromModulePaths", removeFromModulePaths);
+    vm.addLocal(loc, "getFromModulePaths", getFromModulePaths);
     vm.addLocal(loc, "exitNative", exitNative);
     vm.addLocal(loc, "setMaxRecursionNative", setMaxRecursionNative);
     vm.addLocal(loc, "getMaxRecursion", getMaxRecursion);
@@ -642,7 +664,7 @@ INIT_DLL(Prelude)
     vm.addLocal("installPath", "", vm.getInstallPath());
     vm.addLocal("tempPath", "", vm.getTempPath());
     vm.addLocal("libPath", "", vm.getLibPath());
-    vm.addLocal("globalModulePaths", "", vm.getGlobalModulePathsFile());
+    vm.addLocal("globalModulesPath", "", vm.getGlobalModulesPath());
 
     vm.makeLocal<VarStr>(loc, "version", "", PROJECT_VERSION_STR);
     vm.makeLocal<VarInt>(loc, "versionMajor", "", PROJECT_MAJOR);
@@ -852,6 +874,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "set", strSetAt);
     vm.addTypeFn<VarStr>(loc, "insert", strInsert);
     vm.addTypeFn<VarStr>(loc, "erase", strErase);
+    vm.addTypeFn<VarStr>(loc, "append", strAppend);
     vm.addTypeFn<VarStr>(loc, "find", strFind);
     vm.addTypeFn<VarStr>(loc, "rfind", strRFind);
     vm.addTypeFn<VarStr>(loc, "substrNative", strSubstrNative);

@@ -23,18 +23,21 @@ let setMaxRecursion = fn(size = DEFAULT_MAX_RECURSION) {
 
 "
   fn(paths...) -> Int
-Adds each of the provided paths to the global module paths' file.
+Adds each of the provided paths to the global module paths file.
 Feral searches each of the paths in this file for modules when the `import()` function is called.
 Returns the total number of paths added. If the path already exists in the module file, it doesn't count.
 "
 let addGlobalModulePaths = fn(paths...) {
-    moduleDirs.append(paths);
-    return addToModulePaths(globalModulePaths, paths...);
+    for p in paths.each() {
+        if moduleDirs.find(p) { continue; }
+        moduleDirs.push(p);
+    }
+    return addToModulePaths(globalModulesPath, paths...);
 };
 
 "
   fn(paths...) -> Int
-Removes each of the provided paths from the global module paths' file.
+Removes each of the provided paths from the global module paths file.
 Feral searches each of the paths in this file for modules when the `import()` function is called.
 Returns the total number of paths removed. If the path isn't present in the module file, it doesn't count.
 "
@@ -42,7 +45,15 @@ let removeGlobalModulePaths = fn(paths...) {
     for p in paths.each() {
         moduleDirs.remove(p);
     }
-    return removeFromModulePaths(globalModulePaths, paths...);
+    return removeFromModulePaths(globalModulesPath, paths...);
+};
+
+"
+  fn() -> Vec<Path>
+Reads the global module paths file and returns all the paths present in it.
+"
+let getGlobalModulePaths = fn() {
+    return getFromModulePaths(globalModulesPath);
 };
 
 ################################ Types ################################
@@ -101,17 +112,6 @@ Returns `true` if the string `var` is a valid ASCII space/tab/newline character 
 let isSpace in StrTy = fn() {
     if self.empty() { return false; }
     return self == ' ' || self == '\t' || self == '\r' || self == '\n';
-};
-
-"
-  var.fn(data...) -> var
-Appends all the `data` in `var` using `.str()` member function on each item in `data` and returns `var` itself.
-"
-let append in StrTy = fn(data...) {
-    for item in data.each() {
-        self += item;
-    }
-    return self;
 };
 
 "

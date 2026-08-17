@@ -204,7 +204,7 @@ public:
     inline VarPath *getInstallPath() { return gs->installPath; }
     inline VarPath *getTempPath() { return gs->tempPath; }
     inline VarPath *getLibPath() { return gs->libPath; }
-    inline VarPath *getGlobalModulePathsFile() { return gs->globalModulesPath; }
+    inline VarPath *getGlobalModulesPath() { return gs->globalModulesPath; }
     inline VarBool *getTrue() { return gs->tru; }
     inline VarBool *getFalse() { return gs->fals; }
     inline VarNil *getNil() { return gs->nil; }

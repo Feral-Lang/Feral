@@ -17,7 +17,7 @@ let findLibrary in FeralFinder = fn(pkgName, .kw) {
     let isFeral = kw['feral'] ?? true;
     if !isFeral { return feral.err(-1, 'FeralFinder cannot be used to find non-Feral libraries'); }
     let pkgInstallPrefix = package.getInstallPath(pkgName, '').str();
-    let installedPkgDirs = fs.walkDir(package.installRoot, fs.WALK_DIRS, '(.*)' + pkgName + '(.*)');
+    let installedPkgDirs = fs.walkDir(package.installRoot, fs.WALK_DIRS, '(.*)' + pkgName.lower() + '(.*)');
     let installedVersions = vec.new(refs = true);
     for d in installedPkgDirs.each() {
         installedVersions.push(version.parse(d.str().replace(pkgInstallPrefix, '')));
@@ -28,7 +28,7 @@ let findLibrary in FeralFinder = fn(pkgName, .kw) {
     }
     let viableVersion = '';
     for v in installedVersions.each() {
-        if versConstraint.matches(v.str()) { viableVersion = v.str(); break; }
+        if versConstraint.matches(v) { viableVersion = v.str(); break; }
     }
     if viableVersion.empty() {
         return feral.err(-1, 'no viable version of `', pkgName, '` is installed that satisfies constraint `', versConstraint, '`');

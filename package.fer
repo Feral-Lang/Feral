@@ -7,8 +7,6 @@ let package = import('std/package');
 let configure = fn(pkgRoot) {
     let pkg = package.new('Feral', version = '2.3.0', binary = true);
 
-    # info.toolchain.tryAddCompileFlag('--gdwarf-5'); # should be handled by `pkg build --gdwarf`
-
     let repoUrl = '', commitId = '', treeStatus = '';
     if os.exec(out = repoUrl, 'git', '-C', pkgRoot, 'config', '--get', 'remote.origin.url', '^2>&1') != 0 {
         return feral.err(-1, 'failed to get repo URL:\n', repoUrl);
@@ -25,7 +23,7 @@ let configure = fn(pkgRoot) {
     pkg.setConfigVar('COMMIT_ID', commitId);
     pkg.setConfigVar('TREE_STATUS', treeStatus);
 
-    pkg.addConfigFile(pkgRoot / 'include' / 'Config.inl.in', pkgRoot / 'include' / 'Config.inl').?;
+    pkg.addConfigFile(pkgRoot / 'include' / 'Config.inl.in', pkgRoot / 'include' / 'Config.inl');
 
     let feralLib = pkg.addTarget('feral');
     feralLib.findHeaders(pkgRoot / 'include', '(.*).hpp');

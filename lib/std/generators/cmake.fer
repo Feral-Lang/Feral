@@ -1,0 +1,289 @@
+raise('not being used right now');
+
+let vec = import('std/vec');
+
+"
+  fn(.kw, pkg, deps) -> Result<Str>
+Generates a CMakeLists.txt string and returns it wrapped in Result.
+Takes the following keyword arguments:
+* `native = true/false` - if `true`, `-march=native` is enabled. (default: true)
+* `gdwarf = 1-5` - enables the gdwarf version given by the number. (default: 5 (latest))
+* `asan = true/false` - if `true`, address sanitizer is enabled. (default: false)
+* `tsan = true/false` - if `true`, thread sanitizer is enabled. (default: false)
+"
+let generate = fn(.kw, pkgRoot, installRoot, pkg, deps) {
+    let native = kw['native'] ?? true;
+    let gdwarf = kw['gdwarf'] ?? 5;
+    let asan = kw['asan'] ?? false;
+    let tsan = kw['asan'] ?? false;
+
+    let cmakelists = coreTemplate.fmt('$<<', '>>');
+
+    if asan {
+        cmakelists += 'message("-- Address sanitizer is now enabled")\n';
+        cmakelists += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")\n';
+    }
+
+    if tsan {
+        cmakelists += 'message("-- Thread sanitizer is now enabled")\n';
+        cmakelists += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")\n';
+    }
+
+    if native {
+        let flag = '-march=native';
+        let flagName = 'MARCH_NATIVE';
+        cmakelists += compilerSupportsFlagTemplate.fmt('$<<', '>>');
+    }
+
+    # global definitions
+    for def in pkg.definitions.each() {
+        cmakelists.append('add_definitions(-D', def.0);
+        if !def.1.value.empty() {
+            cmakelists.append('=', def.1.value);
+        }
+        cmakelists += ')\n';
+    }
+
+    # setup config vars
+    for cvar in pkg.configVars.each() {
+        cmakelists.append('set(', cvar.0, ' "', cvar.1, '")\n');
+    }
+
+    # setup configure files
+    for cfile in pkg.configFiles.each() {
+        cmakelists.append('configure_file("', cfile.0, '" "', cfile.1, '" @ONLY)\n');
+    }
+
+    # mark startup project if none is.
+    let marked = false;
+    for t in pkg.targets.each() {
+        if t.startup { marked = true; }
+    }
+    if !marked {
+        if pkg.targets.len() == 1 {
+            pkg.targets[0].startup = true;
+        } else {
+            let bins = 0;
+            for t in pkg.targets.each() {
+                if t.binary { ++bins; }
+            }
+            if bins == 1 {
+                for t in pkg.targets.each() {
+                    if t.binary { t.startup = true; }
+                }
+            }
+        }
+    }
+
+    let incDirs = vec.new(refs = true);
+    let libDirs = vec.new(refs = true);
+    let libs = vec.new(refs = true);
+    for t in pkg.targets.each() {
+        incDirs.clear();
+        libDirs.clear();
+        libs.clear();
+
+        # package dependencies
+        for d in deps.each() {
+            for i in d.includeDirs.each() {
+                if incDirs.find(i) { continue; }
+                incDirs.push(i);
+            }
+            for l in d.libraryDirs.each() {
+                if libDirs.find(l) { continue; }
+                libDirs.push(l);
+            }
+            for l in d.libraryFlags.each() {
+                if libs.find(l) { continue; }
+                libs.push(l);
+            }
+        }
+
+        # target dependencies
+        for h in t.headers.each() {
+            if incDirs.find(h.parent()) { continue; }
+            incDirs.push(h.parent());
+        }
+        for s in t.sources.each() {
+            incDirs.remove(s.parent());
+        }
+
+        # now the actual work
+        let targetName = t.binary ? (globalTargetPrefix + t.name) : ('lib' + globalTargetPrefix + t.name);
+
+        cmakelists += '\n\n';
+
+        if t.binary {
+            cmakelists += 'add_executable(';
+        } else {
+            cmakelists += 'add_library(';
+        }
+        cmakelists += targetName;
+        if !t.binary { cmakelists += (t.static ? ' STATIC ' : ' SHARED '); }
+        for s in t.sources.each() {
+            cmakelists.append('\n    "', s, '"');
+        }
+        for h in t.headers.each() {
+            cmakelists.append('\n    "', h, '"');
+        }
+        cmakelists += ')\n';
+
+        cmakelists.append('target_compile_features(', targetName, ' PUBLIC cxx_std_20)\n');
+        if !incDirs.empty() {
+            cmakelists.append('target_include_directories(', targetName, ' PUBLIC');
+            for i in incDirs.each() {
+                cmakelists.append(' "', i, '"');
+            }
+            cmakelists += ')\n';
+        }
+        if !libDirs.empty() {
+            cmakelists.append('target_link_directories(', targetName, ' PUBLIC');
+            for l in libDirs.each() {
+                cmakelists.append(' "', l, '"');
+            }
+            cmakelists += ')\n';
+        }
+        if !libs.empty() {
+            cmakelists.append('target_link_libraries(', targetName);
+            for lib in libs.each() {
+                cmakelists.append(' PUBLIC ', lib);
+            }
+            cmakelists += ')\n';
+        }
+
+        for def in t.definitions.each() {
+            cmakelists.append('target_compile_definitions(', targetName, ' ', (def.1.private ? 'PRIVATE' : 'PUBLIC'), ' ', def.0);
+            cmakelists.append('=', def.1.value.empty() ? 'true' : def.1.value, ')\n');
+        }
+
+        for d in t.dependencies.each() {
+            let depName = d.binary ? (globalTargetPrefix + d.name) : ('lib' + globalTargetPrefix + d.name);
+            cmakelists.append('# target dependency: ', depName, '\n');
+            cmakelists.append('target_link_libraries(', targetName, ' ', depName, ')\n');
+        }
+
+        # target properties
+        cmakelists.append('set_target_properties(', targetName, ' PROPERTIES\n');
+        cmakelists.append('                      CXX_STANDARD_REQUIRED ON\n');
+        cmakelists.append('                      CXX_EXTENSIONS OFF\n');
+        cmakelists.append('                      PREFIX "" # `lib` as prefix is not needed since target name has it anyway\n');
+        cmakelists.append('                      LINK_FLAGS "${EXTRA_LD_FLAGS}"\n');
+        cmakelists.append('                      ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for lib (windows)\n');
+        cmakelists.append('                      LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib$<0:>" # for so  (non-windows)\n');
+        cmakelists.append('                      RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)\n');
+        cmakelists.append(')\n');
+
+        # install stuff
+        if t.binary {
+            cmakelists.append('install(TARGETS ', targetName, '\n');
+            cmakelists.append('        RUNTIME\n');
+            cmakelists.append('          DESINATION bin\n');
+            cmakelists.append('          COMPONENT Binaries\n');
+            cmakelists.append(')\n');
+        } else {
+            cmakelists.append('install(TARGETS ', targetName, ')\n');
+        }
+        if t.startup {
+            cmakelists.append('set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT ', targetName);
+        }
+    }
+
+    return cmakelists;
+};
+
+let coreTemplate =
+`
+cmake_minimum_required(VERSION $<<feral.minCmakeVersion>>)
+
+project($<<pkg.name>>
+    DESCRIPTION "$<<pkg.desc>>"
+    LANGUAGES CXX)
+
+set(PROJECT_VERSION_MAJOR "$<<pkg.version.major>>")
+set(PROJECT_VERSION_MINOR "$<<pkg.version.minor>>")
+set(PROJECT_VERSION_PATCH "$<<pkg.version.patch>>")
+
+include(FetchContent)
+include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
+include(CMakePackageConfigHelpers)
+
+set(CMAKE_INSTALL_PREFIX "$<<installRoot>>")
+set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+add_definitions(-DINSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+message("-- Using PREFIX = ${CMAKE_INSTALL_PREFIX}")
+
+message("-- Install messages are now lazily shown")
+set(CMAKE_INSTALL_MESSAGE LAZY)
+
+# For macOS and BSD, use '/usr/local/include'.
+# For BSD, use '-D_WITH_GETLINE'.
+if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES ".*BSD.*")
+    include_directories(/usr/local/include)
+    if(NOT APPLE)
+        add_definitions(-D_WITH_GETLINE)
+    endif()
+endif()
+
+# Debug info for MSVC builds must be embedded.
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
+
+# Compiler cache setup.
+if(WIN32)
+    # Disable deprecated warnings on Windows
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_compile_options("-Wno-deprecated-declarations")
+    endif()
+    if("${CCACHE_PROGRAM}" STREQUAL "")
+        find_program(CCACHE_PROGRAM sccache)
+    endif()
+else()
+    if(NOT APPLE)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    endif()
+    if("${CCACHE_PROGRAM}" STREQUAL "")
+        find_program(CCACHE_PROGRAM ccache)
+    endif()
+endif()
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    message("-- Using ccache: ${CCACHE_PROGRAM}")
+endif()
+
+string(TIMESTAMP BUILD_DATE "%a %b %d, %Y at %H:%M:%S")
+
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+if(CMAKE_USE_PTHREADS_INIT)
+    message("-- Using thread flags: -pthread")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pthread")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+else()
+    message("-- Using thread flags: ${CMAKE_THREAD_LIBS_INIT}")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
+endif()
+
+# Use DWARF (maybe: force DWARF4 as valgrind does not support anything newer (clang-14 defaults to DWARF5)).
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    check_cxx_compiler_flag(-gdwarf-$<<gdwarf>> COMPILER_SUPPORTS_GDWARF$<<gdwarf>>)
+    if(COMPILER_SUPPORTS_GDWARF$<<gdwarf>>)
+        message("-- Enabling DWARF$<<gdwarf>> debugging symbols")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-$<<gdwarf>>")
+    endif()
+endif()
+
+`;
+
+let compilerSupportsFlagTemplate =
+`
+check_cxx_compiler_flag($<<flag>> COMPILER_SUPPORTS_$<<flagName>>)
+if(COMPILER_SUPPORTS_$<<flagName>>)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $<<flag>>")
+    message("-- Using $<<flag>>")
+endif()
+`;

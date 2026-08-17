@@ -2,19 +2,14 @@ let fs = import('std/fs');
 let os = import('std/os');
 let map = import('std/map');
 let vec = import('std/vec');
-let mutex = import('std/mutex');
-let thread = import('std/thread');
 let logging = import('std/logging');
 
 let core = import('std/toolchain/core');
 
-# let cmakeFinder = import('std/library-finders/cmake');
-# let brewFinder = import('std/library-finders/brew');
-let feralFinder = import('std/library-finders/feral');
-let vcpkgFinder = import('std/library-finders/vcpkg');
-let pkgConfigFinder = import('std/library-finders/pkg-config');
-
 let Opt = ref(core.Opt); # Just a helper for external code. Not used in this module.
+let getFeralOpt = core.getFeralOpt; # Same as above.
+
+let Library = ref(core.Library); # Another helper for external code.
 
 ####################################################################################################
 ######################################## Library Finders ###########################################
@@ -22,15 +17,15 @@ let Opt = ref(core.Opt); # Just a helper for external code. Not used in this mod
 
 let libraryFinders = vec.new(refs = true);
 
-# let r = cmakeFinder.new();
+# let r = import('std/library-finders/cmake').new();
 # if r.isOk() { libraryFinders.push(r.val()); }
-# let r = brewFinder.new();
+# let r = import('std/library-finders/brew').new();
 # if r.isOk() { libraryFinders.push(r.val()); }
-let r = feralFinder.new();
+let r = import('std/library-finders/feral').new();
 if r.isOk() { libraryFinders.push(r.val()); }
-let r = vcpkgFinder.new();
+let r = import('std/library-finders/vcpkg').new();
 if r.isOk() { libraryFinders.push(r.val()); }
-let r = pkgConfigFinder.new();
+let r = import('std/library-finders/pkg-config').new();
 if r.isOk() { libraryFinders.push(r.val()); }
 
 let findLibrary = fn(.kw, names...) {
@@ -113,7 +108,7 @@ Takes a bunch of keyword arguments:
 * `postCompile = fn(dest, success)` - after compilation is performed, call this function. (default: nil)
 * `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
 * `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
-* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.Opt.None`.
+* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.getFeralOpt()`.
 * `defs = Map` - a map of preprocessor definitions to be provided.
 * `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
 * `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
@@ -141,7 +136,7 @@ let compile in Toolchain = fn(.kw, destPath, srcs...) {
     let postCompile = kw['postCompile'];
     let lang = kw['lang'] ?? tmpLang;
     let std = kw['std'] ?? tmpStd;
-    let opt = kw['opt'] ?? core.Opt.None;
+    let opt = kw['opt'] ?? core.getFeralOpt();
     let defs = ref(kw['defs']) ?? map.new();
     let incDirs = ref(kw['incDirs']) ?? vec.new();
     let depends = ref(kw['depends']) ?? vec.new();
@@ -221,7 +216,7 @@ Takes a bunch of keyword arguments:
 * `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
 * `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
 * `libs = Vec<Str>` - a vector of strings to specify libraries to link against.
-* `rpaths = Vec<Str>` - a vector of strings to specify rpaths to be added to the generated binary/library.
+* `rpaths = Vec<Path>` - a vector of paths to specify rpaths to be added to the generated binary/library.
 * `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
 * `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
 "
@@ -289,79 +284,6 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
     }
     return feral.ok(info.dest);
 };
-
-"
-  fn(.kw, buildRoot, pkg, deps) -> Result<toolchainCore.BuildInfo>
-Accepts the following keyword arguments:
-* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.Opt.None`.
-* `preCompile = fn(dest)` - before compilation is performed, call this function. (default: nil)
-* `postCompile = fn(dest, success)` - after compilation is performed, call this function. (default: nil)
-* `preLink = fn(dest)` - before linking is performed, call this function. (default: nil)
-* `postLink = fn(dest, success)` - after linking is performed, call this function. (default: nil)
-"
-let build in Toolchain = fn(.kw, pkg, deps, pkgRoot, buildRoot) {
-    let logger = ref(kw['logger'] ?? logging.defaultLogger);
-    let _ = logger.scopedTag('toolchainBuild');
-
-    let builtLibs = map.new(refs = true); # <targetKey> = <core.Library>
-
-    let succeeded = vec.new(refs = true);
-    let failed = vec.new(refs = true);
-
-    let incs = vec.new(refs = true);
-    let srcs = vec.new(refs = true);
-    let defs = map.new(refs = true);
-    let incDirsBase = vec.new(refs = true);
-    let libDirsBase = vec.new(refs = true);
-    let libsBase = vec.new(refs = true);
-
-    for d in deps.each() {
-        incDirsBase.append(d.includeDirs);
-        libDirsBase.append(d.libraryDirs);
-        libsBase.append(d.libraryFlags);
-    }
-
-    let tpool = thread.newPool();
-    tpool.start();
-
-    for t in pkg.targets.each() {
-        let depQ = vec.new(refs = true);
-        appendDeps(depQ, t);
-        incs.clear();
-        srcs.clear();
-        defs.clear();
-        let incDirs = incDirsBase;
-        let libDirs = libDirsBase;
-        let libs = libsBase;
-        for d in depQ.each() {
-            let dkey = d.name + '-' + d.static.str() + '-' + d.binary.str();
-            if !builtLibs.find(dkey) {
-                tpool.finish();
-                logger.fatal('no info exists for dependency `', d.name, '` for target `', t.name, '`');
-                return feral.err(-1, '{y}no info exists for dependency {c}', d.name, '{y} for target {c}', t.name, '{0}!');
-            }
-            let dl = ref(builtLibs[dkey]);
-            incs.append(d.headers);
-            incs.append(d.sources);
-            for def in d.definitions.each() {
-                if !def.1.private { defs.insert(def.0, def.1.value); }
-            }
-            incDirs.append(dl.includeDirs);
-            libDirs.append(dl.libraryDirs);
-            libs.append(dl.libraryFlags);
-        }
-        incs.append(t.headers);
-        srcs.append(t.sources);
-        for def in t.definitions.each() {
-            defs.insert(def.0, def.1.value);
-        }
-        for s in srcs.each() {
-            tpool.push(self.compile, succeeded, failed, buildRoot / s.relativeTo(pkgRoot), s, lang = 'cxx', defs = defs, incDirs = incDirs, native = true, depends = incs);
-        }
-        tpool.waitAll();
-    }
-    tpool.finish();
- };
 
 ####################################################################################################
 ################################## ToolchainInterface Utils ########################################
@@ -450,34 +372,3 @@ if defaultToolchainInterface.isOk() {
         raise('default toolchain ', tc.id, ' is not ToolchainInterface compliant: ', e);
     }
 }
-
-####################################################################################################
-###################################### Toolchain Utils #############################################
-####################################################################################################
-
-let compMtx = mutex.new();
-
-let compile in Toolchain = fn(.kw, succeeded, failed, dest, src) {
-    let res = self.compile(dest, src, kw...);
-    if res.isErr() {
-        compMtx.lock();
-        failed.push(feral.err(-1, '{y}failed to compile {c}', src, '{0}:\n', res.val().msg()));
-        compMtx.unlock();
-    } else {
-        compMtx.lock();
-        succeeded.push(res.val());
-        compMtx.unlock();
-    }
-};
-
-let appendDeps = fn(dq, target) {
-    for d in target.dependencies.each() {
-        appendDepsRecursive(dq, d);
-    }
-};
-let appendDepsRecursive = fn(dq, target) {
-    for d in target.dependencies.each() {
-        appendDeps(dq, d);
-    }
-    dq.push(target);
-};

@@ -82,7 +82,9 @@ bool GlobalState::init(VirtualMachine &vm)
     // Global .modulePaths file.
     // The path of a package is added to it when it's installed from command line via package
     // manager.
-    vm.tryAddModulePathsFromFile(globalModulesPath->toStr().c_str());
+    // Using libPath instead of globalModulesPath because `tryAddModulePathsFromDir` adds the dir to
+    // visited list. Therefore not possibly adding from it again.
+    vm.tryAddModulePathsFromDir(libPath->toStr().c_str());
 
 #if defined(FER_OS_WINDOWS)
     for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }

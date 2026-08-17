@@ -278,6 +278,30 @@ FERAL_FUNC(strErase, 1, false,
     return args[0];
 }
 
+FERAL_FUNC(strAppend, 1, true,
+           "  var.fn(data...) -> var\n"
+           "Removes the char at index `position` in `var` and returns the updated `var`.")
+{
+    EXPECT_NO_CONST(args[0], "var");
+    String &self = as<VarStr>(args[0])->getVal();
+    for(size_t i = 1; i < args.size(); ++i) {
+        if(args[i]->is<VarStr>()) {
+            self += as<VarStr>(args[i])->getVal();
+            continue;
+        }
+        Var *argStr = nullptr;
+        Array<Var *, 1> strArgs{args[i]};
+        bool res = vm.callVarAndExpect<VarStr>(loc, "str", argStr, strArgs, nullptr);
+        if(!res) {
+            vm.fail(loc, "failed to call `str()` on argument at index `", i - 1, "` of type: ", vm.getTypeName(args[i]));
+            return nullptr;
+        }
+        self += as<VarStr>(argStr)->getVal();
+        vm.decVarRef(argStr);
+    }
+    return args[0];
+}
+
 FERAL_FUNC(strFind, 1, false,
            "  var.fn(data) -> Int\n"
            "Returns the position / index of the first occurrence of `data` in `var`. If it's not "

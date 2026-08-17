@@ -27,11 +27,11 @@ let installRoot = home / 'installed';
 fs.mkdir(tmpRoot, indexRoot, installRoot);
 
 let getInstallPath = fn(name, vers) {
-    return installRoot / (name.lower() + '--' + vers);
+    return installRoot / (name.lower() + '--' + vers.str());
 };
 
 let getTempPath = fn(name, vers) {
-    return tmpRoot / (name.lower() + '--' + vers);
+    return tmpRoot / (name.lower() + '--' + vers.str());
 };
 
 let getLockPath = fn(dir) {
@@ -191,8 +191,6 @@ let Package = struct(
     authors = vec.new(
         'ProjectAuthor <author@email.com>'
     ),
-    installRoot = ''.path(),
-    binary = false,
     configVars = map.new(refs = true),
     configFiles = map.new(refs = true), # source -> dest
     definitions = map.new(refs = true), # <key> = <Definition> (no use of `private` field)
@@ -223,8 +221,6 @@ let new  = fn(.kw, name) {
     if kw['version'] != nil { package.version = version.parse(kw['version']); }
     if kw['license'] != nil { package.license = kw['license']; }
     if kw['authors'] != nil { package.authors = kw['authors']; }
-    if kw['binary'] != nil { package.binary = kw['binary']; }
-    package.installRoot = getInstallPath(name, package.version.str());
     package.setConfigVar('TIMESTAMP', time.format(time.now()));
     return package;
 };
@@ -256,6 +252,9 @@ The created Target is added to project.targets and returned.
 let addTarget in Package = fn(.kw, name) {
     let static = kw['static'] ?? false;
     let binary = kw['binary'] ?? false;
+    if !binary {
+        name = 'libferal' + name;
+    }
     let target = Target(name, static, binary);
     self.targets.push(target);
     return ref(target);
@@ -310,14 +309,6 @@ Then it writes the substituted data in `destPath`.
 "
 let addConfigFile in Package = fn(srcPath, destPath) {
     self.configFiles.insert(srcPath.str(), destPath.str());
-    if !fs.exists(srcPath) { return feral.err(-1, 'source path `', srcPath, '` does not exist'); }
-    if fs.exists(destPath) && fs.lastWriteTime(destPath) > fs.lastWriteTime(srcPath) { return feral.ok(); }
-    let src = fs.fopen(srcPath, 'r').readAll();
-    let dest = src.fmt('$<<', '>>', self.applyConfig);
-    let destFile = fs.fopen(destPath, 'w+');
-    io.fprint(destFile, dest);
-    self.addHeaders(srcPath, destPath);
-    return feral.ok();
 };
 
 "

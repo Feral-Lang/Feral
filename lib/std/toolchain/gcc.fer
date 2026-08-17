@@ -65,8 +65,6 @@ let getCompileInfo in GCC = fn(.kw, destPath, srcs...) {
     let incDirs = ref(kw['incDirs']);
     let native = kw['native'];
 
-    if opt == core.Opt.WithDebInfo { return feral.err(-1, 'Optimization with debug info is not available for non Windows platforms'); }
-
     # Generate the CompileInfo.
 
     let info = core.CompileInfo();
@@ -77,9 +75,10 @@ let getCompileInfo in GCC = fn(.kw, destPath, srcs...) {
     if native { info.cmd.push('-march=native'); }
 
     # optimization
-    if opt == core.Opt.None { info.cmd.push('-Og'); }
-    elif opt == core.Opt.Most { info.cmd.push('-O2'); }
+    if opt == core.Opt.None { info.cmd.push('-O0', '-g'); }
     elif opt == core.Opt.Full { info.cmd.push('-O3'); }
+    elif opt == core.Opt.WithDebInfo { info.cmd.push('-O2', '-g'); }
+    elif opt == core.Opt.Size { info.cmd.push('-Os'); }
     if opt != core.Opt.None {
         defs.insert('NDEBUG', '');
     }
@@ -132,10 +131,10 @@ let getLinkInfo in GCC = fn(.kw, destPath, objs...) {
     if binary {
         info.dest = destPath;
     } elif static {
-        let libDestFile = 'lib' + destPath.file().str() + '.a';
+        let libDestFile = destPath.file().str() + '.a';
         info.dest = destPath.parent() / libDestFile;
     } else {
-        let libDestFile = 'lib' + destPath.file().str() + '.so';
+        let libDestFile = destPath.file().str() + '.so';
         info.dest = destPath.parent() / libDestFile;
     }
 

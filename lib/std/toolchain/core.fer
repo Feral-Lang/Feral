@@ -1,3 +1,4 @@
+let map = import('std/map');
 let vec = import('std/vec');
 
 ################################################################################
@@ -34,13 +35,25 @@ let getLinkInfo in ToolchainInterface = fn(.kw, destPath, objs...) {}; # -> Resu
 
 # Optimization
 let Opt = enum(
-    .None,
-    .WithDebInfo,
-    .Most,
-    .Full,
+    .None, # -O0 -g -DNDEBUG
+    .WithDebInfo, # -O2 -g -DNDEBUG
+    .Full, # -O3 -DNDEBUG
+    .Size, # -Os -DNDEBUG
     .Unknown
 );
 Opt.setTypeName('Opt');
+
+let getFeralOpt = fn() {
+    if feral.buildType == 'Release' {
+        return Opt.Full;
+    } elif feral.buildType == 'RelWithDebInfo' {
+        return Opt.WithDebInfo;
+    } elif feral.buildType == 'MinSizeRel' {
+        return Opt.Size;
+    } else {
+        return Opt.None;
+    }
+};
 
 ################################################################################
 # LibraryFinder Stuff
@@ -52,7 +65,10 @@ let Library = struct(
     includeDirs = vec.new(refs = true),
     libraryDirs = vec.new(refs = true),
     libraryFlags = vec.new(refs = true),
-    dllPaths = vec.new(refs = true) # For Windows
+    rpaths = vec.new(refs = true), # Since library dirs are not necessarily same as rpaths, rpaths must be separate.
+    definitions = map.new(refs = true), # Name = Value (where value can be empty string)
+    dllPaths = vec.new(refs = true), # For Windows
+    useLibraryDirsForRPaths = true # if false, library dirs will not be used for rpaths.
 );
 Library.setTypeName('Library');
 
@@ -76,6 +92,12 @@ let append in Library = fn(other) {
     }
     for libFlag in other.libraryFlags.each() {
         self.addLibraryFlags(libFlag);
+    }
+    for rpath in other.rpaths.each() {
+        self.addRPaths(rpath);
+    }
+    for d in other.definitions.each() {
+        self.addDefinition(d.0, d.1);
     }
     for dllPath in other.dllPaths.each() {
         self.addDllPaths(dllPath);
@@ -103,9 +125,31 @@ let addLibraryFlags in Library = fn(libFlags...) {
     }
 };
 
+let addRPaths in Library = fn(rpaths...) {
+    for rpath in rpaths.each() {
+        if self.rpaths.find(rpath) { continue; }
+        self.rpaths.push(rpath);
+    }
+};
+
+let addDefinitions in Library = fn(.defs) {
+    for def in defs.each() {
+        if self.definitions.find(def.0) { continue; }
+        self.definitions.insert(def.0, def.1.str());
+    }
+};
+
+let addDefinition in Library = fn(key, val) {
+    self.definitions.insert(key, val.str());
+};
+
 let addDllPaths in Library = fn(dllPaths...) {
     for dllPath in dllPaths.each() {
         if self.dllPaths.find(dllPath) { continue; }
         self.dllPaths.push(dllPath);
     }
+};
+
+let useLibDirsForRPaths in Library = fn(useLibDirs) {
+    self.useLibraryDirsForRPaths = useLibDirs;
 };

@@ -135,7 +135,7 @@ FERAL_FUNC(vecInsert, 2, false,
     EXPECT(VarInt, args[1], "insert position");
     VarVec *res = as<VarVec>(args[0]);
     size_t pos  = as<VarInt>(args[1])->getVal();
-    if(pos >= res->size()) {
+    if(pos > res->size()) {
         vm.fail(loc, "position ", std::to_string(pos), " is not within vector of length ",
                 std::to_string(res->size()));
         return nullptr;
