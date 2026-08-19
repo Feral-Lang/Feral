@@ -79,12 +79,13 @@ let sub in StrTy = fn(begin = 0, len = -1) {
 };
 
 "
-  var.fn(delimiter = ' ', count = -1) -> Vec<Str>
+  var.fn(delimiter = ' ', count = -1, ignoreEmpty = false) -> Vec<Str>
 Splits the string `var` using `delimiter`, upto `count` number of times, and returns the resulting list of strings.
 If `count` is less than 0, it's considered unlimited.
+If `ignoreEmpty` is `true`, empty splits are ignored - not added to the split list.
 "
-let split in StrTy = fn(delim = ' ', maxDelimCount = -1) {
-    return self.splitNative(delim, maxDelimCount);
+let split in StrTy = fn(delim = ' ', maxDelimCount = -1, ignoreEmpty = false) {
+    return self.splitNative(delim, maxDelimCount, ignoreEmpty);
 };
 
 "

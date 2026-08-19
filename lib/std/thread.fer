@@ -13,7 +13,7 @@ let run = fn(.kw, args...) {
 let ThreadPool = struct(
     count = 0,
     threads = vec.new(refs = true),
-    tasks = vec.new(refs = true),
+    tasks = vec.new(refs = true), # asyncs
     taskMtx = mutex.new(),
     shouldStop = atomic.newBool(false),
     shouldFinish = atomic.newBool(false),
@@ -51,8 +51,10 @@ let waitAll in ThreadPool = fn() {
 
 let push in ThreadPool = fn(callable, .kwArgs, args...) {
     self.taskMtx.lock();
-    self.tasks.push(feral.closure(callable, kwArgs..., args...));
+    let taskAsync = feral.async(callable, kwArgs..., args...);
+    self.tasks.push(taskAsync);
     self.taskMtx.unlock();
+    return ref(taskAsync);
 };
 
 let join in ThreadPool = fn() {
@@ -88,6 +90,8 @@ let jobRunner in ThreadPool = fn() {
         let job = ref(self.tasks.front());
         self.tasks.erase(0);
         self.taskMtx.unlock();
-        job();
+        while !job.done() {
+            job();
+        }
     }
 };

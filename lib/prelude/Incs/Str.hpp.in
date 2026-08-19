@@ -374,12 +374,14 @@ FERAL_FUNC(strUpper, 0, false,
     return vm.makeVar<VarStr>(loc, str);
 }
 
-FERAL_FUNC(strSplitNative, 2, false, "")
+FERAL_FUNC(strSplitNative, 3, false, "")
 {
     EXPECT(VarStr, args[1], "delimiter");
     EXPECT(VarInt, args[2], "delimit count");
+    EXPECT(VarBool, args[3], "ignore empty splits");
     StringRef str   = as<VarStr>(args[0])->getVal();
     StringRef delim = as<VarStr>(args[1])->getVal();
+    bool ignoreEmpty = as<VarBool>(args[2])->getVal();
     if(delim.size() == 0) {
         vm.fail(loc, "found empty delimiter for string split");
         return nullptr;
@@ -387,24 +389,27 @@ FERAL_FUNC(strSplitNative, 2, false, "")
     int64_t _maxDelimCount = as<VarInt>(args[2])->getVal();
     // Not using std::numeric_limits<uint64_t>().max() as `max` conflicts with a macro of same name
     // on Windows.
-    uint64_t maxDelimCount = UINT64_MAX;
-    if(_maxDelimCount >= 0) maxDelimCount = _maxDelimCount;
+    uint64_t maxDelimCount = _maxDelimCount >= 0 ? _maxDelimCount : UINT64_MAX;
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
     if(str.empty()) return res;
-    VarStr *temp       = vm.makeVar<VarStr>(loc, "");
-    int64_t delimCount = 0;
-    for(auto c : str) {
-        if(delim.find(c) != String::npos && delimCount < maxDelimCount) {
-            ++delimCount;
-            if(temp->getVal().empty()) continue;
-            res->push(vm, temp, true);
-            temp = vm.makeVar<VarStr>(loc, "");
-            continue;
-        }
-        temp->getVal() += c;
+
+    size_t start      = 0;
+    size_t end        = str.find(delim);
+    size_t delimCount = 0;
+    while(end != String::npos && delimCount++ < maxDelimCount) {
+        String tmp(str.substr(start, end - start));
+        while(!tmp.empty() && tmp.front() == ' ') tmp.erase(tmp.begin());
+        while(!tmp.empty() && tmp.back() == ' ') tmp.pop_back();
+        if(!tmp.empty() || !ignoreEmpty) res->push(vm, vm.makeVar<VarStr>(loc, std::move(tmp)), true);
+        start = end + delim.length();
+        end   = str.find(delim, start);
     }
-    if(!temp->getVal().empty()) res->push(vm, temp, true);
+    String tmp(str.substr(start, end - start));
+    while(!tmp.empty() && tmp.front() == ' ') tmp.erase(tmp.begin());
+    while(!tmp.empty() && tmp.back() == ' ') tmp.pop_back();
+    if(!tmp.empty() || !ignoreEmpty) res->push(vm, vm.makeVar<VarStr>(loc, std::move(tmp)), true);
+
     return res;
 }
 
@@ -475,7 +480,7 @@ FERAL_FUNC(strFit, 1, false,
             while(res.size() < count) {
                 if(left) res += fillChar;
                 else res.insert(res.begin(), fillChar);
-                left = ~left;
+                left = !left;
             }
         } else if(align == 2) {
             while(res.size() < count) { res.insert(res.begin(), fillChar); }

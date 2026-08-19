@@ -62,12 +62,12 @@ let getFeralOpt = fn() {
 let Library = struct(
     name = '',
     version = '',
-    includeDirs = vec.new(refs = true),
-    libraryDirs = vec.new(refs = true),
-    libraryFlags = vec.new(refs = true),
-    rpaths = vec.new(refs = true), # Since library dirs are not necessarily same as rpaths, rpaths must be separate.
+    includeDirs = vec.new(),
+    libraryDirs = vec.new(),
+    libraryFlags = vec.new(),
+    rpaths = vec.new(), # Since library dirs are not necessarily same as rpaths, rpaths must be separate.
     definitions = map.new(refs = true), # Name = Value (where value can be empty string)
-    dllPaths = vec.new(refs = true), # For Windows
+    dllPaths = vec.new(), # For Windows
     useLibraryDirsForRPaths = true # if false, library dirs will not be used for rpaths.
 );
 Library.setTypeName('Library');

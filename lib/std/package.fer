@@ -20,18 +20,18 @@ let version = import('std/version');
 ################################################################################
 
 let home = feral.libPath / 'pkg';
-let tmpRoot = feral.tempPath / 'pkg';
+let tempRoot = feral.tempPath / 'pkg';
 let indexRoot = home / 'indexes';
 let installRoot = home / 'installed';
 
-fs.mkdir(tmpRoot, indexRoot, installRoot);
+fs.mkdir(tempRoot, indexRoot, installRoot);
 
 let getInstallPath = fn(name, vers) {
     return installRoot / (name.lower() + '--' + vers.str());
 };
 
 let getTempPath = fn(name, vers) {
-    return tmpRoot / (name.lower() + '--' + vers.str());
+    return tempRoot / (name.lower() + '--' + vers.str());
 };
 
 let getLockPath = fn(dir) {

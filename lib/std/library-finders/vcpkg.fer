@@ -5,19 +5,35 @@ let version = import('std/version');
 let toolchainCore = import('std/toolchain/core');
 
 let VCPKGFinder = struct(
-    exe = ''.path()
+    exe = ''.path(),
+    binPath = ''.path(),
+    libPath = ''.path(),
+    dbgBinPath = ''.path(),
+    dbgLibPath = ''.path(),
+    includePath = ''.path()
 );
 VCPKGFinder.setTypeName('VCPKGFinder');
 
 let new = fn() {
     if os.name != 'windows' { return feral.err(-1, 'Only usable on Windows'); }
+
     let exe = os.findExec('vcpkg.exe');
-    if exe != nil { return feral.ok(VCPKGFinder(exe)); }
-    let vcpkgRoot = os.getEnv('VCPKG_ROOT');
-    if vcpkgRoot == nil { return feral.err(-1, 'No `VCPKG_ROOT` environment variable set'); }
+    let vcpkgRoot = ''.path();
+    if exe == nil {
+        let tmp = os.getEnv('VCPKG_ROOT');
+        if tmp == nil { return feral.err(-1, 'No `VCPKG_ROOT` environment variable set'); }
+        vcpkgRoot = tmp.path();
+        if !fs.exists(vcpkgRoot / 'vcpkg.exe') { feral.err(-1, 'Could not find vcpkg.exe'); }
+    } else {
+        vcpkgRoot = exe.parent();
+    }
     let exePath = vcpkgRoot / 'vcpkg.exe';
-    if fs.exists(exePath) { return feral.ok(VCPKGFinder(exePath)); }
-    return feral.err(-1, 'Could not find vcpkg.exe');
+    let binPath = vcpkgRoot / 'installed' / 'x64-windows' / 'bin';
+    let libPath = vcpkgRoot / 'installed' / 'x64-windows' / 'lib';
+    let debugBinPath = vcpkgRoot / 'installed' / 'x64-windows' / 'debug' / 'bin';
+    let debugLibPath = vcpkgRoot / 'installed' / 'x64-windows' / 'debug' / 'lib';
+    let includePath = vcpkgRoot / 'installed' / 'x64-windows' / 'include';
+    return feral.ok(VCPKGFinder(exePath, binPath, libPath, debugBinPath, debugLibPath, includePath));
 };
 
 let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
@@ -25,50 +41,66 @@ let findLibrary in VCPKGFinder = fn(pkgName, .kw) {
     let versConstraint = kw['version'] ?? '*';
     let isFeral = kw['feral'] ?? false;
     if isFeral { return feral.err(-1, 'VCPKGFinder cannot be used to find Feral libraries'); }
-    let out = vec.new(refs = true);
-    os.exec(out = out, self.exe, 'list', pkgName);
-    if out.empty() { return feral.err(-1, 'Library ', pkgName, ' is not installed via vcpkg'); }
-    out.clear();
-    os.exec(out = out, self.exe, 'depend-info', pkgName);
-    let deps = vec.new(refs = true);
-    for o in out.each() {
-        if o.startsWith('vcpkg') { continue; }
-        let split = o.split(':');
-        let pkgLower = pkgName.lower();
-        if split[0] == pkgLower || split[0].startsWith(pkgLower + '[') { continue; }
-        deps.push(split[0].split('[')[0]);
-    }
-    out.clear();
-    os.exec(out = out, self.exe, 'owns', pkgName);
+
+    let binPath = isDebug ? self.dbgBinPath : self.binPath;
+    let libPath = isDebug ? self.dbgLibPath : self.libPath;
+
+    let pkgNameLower = pkgName.lower();
+
     let lib = toolchainCore.Library(pkgName);
-    if !self.addOutputInLib(lib, out, isDebug) { return feral.err(-1, 'Could not add output of `vcpkg owns` into library object'); }
-    for d in deps.each() {
-        let depLib = self.findLibrary(d, isDebug).?;
-        lib.append(depLib);
+    lib.addIncludeDirs(self.includePath);
+    lib.addLibraryDirs(libPath);
+
+    let libs = fs.walkDir(libPath, fs.WALK_FILES, '(.*).lib');
+    for l in libs.each() {
+        if l.file().str().find(pkgNameLower) >= 0 {
+            lib.addLibraryFlags(l.file());
+            break;
+        }
+    }
+    if lib.libraryFlags.empty() {
+        return feral.err(-1, 'Library ', pkgName, ' is not installed via vcpkg');
+    }
+
+    let dlls = fs.walkDir(binPath, fs.WALK_FILES, '(.*)' + lib.libraryFlags[0].fileName().str() + '(.*).dll');
+    if dlls.empty() {
+        return feral.err(-1, 'No equivalent dll file found for library ', lib.libraryFlags[0].str(), ' for package ', pkgName);
+    }
+    lib.addDllPaths(dlls...);
+
+    # Get the version
+    let out = vec.new(refs = true);
+    let res = os.exec(out = out, self.exe, 'list', pkgName, '^2>&1');
+    let useNoLibName = false;
+    if out.empty() && pkgName.startsWith('lib') {
+        res = os.exec(out = out, self.exe, 'list', pkgName.replace('lib', ''), '^2>&1');
+        useNoLibName = true;
+    }
+    if res != 0 {
+        return feral.err(-1, 'Failed to get version info for library ', pkgName, ' using vcpkg');
+    }
+    for o in out.each() {
+        let split = o.split('  ', -1, true);
+        if split.len() < 3 { continue; }
+        lib.version = split[1].trim();
+    }
+
+    # Now its dependencies.
+    out.clear();
+    let res = os.exec(out = out, self.exe, 'depend-info', useNoLibName ? pkgName.replace('lib', '') : pkgName, '^2>&1');
+    if res == 0 {
+        let deps = vec.new(refs = true);
+        for o in out.each() {
+            if o.startsWith('vcpkg') { continue; }
+            let split = o.split(':');
+            let pkgLower = pkgName.lower();
+            if split[0] == pkgLower || split[0].startsWith(pkgLower + '[') { continue; }
+            deps.push(split[0].split('[')[0]);
+        }
+        for d in deps.each() {
+            let depLib = self.findLibrary(d, debug = isDebug).?;
+            lib.append(depLib);
+        }
     }
     return feral.ok(lib);
-};
-
-let addOutputInLib in VCPKGFinder = fn(lib, out, isDebug) {
-    if out.empty() { return false; }
-    let installedRoot = self.exe.parent() / 'installed';
-    lib.addIncludeDirs(installedRoot / 'x64-windows' / 'include');
-    if isDebug {
-        lib.addLibraryDirs(installedRoot / 'x64-windows' / 'debug' / 'lib');
-    } else {
-        lib.addLibraryDirs(installedRoot / 'x64-windows' / 'lib');
-    }
-    for o in out.each() {
-        let file = o.split(': ')[1];
-        if file.find('bin/') >= 0 || file.find('lib/') >= 0 {
-            let fileDebug = file.find('debug/') >= 0;
-            if isDebug != fileDebug { continue; }
-        }
-        if file.endsWith('.dll') {
-            lib.addDllPaths(installedRoot / file);
-        } elif file.endsWith('.lib') {
-            lib.addLibraryFlags(file.path().file());
-        }
-    }
-    return true;
 };

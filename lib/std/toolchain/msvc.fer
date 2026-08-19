@@ -86,6 +86,7 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
         info.cmd.push('/Z7'); # embed debug info in the object/exe
     }
 
+    info.cmd.push(lang == 'c' ? self.c : self.cxx);
     info.cmd.push('/EHsc'); # to prevent: warning C4530: C++ exception handler used, but unwind semantics are not enabled
     info.cmd.push(lang == 'c' ? '/std:c' + std.str() : '/std:c++' + std.str());
     info.cmd.push('/c');
@@ -118,7 +119,7 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
     info.cmd.append(srcs);
 
     # destination
-    info.cmd.push('/Fo"' + dest.str().replace('/', '\\') + '"');
+    info.cmd.push('/Fo"' + info.dest.str() + '"');
 
     return feral.ok(info);
 };

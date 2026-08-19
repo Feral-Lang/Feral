@@ -13,7 +13,7 @@ let pkgExePath = feral.libPath / 'bin' / 'pkg.fer';
 
 if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
 
-let logFilePath = feral.tempPath / 'feralPkgBootstrap.log';
+let logFilePath = package.tempRoot / 'bootstrap.log';
 logging.defaultLogger.addTargetByPath(logFilePath, level = logging.Levels.TRACE, colorize = false);
 io.println('Writing full logs to: ', logFilePath);
 
@@ -45,13 +45,13 @@ if gitCmd == nil {
 # Download and Install Feral's Pkg
 
 # Download Pkg
-let pkgRepoPath = feral.tempPath / 'Pkg';
+let pkgRepoPath = package.tempRoot / 'PkgRepo';
+logging.info('Fetching git repository for Pkg: ', cmd);
+io.println('Downloading Pkg ...');
 if fs.exists(pkgRepoPath) {
     fs.remove(pkgRepoPath);
 }
 cmd.push(gitCmd, 'clone', '--depth=1', pkgRepo, '--branch', pkgVersion, pkgRepoPath, '^2>&1');
-logging.info('Fetching git repository for Pkg: ', cmd);
-io.println('Downloading Pkg ...');
 cmdOutLines.clear();
 let ec = os.exec(cmd, out = cmdOutLines);
 for line in cmdOutLines.each() {

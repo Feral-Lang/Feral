@@ -75,9 +75,9 @@ let files = fs.walkDir(testsDir, fs.WALK_RECURSE, filePattern);
 files.sort();
 
 let totalTests = runCount * files.len();
-let failed = vec.new();
+let tasks = vec.new(refs = true);
 let counter = 0;
-let failedMtx = mutex.new(), counterMtx = mutex.new();
+let counterMtx = mutex.new();
 
 let valgrindCmd = vec.new(refs = true);
 if args.has('valgrind') {
@@ -110,11 +110,7 @@ let exec = fn(file) {
     io.fflush(io.stdout);
     counterMtx.unlock();
     let res = os.exec(cmd...);
-    failedMtx.lock();
-    if res != 0 {
-        failed.push(vec.new(file, res));
-    }
-    failedMtx.unlock();
+    return res == 0 ? feral.ok() : feral.err(res, file);
 };
 
 let clean = fn(file) {
@@ -136,7 +132,7 @@ let timeBegin = time.now();
 
 for let i = 0; i < runCount; ++i {
     for file in files.each() {
-        tpool.push(exec, file);
+        tasks.push(tpool.push(exec, file));
     }
 }
 
@@ -152,19 +148,26 @@ if !cleanCmd.empty() {
 
 tpool.finish();
 
-for f in failed.each() {
+let failed = 0;
+for t in tasks.each() {
+    if !t.done() {
+        io.cprintln('{br}FATAL Internal{0}: {y}task was not completed after threadpool was finished{0}!');
+    }
+    if t.result().isOk() { continue; }
+    ++failed;
+    let res = t.result().val();
     if !valgrindCmd.empty() {
-        io.cprintln('{r}failed {y}', f[0], '{c} with valgrind{0}, {y}code{0}: {r}', f[1],'{0}');
+        io.cprintln('{r}failed {y}', res.msg(), '{c} with valgrind{0}, {y}code{0}: {r}', res.code(),'{0}');
     } else {
-        io.cprintln('{r}failed {y}', f[0], '{0}, {y}code{0}: {r}', f[1],'{0}');
+        io.cprintln('{r}failed {y}', res.msg(), '{0}, {y}code{0}: {r}', res.code(),'{0}');
     }
 }
 io.fflush(io.stdout);
 
 io.cprintln('total: {y}', totalTests,
-        '{0}, passed: {g}', totalTests - failed.len(),
-        '{0}, failed: {r}', failed.len(),
+        '{0}, passed: {g}', totalTests - failed,
+        '{0}, failed: {r}', failed,
         '{0}, time: {b}', time.resolve(totalTime, time.milli).round(),
         '{0} ms');
 
-feral.exit(failed.len());
+feral.exit(failed);
