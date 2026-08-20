@@ -86,18 +86,11 @@ void *DynLib::get(StringRef filepath, const char *sym)
 #if defined(FER_OS_WINDOWS)
 void *dlopen(const char *filename, int flags)
 {
-    // We need to set current working directory to the module's directory because
-    // Windows can't find the dependent modules (assuming one is in the same directory)
-    // otherwise.
-    using namespace fer;
-    auto prevdir = fs::current_path();
-    fs::current_path(Path(filename).parent_path());
     HINSTANCE hInst = LoadLibraryA(filename);
     if(hInst == NULL) {
         var.lasterror = GetLastError();
         var.err_rutin = "dlopen";
     }
-    fs::current_path(prevdir);
     return hInst;
 }
 
