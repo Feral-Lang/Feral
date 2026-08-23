@@ -2,6 +2,8 @@ let assert = import('std/assert');
 
 let version = import('std/version');
 
+let version100 = version.new(1, 0, 0);
+let version110 = version.new(1, 1, 0);
 let version001 = version.new(0, 0, 1);
 let version010 = version.new(0, 1, 0);
 let versionAlpha = version.new(0, 0, 1, version.buildTypes.Alpha);
@@ -12,6 +14,8 @@ let parsedVersionSimple = version.parse('0.0.1-beta+a_git_commit_id');
 let parsedVersion1 = version.parse('0.0.1+1');
 let parsedVersion1120 = version.parse('0.0.1+1.120');
 let parsedVersion1121 = version.parse('0.0.1+1.121');
+let parsedVersion100 = version.parse('1');
+let parsedVersion110 = version.parse('1.1');
 
 assert.eq(version001, version001);
 assert.ge(version001, version001);
@@ -24,6 +28,8 @@ assert.ne(versionMeta, version001);
 assert.eq(parsedVersionSimple, versionMeta);
 assert.gt(parsedVersion1120, parsedVersion1);
 assert.gt(parsedVersion1121, parsedVersion1120);
+assert.eq(parsedVersion100, version100);
+assert.eq(parsedVersion110, version110);
 
 version001.add(0, 9, 12);
 version001.fixUsingMax(10, 10);

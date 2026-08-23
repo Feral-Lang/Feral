@@ -81,7 +81,9 @@ let parse = fn(versionStr) {
     if tmp.empty() {
         raise('Invalid version string: ', versionStr);
     }
-    if part == 2 { vers.patch = tmp.int(); }
+    if part == 0 { vers.major = tmp.int(); }
+    elif part == 1 { vers.minor = tmp.int(); }
+    elif part == 2 { vers.patch = tmp.int(); }
     elif part == 3 { vers.build = buildTypeFromStr(tmp); }
     elif part == 4 { vers.metadata = tmp.split('.'); }
     if vers.major == 0 && vers.minor == 0 && vers.patch == 0 {
