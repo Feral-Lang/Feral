@@ -159,6 +159,12 @@ let compile in Toolchain = fn(.kw, destPath, srcs...) {
         }
     }
 
+    for d in depends.each() {
+        if !fs.exists(d) {
+            return feral.err(-1, 'Could not find dependency file `', d, '`');
+        }
+    }
+
     let destIsLatest = fs.exists(info.dest);
 
     if destIsLatest && force {
@@ -166,7 +172,7 @@ let compile in Toolchain = fn(.kw, destPath, srcs...) {
         destIsLatest = false;
     }
 
-    let destWriteTime = fs.lastWriteTime(info.dest);
+    let destWriteTime = fs.lastWriteTime(info.dest, err = false);
     if destIsLatest {
         for d in depends.each() {
             if destWriteTime <= fs.lastWriteTime(d) {
@@ -258,7 +264,7 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
         destIsLatest = false;
     }
 
-    let destWriteTime = fs.lastWriteTime(info.dest);
+    let destWriteTime = fs.lastWriteTime(info.dest, err = false);
     if destIsLatest {
         for o in objs.each() {
             if destWriteTime <= fs.lastWriteTime(o) {

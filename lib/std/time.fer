@@ -16,14 +16,6 @@ let setResolution = fn(num) {
     resolution = num;
 };
 
-"
-  fn() -> Int
-Returns the current time in microseconds since epoch.
-"
-let now = fn() {
-    return systemClockNowNative();
-};
-
 let resolve = fn(time, resol = nil) {
     let res = 0.0;
     if resol == nil {
@@ -31,7 +23,7 @@ let resolve = fn(time, resol = nil) {
     } else {
         res = resol;
     }
-    return time.flt() * res;
+    return to(res, micro = time);
 };
 
 let hours = fn(num) {
@@ -55,7 +47,7 @@ let format = fn(time, fmt = timeFormat) {
 };
 
 "
-fn(conversionRatio, ...) -> Int
+  fn(conversionRatio, ...) -> Int
 Example: time.to(time.second, days = 1); # => 86400.0
 "
 let to = fn(ratio, .kwArgs) {

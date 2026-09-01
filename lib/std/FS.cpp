@@ -101,13 +101,27 @@ FERAL_FUNC(fsStatus, 1, false,
 }
 
 FERAL_FUNC(fsLastWriteTime, 1, false,
-           "  fn(path) -> Int\n"
-           "Returns the last write time of `path` as number of seconds since epoch.")
+           "  fn(path, .kw) -> Int\n"
+           "Returns the last write time of `path` as number of seconds since epoch.\n"
+           "Takes the following keyword arguments:\n"
+           "* `err = true/false` - if true, a failure is generated if there is an error fetching "
+           "the last write time for the `path`. (default: true)")
 {
     EXPECT(VarPath, args[1], "path");
     std::error_code ec;
-    auto ftime  = fs::last_write_time(as<VarPath>(args[1])->getVal(), ec).time_since_epoch();
-    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(ftime).count();
+    bool err = true;
+    if(Var *e = assnArgs->getAttr("err")) {
+        EXPECT(VarBool, e, "generate failure");
+        err = as<VarBool>(e)->getVal();
+    }
+    auto ftime = fs::last_write_time(as<VarPath>(args[1])->getVal(), ec);
+    if(err && ec) {
+        vm.fail(loc, "failed to fetch last write time for file `", as<VarPath>(args[1])->getVal(),
+                "`: ", ec.message());
+        return nullptr;
+    }
+    auto sysftime = std::chrono::file_clock::to_sys(ftime).time_since_epoch();
+    int64_t sec   = std::chrono::duration_cast<std::chrono::seconds>(sysftime).count();
     return vm.makeVar<VarInt>(loc, sec);
 }
 
