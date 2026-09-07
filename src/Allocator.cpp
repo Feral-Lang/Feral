@@ -25,6 +25,21 @@ MemoryManager::MemoryManager(StringRef name, size_t poolSize)
 }
 MemoryManager::~MemoryManager()
 {
+    // count free chunks at each index/size
+    if(DEFAULT_LOGGER.isLevelLoggable(LogLevels::INFO)) {
+        LOG_INFO("======================= Freechunk Stats =======================");
+        for(size_t i = 0; i < freechunks.size(); ++i) {
+            auto &sz = freechunks[i];
+            if(sz == 0) continue;
+            size_t allocAddr = sz;
+            size_t count     = 0;
+            while(allocAddr > 0) {
+                ++count;
+                allocAddr = getAllocDetail(allocAddr, AllocDetails::NEXT);
+            }
+            LOG_INFO("-- of bytes ", (1 << size_t(i + 1)), ": ", count, " allocations");
+        }
+    }
     // clear out the allocations that are larger than MAX_ROUNDUP
     for(auto &sz : freechunks) {
         if(sz == 0) continue;

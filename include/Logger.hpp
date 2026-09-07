@@ -91,6 +91,8 @@ public:
 
 extern FER_API Logger logger;
 
+#define DEFAULT_LOGGER ::fer::logger
+
 #define LOG_OBJ_FATAL(loggerObj, ...)                                                     \
     do {                                                                                  \
         if(loggerObj.isLevelLoggable(LogLevels::FATAL)) { loggerObj.fatal(__VA_ARGS__); } \
@@ -112,10 +114,10 @@ extern FER_API Logger logger;
         if(loggerObj.isLevelLoggable(LogLevels::TRACE)) { loggerObj.trace(__VA_ARGS__); } \
     } while(false)
 
-#define LOG_FATAL(...) LOG_OBJ_FATAL(::fer::logger, __VA_ARGS__)
-#define LOG_WARN(...) LOG_OBJ_WARN(::fer::logger, __VA_ARGS__)
-#define LOG_INFO(...) LOG_OBJ_INFO(::fer::logger, __VA_ARGS__)
-#define LOG_DEBUG(...) LOG_OBJ_DEBUG(::fer::logger, __VA_ARGS__)
-#define LOG_TRACE(...) LOG_OBJ_TRACE(::fer::logger, __VA_ARGS__)
+#define LOG_FATAL(...) LOG_OBJ_FATAL(DEFAULT_LOGGER, __VA_ARGS__)
+#define LOG_WARN(...) LOG_OBJ_WARN(DEFAULT_LOGGER, __VA_ARGS__)
+#define LOG_INFO(...) LOG_OBJ_INFO(DEFAULT_LOGGER, __VA_ARGS__)
+#define LOG_DEBUG(...) LOG_OBJ_DEBUG(DEFAULT_LOGGER, __VA_ARGS__)
+#define LOG_TRACE(...) LOG_OBJ_TRACE(DEFAULT_LOGGER, __VA_ARGS__)
 
 } // namespace fer
