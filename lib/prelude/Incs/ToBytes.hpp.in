@@ -1,0 +1,15 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(strToBytes, 0, false,
+           "  var.fn() -> Bytebuffer\n"
+           "Returns the bytebuffer representation of string `var`.")
+{
+    StringRef s = as<VarStr>(args[0])->getVal();
+    return vm.makeVar<VarBytebuffer>(loc, s.size(), s.size(),
+                                     reinterpret_cast<const unsigned char *>(s.data()));
+}
+
+} // namespace fer

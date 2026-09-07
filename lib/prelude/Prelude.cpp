@@ -30,6 +30,7 @@
 // Converters
 
 #include "Incs/ToBool.hpp.in"
+#include "Incs/ToBytes.hpp.in"
 #include "Incs/ToFlt.hpp.in"
 #include "Incs/ToInt.hpp.in"
 #include "Incs/ToStr.hpp.in"
@@ -743,6 +744,9 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarFailure>(loc, "str", failureToStr);
     vm.addTypeFn<VarError>(loc, "str", errorToStr);
     vm.addTypeFn<VarResult>(loc, "str", resultToStr);
+
+    // to bytebuffer
+    vm.addTypeFn<VarStr>(loc, "bytes", strToBytes);
 
     // to path
     vm.addTypeFn<VarStr>(loc, "path", strToPath);
