@@ -950,6 +950,8 @@ INIT_DLL(Prelude)
 
     // bytebuffer
 
+    vm.addTypeFn<VarBytebuffer>(loc, "==", bytebufferEQ);
+    vm.addTypeFn<VarBytebuffer>(loc, "!=", bytebufferNE);
     vm.addTypeFn<VarBytebuffer>(loc, "at", byteBufferAt);
     vm.addTypeFn<VarBytebuffer>(loc, "[]", byteBufferAt);
     vm.addTypeFn<VarBytebuffer>(loc, "len", bytebufferLen);

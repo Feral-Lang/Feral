@@ -11,6 +11,29 @@ FERAL_FUNC(bytebufferNew, 1, false,
     return vm.makeVar<VarBytebuffer>(loc, as<VarInt>(args[1])->getVal());
 }
 
+FERAL_FUNC(bytebufferEQ, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` represent same bytebuffers.")
+{
+    if(!args[1]->is<VarBytebuffer>()) return vm.getFalse();
+    VarBytebuffer *lhs = as<VarBytebuffer>(args[0]);
+    VarBytebuffer *rhs = as<VarBytebuffer>(args[1]);
+    if(lhs->size() != rhs->size()) return vm.getFalse();
+    return memcmp(lhs->getVal(), rhs->getVal(), lhs->size()) == 0 ? vm.getTrue() : vm.getFalse();
+}
+
+FERAL_FUNC(bytebufferNE, 1, false,
+           "  var.fn(other) -> Bool\n"
+           "Returns `true` if `var` and `other` are of different types or if"
+           " the bytebuffers `var` and `other` are not same.")
+{
+    if(!args[1]->is<VarBytebuffer>()) return vm.getTrue();
+    VarBytebuffer *lhs = as<VarBytebuffer>(args[0]);
+    VarBytebuffer *rhs = as<VarBytebuffer>(args[1]);
+    if(lhs->size() != rhs->size()) return vm.getTrue();
+    return memcmp(lhs->getVal(), rhs->getVal(), lhs->size()) != 0 ? vm.getTrue() : vm.getFalse();
+}
+
 FERAL_FUNC(bytebufferCopy, 0, false,
            "  var.fn() -> Bytebuffer\n"
            "Copies the bytebuffer data and returns it.")
