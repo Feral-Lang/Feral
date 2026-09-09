@@ -5,9 +5,15 @@ let vec = import('std/vec');
 let mutex = import('std/mutex');
 let atomic = import('std/atomic');
 
+"
+  fn(.kw, args...) -> Thread
+Runs `os.exec(kw..., args...)` in a newly spawned thread.
+Takes the following keyword arguments:
+* `name = <name>` - the name of the spawned thread.
+"
 let run = fn(.kw, args...) {
     let threadName = kw.at('name') ?? 'osExec';
-    return new(name = threadName, os.exec, args...);
+    return new(name = threadName, os.exec, kw..., args...);
 };
 
 let ThreadPool = struct(
@@ -21,10 +27,22 @@ let ThreadPool = struct(
 );
 ThreadPool.setTypeName('ThreadPool');
 
+"
+  fn(count) -> ThreadPool
+Creates and returns a new ThreadPool object set to `count` threads.
+`ThreadPool.start()` must be used to start the job threads, after
+which the ThreadPool is ready for work.
+"
 let newPool = fn(count = getConcurrency()) {
     return ThreadPool(count = count);
 };
 
+"
+  var.fn() -> Nil
+Resets and starts the ThreadPool `var`.
+This starts `self.count` job threads.
+The job threads can perform work after this function call.
+"
 let start in ThreadPool = fn() {
     self.shouldStop.set(false);
     self.shouldFinish.set(false);
@@ -34,21 +52,45 @@ let start in ThreadPool = fn() {
     }
 };
 
+"
+  var.fn() -> Nil
+Requests all the jobs be stopped. The jobs won't take any more tasks,
+but will complete anything they are working on.
+After that, the job threads are stopped, and this function
+returns once they do.
+"
 let stop in ThreadPool = fn() {
     self.shouldStop.set(true);
     self.join();
 };
 
+"
+  var.fn() -> Nil
+Requests all the job threads finish all tasks in queue before stopping.
+After that, the job threads are stopped and this function returns.
+"
 let finish in ThreadPool = fn() {
     self.shouldFinish.set(true);
     self.join();
 };
 
+"
+  var.fn() -> Nil
+Waits (sleeps) for all jobs to complete their tasks any any task in queue.
+Does not stop the job threads after.
+"
 let waitAll in ThreadPool = fn() {
     os.sleep(1); # in case the threads have been waiting to get scheduled because of the current thread.
     while self.waitingThreads.get() != self.count { os.sleep(1); }
 };
 
+"
+  var.fn(callable, .kwArgs, args...) -> Async
+Using the `callable`, `kwArgs`, and `args`, creates an async object
+and pushes it into the task queue.
+Returns the async object which can then be tested/waited/awaited upon to check if done,
+and fetch the return value of the called `callable`.
+"
 let push in ThreadPool = fn(callable, .kwArgs, args...) {
     self.taskMtx.lock();
     let taskAsync = feral.async(callable, kwArgs..., args...);
@@ -57,18 +99,36 @@ let push in ThreadPool = fn(callable, .kwArgs, args...) {
     return ref(taskAsync);
 };
 
+"
+  var.fn() -> Nil
+Join all threads in the ThreadPool `var`. This call blocks until all the jobs are stopped.
+Note that this function doesn't stop the jobs itself, just waits on them to stop.
+"
 let join in ThreadPool = fn() {
     self.threads.clear(); # since thread joins on delete (C++ JThread), this works as clear will delete the thread instances.
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if there are no tasks in the queue.
+"
 let empty in ThreadPool = fn() {
     return self.tasks.empty();
 };
 
+"
+  var.fn() -> Bool
+Returns `true` if there are any jobs currently running.
+"
 let isRunning in ThreadPool = fn() {
     return !self.threads.empty();
 };
 
+"
+  var.fn() -> Nil
+The actual job logic. All job threads use this logic.
+This must not be called manually - it's called whenever a job thread is spawned.
+"
 let jobRunner in ThreadPool = fn() {
     let wasWaiting = false;
     while !self.shouldStop.get() {

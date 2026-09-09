@@ -114,13 +114,8 @@ FERAL_FUNC(threadNew, 1, true,
     if(!newAssnArgs) return nullptr;
     Var *callable = vm.incVarRef(args[1]);
     Vector<Var *> newArgs;
-    Var *selfVar = newAssnArgs->getAttr("selfvar");
     newArgs.reserve(args.size() - 1); // - 2 for self + callable; + 1 for self
-    newArgs.push_back(selfVar);
-    if(selfVar) {
-        bool found = false;
-        newAssnArgs->remAttr(vm, "selfvar", found, true);
-    }
+    newArgs.push_back(nullptr); // for self
     newArgs.insert(newArgs.end(), args.begin() + 2, args.end());
     for(auto &a : newArgs) vm.incVarRef(a);
     return vm.makeVar<VarThread>(loc, name, callable, std::move(newArgs), newAssnArgs);
