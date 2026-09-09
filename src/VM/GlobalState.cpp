@@ -31,6 +31,8 @@ bool GlobalState::init(VirtualMachine &vm)
 
     prelude = "prelude/prelude";
 
+    docStrings.reserve(500);
+
     basicErrHandler = vm.incVarRef(vm.makeFn({}, basicErrorHandler));
     globals         = vm.incVarRef(vm.makeVar<VarMap>({}, true, false));
     moduleDirs      = vm.incVarRef(vm.makeVar<VarVec>({}, 2, false));

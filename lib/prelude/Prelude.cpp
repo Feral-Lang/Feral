@@ -53,7 +53,7 @@ FERAL_FUNC(allGetDoc, 0, false,
            "(can be function) if one is defined, `nil` otherwise.")
 {
     if(!args[0]->hasDoc()) return vm.getNil();
-    return args[0]->getDoc();
+    return vm.makeVar<VarStr>(loc, vm.getDocString(args[0]->getDoc()));
 }
 
 FERAL_FUNC(allSetDoc, 1, false,
@@ -64,11 +64,11 @@ FERAL_FUNC(allSetDoc, 1, false,
     EXPECT2(VarStr, VarNil, args[1], "doc string");
     auto &mem = vm.getMemoryManager();
     if(args[1]->is<VarNil>()) {
-        args[0]->setDoc(vm, nullptr);
+        args[0]->resetDoc();
     } else {
         VarStr *cp = as<VarStr>(vm.copyVar(loc, args[1], false));
         if(!cp) return nullptr;
-        args[0]->setDoc(vm, cp);
+        args[0]->setDoc(vm.addDocString(loc, as<VarStr>(args[1])->getVal()));
     }
     return vm.getNil();
 }

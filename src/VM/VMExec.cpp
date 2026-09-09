@@ -73,7 +73,7 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
                      ", but found none");
                 goto handleErr;
             }
-            if(ins.hasComment()) { val->setDoc(*this, ins.getLoc(), ins.getComment()); }
+            if(ins.hasComment()) { val->setDoc(addDocString(ins.getLoc(), ins.getComment())); }
             // only copy if reference count > 1 (no point in copying unique values)
             Var *cp = copyVar(ins.getLoc(), val, val->getRef() == 1);
             if(!cp) goto handleErr;

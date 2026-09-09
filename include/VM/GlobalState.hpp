@@ -26,12 +26,14 @@ class FER_API GlobalState
     Map<size_t, String> typenames;
     // Prelude must be imported before any program is executed
     String prelude;
+    // All the doc strings used in Feral
+    Vector<String> docStrings;
+    // Functions for all C++ types
+    Map<size_t, VarMap *> typefns;
     // Default error handler
     VarFn *basicErrHandler;
     // Global vars/objects that are required
     VarMap *globals;
-    // Functions for all C++ types
-    Map<size_t, VarMap *> typefns;
     // Default dirs to search for modules. Used by basic{Import,Module}Finder()
     VarVec *moduleDirs;
     // Functions (VarVec<VarFn>) to resolve module locations. If one fails, next one is

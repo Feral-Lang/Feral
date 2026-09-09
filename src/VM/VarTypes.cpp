@@ -15,7 +15,7 @@ static size_t genStructEnumID()
 ///////////////////////////////////////////// Var ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-Var::Var(ModuleLoc loc, size_t infoFlags) : loc(loc), ref(0), info(infoFlags), doc(nullptr) {}
+Var::Var(ModuleLoc loc, size_t infoFlags) : loc(loc), ref(0), info(0xffffff00 | infoFlags) {}
 Var::~Var() {}
 
 void Var::create(VirtualMachine &vm)
@@ -32,7 +32,6 @@ void Var::destroy(VirtualMachine &vm)
     if(!isCreated()) return;
     unsetCreated();
     onDestroy(vm);
-    if(doc) vm.decVarRef(doc);
 }
 void Var::init(VirtualMachine &vm)
 {
@@ -92,12 +91,12 @@ Var *Var::copy(VirtualMachine &vm, ModuleLoc loc, bool forceRef)
     if(!fn->isCallable()) return nullptr;
     Array<Var *, 1> args = {this};
     Var *res             = vm.callVar(loc, "_copy_", fn, args, nullptr);
-    if(doc && res) res->setDoc(vm, doc);
+    if(res && hasDoc()) res->setDoc(getDoc());
     return res;
 }
 bool Var::set(VirtualMachine &vm, Var *from)
 {
-    if(from->doc) setDoc(vm, from->doc);
+    if(from->hasDoc()) setDoc(from->getDoc());
     return onSet(vm, from);
 }
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, VarVec *stack,
@@ -123,20 +122,6 @@ Var *Var::getAttr(StringRef name) { return nullptr; }
 void Var::getAttrList(VirtualMachine &vm, VarVec *dest) {}
 size_t Var::getAttrCount() { return 0; }
 size_t Var::getSubType() { return getType(); }
-
-void Var::setDoc(VirtualMachine &vm, VarStr *newDoc)
-{
-    if(newDoc) vm.incVarRef(newDoc);
-    if(doc) vm.decVarRef(doc);
-    doc = newDoc;
-}
-
-void Var::setDoc(VirtualMachine &vm, ModuleLoc loc, StringRef newDoc)
-{
-    if(doc) vm.decVarRef(doc);
-    if(newDoc.empty()) return;
-    doc = vm.incVarRef(vm.makeVar<VarStr>(loc, newDoc));
-}
 
 void Var::dump(String &outStr, VirtualMachine *vm)
 {

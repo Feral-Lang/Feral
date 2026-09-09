@@ -7,7 +7,7 @@ namespace fer
 
 namespace VarInfo
 {
-enum
+enum : uint32_t
 {
     // main attributes
     NONE          = 0,
@@ -20,6 +20,9 @@ enum
     SET_CONST   = 1 << 4,
     CREATED     = 1 << 5,
     INITIALIZED = 1 << 6,
+    // currently, not used
+    _UNUSED1 = 1 << 7,
+    // bits 8-31 are reserved for doc index
 };
 } // namespace VarInfo
 
@@ -42,11 +45,10 @@ class VarFrame;
 class FER_API Var : public IAllocated
 {
     ModuleLoc loc;
-    Atomic<ssize_t> ref;
-    // for VarInfo
-    size_t info;
-
-    VarStr *doc;
+    Atomic<int32_t> ref;
+    // for VarInfo (bits 0-7)
+    // and doc string index (bits 8-31)
+    uint32_t info;
 
     friend class VirtualMachine;
 
@@ -55,8 +57,8 @@ class FER_API Var : public IAllocated
     inline bool isInitialized() const { return info & VarInfo::INITIALIZED; }
 
     inline void iref() { ++ref; }
-    inline ssize_t dref() { return --ref; }
-    inline ssize_t getRef() const { return ref; }
+    inline int32_t dref() { return --ref; }
+    inline int32_t getRef() const { return ref; }
 
     // Proxy functions to use the functions to be implemented by the Var's.
     void create(VirtualMachine &vm);
@@ -104,9 +106,6 @@ public:
     virtual size_t getAttrCount();
     virtual size_t getSubType();
 
-    void setDoc(VirtualMachine &vm, VarStr *newDoc);
-    void setDoc(VirtualMachine &vm, ModuleLoc loc, StringRef newDoc);
-
     void dump(String &outStr, VirtualMachine *vm);
 
     template<VarDerived T> bool is() const
@@ -117,8 +116,14 @@ public:
 
     inline void setLoc(ModuleLoc _loc) { loc = _loc; }
 
-    inline VarStr *getDoc() { return doc; }
-    inline bool hasDoc() const { return doc != nullptr; }
+    inline void resetDoc() { info |= 0xffffff00; }
+    inline void setDoc(uint32_t index)
+    {
+        resetDoc();
+        info &= (index << 8) | 0x000000ff;
+    }
+    inline uint32_t getDoc() const { return info >> 8; }
+    inline bool hasDoc() const { return getDoc() != 0xffffff; }
     inline ModuleLoc getLoc() const { return loc; }
     inline size_t getType() { return typeid(*this).hash_code(); }
 

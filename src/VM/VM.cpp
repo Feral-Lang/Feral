@@ -242,13 +242,26 @@ VarFn *VirtualMachine::makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj)
         makeVar<VarFn>(loc, nullptr, std::move(params), StringMap<Var *>{},
                        FnBody{.native = fnObj.fn}, "", fnObj.isVariadic ? "." : "", true, false);
     if(!f) return nullptr;
-    if(!fnObj.doc.empty()) f->setDoc(*this, loc, fnObj.doc);
+    if(!fnObj.doc.empty()) f->setDoc(addDocString(loc, fnObj.doc));
     return f;
 }
 
+uint32_t VirtualMachine::addDocString(ModuleLoc loc, StringRef doc)
+{
+    LockGuard globalGuard(gs->mutex);
+    gs->docStrings.emplace_back(doc);
+    return gs->docStrings.size() - 1;
+}
+void VirtualMachine::setDocString(uint32_t index, ModuleLoc loc, StringRef doc)
+{
+    LockGuard globalGuard(gs->mutex);
+    gs->docStrings[index] = doc;
+}
+StringRef VirtualMachine::getDocString(uint32_t index) { return gs->docStrings[index]; }
+
 void VirtualMachine::addGlobal(StringRef name, StringRef doc, Var *val, bool iref)
 {
-    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
+    if(!doc.empty()) val->setDoc(addDocString(val->getLoc(), doc));
     gs->globals->setAttr(*this, name, val, iref);
 }
 void VirtualMachine::addGlobal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
@@ -260,7 +273,7 @@ Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->getAttr(nam
 void VirtualMachine::addLocal(StringRef name, StringRef doc, Var *val, bool iref)
 {
     VarModule *mod = getCurrModule();
-    if(!doc.empty()) val->setDoc(*this, val->getLoc(), doc);
+    if(!doc.empty()) val->setDoc(addDocString(val->getLoc(), doc));
     mod->setAttr(*this, name, val, iref);
 }
 void VirtualMachine::addLocal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)

@@ -19,11 +19,11 @@ enum class AllocDetails : uint32_t
     // The address points to the usable location, so to get AllocDetail from there,
     // you must do: (char*)loc - sizeof(AllocDetail)
     NEXT,
-    // <Unused internally as of now>
-    // Can be used for something else while the memory is allocated -
-    // make sure to reset the value to zero before freeing though
-    // The address points to the usable location, so to get AllocDetail from there,
-    // you must do: (char*)loc - sizeof(AllocDetail)
+    // Address of prev free allocation of the same size
+    // Can be used for something else while the memory is allocated - Managed*List uses it, for
+    // example. make sure to reset the value to zero before freeing though The address points to the
+    // usable location, so to get AllocDetail from there, you must do: (char*)loc -
+    // sizeof(AllocDetail)
     PREV,
     // <Unused internally as of now>
     // Can be used for something else while the memory is allocated -
@@ -50,6 +50,7 @@ static_assert(ALLOC_DETAIL_BYTES % MAX_ALIGNMENT == 0,
 
 struct MemPool
 {
+    size_t sz;
     char *head;
     char *mem;
 };
@@ -76,26 +77,27 @@ class FER_API MemoryManager
     // global mutex).
     RecursiveMutex mtx;
     String name;
-    size_t poolSize;
 
-    inline constexpr size_t getFreeChunkIndex(size_t sz) { return std::countr_zero(sz) - 1; }
+    inline constexpr size_t getIndexForAllocSize(size_t sz) { return std::countr_zero(sz) - 1; }
+    inline constexpr size_t getAllocSizeForIndex(size_t index) { return 1 << size_t(index + 1); }
+
     // works upto MAX_ROUNDUP
     size_t nextPow2(size_t sz);
     void allocPool();
 
 public:
-    MemoryManager(StringRef name, size_t poolSize = DEFAULT_POOL_SIZE);
+    MemoryManager(StringRef name);
     ~MemoryManager();
 
-    void *allocRaw(size_t size, size_t align);
+    void *allocRaw(size_t size);
     void freeRaw(void *data);
 
     // Helper function - only use if seeing memory issues.
-    void dumpMem(char *pool);
+    void dumpMem(MemPool &pool);
 
     template<IAllocatedDerived T, typename... Args> T *allocInit(Args &&...args)
     {
-        void *m = allocRaw(sizeof(T), alignof(T));
+        void *m = allocRaw(sizeof(T));
         return new(m) T(std::forward<Args>(args)...);
     }
     inline void freeDeinit(IAllocated *data)
@@ -116,8 +118,7 @@ public:
         return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)];
     }
 
-    inline size_t getPoolSize() { return poolSize; }
-    inline size_t getPoolCount() { return pools.size(); }
+    inline size_t minUsableSize() { return nextPow2(ALLOC_DETAIL_BYTES + 1) - ALLOC_DETAIL_BYTES; }
 };
 
 class IAllocatedList : public IAllocated
@@ -223,7 +224,7 @@ public:
 
     template<typename T> T *alloc(size_t count = 1)
     {
-        T *res = (T *)mem.allocRaw(sizeof(T) * count, alignof(T));
+        T *res = (T *)mem.allocRaw(sizeof(T) * count);
         addAlloc(res, start, end);
         return res;
     }

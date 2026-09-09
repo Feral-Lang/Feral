@@ -18,16 +18,16 @@ namespace fer
 static Atomic<size_t> totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0,
                       chunkReuseCount = 0;
 
-MemoryManager::MemoryManager(StringRef name, size_t poolSize)
-    : freechunks({}), name(name), poolSize(poolSize)
+MemoryManager::MemoryManager(StringRef name) : freechunks({}), name(name)
 {
-    allocPool();
+    for(auto &sz : freechunks) sz = 0;
 }
 MemoryManager::~MemoryManager()
 {
-    // count free chunks at each index/size
     if(DEFAULT_LOGGER.isLevelLoggable(LogLevels::INFO)) {
-        LOG_INFO("======================= Freechunk Stats =======================");
+        // count free chunks at each index/size - by end of memory manager, this contains the true
+        // allocation count ie, allocations - reuses
+        LOG_INFO("=================== Freechunk Stats (real allocation count) ===================");
         for(size_t i = 0; i < freechunks.size(); ++i) {
             auto &sz = freechunks[i];
             if(sz == 0) continue;
@@ -40,21 +40,11 @@ MemoryManager::~MemoryManager()
             LOG_INFO("-- of bytes ", (1 << size_t(i + 1)), ": ", count, " allocations");
         }
     }
-    // clear out the allocations that are larger than MAX_ROUNDUP
-    for(auto &sz : freechunks) {
-        if(sz == 0) continue;
-        size_t allocAddr = sz;
-        while(allocAddr > 0) {
-            if(getAllocDetail(allocAddr, AllocDetails::SIZE) <= poolSize) break;
-            AlignedFree((char *)allocAddr - ALLOC_DETAIL_BYTES);
-            allocAddr = getAllocDetail(allocAddr, AllocDetails::NEXT);
-        }
-        sz = 0;
-    }
     for(auto &p : pools) AlignedFree(p.mem);
-    LOG_INFO("=============== ", name, " memory manager stats: ===============");
+    LOG_INFO("======================== ", name, " memory manager stats: =======================");
     LOG_INFO("-- Total allocated bytes (pools + otherwise): ", totalAllocBytes.load());
     LOG_INFO("--                Allocated bytes from pools: ", totalPoolAlloc.load());
+    LOG_INFO("--                                Pool count: ", pools.size());
     LOG_INFO("--                             Request count: ", totalAllocRequests.load());
     LOG_INFO("--                         Chunk Reuse count: ", chunkReuseCount.load());
 }
@@ -73,12 +63,15 @@ size_t MemoryManager::nextPow2(size_t sz)
 
 void MemoryManager::allocPool()
 {
+    size_t poolSize = DEFAULT_POOL_SIZE;
+    if(pools.empty()) pools.reserve(20);
+    else poolSize = pools.back().sz;
     char *alloc = (char *)AlignedAlloc(MAX_ALIGNMENT, poolSize);
     totalAllocBytes += poolSize;
-    pools.emplace_back(alloc, alloc);
+    pools.emplace_back(poolSize, alloc, alloc);
 }
 
-void *MemoryManager::allocRaw(size_t size, size_t align)
+void *MemoryManager::allocRaw(size_t size)
 {
     // align is unused for now.
     if(size == 0) return nullptr;
@@ -88,21 +81,22 @@ void *MemoryManager::allocRaw(size_t size, size_t align)
     size_t requiredSz = size + ALLOC_DETAIL_BYTES;
     size_t allocSz    = nextPow2(requiredSz);
 
-    LOG_TRACE("Allocating: ", allocSz, " (required size: ", requiredSz, ") (original size: ", size,
-              ")");
+    LOG_TRACE("Allocating: ", allocSz, " (reqd size: ", requiredSz, ") (orig size: ", size, ")");
 
     char *loc = nullptr;
 
     ++totalAllocRequests;
-    if(allocSz > poolSize) {
+    if(allocSz > MAX_ROUNDUP) {
         totalAllocBytes += allocSz;
         loc = (char *)AlignedAlloc(MAX_ALIGNMENT, allocSz);
-        LOG_TRACE("Allocated ", allocSz, " using malloc as it exceeds pool size: ", poolSize);
+        LOG_TRACE("Allocated ", allocSz,
+                  " using malloc as it exceeds pool allocation size: ", MAX_ROUNDUP);
     } else {
         totalPoolAlloc += allocSz;
+        size_t poolIndex = getIndexForAllocSize(allocSz);
         LockGuard<RecursiveMutex> mtxlock(mtx);
         // there is a free chunk available in the chunk list
-        size_t &addrSz = freechunks[getFreeChunkIndex(allocSz)];
+        size_t &addrSz = freechunks[poolIndex];
         if(addrSz != 0) {
             loc            = (char *)addrSz;
             size_t nextTmp = getAllocDetail(addrSz, AllocDetails::NEXT);
@@ -117,7 +111,7 @@ void *MemoryManager::allocRaw(size_t size, size_t align)
 
         // fetch a chunk from the pool
         for(auto &p : pools) {
-            size_t freespace = poolSize - (p.head - p.mem);
+            size_t freespace = p.sz - (p.head - p.mem);
             if(freespace >= allocSz) {
                 loc = p.head;
                 p.head += allocSz;
@@ -144,24 +138,24 @@ void MemoryManager::freeRaw(void *data)
     if(data == nullptr) return;
     char *loc = (char *)data;
     size_t sz = getAllocDetail((size_t)loc, AllocDetails::SIZE);
-    if(sz > poolSize) {
+    if(sz > MAX_ROUNDUP) {
         AlignedFree(loc - ALLOC_DETAIL_BYTES);
         return;
     }
     LockGuard<RecursiveMutex> mtxlock(mtx);
-    size_t idx     = getFreeChunkIndex(sz);
+    size_t idx     = getIndexForAllocSize(sz);
     size_t &addrSz = freechunks[idx];
     setAllocDetail((size_t)loc, AllocDetails::NEXT, addrSz);
     addrSz = (size_t)loc;
 }
 
-void MemoryManager::dumpMem(char *pool)
+void MemoryManager::dumpMem(MemPool &pool)
 {
     constexpr size_t charSize     = 2; // in bytes
     constexpr size_t charsPerLine = 64 * charSize;
-    for(size_t i = 0; i < poolSize; i += charSize) {
-        if(i % charsPerLine == 0) std::cout << "\n" << (void *)(pool + i) << " :: ";
-        std::cout << std::hex << (*(uint16_t *)(pool + i)) << " ";
+    for(size_t i = 0; i < pool.sz; i += charSize) {
+        if(i % charsPerLine == 0) std::cout << "\n" << (void *)(pool.mem + i) << " :: ";
+        std::cout << std::hex << (*(uint16_t *)(pool.mem + i)) << " ";
     }
     std::cout << std::dec << "\n";
 }

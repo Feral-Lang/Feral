@@ -130,6 +130,10 @@ public:
 
     VarFn *makeFn(ModuleLoc loc, const FeralNativeFnDesc &fnObj);
 
+    uint32_t addDocString(ModuleLoc loc, StringRef doc);
+    void setDocString(uint32_t index, ModuleLoc loc, StringRef doc);
+    StringRef getDocString(uint32_t index);
+
     void addGlobal(StringRef name, StringRef doc, Var *val, bool iref = true);
     void addGlobal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj);
     Var *getGlobal(StringRef name);
@@ -239,7 +243,7 @@ public:
     // makeVar => createVar + initVar
     template<VarDerived T, typename... Args> T *createVar(ModuleLoc loc, Args &&...args)
     {
-        T *res = new(gs->mem.allocRaw(sizeof(T), alignof(T))) T(loc, std::forward<Args>(args)...);
+        T *res = new(gs->mem.allocRaw(sizeof(T))) T(loc, std::forward<Args>(args)...);
         res->create(*this);
         return res;
     }
