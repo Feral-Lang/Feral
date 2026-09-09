@@ -34,6 +34,8 @@ if feral.args.find('r') {
     buildType = 'Debug';
 } elif feral.args.find('rd') {
     buildType = 'RelWithDebInfo';
+} elif feral.args.find('s') {
+    buildType = 'MinSizeRel';
 }
 if feral.args.find('t') { testing = true; }
 if feral.args.find('c') { codeCov = true; }
