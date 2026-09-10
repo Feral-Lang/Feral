@@ -327,7 +327,7 @@ let getDefault = fn() {
     } elif cc == nil && cxx != nil {
         return feral.err(-1, 'found $CXX as `', cxx, '`, but could not find $CC');
     } elif cc != nil && cxx != nil {
-        return identifyCompiler(cc, cxx);
+        return identifyCompiler(cc.path(), cxx.path());
     }
     # option 2: cc/c++ executables
     let cc = os.findExec('cc');
@@ -357,12 +357,25 @@ Only works on clang and gcc for now.
 "
 let identifyCompiler = fn(cc, cxx) {
     let out = '';
-    os.exec(out = out, cc, '--version');
-    if out.find('GCC') >= 0 {
+    let absCC = cc.absolute().str();
+    let id = '';
+    if absCC.find('gcc') >= 0 {
+        id = 'gcc';
+    } elif absCC.find('clang') >= 0 {
+        id = 'clang';
+    }
+    if id.empty() {
+        os.exec(out = out, cc, '--version');
+        if out.find('GCC') >= 0 {
+            id = 'gcc';
+        } elif out.find('clang') >= 0 {
+            id = 'clang';
+        }
+    }
+    if id == 'gcc' {
         let gcc = import('std/toolchain/gcc');
         return gcc.new();
-    }
-    if out.find('clang') >= 0 {
+    } elif id == 'clang' {
         let clang = import('std/toolchain/clang');
         return clang.new();
     }

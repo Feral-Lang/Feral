@@ -49,9 +49,6 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Show compiler
-        run: /usr/bin/cc --version
-
       - name: Install valgrind
         if: runner.os != 'Windows' && runner.os != 'macOS'
         run: |
