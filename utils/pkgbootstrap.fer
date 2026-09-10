@@ -18,7 +18,7 @@ logging.defaultLogger.addTargetByPath(logFilePath, level = logging.Levels.TRACE,
 io.println('Writing full logs to: ', logFilePath);
 
 if feral.args.find('-V') {
-    logging.addTarget(io.stderr, logging.Levels.TRACE, false);
+    logging.defaultLogger.addTarget(io.stderr, level = logging.Levels.TRACE, colorize = false);
 }
 
 logging.trace('Checking if path exists: ', pkgExePath);
