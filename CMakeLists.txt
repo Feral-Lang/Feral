@@ -6,7 +6,7 @@ project(Feral
 
 set(PROJECT_VERSION_MAJOR "2")
 set(PROJECT_VERSION_MINOR "4")
-set(PROJECT_VERSION_PATCH "7")
+set(PROJECT_VERSION_PATCH "8")
 
 include(FetchContent)
 include(GNUInstallDirs)

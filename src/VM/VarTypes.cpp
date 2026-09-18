@@ -956,8 +956,13 @@ bool VarFileIterator::next(VarStr *&val)
 VarBytebuffer::VarBytebuffer(ModuleLoc loc, size_t bufsz, size_t buflen, const unsigned char *buf)
     : Var(loc), buffer(nullptr), bufsz(bufsz), buflen(buflen)
 {
-    if(bufsz > 0) buffer = (unsigned char *)malloc(bufsz);
-    if(buflen > 0) memcpy(buffer, buf, buflen);
+    if(bufsz > 0) {
+        buffer = (unsigned char *)malloc(bufsz);
+        if(buflen > 0) memcpy(buffer, buf, buflen);
+    } else if(buflen > 0) {
+        buffer       = (unsigned char *)buf;
+        this->buflen = buflen;
+    }
 }
 VarBytebuffer::~VarBytebuffer()
 {

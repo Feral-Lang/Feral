@@ -432,6 +432,10 @@ FERAL_FUNC(fdWrite, 2, false,
         VarBytebuffer *bb = as<VarBytebuffer>(args[2]);
         data              = bb->getVal();
         count             = bb->size();
+        if(bb->capacity() == 0) {
+            vm.fail(loc, "provided bytebuffer has no capacity");
+            return nullptr;
+        }
     } else if(args[2]->is<VarStr>()) {
         VarStr *s = as<VarStr>(args[2]);
         data      = s->getVal().data();

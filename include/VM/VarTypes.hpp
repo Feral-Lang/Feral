@@ -827,7 +827,7 @@ public:
 
 private:
     InternalType *buffer;
-    size_t bufsz;
+    size_t bufsz; // if 0, buffer not owned by this object and won't be freed.
     size_t buflen;
 
     bool onSet(VirtualMachine &vm, Var *from) override;

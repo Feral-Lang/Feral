@@ -13,9 +13,9 @@
 namespace fer
 {
 
-inline ssize_t writeToFile(FILE *file, StringRef data)
+inline ssize_t writeToFile(FILE *file, const void *data, size_t bytes)
 {
-    return fwrite(data.data(), sizeof(char), data.size(), file);
+    return fwrite(data, 1, bytes, file);
 }
 ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> args)
 {
@@ -23,14 +23,21 @@ ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> arg
     for(auto &a : args) {
         if(a->is<VarStr>()) {
             const String &s = as<VarStr>(a)->getVal();
-            count += writeToFile(file, s);
+            size_t bytes    = sizeof(String::value_type) * s.size();
+            count += writeToFile(file, s.data(), bytes);
+            continue;
+        } else if(a->is<VarBytebuffer>()) {
+            VarBytebuffer *b = as<VarBytebuffer>(a);
+            size_t bytes     = sizeof(VarBytebuffer::InternalType) * b->size();
+            count += writeToFile(file, b->getVal(), bytes);
             continue;
         }
         Var *v = nullptr;
         Array<Var *, 1> tmp{a};
         if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return -1;
         const String &s = as<VarStr>(v)->getVal();
-        count += writeToFile(file, s);
+        size_t bytes    = sizeof(String::value_type) * s.size();
+        count += writeToFile(file, s.data(), bytes);
         vm.decVarRef(v);
     }
     return count;
@@ -57,7 +64,7 @@ FERAL_FUNC(println, 0, true,
 {
     ssize_t count = printBase(vm, loc, stdout, {args.begin() + 1, args.end()});
     if(count < 0) return nullptr;
-    count += writeToFile(stdout, "\n");
+    count += writeToFile(stdout, "\n", 1);
     return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -76,7 +83,7 @@ FERAL_FUNC(eprintln, 0, true,
 {
     ssize_t count = printBase(vm, loc, stderr, {args.begin() + 1, args.end()});
     if(count < 0) return nullptr;
-    count += writeToFile(stderr, "\n");
+    count += writeToFile(stderr, "\n", 1);
     return vm.makeVar<VarInt>(loc, count);
 }
 
@@ -109,7 +116,7 @@ FERAL_FUNC(fprintln, 0, true,
     FILE *f       = as<VarFile>(args[1])->getFile();
     ssize_t count = printBase(vm, loc, f, {args.begin() + 2, args.end()});
     if(count < 0) return nullptr;
-    count += writeToFile(f, "\n");
+    count += writeToFile(f, "\n", 1);
     return vm.makeVar<VarInt>(loc, count);
 }
 
