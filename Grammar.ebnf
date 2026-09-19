@@ -79,8 +79,11 @@ escape_seq   = '\' any_char ;
 (* --- Keywords (reserved; cannot be used as identifiers) --- *)
 
 (* let  fn  if  elif  else  for  in  while  return  yield
-   await  wait  continue  break  void  true  false  nil
-   or  defer  inline                                       *)
+   await  wait  continue  break  true  false  nil
+   or  defer  inline
+
+   Note: 'void' is NOT a keyword — it is treated as a regular identifier.
+   The '@' token is recognized by the lexer but is not currently used by the parser. *)
 
 
 (* ============================================================
@@ -166,15 +169,16 @@ for_init     = var_decl   (* note: var_decl does NOT include its trailing ';' he
 
 (* --- For-in loop (syntactic sugar) --- *)
 
-for_in_loop  = 'for' IDENTIFIER 'in' expr16 braced_block ;
+for_in_loop  = 'for' IDENTIFIER 'in' expr15 braced_block ;
 (* Desugared by the parser into a C-style for loop:
      let __<ident>N = <iterable>;
      for ;; {
-         let <ident> = __<ident>N.next();
+         let <ident> = ref(__<ident>N.next());
          if <ident> == nil { break; }
          <original body>
      }
-   The iterator variable name is unambiguously generated; N is a counter.  *)
+   The iterator variable name is unambiguously generated; N is a counter.
+   Note: next() is wrapped in ref() at desugaring time.          *)
 
 
 (* --- While loop --- *)
@@ -193,8 +197,8 @@ while_loop   = 'while' expr17 braced_block ;
    -----  -------  -----------------------------------  -------------
     18    expr18   ,                                    left
     17    expr17   =                                    right
-    15    expr15   ? :   (ternary)                      none
-    16    expr16   += -= *= /= %= <<= >>= &= |= ~= ^=  left
+    16    expr16   ? :   (ternary)                      none
+    15    expr15   += -= *= /= %= <<= >>= &= |= ~= ^=  left
                    or-block
     14    expr14   ??                                   left
     13    expr13   ||                                   left
@@ -209,11 +213,9 @@ while_loop   = 'while' expr17 braced_block ;
      4    expr04   * / % ** //                          left
      3    expr03   ++ -- + - * & ! ~  (unary prefix)   right (applied outermost-last)
      2    expr02   ++ -- ...          (unary postfix)   —
-     1    expr01   () [] . ->  (primary / suffix chain) left
+     1    expr01   () [] . -> .? (primary / suffix chain) left
 
-   Note: the call chain is 18→17→15→16→14→13→...→1
-   (level 15 is sandwiched between 17 and 16 due to how ternary interacts
-    with compound assignment)
+   Call chain: 18→17→16→15→14→13→...→1
    ============================================================ *)
 
 expr     = expr18 ;
@@ -226,18 +228,18 @@ expr18   = expr17 { ',' expr17 } ;
 
 (* --- Level 17: Assignment --- right-associative *)
 
-expr17   = expr15 { '=' expr15 } ;
+expr17   = expr16 { '=' expr16 } ;
 
 
-(* --- Level 15: Ternary --- non-repeating *)
+(* --- Level 16: Ternary --- non-repeating *)
 
-expr15   = expr16 [ '?' expr16 ':' expr16 ] ;
-(* Each branch is evaluated at expr16 level (compound-assign is allowed in branches). *)
+expr16   = expr15 [ '?' expr15 ':' expr15 ] ;
+(* Each branch is evaluated at expr15 level (compound-assign and or-block are allowed in branches). *)
 
 
-(* --- Level 16: Compound assignment and or-block --- left-associative *)
+(* --- Level 15: Compound assignment and or-block --- left-associative *)
 
-expr16   = expr14 { compound_assign_op expr14 } [ or_block ] ;
+expr15   = expr14 { compound_assign_op expr14 } [ or_block ] ;
 
 compound_assign_op = '+=' | '-=' | '*=' | '/=' | '%='
                    | '<<=' | '>>='
@@ -356,9 +358,13 @@ primary  = IDENTIFIER
 
 suffix   = '[' expr17 ']'                                  (* subscript     *)
          | '(' [ call_arg { ',' call_arg } ] ')'           (* function call *)
-         | ( '.' | '->' ) primary                          (* member access *) ;
+         | ( '.' | '->' ) primary                          (* member access *)
+         | '.?'                                             (* result-error-return *) ;
 (* Suffixes chain left-to-right: foo.bar[0]().baz is valid.
-   Both '.' and '->' produce identical DOT expressions; '->' is an alias. *)
+   Both '.' and '->' produce identical DOT expressions; '->' is an alias.
+   '.?' is the result-error-return operator: it unwraps a result value,
+   or returns early from the enclosing function if the value is an error.
+   Desugars to: let __tmpN = ref(<expr>); if __tmpN.isErr() { return __tmpN; }; __tmpN.val() *)
 
 call_arg = ( IDENTIFIER | STR_LITERAL | ATOM ) '=' expr17  (* named argument  *)
          | expr17 ;                                        (* positional arg  *)
