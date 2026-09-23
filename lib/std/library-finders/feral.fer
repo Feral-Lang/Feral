@@ -43,10 +43,10 @@ let findLibrary in FeralFinder = fn(pkgName, .kw) {
             lib.addIncludeDirs(h.parent());
         }
     }
-    let libFiles = fs.walkDir(installDir, fs.WALK_RECURSE, '(.*).lib|(.*).so|(.*).dylib|(.*).dll');
+    let libFiles = fs.walkDir(installDir, fs.WALK_RECURSE, '(.*).lib|(.*).so|(.*).dylib|(.*).dll|(.*).pdb');
     for f in libFiles.each() {
         lib.addLibraryDirs(f.parent());
-        if f.str().endsWith('.dll') {
+        if f.str().endsWith('.dll', '.pdb') {
             lib.addDllPaths(f);
             continue;
         }

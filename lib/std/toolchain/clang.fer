@@ -46,9 +46,9 @@ let getVersion in Clang = fn() { return self.version; };
 Gets the compilation command for compiling all of `srcs` into `dest` object.
 Preferably, use full paths for `dest` and `srcs`.
 Takes a bunch of keyword arguments:
-* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, decides using `srcs` extension. If it can't, considers as `c`.
-* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
-* `opt = Opt` - optimization level, one of the values in `Opt` enum. Defaults to `Opt.None`.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`.
+* `opt = Opt` - optimization level, one of the values in `Opt` enum.
 * `defs = Map` - a map of preprocessor definitions to be provided.
 * `flags = Vec<Str>` - a list of flags to be used for compilation.
 * `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
@@ -112,15 +112,17 @@ let getCompileInfo in Clang = fn(.kw, destPath, srcs...) {
 Gets the linker command for linking all of `srcs` into `dest`.
 Preferably, use full paths for `dest` and `objs`.
 Takes a bunch of keyword arguments:
-* `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
+* `lang = 'c'/'cxx'` - Use the respective compiler/linker.
+* `opt = Opt` - optimization level, one of the values in `Opt` enum.
 * `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
 * `libs = Vec<Str>` - a vector of strings to specify libraries to link against.
 * `rpaths = Vec<Str>` - a vector of strings to specify rpaths to be added to the generated binary/library.
-* `static = true/false` - if `true`, generate static binary/library; dynamic otherwise. defaults to `false`.
-* `binary = true/false` - if `true`, generate an executable; library otherwise. defaults to `true`.
+* `static = true/false` - if `true`, generate static binary/library; dynamic otherwise.
+* `binary = true/false` - if `true`, generate an executable; library otherwise.
 "
 let getLinkInfo in Clang = fn(.kw, destPath, objs...) {
     let lang = kw['lang'];
+    let opt = kw['opt'];
     let libDirs = ref(kw['libDirs']);
     let libs = ref(kw['libs']);
     let rpaths = ref(kw['rpaths']);

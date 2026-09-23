@@ -31,8 +31,6 @@ endif()
 # Add external path
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
-
 if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
     if(WIN32)
         file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}/Programs/Feral" TMP_PREFIX)
@@ -170,6 +168,7 @@ set_target_properties(libferal
     ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for lib (windows)
     LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib" # for so (non-windows)
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>" # for dll (windows)
+    PDB_OUTPUT_DIRECTORY     "${PROJECT_BINARY_DIR}/bin$<0:>" # for pdb (windows)
 )
 install(TARGETS libferal EXPORT FeralTargets)
 install(EXPORT FeralTargets
@@ -177,6 +176,12 @@ install(EXPORT FeralTargets
     NAMESPACE Feral::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Feral
 )
+if(MSVC)
+    install(FILES "$<TARGET_PDB_FILE:libferal>"
+            DESTINATION bin
+            CONFIGURATIONS Debug RelWithDebInfo
+    )
+endif()
 
 configure_package_config_file(
     "${PROJECT_SOURCE_DIR}/cmake/FeralConfig.cmake.in"
@@ -206,12 +211,19 @@ set_target_properties(feral
     CXX_EXTENSIONS OFF
     LINK_FLAGS "${EXTRA_LD_FLAGS}"
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin$<0:>"
+    PDB_OUTPUT_DIRECTORY     "${PROJECT_BINARY_DIR}/bin$<0:>" # for pdb (windows)
 )
 install(TARGETS feral
     RUNTIME
       DESTINATION bin
       COMPONENT Binaries
 )
+if(MSVC)
+    install(FILES "$<TARGET_PDB_FILE:feral>"
+            DESTINATION bin
+            CONFIGURATIONS Debug RelWithDebInfo
+    )
+endif()
 set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT feral)
 
 # Install CMake modules
@@ -269,12 +281,19 @@ if(NOT NOSTDLIB STREQUAL "true")
             LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}" # for so (non-windows)
             RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for dll (windows)
             ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for lib (windows)
+            PDB_OUTPUT_DIRECTORY     "${PROJECT_BINARY_DIR}/lib/feral/${moddir}$<0:>" # for pdb (windows)
         )
         install(TARGETS ${modname}
             LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}"
             ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}$<0:>"
             RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}$<0:>"
         )
+        if(MSVC)
+            install(FILES "$<TARGET_PDB_FILE:${modname}>"
+                    DESTINATION "${CMAKE_INSTALL_LIBDIR}/feral/${moddir}$<0:>"
+                    CONFIGURATIONS Debug RelWithDebInfo
+            )
+        endif()
     endforeach()
 endif()
 

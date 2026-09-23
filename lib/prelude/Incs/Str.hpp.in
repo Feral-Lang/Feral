@@ -414,25 +414,31 @@ FERAL_FUNC(strSplitNative, 3, false, "")
     return res;
 }
 
-FERAL_FUNC(strStartsWith, 1, false,
-           "  var.fn(data) -> Bool\n"
-           "Returns `true` if the string `var` starts with `data`.")
+FERAL_FUNC(strStartsWith, 1, true,
+           "  var.fn(strs...) -> Bool\n"
+           "Returns `true` if the string `var` starts with any of `strs`.")
 {
-    EXPECT(VarStr, args[1], "compare string");
     const String &str = as<VarStr>(args[0])->getVal();
-    String &with      = as<VarStr>(args[1])->getVal();
-    return str.rfind(with, 0) == 0 ? vm.getTrue() : vm.getFalse();
+    for(size_t i = 1; i < args.size(); ++i) {
+        EXPECT(VarStr, args[i], "compare string");
+        String &with      = as<VarStr>(args[i])->getVal();
+        if(str.rfind(with, 0) == 0) return vm.getTrue();
+    }
+    return vm.getFalse();
 }
 
-FERAL_FUNC(strEndsWith, 1, false,
-           "  var.fn(data) -> Bool\n"
-           "Returns `true` if the string `var` ends with `data`.")
+FERAL_FUNC(strEndsWith, 1, true,
+           "  var.fn(strs...) -> Bool\n"
+           "Returns `true` if the string `var` ends with any of `strs`.")
 {
-    EXPECT(VarStr, args[1], "compare string");
     const String &str = as<VarStr>(args[0])->getVal();
-    String &with      = as<VarStr>(args[1])->getVal();
-    size_t pos        = str.rfind(with);
-    return vm.makeVar<VarBool>(loc, pos != String::npos && pos + with.size() == str.size());
+    for(size_t i = 1; i < args.size(); ++i) {
+        EXPECT(VarStr, args[i], "compare string");
+        String &with      = as<VarStr>(args[i])->getVal();
+        size_t pos        = str.rfind(with);
+        if(pos != String::npos && pos + with.size() == str.size()) return vm.getTrue();
+    }
+    return vm.getFalse();
 }
 
 FERAL_FUNC(strFit, 1, false,

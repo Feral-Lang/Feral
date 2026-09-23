@@ -227,6 +227,7 @@ Takes a bunch of keyword arguments:
 * `preLink = fn(dest)` - before linking is performed, call this function. (default: nil)
 * `postLink = fn(dest, success)` - after linking is performed, call this function. (default: nil)
 * `lang = 'c'/'cxx'` - Use the respective compiler/linker. no default: MUST be provided.
+* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.getFeralOpt()`.
 * `libDirs = Vec<Path>` - a vector of paths to add as library dirs.
 * `libs = Vec<Str>` - a vector of strings to specify libraries to link against.
 * `rpaths = Vec<Path>` - a vector of paths to specify rpaths to be added to the generated binary/library.
@@ -243,6 +244,7 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
     let preLink = kw['preLink'];
     let postLink = kw['postLink'];
     let lang = kw['lang'] ?? 'c';
+    let opt = kw['opt'] ?? core.getFeralOpt();
     let libDirs = ref(kw['libDirs']) ?? vec.new();
     let libs = ref(kw['libs']) ?? vec.new();
     let rpaths = ref(kw['rpaths']) ?? vec.new();
@@ -250,7 +252,7 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
     let binary = kw['binary'] ?? true;
 
     # Generate the command(info) to run.
-    let info = self.iface.getLinkInfo(lang = lang, libDirs = libDirs, libs = libs,
+    let info = self.iface.getLinkInfo(lang = lang, opt = opt, libDirs = libDirs, libs = libs,
                                       rpaths = rpaths, static = static, binary = binary,
                                       destPath, objs...).?;
 
