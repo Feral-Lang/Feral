@@ -6,7 +6,7 @@ project(Feral
 
 set(PROJECT_VERSION_MAJOR "2")
 set(PROJECT_VERSION_MINOR "4")
-set(PROJECT_VERSION_PATCH "8")
+set(PROJECT_VERSION_PATCH "9")
 
 include(FetchContent)
 include(GNUInstallDirs)
@@ -106,11 +106,23 @@ endif()
 
 # Generally, disabled for CI purposes
 # Also needed when running valgrind as valgrind does not support instruction bytes for Vector<bool>
+set(USING_MARCH "false")
+set(MARCH_FLAG "")
 if(NOT DEFINED DISABLE_MARCH_NATIVE AND (NOT DEFINED ENV{DISABLE_MARCH_NATIVE} OR "$ENV{DISABLE_MARCH_NATIVE}" STREQUAL ""))
-    check_cxx_compiler_flag(-march=native COMPILER_SUPPORTS_MARCH_NATIVE)
+    if(MSVC AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            set(MARCH_FLAG "/clang:-march=native")
+        else()
+            set(MARCH_FLAG "/arch:AVX2")
+        endif()
+    else()
+        set(MARCH_FLAG "-march=native")
+    endif()
+    check_cxx_compiler_flag("${MARCH_FLAG}" COMPILER_SUPPORTS_MARCH_NATIVE)
     if(COMPILER_SUPPORTS_MARCH_NATIVE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-        message("-- Using -march=native")
+        set(USING_MARCH "true")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MARCH_FLAG}")
+        message("-- Using ${MARCH_FLAG}")
     endif()
 endif()
 

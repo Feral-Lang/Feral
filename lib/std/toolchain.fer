@@ -57,7 +57,8 @@ let getFeralLibrary = fn() {
 
 let Toolchain = struct(
     iface = nil, # interface
-    logger = nil
+    logger = nil,
+    cachedSupportedFlags = map.new() # String (flag) -> bool
 );
 Toolchain.setTypeName('Toolchain');
 
@@ -110,6 +111,7 @@ Takes a bunch of keyword arguments:
 * `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
 * `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.getFeralOpt()`.
 * `defs = Map` - a map of preprocessor definitions to be provided.
+* `flags = Vec<Str>` - a list of flags to be used for compilation.
 * `incDirs = Vec<Path>` - a vector of paths to add as include dirs.
 * `native = true/false` - if `true`, sets `-march=native` on non-msvc toolchains.
 * `depends = Vec<Path>` - if any of the files in this list is modified, triggers a recompilation.
@@ -138,15 +140,20 @@ let compile in Toolchain = fn(.kw, destPath, srcs...) {
     let std = kw['std'] ?? tmpStd;
     let opt = kw['opt'] ?? core.getFeralOpt();
     let defs = ref(kw['defs']) ?? map.new();
+    let flags = ref(kw['flags']) ?? vec.new();
     let incDirs = ref(kw['incDirs']) ?? vec.new();
     let depends = ref(kw['depends']) ?? vec.new();
-    let native = kw['native'] ?? false;
+    let native = kw['native'] ?? feral.usingMarch;
+
+    if kw['native'] != nil && native {
+        native = self.supportsFlag(feral.marchFlag);
+    }
 
     if opt < core.Opt.None || opt >= core.Opt.Unknown { return feral.err(-1, 'Unknown optimization level `', opt, '`'); }
 
     # Generate the command(info) to run.
-    let info = self.iface.getCompileInfo(dry = dry, force = force, lang = lang, std = std, opt = opt,
-                                         defs = defs, incDirs = incDirs, native = native,
+    let info = self.iface.getCompileInfo(lang = lang, std = std, opt = opt, defs = defs,
+                                         flags = flags, incDirs = incDirs, native = native,
                                          destPath, srcs...).?;
 
     if cmdOut != nil { cmdOut = info.cmd.join(' '); }
@@ -208,7 +215,7 @@ let compile in Toolchain = fn(.kw, destPath, srcs...) {
 };
 
 "
-  fn(.kw, dest, objs...) -> Result<Path>
+  var.fn(.kw, dest, objs...) -> Result<Path>
 Links each of the given `objs` and generates a `dest` binary/library from them.
 Returns the path to the created/expected library/binary, wrapped in `Result`.
 Preferably, use full paths for `dest` and `objs`.
@@ -243,8 +250,8 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
     let binary = kw['binary'] ?? true;
 
     # Generate the command(info) to run.
-    let info = self.iface.getLinkInfo(dry = dry, force = force, lang = lang, libDirs = libDirs,
-                                      libs = libs, rpaths = rpaths, static = static, binary = binary,
+    let info = self.iface.getLinkInfo(lang = lang, libDirs = libDirs, libs = libs,
+                                      rpaths = rpaths, static = static, binary = binary,
                                       destPath, objs...).?;
 
     if cmdOut != nil { cmdOut = info.cmd.join(' '); }
@@ -289,6 +296,32 @@ let link in Toolchain = fn(.kw, destPath, objs...) {
         }
     }
     return feral.ok(info.dest);
+};
+
+"
+  var.fn(.kw, flag) -> Bool
+Checks if the given `flag` is supported by the compiler.
+Returns `true` if the flag is supported, `false` otherwise.
+* `lang = 'c'/'cxx'` - can provide `c` to compile as a c source. By default, considers as 'c'.
+* `std = <number>` - which standard to use, like `std = 17` or `std = 20`. Defaults to `20` for C++, `11` for C.
+* `opt = core.Opt` - optimization level, one of the values in `core.Opt` enum. Defaults to `core.getFeralOpt()`.
+"
+let supportsFlag in Toolchain = fn(flag) {
+    let cachedVal = self.cachedSupportedFlags.at(flag);
+    if cachedVal != nil { return cachedVal; }
+
+    let lang = kw['lang'] ?? 'c';
+    let std = kw['std'] ?? (lang == 'cxx' ? 20 : 11);
+    let opt = kw['opt'] ?? core.getFeralOpt();
+
+    let tmpSrc = 'int main() { return 0; }';
+    let tmpSrcPath = core.workingDir / (lang == 'cxx' ? 'tmp.cpp' : 'tmp.c');
+    let tmpDestPath = (tmpSrcPath.str() + '.o').path();
+    io.fprint(fs.fopen(tmpSrcPath, 'w+'), tmpSrc);
+    let res = self.compile(lang = lang, std = std, opt = opt, flags = vec.new(flag), tmpDestPath, tmpSrcPath);
+    fs.remove(tmpSrcPath, tmpDestPath);
+    return res.isOk();
+
 };
 
 ####################################################################################################

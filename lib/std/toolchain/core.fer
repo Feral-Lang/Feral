@@ -1,5 +1,9 @@
+let fs = import('std/fs');
 let map = import('std/map');
 let vec = import('std/vec');
+
+let workingDir = feral.tempPath / 'toolchain';
+fs.mkdir(workingDir);
 
 ####################################################################################################
 ##################################### ToolchainInterface Stuff #####################################

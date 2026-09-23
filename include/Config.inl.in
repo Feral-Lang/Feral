@@ -11,6 +11,8 @@ constexpr char const *PROJECT_VERSION_STR = "@PROJECT_VERSION_MAJOR@.@PROJECT_VE
 constexpr char const *CMAKE_BUILD_TYPE = "@CMAKE_BUILD_TYPE@";
 constexpr char const *BUILD_COMPILER   = "@CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";
 constexpr char const *BUILD_DATE       = "@BUILD_DATE@";
+constexpr char const *MARCH_FLAG       = "@MARCH_FLAG@";
+constexpr bool const USING_MARCH       = @USING_MARCH@;
 
 constexpr char const *REPO_URL    = "@REPO_URL@";
 constexpr char const *COMMIT_ID   = "@COMMIT_ID@";

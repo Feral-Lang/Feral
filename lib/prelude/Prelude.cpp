@@ -674,6 +674,8 @@ INIT_DLL(Prelude)
     vm.makeLocal<VarStr>(loc, "buildDate", "", BUILD_DATE);
     vm.makeLocal<VarStr>(loc, "buildCompiler", "", BUILD_COMPILER);
     vm.makeLocal<VarStr>(loc, "buildType", "", CMAKE_BUILD_TYPE);
+    vm.makeLocal<VarBool>(loc, "marchFlag", "", MARCH_FLAG);
+    vm.makeLocal<VarBool>(loc, "usingMarch", "", USING_MARCH);
     vm.makeLocal<VarStr>(loc, "minCmakeVersion", "", MIN_CMAKE_VERSION);
     vm.makeLocal<VarStr>(loc, "usedCmakeVersion", "", USED_CMAKE_VERSION);
     vm.makeLocal<VarInt>(loc, "DEFAULT_MAX_RECURSION", "", DEFAULT_MAX_RECURSE_COUNT);
