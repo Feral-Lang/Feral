@@ -82,10 +82,6 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
     let info = core.CompileInfo();
     info.dest = (destPath.str() + '.obj').path();
 
-    if opt == core.Opt.None || opt == core.Opt.WithDebInfo {
-        info.cmd.push('/Z7'); # embed debug info in the object/exe
-    }
-
     info.cmd.push(lang == 'c' ? self.c : self.cxx);
     info.cmd.push('/EHsc'); # to prevent: warning C4530: C++ exception handler used, but unwind semantics are not enabled
     info.cmd.push(lang == 'c' ? '/std:c' + std.str() : '/std:c++' + std.str());
@@ -96,6 +92,11 @@ let getCompileInfo in MSVC = fn(.kw, destPath, srcs...) {
     elif opt == core.Opt.Full { info.cmd.push('/O3'); }
     elif opt == core.Opt.WithDebInfo { info.cmd.push('/Ob2'); }
     elif opt == core.Opt.Size { info.cmd.push('/O2'); }
+
+    if opt == core.Opt.None || opt == core.Opt.WithDebInfo {
+        info.cmd.push('/Z7'); # embed debug info in the object/exe
+    }
+
     if opt != core.Opt.None {
         defs.insert('NDEBUG', '');
     }
