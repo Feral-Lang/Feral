@@ -1,4 +1,5 @@
 #include <chrono>
+#include <format>
 
 #include "VM/VM.hpp"
 
@@ -18,20 +19,28 @@ FERAL_FUNC(timeNow, 0, false,
 }
 
 FERAL_FUNC(timeFormat, 2, false,
-           "  fn(timestamp, format) -> Str | Nil\n"
-           "Formats the `timestamp` which is in microseconds since epoch, using `format` string, "
-           "returning the resulting string.")
+           "  fn(timestamp, formatStr) -> Str | Nil\n"
+           "Formats the `timestamp` which is in microseconds since epoch, using `formatStr`.\n"
+           "Returns the resulting string.\n"
+           "Takes the following optional keyword arguments:\n"
+           "* `utc = true/false` - if `true`, time will be shown in UTC format, local time "
+           "otherwise. (default: false)")
 {
     EXPECT(VarInt, args[1], "time");
     EXPECT(VarStr, args[2], "format");
+    bool utc = false;
+    if(Var *utcVar = assnArgs->getAttr("utc")) {
+        EXPECT(VarBool, utcVar, "is utc format");
+        utc = as<VarBool>(utcVar)->getVal();
+    }
     int64_t val     = as<VarInt>(args[1])->getVal();
     const String &f = as<VarStr>(args[2])->getVal();
-    std::chrono::system_clock::time_point tp(std::chrono::microseconds{val});
-    std::time_t time = std::chrono::system_clock::to_time_t(tp);
-    std::tm *t       = std::localtime(&time);
-    char fmt[1024]   = {0};
-    if(std::strftime(fmt, sizeof(fmt), f.c_str(), t)) return vm.makeVar<VarStr>(loc, fmt);
-    return vm.getNil();
+    std::chrono::system_clock::time_point tpMicro(std::chrono::microseconds{val});
+    auto tpSec{std::chrono::time_point_cast<std::chrono::seconds>(tpMicro)};
+    auto tzTime = utc ? std::chrono::zoned_time{"UTC", tpSec}
+                      : std::chrono::zoned_time{std::chrono::current_zone(), tpSec};
+    auto res    = std::vformat("{:" + f + "}", std::make_format_args(tzTime));
+    return vm.makeVar<VarStr>(loc, std::move(res));
 }
 
 FERAL_FUNC(timeParse, 2, false,
@@ -54,7 +63,7 @@ FERAL_FUNC(timeParse, 2, false,
 INIT_DLL(Time)
 {
     vm.addLocal(loc, "now", timeNow);
-    vm.addLocal(loc, "parse", timeParse);
+    vm.addLocal(loc, "parseNative", timeParse);
     vm.addLocal(loc, "formatNative", timeFormat);
     return true;
 }

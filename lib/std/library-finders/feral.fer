@@ -51,7 +51,7 @@ let findLibrary in FeralFinder = fn(pkgName, .kw) {
             continue;
         }
         if os.name == 'windows' {
-            lib.addLibraryFlags(f.fileName().str());
+            lib.addLibraryFlags(f.file().str());
         } else {
             lib.addLibraryFlags(f.fileName().str().replace('lib', ''));
         }

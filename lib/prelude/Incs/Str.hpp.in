@@ -279,8 +279,9 @@ FERAL_FUNC(strErase, 1, false,
 }
 
 FERAL_FUNC(strAppend, 1, true,
-           "  var.fn(data...) -> var\n"
-           "Removes the char at index `position` in `var` and returns the updated `var`.")
+           "  var.fn(data...) -> Nil\n"
+           "Removes the char at index `position` in `var`.\n"
+           "Returns `nil`.")
 {
     EXPECT_NO_CONST(args[0], "var");
     String &self = as<VarStr>(args[0])->getVal();
@@ -299,7 +300,7 @@ FERAL_FUNC(strAppend, 1, true,
         self += as<VarStr>(argStr)->getVal();
         vm.decVarRef(argStr);
     }
-    return args[0];
+    return vm.getNil();
 }
 
 FERAL_FUNC(strFind, 1, false,

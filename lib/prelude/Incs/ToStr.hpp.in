@@ -24,7 +24,7 @@ FERAL_FUNC(bytebufferToStr, 0, false,
            "Converts the bytes in the Bytebuffer `var` into a string and returns it.")
 {
     VarBytebuffer *self = as<VarBytebuffer>(args[0]);
-    if(self->capacity() == 0) return vm.makeVar<VarStr>(loc, "");
+    if(self->size() == 0) return vm.makeVar<VarStr>(loc, "");
     return vm.makeVar<VarStr>(loc, reinterpret_cast<const char *>(self->getVal()), self->size());
 }
 

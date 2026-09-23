@@ -145,10 +145,7 @@ FERAL_FUNC(fileReadBytes, 1, false,
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
     VarBytebuffer *buf = as<VarBytebuffer>(args[1]);
-    if(buf->capacity() == 0) {
-        vm.fail(loc, "provided bytebuffer has no capacity");
-        return nullptr;
-    }
+    if(buf->capacity() == 0) return vm.makeVar<VarInt>(loc, 0);
     size_t read = fread(buf->getVal(), sizeof(VarBytebuffer::InternalType), buf->capacity(), file);
     buf->setLen(read);
     return vm.makeVar<VarInt>(loc, read);

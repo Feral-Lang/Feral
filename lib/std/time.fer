@@ -42,8 +42,12 @@ let setFormat = fn(newFormat) {
     timeFormat = newFormat;
 };
 
-let format = fn(time, fmt = timeFormat) {
-    return formatNative(time, fmt);
+let format = fn(.kw, time, fmt = timeFormat) {
+    return formatNative(time, fmt, kw...);
+};
+
+let parse = fn(timeStr, fmt = timeFormat) {
+    return parseNative(timeStr, fmt);
 };
 
 "
