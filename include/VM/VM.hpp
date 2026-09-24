@@ -89,6 +89,7 @@ namespace fer
 class FER_API VirtualMachine : public IAllocated
 {
     GlobalState *gs;
+    MemoryAllocator *mem;
     String name;
     Vector<VarModule *> modulestack;
     Set<Var *> refVars; // vars that are marked for ref.
@@ -102,7 +103,7 @@ class FER_API VirtualMachine : public IAllocated
     bool ownsGlobalState;
     bool ready; // if not ready, _init_() and _deinit_() won't be called
 
-    friend class MemoryManager;
+    friend class MemoryAllocator;
 
     bool loadPrelude();
 
@@ -201,7 +202,7 @@ public:
 
     inline GlobalState *getGlobalState() { return gs; }
     inline args::ArgParser &getArgParser() { return gs->argparser; }
-    inline MemoryManager &getMemoryManager() { return gs->mem; }
+    inline MemoryAllocator &getMemoryAllocator() { return *mem; }
     inline VarVec *getModuleDirs() { return gs->moduleDirs; }
     inline VarVec *getModuleFinders() { return gs->moduleFinders; }
     inline VarPath *getBinaryPath() { return gs->binaryPath; }
@@ -243,7 +244,7 @@ public:
     // makeVar => createVar + initVar
     template<VarDerived T, typename... Args> T *createVar(ModuleLoc loc, Args &&...args)
     {
-        T *res = new(gs->mem.allocRaw(sizeof(T))) T(loc, std::forward<Args>(args)...);
+        T *res = new(mem->allocRaw(sizeof(T))) T(loc, std::forward<Args>(args)...);
         res->create(*this);
         return res;
     }
@@ -272,7 +273,7 @@ public:
         if(var->dref() <= 0 && del) {
             var->deinit(*this);
             var->destroy(*this);
-            gs->mem.freeDeinit(var);
+            mem->freeDeinit(var);
             var = nullptr;
         }
         return var;

@@ -23,15 +23,16 @@ Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *ass
 
 VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSourceFn,
                                StringRef name)
-    : gs(new GlobalState(argparser, parseSourceFn)), name(name), recurseCount(0), exitcode(0),
-      recurseExceeded(false), exitCalled(false), ownsGlobalState(true), ready(false)
+    : gs(new GlobalState(argparser, parseSourceFn)), mem(new MemoryAllocator(gs->mgr)), name(name),
+      recurseCount(0), exitcode(0), recurseExceeded(false), exitCalled(false),
+      ownsGlobalState(true), ready(false)
 {
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
     modulestack.reserve(10);
     refVars.reserve(20);
     vars      = makeVar<VarStack>({});
-    failstack = gs->mem.allocInit<FailStack>(*this);
-    execstack = gs->mem.allocInit<ExecStack>(*this);
+    failstack = mem->allocInit<FailStack>(*this);
+    execstack = mem->allocInit<ExecStack>(*this);
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
     failstack->pushHandler(gs->basicErrHandler, -1, 1);
     ++gs->vmCount;
@@ -39,12 +40,12 @@ VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSo
     if(ownsGlobalState && !loadPrelude()) throw "Failed to load prelude module";
 }
 VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandler)
-    : gs(gs), name(name), recurseCount(0), exitcode(0), recurseExceeded(false), exitCalled(false),
-      ownsGlobalState(false), ready(false)
+    : gs(gs), mem(new MemoryAllocator(gs->mgr)), name(name), recurseCount(0), exitcode(0),
+      recurseExceeded(false), exitCalled(false), ownsGlobalState(false), ready(false)
 {
     vars      = makeVar<VarStack>({});
-    failstack = gs->mem.allocInit<FailStack>(*this);
-    execstack = gs->mem.allocInit<ExecStack>(*this);
+    failstack = mem->allocInit<FailStack>(*this);
+    execstack = mem->allocInit<ExecStack>(*this);
     if(!errHandler) errHandler = gs->basicErrHandler;
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
     failstack->pushHandler(errHandler, -1, 1);
@@ -56,20 +57,19 @@ VirtualMachine::~VirtualMachine()
     decVarRef(vars);
     ready = false;
     if(failstack->size() > 0) failstack->popHandler();
-    gs->mem.freeDeinit(execstack);
-    gs->mem.freeDeinit(failstack);
+    mem->freeDeinit(execstack);
+    mem->freeDeinit(failstack);
     --gs->vmCount;
-    if(ownsGlobalState) {
-        gs->deinit(*this);
-        delete gs;
-    }
+    if(ownsGlobalState) gs->deinit(*this);
+    delete mem;
+    if(ownsGlobalState) delete gs;
 }
 
 VirtualMachine *VirtualMachine::createVM(StringRef name, VarFn *errHandler)
 {
-    return gs->mem.allocInit<VirtualMachine>(gs, name, errHandler);
+    return gs->mem->allocInit<VirtualMachine>(gs, name, errHandler);
 }
-void VirtualMachine::destroyVM(VirtualMachine *vm) { gs->mem.freeDeinit(vm); }
+void VirtualMachine::destroyVM(VirtualMachine *vm) { gs->mem->freeDeinit(vm); }
 
 int VirtualMachine::runFile(ModuleLoc loc, const char *file, StringRef threadName)
 {

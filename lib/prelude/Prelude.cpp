@@ -62,7 +62,6 @@ FERAL_FUNC(allSetDoc, 1, false,
            "string for `var`.")
 {
     EXPECT2(VarStr, VarNil, args[1], "doc string");
-    auto &mem = vm.getMemoryManager();
     if(args[1]->is<VarNil>()) {
         args[0]->resetDoc();
     } else {

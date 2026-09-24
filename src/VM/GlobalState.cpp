@@ -16,10 +16,11 @@ Var *loadModule(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *ass
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 GlobalState::GlobalState(args::ArgParser &argparser, ParseSourceFn parseSourceFn)
-    : mem("VM::Main"), managedAllocator(mem, "VM::ManagedAllocator"), argparser(argparser),
-      parseSourceFn(parseSourceFn), vmCount(0), recurseMax(DEFAULT_MAX_RECURSE_COUNT)
+    : mgr("VM::Main"), mem(new MemoryAllocator(mgr)), managedAllocator(mgr, "VM::ManagedAllocator"),
+      argparser(argparser), parseSourceFn(parseSourceFn), vmCount(0),
+      recurseMax(DEFAULT_MAX_RECURSE_COUNT)
 {}
-GlobalState::~GlobalState() {}
+GlobalState::~GlobalState() { delete mem; }
 
 bool GlobalState::init(VirtualMachine &vm)
 {

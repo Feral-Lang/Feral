@@ -48,6 +48,25 @@ constexpr size_t ALLOC_DETAIL_BYTES = sizeof(AllocDetail);
 static_assert(ALLOC_DETAIL_BYTES % MAX_ALIGNMENT == 0,
               "sizeof(AllocDetail) must be a multiple of max alignment");
 
+// works upto MAX_ROUNDUP
+size_t nextPow2(size_t sz);
+
+inline constexpr size_t getIndexForAllocSize(size_t sz) { return std::countr_zero(sz) - 1; }
+inline constexpr size_t getAllocSizeForIndex(size_t index) { return 1 << size_t(index + 1); }
+
+// alloc address must be AFTER sizeof(AllocDetail)
+inline void setAllocDetail(size_t alloc, AllocDetails field, size_t value)
+{
+    (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)] = value;
+}
+// alloc address must be AFTER sizeof(AllocDetail)
+inline size_t getAllocDetail(size_t alloc, AllocDetails field)
+{
+    return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)];
+}
+
+inline size_t minUsableSize() { return nextPow2(ALLOC_DETAIL_BYTES + 1) - ALLOC_DETAIL_BYTES; }
+
 struct MemPool
 {
     size_t sz;
@@ -67,10 +86,10 @@ template<typename T> concept IAllocatedDerived = std::is_base_of_v<IAllocated, T
 
 class FER_API MemoryManager
 {
+    Vector<MemPool> pools;
     // The size_t at freechunks[sz] is an address which holds an allocation.
     // This address is after ALLOC_DETAIL_BYTES bytes.
     Array<size_t, std::countr_zero(MAX_ROUNDUP)> freechunks;
-    Vector<MemPool> pools;
     // TODO: have multiple arenas and then use mutexes individual to those arenas
     // then, in a mutithreaded environment, the manager should be able to choose one of the
     // available arenas and allocate memory from that (therefore increasing speed, compared to a
@@ -78,22 +97,36 @@ class FER_API MemoryManager
     RecursiveMutex mtx;
     String name;
 
-    inline constexpr size_t getIndexForAllocSize(size_t sz) { return std::countr_zero(sz) - 1; }
-    inline constexpr size_t getAllocSizeForIndex(size_t index) { return 1 << size_t(index + 1); }
-
-    // works upto MAX_ROUNDUP
-    size_t nextPow2(size_t sz);
     void allocPool();
+
+    void *alloc(size_t size);
+    void free(void *data);
+
+    void clearChunks(Array<size_t, std::countr_zero(MAX_ROUNDUP)> &chunks);
+
+    friend class MemoryAllocator;
 
 public:
     MemoryManager(StringRef name);
     ~MemoryManager();
 
-    void *allocRaw(size_t size);
-    void freeRaw(void *data);
-
     // Helper function - only use if seeing memory issues.
     void dumpMem(MemPool &pool);
+};
+
+class FER_API MemoryAllocator
+{
+    // The size_t at freechunks[sz] is an address which holds an allocation.
+    // This address is after ALLOC_DETAIL_BYTES bytes.
+    Array<size_t, std::countr_zero(MAX_ROUNDUP)> freechunks;
+    MemoryManager &mgr;
+
+public:
+    MemoryAllocator(MemoryManager &mgr);
+    ~MemoryAllocator();
+
+    void *allocRaw(size_t size);
+    void freeRaw(void *data);
 
     template<IAllocatedDerived T, typename... Args> T *allocInit(Args &&...args)
     {
@@ -106,19 +139,7 @@ public:
         freeRaw(data);
     }
 
-    // alloc address must be AFTER sizeof(AllocDetail)
-    inline void setAllocDetail(size_t alloc, AllocDetails field, size_t value)
-    {
-        (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)] =
-            value;
-    }
-    // alloc address must be AFTER sizeof(AllocDetail)
-    inline size_t getAllocDetail(size_t alloc, AllocDetails field)
-    {
-        return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)];
-    }
-
-    inline size_t minUsableSize() { return nextPow2(ALLOC_DETAIL_BYTES + 1) - ALLOC_DETAIL_BYTES; }
+    inline MemoryManager &getManager() { return mgr; }
 };
 
 class IAllocatedList : public IAllocated
@@ -127,7 +148,7 @@ class IAllocatedList : public IAllocated
     size_t count;
 
 protected:
-    MemoryManager &mem;
+    MemoryAllocator mem;
     void *addAlloc(void *newAlloc, void *&start, void *&end);
     void *removeAlloc(void *alloc, void *&start, void *&end);
     void *removeAlloc(size_t allocIndex, void *&start, void *&end);
@@ -136,19 +157,19 @@ protected:
 
     inline void *getPrev(void *from, void *end) const
     {
-        return from ? (void *)mem.getAllocDetail((size_t)from, AllocDetails::PREV) : end;
+        return from ? (void *)getAllocDetail((size_t)from, AllocDetails::PREV) : end;
     }
     inline void *getNext(void *from, void *start) const
     {
-        return from ? (void *)mem.getAllocDetail((size_t)from, AllocDetails::NEXT) : start;
+        return from ? (void *)getAllocDetail((size_t)from, AllocDetails::NEXT) : start;
     }
 
     inline size_t getSize() const { return count; }
     inline bool isEmpty(void *start) const { return !start; }
 
 public:
-    IAllocatedList(MemoryManager &mem, String &&name);
-    IAllocatedList(MemoryManager &mem, const char *name);
+    IAllocatedList(MemoryManager &mgr, String &&name);
+    IAllocatedList(MemoryManager &mgr, const char *name);
     virtual ~IAllocatedList();
 
     inline StringRef getName() { return name; }
@@ -162,8 +183,8 @@ class FER_API ManagedList : public IAllocatedList
     IAllocated *start, *end;
 
 public:
-    ManagedList(MemoryManager &mem, String &&name);
-    ManagedList(MemoryManager &mem, const char *name);
+    ManagedList(MemoryManager &mgr, String &&name);
+    ManagedList(MemoryManager &mgr, const char *name);
     ~ManagedList();
 
     template<IAllocatedDerived T, typename... Args> T *alloc(Args &&...args)
@@ -218,8 +239,8 @@ class FER_API ManagedRawList : public IAllocatedList
     void *start, *end;
 
 public:
-    ManagedRawList(MemoryManager &mem, String &&name);
-    ManagedRawList(MemoryManager &mem, const char *name);
+    ManagedRawList(MemoryManager &mgr, String &&name);
+    ManagedRawList(MemoryManager &mgr, const char *name);
     ~ManagedRawList();
 
     template<typename T> T *alloc(size_t count = 1)

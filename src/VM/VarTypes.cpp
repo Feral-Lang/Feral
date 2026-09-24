@@ -351,13 +351,13 @@ VarMap::VarMap(ModuleLoc loc, bool ordered, bool asrefs)
 {}
 void VarMap::onCreate(VirtualMachine &vm)
 {
-    MemoryManager &mem = vm.getMemoryManager();
-    if(isOrdered()) keyOrder = mem.allocInit<ManagedRawList>(mem, "VarMap");
+    MemoryAllocator &mem = vm.getMemoryAllocator();
+    if(isOrdered()) keyOrder = mem.allocInit<ManagedRawList>(mem.getManager(), "VarMap");
 }
 void VarMap::onDestroy(VirtualMachine &vm)
 {
     clear(vm);
-    MemoryManager &mem = vm.getMemoryManager();
+    MemoryAllocator &mem = vm.getMemoryAllocator();
     if(isOrdered()) mem.freeDeinit(keyOrder);
 }
 bool VarMap::onSet(VirtualMachine &vm, Var *from)

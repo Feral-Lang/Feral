@@ -16,7 +16,8 @@ typedef bool (*ParseSourceFn)(VirtualMachine &vm, Bytecode &bc, ModuleId moduleI
 
 class FER_API GlobalState
 {
-    MemoryManager mem;
+    MemoryManager mgr;
+    MemoryAllocator *mem; // only used for creating VirtualMachine(s).
     ManagedList managedAllocator;
     args::ArgParser &argparser;
     ParseSourceFn parseSourceFn;
