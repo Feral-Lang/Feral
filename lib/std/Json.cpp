@@ -200,6 +200,7 @@ Var *parseInternal(VirtualMachine &vm, ModuleLoc loc, Tokenizer &t)
                 vm.decVarRef(m);
                 return nullptr;
             }
+            if(t.is(JsonTokenType::RBRACE)) break;
             if(!t.expect(JsonTokenType::STR)) goto errorMap;
             StringRef key = t.asStr();
             t.next();
@@ -220,6 +221,7 @@ Var *parseInternal(VirtualMachine &vm, ModuleLoc loc, Tokenizer &t)
         VarVec *v = vm.makeVar<VarVec>(loc, 5, true);
         if(t.acceptn(JsonTokenType::RBRACK)) return v;
         do {
+            if(t.is(JsonTokenType::RBRACK)) break;
             Var *e = parseInternal(vm, loc, t);
             if(!e) goto errorVec;
             v->push(vm, e, true);

@@ -6,7 +6,7 @@ project(Feral
 
 set(PROJECT_VERSION_MAJOR "2")
 set(PROJECT_VERSION_MINOR "5")
-set(PROJECT_VERSION_PATCH "2")
+set(PROJECT_VERSION_PATCH "3")
 
 include(FetchContent)
 include(GNUInstallDirs)
@@ -36,11 +36,20 @@ if(NOT DEFINED ENV{PREFIX_DIR} OR "$ENV{PREFIX_DIR}" STREQUAL "")
         file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}/Programs/Feral" TMP_PREFIX)
         set(ENV{PREFIX_DIR} ${TMP_PREFIX})
     else()
-        set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
+        execute_process(COMMAND id -u
+                            OUTPUT_VARIABLE CURRENT_UID
+                            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(CURRENT_UID STREQUAL "0")
+            set(ENV{PREFIX_DIR} "")
+        else()
+            set(ENV{PREFIX_DIR} "$ENV{HOME}/.feral")
+        endif()
     endif()
 endif()
 
-set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
+if(NOT "$ENV{PREFIX_DIR}" STREQUAL "")
+    set(CMAKE_INSTALL_PREFIX "$ENV{PREFIX_DIR}")
+endif()
 set(CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX};${CMAKE_BINARY_DIR}")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 # if(APPLE)
