@@ -81,10 +81,11 @@ let addTargetByPath in Logger = fn(.kw, path) {
 };
 
 let log in Logger = fn(lvl, data...) {
+    if self.targets.empty() { return; }
     let levelColor = levelColorToStr(lvl);
     let levelStr = levelToStr(lvl);
     let timeStr = time.format(time.now());
-    let tag = self.tagStack.empty() ? ''.fit(self.maxTagLen) : '[' + self.tagStack.back().fit(self.maxTagLen - 2) + ']';
+    let tag = self.tagStack.empty() ? '' : '[' + self.tagStack.back().fit(self.maxTagLen - 2) + ']';
     for t in self.targets.each() {
         if t.level < lvl { continue; }
         io.fprintln(t.f, t.prefix.fmt(), t.depthPrefix * self.depth, ' ', data...);
@@ -114,7 +115,6 @@ let debug in Logger = fn(data...) { return self.log(Levels.DEBUG, data...); };
 let trace in Logger = fn(data...) { return self.log(Levels.TRACE, data...); };
 
 let defaultLogger = newLogger();
-defaultLogger.addTarget(io.stderr, prefix = '');
 
 let fatal = fn(data...) { defaultLogger.fatal(data...); };
 let warn = fn(data...) { defaultLogger.warn(data...); };
