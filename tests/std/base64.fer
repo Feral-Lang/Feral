@@ -1,0 +1,19 @@
+let map = import('std/map');
+let base64 = import('std/base64');
+
+let assert = import('std/assert');
+
+let tests = map.new(
+    'hello', 'aGVsbG8',
+    'this world', 'dGhpcyB3b3JsZA==',
+    'beautiful', 'YmVhdXRpZnVs'
+);
+
+let i = 0;
+for t in tests.each() {
+    let data = t.0.bytes();
+    let encoded = base64.encode(data, url = (i++ % 2 == 0));
+    assert.eq(encoded, t.1);
+    let decoded = base64.decode(encoded);
+    assert.eq(decoded, data);
+}
