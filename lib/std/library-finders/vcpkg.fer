@@ -104,5 +104,9 @@ let findLibrary in VCPKGFinder = fn(pkgNameTmp, .kw) {
         lib.version = split[1].trim();
     }
 
+    if !version.parseConstraint(versConstraint).matches(version.parse(lib.version)) {
+        return feral.err(0, 'Found library ', pkgName, '@', lib.version, ' but it doesn\'t satisfy the constraint ', versConstraint);
+    }
+
     return feral.ok(lib);
 };

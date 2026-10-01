@@ -57,7 +57,7 @@ let parse = fn(versionStr) {
             tmp.clear();
             continue;
         }
-        if versionStr.isChAt(i, '-') && part == 2 {
+        if versionStr.isChAt(i, '-#') && part == 2 {
             if tmp.empty() {
                 raise('Invalid version string: ', versionStr);
             }
