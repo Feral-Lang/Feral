@@ -54,17 +54,51 @@ FERAL_FUNC(typeIDToStr, 0, false,
 }
 
 FERAL_FUNC(intToStr, 0, false,
-           "  var.fn() -> Str\n"
-           "Converts the int `var` into a string and returns it.")
+           "  var.fn(.kw) -> Str\n"
+           "Converts the int `var` into a string and returns it.\n"
+           "Takes the following optional arguments:\n"
+           "* `base = <int>` - base for the number `var`. (default: 10)")
 {
-    return vm.makeVar<VarStr>(loc, std::to_string(as<VarInt>(args[0])->getVal()));
+    char fmt[256] = {0};
+    int base = 10;
+    if(assnArgs) {
+        if(Var *baseVar = assnArgs->getAttr("precision")) {
+            EXPECT(VarInt, baseVar, "base");
+            base = as<VarInt>(baseVar)->getVal();
+        }
+    }
+    auto res = std::to_chars(fmt, fmt + 256, as<VarInt>(args[0])->getVal(), base);
+    if(res.ec != std::errc()) {
+        vm.fail(loc, "failed to convert int to string: ", std::make_error_code(res.ec).message());
+        return nullptr;
+    }
+    return vm.makeVar<VarStr>(loc, fmt);
 }
 
 FERAL_FUNC(fltToStr, 0, false,
-           "  var.fn() -> Str\n"
-           "Converts the float `var` into a string and returns it.")
+           "  var.fn(precision = 2) -> Str\n"
+           "Converts the float `var` into a string and returns it.\n"
+           "Takes the following optional arguments:\n"
+           "* `precision = <int>` - number of precision digits. (default: 2)")
 {
-    return vm.makeVar<VarStr>(loc, std::to_string(as<VarFlt>(args[0])->getVal()));
+    char fmt[32] = {0};
+    int precision = 2;
+    if(assnArgs) {
+        if(Var *precisionVar = assnArgs->getAttr("precision")) {
+            EXPECT(VarInt, precisionVar, "precision");
+            precision = as<VarInt>(precisionVar)->getVal();
+        }
+    }
+    if(precision > 24) {
+        vm.fail(loc, "floating precision cannot be more than 24, found: ", precision);
+        return nullptr;
+    }
+    auto res = std::to_chars(fmt, fmt + 32, as<VarFlt>(args[0])->getVal(), std::chars_format::fixed, precision);
+    if(res.ec != std::errc()) {
+        vm.fail(loc, "failed to convert float to string: ", std::make_error_code(res.ec).message());
+        return nullptr;
+    }
+    return vm.makeVar<VarStr>(loc, fmt);
 }
 
 FERAL_FUNC(strToStr, 0, false,
