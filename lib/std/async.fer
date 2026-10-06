@@ -2,17 +2,15 @@
 
 let vec = import('std/vec');
 
-let DefaultEventLoop = struct(
-    runner = nil
-);
+let DefaultEventLoop = struct();
 DefaultEventLoop.setTypeName('DefaultEventLoop');
 
-let loop in DefaultEventLoop = fn() {
-    while !self.runner.tasks.empty() && !self.runner.shouldStop {
-        for let i = 0; i < self.runner.tasks.len(); ++i {
-            let t = ref(self.runner.tasks[i]);
+let loop in DefaultEventLoop = fn(runner) {
+    while !runner.tasks.empty() && !runner.shouldStop {
+        for let i = 0; i < runner.tasks.len(); ++i {
+            let t = ref(runner.tasks[i]);
             if t.done() {
-                self.runner.tasks.erase(i);
+                runner.tasks.erase(i);
                 --i;
                 continue;
             }
@@ -30,10 +28,8 @@ let Runner = struct(
 Runner.setTypeName('AsyncRunner');
 
 let newRunner = fn(eventLoop = DefaultEventLoop) {
-    let runner = Runner();
-    let loop = eventLoop(runner);
-    let eventLoop in runner = ref(loop);
-    return runner;
+    let loop = eventLoop();
+    return Runner(ref(loop));
 };
 
 let run in Runner = fn() {
@@ -41,7 +37,7 @@ let run in Runner = fn() {
         raise('already running!');
     }
     self.running = true;
-    self.eventLoop.loop();
+    self.eventLoop.loop(self);
     self.running = false;
     self.shouldStop = false;
 };
