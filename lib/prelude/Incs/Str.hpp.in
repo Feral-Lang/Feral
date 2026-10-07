@@ -382,7 +382,7 @@ FERAL_FUNC(strSplitNative, 3, false, "")
     EXPECT(VarBool, args[3], "ignore empty splits");
     StringRef str   = as<VarStr>(args[0])->getVal();
     StringRef delim = as<VarStr>(args[1])->getVal();
-    bool ignoreEmpty = as<VarBool>(args[2])->getVal();
+    bool ignoreEmpty = as<VarBool>(args[3])->getVal();
     if(delim.size() == 0) {
         vm.fail(loc, "found empty delimiter for string split");
         return nullptr;
