@@ -29,10 +29,10 @@
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
-#if defined(BUILD_DEBUG)
-#define FER_BUILD_DEBUG
-#else
+#if defined(NDEBUG)
 #define FER_BUILD_RELEASE
+#else
+#define FER_BUILD_DEBUG
 #endif
 
 #if defined(_WIN32) && defined(_MSC_VER)

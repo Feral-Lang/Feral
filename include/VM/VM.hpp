@@ -219,9 +219,6 @@ public:
 
     inline StringRef getTypeName(Var *var) { return getTypeName(var->getSubType()); }
 
-    inline void stopExecution() { gs->stopExec.store(true, std::memory_order_release); }
-    inline bool shouldStopExecution() { return gs->stopExec.load(std::memory_order_relaxed); }
-
     inline StringRef getFeralImportExtension() { return ".fer"; }
     inline StringRef getNativeModuleExtension()
     {

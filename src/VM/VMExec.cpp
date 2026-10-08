@@ -1,3 +1,4 @@
+#include "Logger.hpp"
 #include "VM/VM.hpp"
 
 namespace fer
@@ -25,7 +26,7 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
                   ins.dump(), " :: ", execstack->dump(this));
 #endif
 
-        if(shouldStopExecution()) goto fail;
+        if(gs->shouldStopExecution()) goto fail;
         if(exitCalled) goto done;
 
         if(recurseCount >= getRecurseMax()) {

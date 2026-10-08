@@ -66,6 +66,9 @@ class FER_API GlobalState
 public:
     GlobalState(args::ArgParser &argparser, ParseSourceFn parseSourceFn);
     ~GlobalState();
+
+    inline void stopExecution() { stopExec.store(true, std::memory_order_release); }
+    inline bool shouldStopExecution() { return stopExec.load(std::memory_order_relaxed); }
 };
 
 #if defined(FER_OS_WINDOWS)
