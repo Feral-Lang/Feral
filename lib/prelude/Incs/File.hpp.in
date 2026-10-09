@@ -58,9 +58,7 @@ FERAL_FUNC(fileLines, 0, false,
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);
     while((read = getline(&lineptr, &len, file)) != -1) {
         VarStr *s = vm.makeVar<VarStr>(loc, lineptr);
-        while(!s->getVal().empty() && (s->getVal().back() == '\n' || s->getVal().back() == '\r')) {
-            s->getVal().pop_back();
-        }
+        s->rtrim();
         res->push(vm, s, true);
         free(lineptr);
         lineptr = NULL;
@@ -88,7 +86,7 @@ FERAL_FUNC(fileSize, 0, false,
            "Gets the size of the file.")
 {
     FILE *const file = as<VarFile>(args[0])->getFile();
-    size_t curr = ftell(file);
+    size_t curr      = ftell(file);
     fseek(file, 0, SEEK_END);
     size_t sz = ftell(file);
     fseek(file, curr, SEEK_SET);
@@ -99,9 +97,7 @@ FERAL_FUNC(fileEachLine, 0, false,
            "  var.fn() -> FileIterator\n"
            "Create and return an iterator from File `var`.\n"
            "This iterator can be used to loop through each line.")
-{
-    return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0]));
-}
+{ return vm.makeVar<VarFileIterator>(loc, as<VarFile>(args[0])); }
 
 FERAL_FUNC(fileIteratorNext, 0, false,
            "  var.fn() -> Str | Nil\n"
@@ -128,8 +124,7 @@ FERAL_FUNC(fileReadAll, 0, false,
 
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     while((read = getline(&lineptr, &len, file)) != -1) {
-        String tmp = lineptr;
-        res->getVal() += tmp;
+        res->append(lineptr);
         free(lineptr);
         lineptr = NULL;
     }
@@ -143,7 +138,7 @@ FERAL_FUNC(fileReadBytes, 1, false,
            "Reads the file `var` as an array of bytes into `bytebuffer` upto the capacity of it,"
            " and returns the number of bytes read.")
 {
-    FILE *const file = as<VarFile>(args[0])->getFile();
+    FILE *const file   = as<VarFile>(args[0])->getFile();
     VarBytebuffer *buf = as<VarBytebuffer>(args[1]);
     if(buf->capacity() == 0) return vm.makeVar<VarInt>(loc, 0);
     size_t read = fread(buf->getVal(), sizeof(VarBytebuffer::InternalType), buf->capacity(), file);
@@ -158,9 +153,9 @@ FERAL_FUNC(fileReadBlocks, 2, false,
     EXPECT(VarStr, args[1], "block begin location");
     EXPECT(VarStr, args[2], "block end location");
 
-    FILE *const file  = as<VarFile>(args[0])->getFile();
-    const String &beg = as<VarStr>(args[1])->getVal();
-    const String &end = as<VarStr>(args[2])->getVal();
+    FILE *const file = as<VarFile>(args[0])->getFile();
+    StringRef beg    = as<VarStr>(args[1])->getVal();
+    StringRef end    = as<VarStr>(args[2])->getVal();
 
     bool insideBlock = false;
     char *lineptr    = NULL;

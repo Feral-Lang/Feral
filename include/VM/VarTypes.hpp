@@ -109,9 +109,7 @@ public:
     void dump(String &outStr, VirtualMachine *vm);
 
     template<VarDerived T> bool is() const
-    {
-        return typeid(*this).hash_code() == typeid(T).hash_code();
-    }
+    { return typeid(*this).hash_code() == typeid(T).hash_code(); }
     template<VarDerived T> bool isDerivedFrom() { return dynamic_cast<T *>(this) != 0; }
 
     inline void setLoc(ModuleLoc _loc) { loc = _loc; }
@@ -243,20 +241,71 @@ public:
 
 class FER_API VarStr : public Var
 {
-    String val;
+    enum StrFlags
+    {
+        NONE           = 0,
+        HEAP_ALLOCATED = 1 << 0, // if set, ptr is used. arr otherwise
+    };
+    union
+    {
+        char arr[minUsableSize(sizeof(Var) + sizeof(size_t) * 3)];
+        char *ptr;
+    } val;
+    size_t flags;
+    size_t cap;
+    size_t len;
+
+    inline void setHeapAllocated() { flags |= HEAP_ALLOCATED; }
+    inline void unsetHeapAllocated() { flags &= ~HEAP_ALLOCATED; }
+    inline bool heapAllocated() const { return flags & HEAP_ALLOCATED; }
 
     bool onSet(VirtualMachine &vm, Var *from) override;
 
 public:
-    VarStr(ModuleLoc loc, char val);
-    VarStr(ModuleLoc loc, String &&val);
-    VarStr(ModuleLoc loc, StringRef val);
-    VarStr(ModuleLoc loc, const char *val);
-    VarStr(ModuleLoc loc, InitList<StringRef> _val);
-    VarStr(ModuleLoc loc, const char *val, size_t count);
+    explicit VarStr(ModuleLoc loc, char val);
+    explicit VarStr(ModuleLoc loc, StringRef val);
+    explicit VarStr(ModuleLoc loc, const char *val);
+    explicit VarStr(ModuleLoc loc, InitList<StringRef> _val);
+    explicit VarStr(ModuleLoc loc, const char *val, size_t count);
+    explicit VarStr(ModuleLoc loc, size_t capacity); // preallocate capacity
+    ~VarStr();
 
-    inline void setVal(StringRef newval) { val = newval; }
-    inline String &getVal() { return val; }
+    // newcap MUST include space for NULL terminator
+    // if clean is true, and heap gets allocated, it won't copy the array contents to heap memory.
+    void reserve(size_t newcap, bool clean, bool doubleIt);
+
+    void setVal(StringRef newval);
+    void setVal(InitList<StringRef> newval);
+
+    void append(StringRef data);
+    void append(InitList<StringRef> newval);
+    void append(char data);
+    void append(size_t data);
+    void append(int64_t data);
+    void append(double data);
+
+    void insert(size_t pos, StringRef data);
+    void insert(size_t pos, char data);
+    void erase(size_t pos, size_t count = String::npos);
+    void clear();
+    void rtrim();
+    void ltrim();
+    void trim();
+    void pop();
+    void replace(StringRef from, StringRef to);
+    bool setLength(size_t newlen);
+
+    inline void popFront() { return erase(0, 1); }
+
+    inline StringRef getVal() { return StringRef(heapAllocated() ? val.ptr : val.arr, len); }
+    inline const char *cStr() const { return heapAllocated() ? val.ptr : val.arr; }
+    inline char *data() { return heapAllocated() ? val.ptr : val.arr; }
+    inline char front() { return empty() ? '\0' : data()[0]; }
+    inline char back() { return empty() ? '\0' : data()[len - 1]; }
+
+    inline size_t length() const { return len; }
+    inline size_t capacity() const { return cap; }
+    inline bool empty() const { return len == 0; }
 };
 
 class FER_API VarVec : public Var
@@ -329,9 +378,7 @@ public:
         Iterator(void *orderiter, StringMap<Var *>::iterator dataiter, bool forward);
 
         inline bool operator==(const Iterator &other) const
-        {
-            return orderiter == other.orderiter && dataiter == other.dataiter;
-        }
+        { return orderiter == other.orderiter && dataiter == other.dataiter; }
         inline bool operator!=(const Iterator &other) const { return !(*this == other); }
 
         inline StringRef key() { return dataiter->first; }
@@ -474,30 +521,20 @@ public:
     VarClosure(ModuleLoc loc, Var *callable);
 
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return assnArgs->setAttr(vm, name, val, iref);
-    }
+    { return assnArgs->setAttr(vm, name, val, iref); }
     inline void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override
-    {
-        return assnArgs->remAttr(vm, name, found, dref);
-    }
+    { return assnArgs->remAttr(vm, name, found, dref); }
     inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return assnArgs->replaceAttr(vm, name, val, iref);
-    }
+    { return assnArgs->replaceAttr(vm, name, val, iref); }
     inline bool existsAttr(StringRef name) override { return assnArgs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return assnArgs->getAttr(name); }
     inline size_t getAttrCount() override { return args->size() + assnArgs->size(); }
 
     inline void setSelf(VirtualMachine &vm, Var *data, bool iref)
-    {
-        return args->setAt(vm, 0, data, iref);
-    }
+    { return args->setAt(vm, 0, data, iref); }
 
     inline void push(VirtualMachine &vm, Var *data, bool iref)
-    {
-        return args->push(vm, data, iref);
-    }
+    { return args->push(vm, data, iref); }
     inline void pop(VirtualMachine &vm, bool dref) { return args->pop(vm, dref); }
 };
 
@@ -617,19 +654,13 @@ public:
     VarStructDef(ModuleLoc loc, size_t id);
 
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return attrs->setAttr(vm, name, val, iref);
-    }
+    { return attrs->setAttr(vm, name, val, iref); }
     inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return attrs->replaceAttr(vm, name, val, iref);
-    }
+    { return attrs->replaceAttr(vm, name, val, iref); }
     inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
     inline void getAttrList(VirtualMachine &vm, VarVec *dest) override
-    {
-        return attrs->getAttrList(vm, dest);
-    }
+    { return attrs->getAttrList(vm, dest); }
     inline size_t getAttrCount() override { return attrs->size(); }
 
     inline VarMap::Iterator attrBegin() { return attrs->begin(); }
@@ -659,19 +690,13 @@ public:
     VarStruct(ModuleLoc loc, VarStructDef *base, size_t id);
 
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return attrs->setAttr(vm, name, val, iref);
-    }
+    { return attrs->setAttr(vm, name, val, iref); }
     inline bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return attrs->replaceAttr(vm, name, val, iref);
-    }
+    { return attrs->replaceAttr(vm, name, val, iref); }
     inline bool existsAttr(StringRef name) override { return attrs->existsAttr(name); }
     inline Var *getAttr(StringRef name) override { return attrs->getAttr(name); }
     inline void getAttrList(VirtualMachine &vm, VarVec *dest) override
-    {
-        return attrs->getAttrList(vm, dest);
-    }
+    { return attrs->getAttrList(vm, dest); }
     inline size_t getAttrCount() override { return attrs->size(); }
 
     inline VarMap::Iterator attrBegin() { return attrs->begin(); }
@@ -858,13 +883,9 @@ public:
     VarStack(ModuleLoc loc);
 
     inline void setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override
-    {
-        return stack.back()->setAttr(vm, name, val, iref);
-    }
+    { return stack.back()->setAttr(vm, name, val, iref); }
     inline void remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) override
-    {
-        return stack.back()->remAttr(vm, name, found, dref);
-    }
+    { return stack.back()->remAttr(vm, name, found, dref); }
     bool replaceAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) override;
     // checks if variable exists in current scope ONLY
     inline bool existsAttr(StringRef name) override { return stack.back()->existsAttr(name); }

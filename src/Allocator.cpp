@@ -18,18 +18,6 @@ namespace fer
 static Atomic<size_t> totalAllocRequests = 0, totalAllocBytes = 0, totalPoolAlloc = 0,
                       chunkReuseCount = 0;
 
-size_t nextPow2(size_t sz)
-{
-    if(sz > MAX_ROUNDUP) return sz;
-    --sz;
-    sz |= sz >> 1;
-    sz |= sz >> 2;
-    sz |= sz >> 4;
-    sz |= sz >> 8;
-    sz |= sz >> 16;
-    return ++sz;
-}
-
 IAllocated::IAllocated() {}
 IAllocated::~IAllocated() {}
 

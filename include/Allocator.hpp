@@ -49,23 +49,30 @@ static_assert(ALLOC_DETAIL_BYTES % MAX_ALIGNMENT == 0,
               "sizeof(AllocDetail) must be a multiple of max alignment");
 
 // works upto MAX_ROUNDUP
-size_t nextPow2(size_t sz);
+constexpr size_t nextPow2(size_t sz)
+{
+    if(sz > MAX_ROUNDUP) return sz;
+    --sz;
+    sz |= sz >> 1;
+    sz |= sz >> 2;
+    sz |= sz >> 4;
+    sz |= sz >> 8;
+    sz |= sz >> 16;
+    return ++sz;
+}
 
 inline constexpr size_t getIndexForAllocSize(size_t sz) { return std::countr_zero(sz) - 1; }
 inline constexpr size_t getAllocSizeForIndex(size_t index) { return 1 << size_t(index + 1); }
 
 // alloc address must be AFTER sizeof(AllocDetail)
 inline void setAllocDetail(size_t alloc, AllocDetails field, size_t value)
-{
-    (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)] = value;
-}
+{ (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)] = value; }
 // alloc address must be AFTER sizeof(AllocDetail)
 inline size_t getAllocDetail(size_t alloc, AllocDetails field)
-{
-    return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)];
-}
+{ return (*(AllocDetail *)((char *)alloc - ALLOC_DETAIL_BYTES))[static_cast<uint32_t>(field)]; }
 
-inline size_t minUsableSize() { return nextPow2(ALLOC_DETAIL_BYTES + 1) - ALLOC_DETAIL_BYTES; }
+inline constexpr size_t minUsableSize(size_t from)
+{ return nextPow2(from + ALLOC_DETAIL_BYTES) - ALLOC_DETAIL_BYTES - from; }
 
 struct MemPool
 {
@@ -156,13 +163,9 @@ protected:
     void *getAt(size_t index, void *start, void *end) const;
 
     inline void *getPrev(void *from, void *end) const
-    {
-        return from ? (void *)getAllocDetail((size_t)from, AllocDetails::PREV) : end;
-    }
+    { return from ? (void *)getAllocDetail((size_t)from, AllocDetails::PREV) : end; }
     inline void *getNext(void *from, void *start) const
-    {
-        return from ? (void *)getAllocDetail((size_t)from, AllocDetails::NEXT) : start;
-    }
+    { return from ? (void *)getAllocDetail((size_t)from, AllocDetails::NEXT) : start; }
 
     inline size_t getSize() const { return count; }
     inline bool isEmpty(void *start) const { return !start; }
@@ -200,18 +203,12 @@ public:
     size_t clear();
 
     inline IAllocated *add(IAllocated *alloc)
-    {
-        return (IAllocated *)addAlloc(alloc, (void *&)start, (void *&)end);
-    }
+    { return (IAllocated *)addAlloc(alloc, (void *&)start, (void *&)end); }
 
     inline IAllocated *remove(IAllocated *alloc)
-    {
-        return (IAllocated *)removeAlloc(alloc, (void *&)start, (void *&)end);
-    }
+    { return (IAllocated *)removeAlloc(alloc, (void *&)start, (void *&)end); }
     inline IAllocated *remove(size_t index)
-    {
-        return (IAllocated *)removeAlloc(index, (void *&)start, (void *&)end);
-    }
+    { return (IAllocated *)removeAlloc(index, (void *&)start, (void *&)end); }
 
     inline IAllocated *getStart() const { return start; }
     inline IAllocated *getEnd() const { return end; }
@@ -219,13 +216,9 @@ public:
     inline IAllocated *at(size_t index) const { return (IAllocated *)getAt(index, start, end); }
 
     inline IAllocated *prev(IAllocated *from = nullptr) const
-    {
-        return (IAllocated *)getPrev(from, end);
-    }
+    { return (IAllocated *)getPrev(from, end); }
     inline IAllocated *next(IAllocated *from = nullptr) const
-    {
-        return (IAllocated *)getNext(from, start);
-    }
+    { return (IAllocated *)getNext(from, start); }
 
     inline size_t size() const { return getSize(); }
     inline bool empty() const { return isEmpty(start); }

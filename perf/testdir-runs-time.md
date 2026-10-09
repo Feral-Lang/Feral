@@ -9,5 +9,5 @@ feral testdir tests --runs 100
 ## Output
 
 ```sh
-total: 7300, passed: 7300, failed: 0, time: 7571 ms
+total: 7400, passed: 7400, failed: 0, time: 8076 ms
 ```

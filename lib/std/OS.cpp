@@ -44,10 +44,10 @@ FERAL_FUNC(getEnv, 1, false,
            "Returns the value of the environment `variable` as string, or `nil` if not found.")
 {
     EXPECT(VarStr, args[1], "env variable name");
-    const String &var = as<VarStr>(args[1])->getVal();
-    String res        = env::get(var.c_str());
+    const char *var = as<VarStr>(args[1])->cStr();
+    StringRef res   = env::get(var);
     if(res.empty()) return vm.getNil();
-    return vm.makeVar<VarStr>(loc, std::move(res));
+    return vm.makeVar<VarStr>(loc, res);
 }
 
 FERAL_FUNC(setEnv, 3, false,
@@ -58,10 +58,10 @@ FERAL_FUNC(setEnv, 3, false,
     EXPECT(VarStr, args[1], "env variable name");
     EXPECT(VarStr, args[2], "env variable value");
     EXPECT(VarBool, args[3], "overwrite existing variable");
-    const String &var = as<VarStr>(args[1])->getVal();
-    const String &val = as<VarStr>(args[2])->getVal();
-    bool overwrite    = as<VarBool>(args[3])->getVal();
-    return vm.makeVar<VarInt>(loc, env::set(var.c_str(), val.c_str(), overwrite));
+    const char *var = as<VarStr>(args[1])->cStr();
+    const char *val = as<VarStr>(args[2])->cStr();
+    bool overwrite  = as<VarBool>(args[3])->getVal();
+    return vm.makeVar<VarInt>(loc, env::set(var, val, overwrite));
 }
 
 FERAL_FUNC(
@@ -112,11 +112,9 @@ FERAL_FUNC(
     StringMap<String> newEnv;
     if(envVar) {
         auto &map = as<VarMap>(envVar)->getVal();
-        String val;
         for(auto &item : map) {
-            val = env::get(item.first.c_str());
             // Must add keys with empty values as well to clean out the env afterwards.
-            existingEnv[item.first] = val;
+            existingEnv[item.first] = env::get(item.first.c_str());
             Var *v                  = nullptr;
             Array<Var *, 1> tmp{item.second};
             if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) {
@@ -138,21 +136,17 @@ FERAL_FUNC(
         while((nread = getline(&csline, &len, pipe)) != -1) std::cout << csline;
     } else if(outVar->is<VarVec>()) {
         VarVec *resvec = as<VarVec>(outVar);
-        String line;
         while((nread = getline(&csline, &len, pipe)) != -1) {
-            line = csline;
-            while(!line.empty() && (line.back() == '\n' || line.back() == '\r')) {
-                line.pop_back();
-            }
-            resvec->push(vm, vm.makeVar<VarStr>(loc, line), true);
+            VarStr *line = vm.makeVar<VarStr>(loc, "");
+            line->setVal(csline);
+            line->rtrim();
+            resvec->push(vm, line, true);
         }
     } else if(outVar->is<VarStr>()) {
-        String &resstr = as<VarStr>(outVar)->getVal();
+        VarStr *resstr = as<VarStr>(outVar);
         while((nread = getline(&csline, &len, pipe)) != -1) {
-            resstr += csline;
-            while(!resstr.empty() && (resstr.back() == '\n' || resstr.back() == '\r')) {
-                resstr.pop_back();
-            }
+            resstr->append(csline);
+            resstr->rtrim();
         }
     }
     if(csline) free(csline);
@@ -174,9 +168,9 @@ FERAL_FUNC(systemCustom, 1, false,
            "Here, the `command` is a single string containing the command and all parameters.")
 {
     EXPECT(VarStr, args[1], "command");
-    const String &cmd = as<VarStr>(args[1])->getVal();
+    const char *cmd = as<VarStr>(args[1])->cStr();
 
-    int res = std::system(cmd.c_str());
+    int res = std::system(cmd);
 #if !defined(FER_OS_WINDOWS)
     res = WEXITSTATUS(res);
 #endif
@@ -228,10 +222,10 @@ FERAL_FUNC(
     EXPECT(VarStr, args[1], "destination");
     EXPECT(VarStr, args[2], "mode");
     EXPECT(VarBool, args[3], "apply recursive");
-    const String &dest = as<VarStr>(args[1])->getVal();
-    const String &mode = as<VarStr>(args[2])->getVal();
-    bool recurse       = as<VarBool>(args[3])->getVal();
-    String cmd         = "chmod ";
+    StringRef dest = as<VarStr>(args[1])->getVal();
+    StringRef mode = as<VarStr>(args[2])->getVal();
+    bool recurse   = as<VarBool>(args[3])->getVal();
+    String cmd     = "chmod ";
     if(recurse) cmd += "-R ";
     cmd += mode;
     cmd += " ";

@@ -41,10 +41,13 @@ bool GlobalState::init(VirtualMachine &vm)
 
     tempPath = vm.incVarRef(vm.makeVar<VarPath>({}, fs::temp_directory_path()));
 #if defined(FER_OS_WINDOWS)
-    tempPath->append("feral." + env::get("USERNAME"));
+    const char *userName = env::get("USERNAME");
 #else
-    tempPath->append("feral." + env::get("USER"));
+    const char *userName = env::get("USER");
 #endif
+    char tempPathUser[128];
+    sprintf(tempPathUser, "feral.%s", userName);
+    tempPath->append(tempPathUser);
     binaryPath        = vm.incVarRef(vm.makeVar<VarPath>({}, env::getProcPath()));
     installPath       = vm.incVarRef(vm.makeVar<VarPath>({}, binaryPath->parent().parent_path()));
     libPath           = vm.incVarRef(vm.makeVar<VarPath>({}, installPath->join("lib/feral")));
@@ -76,7 +79,7 @@ bool GlobalState::init(VirtualMachine &vm)
     moduleDirs->insert(vm, 0, libPath, true);
 
     // FERAL_PATHS supercedes the install path, ie. I can even run a custom stdlib if I want :D
-    String feralPaths = env::get("FERAL_PATHS");
+    StringRef feralPaths = env::get("FERAL_PATHS");
     for(auto &_path : utils::stringDelim(feralPaths, ";")) {
         VarPath *moduleLoc = vm.makeVar<VarPath>({}, _path);
         moduleDirs->insert(vm, 0, moduleLoc, true);

@@ -14,16 +14,15 @@ namespace fer
 {
 
 inline ssize_t writeToFile(FILE *file, const void *data, size_t bytes)
-{
-    return fwrite(data, 1, bytes, file);
-}
+{ return fwrite(data, 1, bytes, file); }
+
 ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> args)
 {
     ssize_t count = 0;
     for(auto &a : args) {
         if(a->is<VarStr>()) {
-            const String &s = as<VarStr>(a)->getVal();
-            size_t bytes    = sizeof(String::value_type) * s.size();
+            StringRef s  = as<VarStr>(a)->getVal();
+            size_t bytes = sizeof(StringRef::value_type) * s.size();
             count += writeToFile(file, s.data(), bytes);
             continue;
         } else if(a->is<VarBytebuffer>()) {
@@ -35,8 +34,8 @@ ssize_t printBase(VirtualMachine &vm, ModuleLoc loc, FILE *file, Span<Var *> arg
         Var *v = nullptr;
         Array<Var *, 1> tmp{a};
         if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return -1;
-        const String &s = as<VarStr>(v)->getVal();
-        size_t bytes    = sizeof(String::value_type) * s.size();
+        StringRef s  = as<VarStr>(v)->getVal();
+        size_t bytes = sizeof(StringRef::value_type) * s.size();
         count += writeToFile(file, s.data(), bytes);
         vm.decVarRef(v);
     }
@@ -122,10 +121,10 @@ FERAL_FUNC(fprintln, 0, true,
 
 FERAL_FUNC(scanNative, 0, false, "")
 {
-    VarStr *res = vm.makeVar<VarStr>(loc, "");
-    std::getline(std::cin, res->getVal());
-    if(!res->getVal().empty() && res->getVal().back() == '\r') res->getVal().pop_back();
-    if(!res->getVal().empty() && res->getVal().back() == '\n') res->getVal().pop_back();
+    String data;
+    std::getline(std::cin, data);
+    VarStr *res = vm.makeVar<VarStr>(loc, data);
+    res->trim();
     return res;
 }
 
@@ -135,11 +134,8 @@ FERAL_FUNC(scanEOF, 0, false,
 {
     String line;
     VarStr *res = vm.makeVar<VarStr>(loc, "");
-    while(std::getline(std::cin, line)) res->getVal() += line;
-
-    if(!res->getVal().empty() && (res->getVal().back() == '\r' || res->getVal().back() == '\n'))
-        res->getVal().pop_back();
-
+    while(std::getline(std::cin, line)) res->append(line);
+    res->trim();
     return res;
 }
 

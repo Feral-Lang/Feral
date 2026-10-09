@@ -49,14 +49,6 @@ assert.eq(s.split('3'), vec.new('12', '45'));
 assert.eq(s.startsWith('12'), true);
 assert.eq(s.endsWith('45'), true);
 
-assert.eq('025AF'.getBinStrFromHexStr(), '10010110101111');
-assert.eq('2665'.getBinStrFromHexStr(), '10011001100101');
-let heart = '2665'.getUTF8CharFromHexString();
-assert.eq(heart.len(), 3);
-assert.eq(heart[0].byt(), 226);
-assert.eq(heart[1].byt(), 153);
-assert.eq(heart[2].byt(), 165);
-
 assert.eq('A'.byt(), 65);
 assert.eq(66.chr(), 'B');
 assert.eq(' '.isSpace(), true);

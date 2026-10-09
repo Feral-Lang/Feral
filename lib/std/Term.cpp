@@ -129,12 +129,10 @@ FERAL_FUNC(getANSISeq, 1, false,
         StringRef anchor = code.substr(0, colonPos);
         StringRef link   = code.substr(colonPos + 1);
         VarStr *res      = vm.makeVar<VarStr>(loc, "\033]8;;");
-        res->getVal() += link;
-        res->getVal() += "\033\\";
-        res->getVal() += anchor;
+        // For the string after `anchor`:
         // Move cursor backward and then forward (\033[1D\033[1C) is here because
         // `\\` (before that sequence) at the end would cause havoc in string.fmt().
-        res->getVal() += "\033]8;;\033\\\033[1D\033[1C";
+        res->setVal({"\033]8;;", link, "\033\\", anchor, "\033]8;;\033\\\033[1D\033[1C"});
         return res;
     }
 

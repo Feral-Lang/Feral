@@ -1,5 +1,7 @@
 #include "VM/VarTypes.hpp"
 
+#include <cassert>
+
 #include "VM/VM.hpp"
 
 namespace fer
@@ -101,18 +103,14 @@ bool Var::set(VirtualMachine &vm, Var *from)
 }
 Var *Var::call(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs, VarVec *stack,
                size_t *currentlyAt)
-{
-    return onCall(vm, loc, args, assnArgs, stack, currentlyAt);
-}
+{ return onCall(vm, loc, args, assnArgs, stack, currentlyAt); }
 
 void Var::onCreate(VirtualMachine &vm) {}
 void Var::onDestroy(VirtualMachine &vm) {}
 bool Var::onSet(VirtualMachine &vm, Var *from) { return true; }
 Var *Var::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                  VarVec *stack, size_t *currentlyAt)
-{
-    return nullptr;
-}
+{ return nullptr; }
 
 void Var::setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref) {}
 void Var::remAttr(VirtualMachine &vm, StringRef name, bool &found, bool dref) {}
@@ -248,18 +246,232 @@ bool VarFlt::onSet(VirtualMachine &vm, Var *from)
 ////////////////////////////////////////// VarStr ////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-VarStr::VarStr(ModuleLoc loc, char val) : Var(loc), val(1, val) {}
-VarStr::VarStr(ModuleLoc loc, String &&val) : Var(loc), val(std::move(val)) {}
-VarStr::VarStr(ModuleLoc loc, StringRef val) : Var(loc), val(val) {}
-VarStr::VarStr(ModuleLoc loc, const char *val) : Var(loc), val(val) {}
-VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val) : Var(loc)
+VarStr::VarStr(ModuleLoc loc, char val) : Var(loc), flags(0), cap(sizeof(this->val.arr)), len(1)
 {
-    for(auto &e : _val) val += e;
+    this->val.arr[0] = val;
+    this->val.arr[1] = '\0';
 }
-VarStr::VarStr(ModuleLoc loc, const char *val, size_t count) : Var(loc), val(val, count) {}
+VarStr::VarStr(ModuleLoc loc, StringRef val)
+    : Var(loc), flags(0), cap(sizeof(this->val.arr)), len(0)
+{ setVal(val); }
+VarStr::VarStr(ModuleLoc loc, const char *val)
+    : Var(loc), flags(0), cap(sizeof(this->val.arr)), len(0)
+{ setVal(StringRef(val, strlen(val))); }
+VarStr::VarStr(ModuleLoc loc, InitList<StringRef> _val)
+    : Var(loc), flags(0), cap(sizeof(this->val.arr)), len(0)
+{ setVal(_val); }
+VarStr::VarStr(ModuleLoc loc, const char *val, size_t count)
+    : Var(loc), flags(0), cap(sizeof(this->val.arr)), len(0)
+{ setVal(StringRef(val, count)); }
+VarStr::VarStr(ModuleLoc loc, size_t capacity) : Var(loc), flags(0), cap(0), len(0)
+{ reserve(capacity, false, false); }
+
+VarStr::~VarStr()
+{
+    if(heapAllocated()) {
+        free(val.ptr);
+        cap = sizeof(val.arr);
+    }
+    len = 0;
+}
+
 bool VarStr::onSet(VirtualMachine &vm, Var *from)
 {
-    val = as<VarStr>(from)->getVal();
+    setVal(as<VarStr>(from)->getVal());
+    return true;
+}
+
+void VarStr::reserve(size_t newcap, bool clean, bool doubleIt)
+{
+    if(heapAllocated()) {
+        if(cap < newcap) {
+            cap     = doubleIt ? newcap * 2 : newcap;
+            val.ptr = (char *)realloc(val.ptr, cap);
+        }
+        if(clean) {
+            len          = 0;
+            val.ptr[len] = '\0';
+        }
+    } else if(cap < newcap) {
+        setHeapAllocated();
+        cap        = doubleIt ? newcap * 2 : newcap;
+        char *data = (char *)malloc(cap);
+        data[0]    = '\0';
+        if(len) {
+            if(!clean) memcpy(data, val.arr, len);
+            else len = 0;
+        }
+        data[len] = '\0';
+        val.ptr   = data;
+    }
+}
+
+void VarStr::setVal(StringRef newval)
+{
+    reserve(newval.length() + 1, true, true);
+    len     = newval.length();
+    char *s = data();
+    memcpy(s, newval.data(), len);
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::setVal(InitList<StringRef> newval)
+{
+    size_t total = 0;
+    for(auto &v : newval) total += v.length();
+    reserve(total + 1, true, false);
+    len      = total;
+    char *s  = data();
+    size_t i = 0;
+    for(auto &v : newval) {
+        if(v.empty()) continue;
+        memcpy(s + i, v.data(), v.length());
+        i += v.length();
+    }
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::append(StringRef data)
+{
+    if(data.empty()) return;
+    reserve(len + data.length() + 1, false, true);
+    char *s = this->data();
+    memcpy(s + len, data.data(), data.length());
+    len += data.length();
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::append(InitList<StringRef> data)
+{
+    size_t total = 0;
+    for(auto &v : data) total += v.length();
+    reserve(len + total + 1, false, true);
+    char *s = this->data();
+    for(auto &v : data) {
+        if(v.empty()) continue;
+        memcpy(s + len, v.data(), v.length());
+        len += v.length();
+    }
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::append(char data) { return append(StringRef(&data, 1)); }
+
+void VarStr::append(size_t data)
+{
+    char tmp[64];
+    int count = sprintf(tmp, "%zu", data);
+    return append(StringRef(tmp, count));
+}
+
+void VarStr::append(int64_t data)
+{
+    char tmp[64];
+    int count = sprintf(tmp, "%ld", data);
+    return append(StringRef(tmp, count));
+}
+
+void VarStr::append(double data)
+{
+    char tmp[64];
+    int count = sprintf(tmp, "%lf", data);
+    return append(StringRef(tmp, count));
+}
+
+void VarStr::insert(size_t pos, StringRef data)
+{
+    if(data.empty()) return;
+    reserve(len + data.length() + 1, false, false);
+    char *s = this->data();
+    if(len > 0) memmove(s + pos + data.length(), s + pos, len);
+    memcpy(s + pos, data.data(), data.length());
+    len += data.length();
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::insert(size_t pos, char data) { return insert(pos, StringRef(&data, 1)); }
+
+void VarStr::erase(size_t pos, size_t count)
+{
+    if(pos >= len) return;
+    count = count == -1 ? len - pos : count;
+    if(count >= len) {
+        len         = pos;
+        data()[len] = '\0';
+        return;
+    }
+    char *s = data();
+    memmove(s + pos, s + pos + count, len - pos - count);
+    len -= count;
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    s[len] = '\0';
+}
+
+void VarStr::clear()
+{
+    len         = 0;
+    data()[len] = '\0';
+}
+
+void VarStr::rtrim()
+{
+    char *str = data();
+    if(len == 0) return;
+    while(len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r' || str[len - 1] == ' ' ||
+                      str[len - 1] == '\t'))
+        --len;
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    str[len] = '\0';
+}
+
+void VarStr::ltrim()
+{
+    char *str = data();
+    if(len == 0) return;
+    size_t firstValid = 0;
+    while(firstValid < len && (str[firstValid] == '\n' || str[firstValid] == '\r' ||
+                               str[firstValid] == ' ' || str[firstValid] == '\t'))
+        ++firstValid;
+    if(firstValid > 0) memmove(str, str + firstValid, len - firstValid);
+    len -= firstValid;
+    assert(len >= 0 && len <= cap && "len cannot be below zero");
+    str[len] = '\0';
+}
+
+void VarStr::trim()
+{
+    rtrim();
+    ltrim();
+}
+
+void VarStr::pop()
+{
+    if(!empty()) {
+        --len;
+        data()[len] = '\0';
+    }
+}
+
+void VarStr::replace(StringRef from, StringRef to)
+{
+    size_t pos = getVal().find(from);
+    while(pos != StringRef::npos) {
+        erase(pos, from.length());
+        insert(pos, to);
+        pos = getVal().find(from, pos + to.length());
+    }
+}
+
+bool VarStr::setLength(size_t newlen)
+{
+    if(newlen + 1 > cap) return false;
+    len         = newlen;
+    data()[len] = '\0';
     return true;
 }
 
@@ -268,9 +480,7 @@ bool VarStr::onSet(VirtualMachine &vm, Var *from)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarVec::VarVec(ModuleLoc loc, size_t reservesz, bool asrefs) : Var(loc), asrefs(asrefs)
-{
-    val.reserve(reservesz);
-}
+{ val.reserve(reservesz); }
 VarVec::VarVec(ModuleLoc loc, Vector<Var *> &&val, bool asrefs)
     : Var(loc), val(std::move(val)), asrefs(asrefs)
 {}
@@ -361,9 +571,7 @@ void VarMap::onDestroy(VirtualMachine &vm)
     if(isOrdered()) mem.freeDeinit(keyOrder);
 }
 bool VarMap::onSet(VirtualMachine &vm, Var *from)
-{
-    return setVal(vm, as<VarMap>(from)->getVal(), as<VarMap>(from)->getOrder());
-}
+{ return setVal(vm, as<VarMap>(from)->getVal(), as<VarMap>(from)->getOrder()); }
 bool VarMap::setVal(VirtualMachine &vm, const StringMap<Var *> &newval, ManagedRawList *order)
 {
     clear(vm);
@@ -693,9 +901,7 @@ size_t VarModule::getAttrCount()
 VarFrame::VarFrame(ModuleLoc loc) : Var(loc), frameTy(FrameType::REGULAR) {}
 
 void VarFrame::onCreate(VirtualMachine &vm)
-{
-    frame = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), 0, false));
-}
+{ frame = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), 0, false)); }
 void VarFrame::onDestroy(VirtualMachine &vm) { vm.decVarRef(frame); }
 
 void VarFrame::setAttr(VirtualMachine &vm, StringRef name, Var *val, bool iref)
@@ -757,9 +963,7 @@ VarStructDef::VarStructDef(ModuleLoc loc, size_t id)
     : Var(loc, VarInfo::CALLABLE | VarInfo::ATTR_BASED), attrs(nullptr), id(id)
 {}
 void VarStructDef::onCreate(VirtualMachine &vm)
-{
-    attrs = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), true, false));
-}
+{ attrs = vm.incVarRef(vm.makeVar<VarMap>(getLoc(), true, false)); }
 void VarStructDef::onDestroy(VirtualMachine &vm) { vm.decVarRef(attrs); }
 
 Var *VarStructDef::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
@@ -934,15 +1138,12 @@ void VarFileIterator::onDestroy(VirtualMachine &vm) { vm.decVarRef(file); }
 bool VarFileIterator::next(VarStr *&val)
 {
     if(!val) return false;
-    char *lineptr   = NULL;
-    size_t len      = 0;
-    String &valdata = val->getVal();
+    char *lineptr = NULL;
+    size_t len    = 0;
     if(getline(&lineptr, &len, file->getFile()) != -1) {
-        valdata.clear();
-        valdata = lineptr;
+        val->setVal(lineptr);
+        val->trim();
         free(lineptr);
-        while(!valdata.empty() && valdata.back() == '\n') valdata.pop_back();
-        while(!valdata.empty() && valdata.back() == '\r') valdata.pop_back();
         return true;
     }
     if(lineptr) free(lineptr);

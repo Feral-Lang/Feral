@@ -29,7 +29,7 @@ static void compress(uint32_t H[8], const unsigned char blk[64])
     for(int i = 0; i < 16; ++i) {
         int j = i * 4;
         w[i]  = ((uint32_t)blk[j] << 24) | ((uint32_t)blk[j + 1] << 16) |
-               ((uint32_t)blk[j + 2] << 8) | ((uint32_t)blk[j + 3]);
+                ((uint32_t)blk[j + 2] << 8) | ((uint32_t)blk[j + 3]);
     }
     for(int i = 16; i < 64; ++i) {
         uint32_t s0 = rotr32(w[i - 15], 7) ^ rotr32(w[i - 15], 18) ^ (w[i - 15] >> 3);
@@ -150,9 +150,7 @@ FERAL_FUNC(newSHA256Ctx, 0, false,
            "  fn() -> SHA256Ctx\n"
            "Creates and returns a fresh SHA-256 streaming context.\n"
            "Use with update() and final() for incremental hashing.")
-{
-    return vm.makeVar<VarSHA256Ctx>(loc);
-}
+{ return vm.makeVar<VarSHA256Ctx>(loc); }
 
 FERAL_FUNC(sha256Update, 1, false,
            "  var.fn(data) -> Nil\n"
@@ -162,7 +160,7 @@ FERAL_FUNC(sha256Update, 1, false,
     EXPECT2(VarStr, VarBytebuffer, args[1], "data string");
     VarSHA256Ctx *ctx = as<VarSHA256Ctx>(args[0]);
     if(args[1]->is<VarStr>()) {
-        const String &s = as<VarStr>(args[1])->getVal();
+        StringRef s = as<VarStr>(args[1])->getVal();
         ctx->update(reinterpret_cast<const unsigned char *>(s.data()), s.size());
     } else if(args[1]->is<VarBytebuffer>()) {
         VarBytebuffer *buf = as<VarBytebuffer>(args[1]);

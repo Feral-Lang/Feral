@@ -195,10 +195,9 @@ FERAL_FUNC(allImplements, 1, true,
         VarMap *interfacefns = vm.getTypeFns(args[i]);
         if(interfacefns && !objfns) {
             if(err) {
-                utils::appendToString(
-                    err->getVal(), "object of type `", vm.getTypeName(args[0]),
-                    "` doesn't provide any functions which are required by interface `",
-                    vm.getTypeName(args[i]), "`");
+                err->setVal({"object of type `", vm.getTypeName(args[0]),
+                             "` doesn't provide any functions which are required by interface `",
+                             vm.getTypeName(args[i]), "`"});
             }
             return vm.getFalse();
         }
@@ -207,20 +206,18 @@ FERAL_FUNC(allImplements, 1, true,
             Var *of = objfns->getAttr(fit.key());
             if(!of) {
                 if(err) {
-                    utils::appendToString(
-                        err->getVal(), "object of type `", vm.getTypeName(args[0]),
-                        "` doesn't implement a function `", fit.key(),
-                        "` required by the interface `", vm.getTypeName(args[i]), "`");
+                    err->setVal({"object of type `", vm.getTypeName(args[0]),
+                                 "` doesn't implement a function `", fit.key(),
+                                 "` required by the interface `", vm.getTypeName(args[i]), "`"});
                 }
                 return vm.getFalse();
             }
             Var *f = fit.val();
             if(of->getSubType() != f->getSubType()) {
                 if(err) {
-                    utils::appendToString(
-                        err->getVal(), "function `", fit.key(), "` in `", vm.getTypeName(args[0]),
-                        "` is of type `", vm.getTypeName(of), "`, but the interface `",
-                        vm.getTypeName(args[i]), "` expects a `", vm.getTypeName(f), "`");
+                    err->setVal({"function `", fit.key(), "` in `", vm.getTypeName(args[0]),
+                                 "` is of type `", vm.getTypeName(of), "`, but the interface `",
+                                 vm.getTypeName(args[i]), "` expects a `", vm.getTypeName(f), "`"});
                 }
                 return vm.getFalse();
             }
@@ -229,32 +226,33 @@ FERAL_FUNC(allImplements, 1, true,
             VarFn *ffn  = as<VarFn>(f);
             if(offn->getParamCount() != ffn->getParamCount()) {
                 if(err) {
-                    utils::appendToString(
-                        err->getVal(), "function `", fit.key(), "` in `", vm.getTypeName(args[0]),
-                        "` expects ", offn->getParamCount(), " argument(s), but the interface `",
-                        vm.getTypeName(args[i]), "` expected ", ffn->getParamCount());
+                    err->setVal(
+                        {"function `", fit.key(), "` in `", vm.getTypeName(args[0]), "` expects "});
+                    err->append(offn->getParamCount());
+                    err->append({" argument(s), but the interface `", vm.getTypeName(args[i]),
+                                 "` expected "});
+                    err->append(ffn->getParamCount());
                 }
                 return vm.getFalse();
             }
             if(offn->isVariadic() != ffn->isVariadic()) {
                 if(err) {
-                    utils::appendToString(err->getVal(), "interface `", vm.getTypeName(args[i]),
-                                          "` expects function `", fit.key(), "` to be ",
-                                          ffn->isVariadic() ? "variadic" : "non-variadic",
-                                          " but the function in `", vm.getTypeName(args[0]),
-                                          "` is ",
-                                          offn->isVariadic() ? "variadic" : "non-variadic");
+                    err->setVal({"interface `", vm.getTypeName(args[i]), "` expects function `",
+                                 fit.key(), "` to be ",
+                                 ffn->isVariadic() ? "variadic" : "non-variadic",
+                                 " but the function in `", vm.getTypeName(args[0]), "` is ",
+                                 offn->isVariadic() ? "variadic" : "non-variadic"});
                 }
                 return vm.getFalse();
             }
             if(offn->isKWAccepted() != ffn->isKWAccepted()) {
                 if(err) {
-                    utils::appendToString(
-                        err->getVal(), "interface `", vm.getTypeName(args[i]),
-                        "` expects function `", fit.key(), "` to be ",
-                        ffn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting",
-                        " but the function in `", vm.getTypeName(args[0]), "` is ",
-                        offn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting");
+                    err->setVal(
+                        {"interface `", vm.getTypeName(args[i]), "` expects function `", fit.key(),
+                         "` to be ",
+                         ffn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting",
+                         " but the function in `", vm.getTypeName(args[0]), "` is ",
+                         offn->isKWAccepted() ? "keyword-accepting" : "non-keyword-accepting"});
                 }
                 return vm.getFalse();
             }
@@ -878,8 +876,6 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "endsWith", strEndsWith);
     vm.addTypeFn<VarStr>(loc, "fit", strFit);
     vm.addTypeFn<VarStr>(loc, "fmt", strFormat);
-    vm.addTypeFn<VarStr>(loc, "getBinStrFromHexStr", hexStrToBinStr);
-    vm.addTypeFn<VarStr>(loc, "getUTF8CharFromBinStr", utf8CharFromBinStr);
 
     vm.addTypeFn<VarStr>(loc, "byt", byt);
     vm.addTypeFn<VarInt>(loc, "chr", chr);

@@ -209,7 +209,7 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
             params.reserve(arginfo.size() - 3);
             StringMap<Var *> defaultParams;
             for(size_t idx = 3; idx < arginfo.size(); ++idx) {
-                String name = as<VarStr>(execstack->back())->getVal();
+                String name{as<VarStr>(execstack->back())->getVal()};
                 execstack->pop();
                 if(arginfo[idx] == '1') {
                     Var *val = execstack->pop(false);

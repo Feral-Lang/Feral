@@ -9,13 +9,10 @@ FERAL_FUNC(allToStr, 0, false,
            "This function is used as a default if a type doesn't implement its own `.str()` member "
            "function.")
 {
-    VarStr *res = vm.makeVar<VarStr>(loc, "");
-    res->getVal() += "Type: ";
-    res->getVal() += vm.getTypeName(args[0]);
-    res->getVal() += " at ";
     char tmp[24];
     snprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), "%p", args[0]);
-    res->getVal() += tmp;
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    res->setVal({"Type: ", vm.getTypeName(args[0]), " at ", tmp});
     return res;
 }
 
@@ -31,25 +28,22 @@ FERAL_FUNC(bytebufferToStr, 0, false,
 FERAL_FUNC(nilToStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns `'(nil)'`.")
-{
-    return vm.makeVar<VarStr>(loc, "(nil)");
-}
+{ return vm.makeVar<VarStr>(loc, "(nil)"); }
 
 FERAL_FUNC(boolToStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns `'true'` if `var` is `true`, `'false'` otherwise.")
-{
-    return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false");
-}
+{ return vm.makeVar<VarStr>(loc, as<VarBool>(args[0])->getVal() ? "true" : "false"); }
 
 FERAL_FUNC(typeIDToStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns the string representation of the typeID `var` with the ID as `number` as "
            "`'typeid<number>'`.")
 {
-    VarStr *res = vm.makeVar<VarStr>(loc, "typeid<");
-    res->getVal() += std::to_string(as<VarTypeID>(args[0])->getVal());
-    res->getVal() += ">";
+    char tmp[24];
+    snprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), "%ld", as<VarTypeID>(args[0])->getVal());
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    res->setVal({"typeid<", tmp, ">"});
     return res;
 }
 
@@ -60,7 +54,7 @@ FERAL_FUNC(intToStr, 0, false,
            "* `base = <int>` - base for the number `var`. (default: 10)")
 {
     char fmt[256] = {0};
-    int base = 10;
+    int base      = 10;
     if(assnArgs) {
         if(Var *baseVar = assnArgs->getAttr("precision")) {
             EXPECT(VarInt, baseVar, "base");
@@ -81,7 +75,7 @@ FERAL_FUNC(fltToStr, 0, false,
            "Takes the following optional arguments:\n"
            "* `precision = <int>` - number of precision digits. (default: 2)")
 {
-    char fmt[32] = {0};
+    char fmt[32]  = {0};
     int precision = 2;
     if(assnArgs) {
         if(Var *precisionVar = assnArgs->getAttr("precision")) {
@@ -93,7 +87,8 @@ FERAL_FUNC(fltToStr, 0, false,
         vm.fail(loc, "floating precision cannot be more than 24, found: ", precision);
         return nullptr;
     }
-    auto res = std::to_chars(fmt, fmt + 32, as<VarFlt>(args[0])->getVal(), std::chars_format::fixed, precision);
+    auto res = std::to_chars(fmt, fmt + 32, as<VarFlt>(args[0])->getVal(), std::chars_format::fixed,
+                             precision);
     if(res.ec != std::errc()) {
         vm.fail(loc, "failed to convert float to string: ", std::make_error_code(res.ec).message());
         return nullptr;
@@ -104,23 +99,17 @@ FERAL_FUNC(fltToStr, 0, false,
 FERAL_FUNC(strToStr, 0, false,
            "  var.fn() -> var\n"
            "Returns `var` as is.")
-{
-    return args[0];
-}
+{ return args[0]; }
 
 FERAL_FUNC(failureToStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns the message in the failure `var`.")
-{
-    return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg());
-}
+{ return vm.makeVar<VarStr>(loc, as<VarFailure>(args[0])->getMsg()); }
 
 FERAL_FUNC(pathToStr, 0, false,
            "  var.fn() -> Str\n"
            "Converts the path `var` into a string and returns it.")
-{
-    return vm.makeVar<VarStr>(loc, as<VarPath>(args[0])->toStr());
-}
+{ return vm.makeVar<VarStr>(loc, as<VarPath>(args[0])->toStr()); }
 
 FERAL_FUNC(structToStr, 0, false,
            "  var.fn() -> Str\n"
@@ -131,7 +120,7 @@ FERAL_FUNC(structToStr, 0, false,
 {
     VarStruct *st = as<VarStruct>(args[0]);
     VarStr *res   = vm.makeVar<VarStr>(loc, vm.getTypeName(st->getSubType()));
-    res->getVal() += "{";
+    res->append("{");
     for(auto it = st->attrBegin(); it != st->attrEnd(); st->attrNext(it)) {
         Var *v = nullptr;
         Array<Var *, 1> tmp{it.val()};
@@ -139,17 +128,15 @@ FERAL_FUNC(structToStr, 0, false,
             vm.decVarRef(res);
             return nullptr;
         }
-        res->getVal() += it.key();
-        res->getVal() += ": ";
-        res->getVal() += as<VarStr>(v)->getVal();
+        res->append({it.key(), ": ", as<VarStr>(v)->getVal()});
         vm.decVarRef(v);
-        res->getVal() += ", ";
+        res->append(", ");
     }
     if(st->getAttrCount() > 0) {
-        res->getVal().pop_back();
-        res->getVal().pop_back();
+        res->pop();
+        res->pop();
     }
-    res->getVal() += "}";
+    res->append("}");
     return res;
 }
 
@@ -158,14 +145,11 @@ FERAL_FUNC(errorToStr, 0, false,
            "Returns the string representation of the error `var`.")
 {
     VarError *e = as<VarError>(args[0]);
-    String res;
-    res.reserve(e->getMsg().size() + 15);
-    res += "Error<";
-    res += std::to_string(e->getCode());
-    res += ": ";
-    res += e->getMsg();
-    res += ">";
-    return vm.makeVar<VarStr>(loc, std::move(res));
+    char tmp[32];
+    sprintf(tmp, "%ld", e->getCode());
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    res->setVal({"Error<", tmp, ": ", e->getMsg(), ">"});
+    return res;
 }
 
 FERAL_FUNC(resultToStr, 0, false,
@@ -173,18 +157,13 @@ FERAL_FUNC(resultToStr, 0, false,
            "Returns the string representation of the Result `var`.")
 {
     VarResult *r = as<VarResult>(args[0]);
-    String res;
-    res.reserve(20);
-    res += "Result.";
-    res += r->isOk() ? "Ok" : "Err";
-    res += "<";
-    Var *v = nullptr;
+    Var *v       = nullptr;
     Array<Var *, 1> tmp{r->getVal()};
     if(!vm.callVarAndExpect<VarStr>(loc, "str", v, tmp, {})) return nullptr;
-    res += as<VarStr>(v)->getVal();
+    VarStr *res = vm.makeVar<VarStr>(loc, "");
+    res->setVal({"Result.", r->isOk() ? "Ok" : "Err", "<", as<VarStr>(v)->getVal(), ">"});
     vm.decVarRef(v);
-    res += ">";
-    return vm.makeVar<VarStr>(loc, std::move(res));
+    return res;
 }
 
 } // namespace fer

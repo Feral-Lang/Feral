@@ -30,7 +30,7 @@ bool set(const char *key, const char *val, bool overwrite)
 #endif
 }
 
-String get(const char *key)
+const char *get(const char *key)
 {
 #if defined(FER_OS_WINDOWS)
     static char envdata[MAX_ENV_CHARS];

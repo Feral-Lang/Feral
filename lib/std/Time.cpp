@@ -33,14 +33,16 @@ FERAL_FUNC(timeFormat, 2, false,
         EXPECT(VarBool, utcVar, "is utc format");
         utc = as<VarBool>(utcVar)->getVal();
     }
-    int64_t val     = as<VarInt>(args[1])->getVal();
-    const String &f = as<VarStr>(args[2])->getVal();
+    int64_t val        = as<VarInt>(args[1])->getVal();
+    const char *fmtStr = as<VarStr>(args[2])->cStr();
     std::chrono::system_clock::time_point tpMicro(std::chrono::microseconds{val});
     auto tpSec{std::chrono::time_point_cast<std::chrono::seconds>(tpMicro)};
     auto tzTime = utc ? std::chrono::zoned_time{"UTC", tpSec}
                       : std::chrono::zoned_time{std::chrono::current_zone(), tpSec};
-    auto res    = std::vformat("{:" + f + "}", std::make_format_args(tzTime));
-    return vm.makeVar<VarStr>(loc, std::move(res));
+    char fmt[128];
+    sprintf(fmt, "{:%s}", fmtStr);
+    auto res = std::vformat(fmt, std::make_format_args(tzTime));
+    return vm.makeVar<VarStr>(loc, res);
 }
 
 FERAL_FUNC(timeParse, 2, false,
@@ -50,12 +52,13 @@ FERAL_FUNC(timeParse, 2, false,
 {
     EXPECT(VarStr, args[1], "time");
     EXPECT(VarStr, args[2], "format");
-    const String &tm  = as<VarStr>(args[1])->getVal();
-    const String &fmt = as<VarStr>(args[2])->getVal();
+    // UGH the allocation!!! :(
+    String tm       = as<VarStr>(args[1])->cStr();
+    const char *fmt = as<VarStr>(args[2])->cStr();
     std::istringstream is{tm};
     std::chrono::local_time<std::chrono::microseconds> t;
     is.imbue(std::locale(""));
-    is >> std::chrono::parse(fmt.c_str(), t);
+    is >> std::chrono::parse(fmt, t);
     if(is.fail()) return vm.getNil();
     return vm.makeVar<VarInt>(loc, t.time_since_epoch().count());
 }

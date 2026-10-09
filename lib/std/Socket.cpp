@@ -63,16 +63,16 @@ static String addrToStr(const struct sockaddr_storage &addr)
 // Resolves `host`:`port` using getaddrinfo, matching the given address family and socket type.
 // Passing an empty `host` resolves to the wildcard address (for binding).
 // NOTE: getaddrinfo performs DNS resolution and may block briefly.
-static bool resolveAddr(VirtualMachine &vm, ModuleLoc loc, const String &host, uint16_t port,
-                        int domain, int sockType, struct addrinfo **result)
+static bool resolveAddr(VirtualMachine &vm, ModuleLoc loc, const char *host, size_t hostLen,
+                        uint16_t port, int domain, int sockType, struct addrinfo **result)
 {
     struct addrinfo hints{};
     hints.ai_family   = domain;
     hints.ai_socktype = sockType;
-    if(host.empty()) hints.ai_flags = AI_PASSIVE;
+    if(hostLen == 0) hints.ai_flags = AI_PASSIVE;
     char portStr[8] = {0};
     std::snprintf(portStr, sizeof(portStr) / sizeof(portStr[0]), "%" PRIu16, port);
-    int res = getaddrinfo(host.empty() ? nullptr : host.c_str(), portStr, &hints, result);
+    int res = getaddrinfo(hostLen == 0 ? nullptr : host, portStr, &hints, result);
     if(res != 0) {
 #if defined(FER_OS_WINDOWS)
         vm.fail(loc, "failed to resolve '", host, "': error ", WSAGetLastError());
@@ -107,15 +107,11 @@ void VarSocket::closeSocket()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarAddr::VarAddr(ModuleLoc loc) : Var(loc), addrLen(sizeof(struct sockaddr_storage))
-{
-    memset(&addr, 0, sizeof(addr));
-}
+{ memset(&addr, 0, sizeof(addr)); }
 
 VarAddr::VarAddr(ModuleLoc loc, const struct sockaddr_storage &addr, socklen_t addrLen)
     : Var(loc), addr(addr), addrLen(addrLen)
-{
-    updateRepr();
-}
+{ updateRepr(); }
 
 bool VarAddr::onSet(VirtualMachine &vm, Var *from)
 {
@@ -165,16 +161,12 @@ FERAL_FUNC(socketClose, 0, false,
 FERAL_FUNC(socketIsClosed, 0, false,
            "  var.fn() -> Bool\n"
            "Returns `true` if the Socket `var` has been closed.")
-{
-    return as<VarSocket>(args[0])->isClosed() ? vm.getTrue() : vm.getFalse();
-}
+{ return as<VarSocket>(args[0])->isClosed() ? vm.getTrue() : vm.getFalse(); }
 
 FERAL_FUNC(socketGetFd, 0, false,
            "  var.fn() -> Int\n"
            "Returns the underlying file descriptor of the Socket `var`.")
-{
-    return vm.makeVar<VarInt>(loc, as<VarSocket>(args[0])->getFd());
-}
+{ return vm.makeVar<VarInt>(loc, as<VarSocket>(args[0])->getFd()); }
 
 // Binds the socket to a local address. Pass an empty string for host to bind to all interfaces.
 FERAL_FUNC(socketBind, 2, false,
@@ -185,10 +177,12 @@ FERAL_FUNC(socketBind, 2, false,
     EXPECT(VarStr, args[1], "host");
     EXPECT(VarInt, args[2], "port");
     VarSocket *sock      = as<VarSocket>(args[0]);
-    const String &host   = as<VarStr>(args[1])->getVal();
+    VarStr *host         = as<VarStr>(args[1]);
     uint16_t port        = (uint16_t)as<VarInt>(args[2])->getVal();
     struct addrinfo *res = nullptr;
-    if(!resolveAddr(vm, loc, host, port, sock->getDomain(), sock->getType(), &res)) return nullptr;
+    if(!resolveAddr(vm, loc, host->cStr(), host->length(), port, sock->getDomain(), sock->getType(),
+                    &res))
+        return nullptr;
     int bindRes = bind(sock->getFd(), res->ai_addr, (socklen_t)res->ai_addrlen);
     freeaddrinfo(res);
     if(bindRes < 0) {
@@ -244,10 +238,12 @@ FERAL_FUNC(socketConnect, 2, false,
     EXPECT(VarStr, args[1], "host");
     EXPECT(VarInt, args[2], "port");
     VarSocket *sock      = as<VarSocket>(args[0]);
-    const String &host   = as<VarStr>(args[1])->getVal();
+    VarStr *host         = as<VarStr>(args[1]);
     uint16_t port        = (uint16_t)as<VarInt>(args[2])->getVal();
     struct addrinfo *res = nullptr;
-    if(!resolveAddr(vm, loc, host, port, sock->getDomain(), sock->getType(), &res)) return nullptr;
+    if(!resolveAddr(vm, loc, host->cStr(), host->length(), port, sock->getDomain(), sock->getType(),
+                    &res))
+        return nullptr;
     int connectRes = connect(sock->getFd(), res->ai_addr, (socklen_t)res->ai_addrlen);
     freeaddrinfo(res);
     if(connectRes < 0 && !sockInProgress()) {
@@ -481,10 +477,11 @@ FERAL_FUNC(newAddr, 0, true,
     }
     EXPECT(VarStr, args[1], "host");
     EXPECT(VarInt, args[2], "port");
-    const String &host   = as<VarStr>(args[1])->getVal();
+    VarStr *host         = as<VarStr>(args[1]);
     uint16_t port        = (uint16_t)as<VarInt>(args[2])->getVal();
     struct addrinfo *res = nullptr;
-    if(!resolveAddr(vm, loc, host, port, AF_UNSPEC, 0, &res)) return nullptr;
+    if(!resolveAddr(vm, loc, host->cStr(), host->length(), port, AF_UNSPEC, 0, &res))
+        return nullptr;
     struct sockaddr_storage storage{};
     socklen_t len = (socklen_t)res->ai_addrlen;
     memcpy(&storage, res->ai_addr, len);
@@ -495,9 +492,7 @@ FERAL_FUNC(newAddr, 0, true,
 FERAL_FUNC(addrStr, 0, false,
            "  var.fn() -> Str\n"
            "Returns the Addr `var` as a \"host:port\" string.")
-{
-    return vm.makeVar<VarStr>(loc, as<VarAddr>(args[0])->getRepr());
-}
+{ return vm.makeVar<VarStr>(loc, as<VarAddr>(args[0])->getRepr()); }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// INIT ///////////////////////////////////////////////

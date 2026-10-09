@@ -5,7 +5,7 @@
 namespace fer::env
 {
 
-String FER_API get(const char *key);
+const char *FER_API get(const char *key);
 Path FER_API getHome();
 Path FER_API getProcPath();
 

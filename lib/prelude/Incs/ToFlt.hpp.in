@@ -1,3 +1,5 @@
+#include <charconv>
+
 #include "VM/VM.hpp"
 
 namespace fer
@@ -6,37 +8,37 @@ namespace fer
 FERAL_FUNC(nilToFlt, 0, false,
            "  var.fn() -> Flt\n"
            "Returns 0.0 which is the float equivalent of nil.")
-{
-    return vm.makeVar<VarFlt>(loc, 0.0);
-}
+{ return vm.makeVar<VarFlt>(loc, 0.0); }
 
 FERAL_FUNC(boolToFlt, 0, false,
            "  var.fn() -> Flt\n"
            "Returns `1.0` if `var` is `true`, `0.0` otherwise.")
-{
-    return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->getVal() ? 1.0 : 0.0);
-}
+{ return vm.makeVar<VarFlt>(loc, as<VarBool>(args[0])->getVal() ? 1.0 : 0.0); }
 
 FERAL_FUNC(intToFlt, 0, false,
            "  var.fn() -> Flt\n"
            "Converts the int `var` to float and returns it.")
-{
-    return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getVal());
-}
+{ return vm.makeVar<VarFlt>(loc, as<VarInt>(args[0])->getVal()); }
 
 FERAL_FUNC(fltToFlt, 0, false,
            "  var.fn() -> var\n"
            "Returns `var` as is.")
-{
-    return args[0];
-}
+{ return args[0]; }
 
 FERAL_FUNC(
     strToFlt, 0, false,
     "  var.fn() -> Flt\n"
     "Converts the string `var` which should represent a float and returns it as a float type.")
 {
-    return vm.makeVar<VarFlt>(loc, std::stod(as<VarStr>(args[0])->getVal()));
+    StringRef num = as<VarStr>(args[0])->getVal();
+#if defined(_LIBCPP_VERSION)
+    String numtmp(num);
+    double fltval = std::strtod(numtmp.c_str(), nullptr);
+#else
+    double fltval;
+    std::from_chars(num.data(), num.data() + num.size(), fltval);
+#endif
+    return vm.makeVar<VarFlt>(loc, fltval);
 }
 
 } // namespace fer

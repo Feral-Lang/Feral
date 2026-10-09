@@ -53,10 +53,10 @@ FERAL_FUNC(fsFopen, 3, false, "")
     EXPECT(VarPath, args[1], "file path");
     EXPECT(VarStr, args[2], "file open mode");
     EXPECT(VarBool, args[3], "if file should be closed");
-    auto &&path        = as<VarPath>(args[1])->toStr();
-    const String &mode = as<VarStr>(args[2])->getVal();
-    bool mustClose     = as<VarBool>(args[3])->getVal();
-    FILE *file         = fopen(path.c_str(), mode.c_str());
+    auto &&path      = as<VarPath>(args[1])->toStr();
+    const char *mode = as<VarStr>(args[2])->cStr();
+    bool mustClose   = as<VarBool>(args[3])->getVal();
+    FILE *file       = fopen(path.c_str(), mode);
     if(!file) {
         vm.fail(loc, "failed to open file '", path, "' with mode: ", mode);
         return nullptr;
@@ -78,7 +78,7 @@ FERAL_FUNC(fsWalkDir, 3, false, "")
 
     size_t mode = as<VarInt>(args[2])->getVal();
 
-    const String &regexstr = as<VarStr>(args[3])->getVal();
+    const char *regexstr = as<VarStr>(args[3])->cStr();
     Regex regex(regexstr);
 
     VarVec *res = vm.makeVar<VarVec>(loc, 0, false);

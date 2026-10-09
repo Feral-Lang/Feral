@@ -84,8 +84,9 @@ FERAL_FUNC(feralBase64Encode, 1, false,
 
     const char *table = url ? base64URLEncodeTable : base64EncodeTable;
 
-    String res(len, '\0');
-    char *resIt = res.data();
+    VarStr *res = vm.makeVar<VarStr>(loc, len + 1);
+    res->setLength(len);
+    char *resIt = res->data();
 
     size_t currLen = 0;
     size_t inPos   = 0;
@@ -93,7 +94,7 @@ FERAL_FUNC(feralBase64Encode, 1, false,
 
     while((dataLen - inPos) >= 3) {
         currLen += 4;
-        if(currLen > res.size()) {
+        if(currLen > res->length()) {
             done = true;
             break;
         }
@@ -111,7 +112,7 @@ FERAL_FUNC(feralBase64Encode, 1, false,
 
     if(!done && dataLen != inPos) {
         currLen += 4;
-        if(currLen > res.size()) done = true;
+        if(currLen > res->length()) done = true;
 
         if(!done) {
             *resIt = table[data[0] >> 2];
@@ -134,9 +135,10 @@ FERAL_FUNC(feralBase64Encode, 1, false,
 
     *resIt = '\0';
     if(url) {
-        while(!res.empty() && res.back() == '=') res.pop_back();
+        while(!res->empty() && res->back() == '=') res->pop();
     }
-    return vm.makeVar<VarStr>(loc, std::move(res));
+    std::cout << "encoded to: " << res->getVal() << "\n";
+    return res;
 }
 
 FERAL_FUNC(feralBase64Decode, 1, false,
@@ -146,8 +148,8 @@ FERAL_FUNC(feralBase64Decode, 1, false,
 {
     EXPECT(VarStr, args[1], "base64 encoded data");
     VarStr *dataStr  = as<VarStr>(args[1]);
-    const char *data = dataStr->getVal().c_str();
-    size_t dataLen   = dataStr->getVal().size();
+    const char *data = dataStr->cStr();
+    size_t dataLen   = dataStr->length();
 
     if(dataLen == 0) return vm.getNil();
 

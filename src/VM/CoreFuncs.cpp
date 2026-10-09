@@ -81,8 +81,8 @@ FERAL_FUNC_DEF(basicModuleFinder)
 {
     EXPECT(VarStr, args[1], "module file");
     EXPECT(VarBool, args[2], "is import");
-    String modfile = as<VarStr>(args[1])->getVal();
-    bool isImport  = as<VarBool>(args[2])->getVal();
+    String modfile{as<VarStr>(args[1])->getVal()};
+    bool isImport = as<VarBool>(args[2])->getVal();
     if(isImport) {
         if(!vm.findImportIn(vm.getModuleDirs(), modfile)) return vm.getNil();
     } else {
