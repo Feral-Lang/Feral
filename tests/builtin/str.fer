@@ -12,10 +12,10 @@ assert.ne('hello', 'world');
 
 # arithmetic
 assert.eq('hello ' + 'world', 'hello world');
-assert.eq('ab' * 3, 'ababab');
 
 let ab = 'ab', cd = 'cd';
 
+assert.eq(ab * 3, 'ababab');
 assert.eq((ab += cd), 'abcd');
 assert.eq((ab *= 2), 'abcdabcd');
 

@@ -45,13 +45,19 @@ FERAL_FUNC(strToIntNative, 1, false, "")
     EXPECT(VarInt, args[1], "base");
     StringRef num = as<VarStr>(args[0])->getVal();
     for(auto c : num) {
-        if(c == '-' || (c >= '0' && c <= '9')) continue;
+        if(c == '-' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) continue;
         vm.fail(loc, "string '", num, "' is not a number");
         return nullptr;
     }
     int64_t base = as<VarInt>(args[1])->getVal();
     int64_t val;
-    std::from_chars(num.data(), num.data() + num.size(), val, base);
+    auto [ptr, ec] = std::from_chars(num.data(), num.data() + num.size(), val, base);
+    if(ec != std::errc()) {
+        if(ec == std::errc::invalid_argument) vm.fail(loc, "not a number: ", num);
+        else if(ec == std::errc::result_out_of_range) vm.fail(loc, "number can't fit in an integer: ", num);
+        else vm.fail(loc, "failed to convert `", num, "` to an int");
+        return nullptr;
+    }
     return vm.makeVar<VarInt>(loc, val);
 }
 

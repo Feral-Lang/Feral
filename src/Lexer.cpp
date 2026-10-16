@@ -78,7 +78,6 @@ const char *TokStrs[_LAST] = {
     "^",
     "&=",
     "|=",
-    "~=",
     "^=",
     // Others
     "<<",
@@ -390,7 +389,15 @@ StringRef getNum(ModuleId moduleId, StringRef data, size_t &i, size_t &line, siz
         case 'c':
         case 'C':
         case 'b':
-        case 'B':
+        case 'B': {
+            if(base >= 16) break;
+            if(readBase && (c == 'b' || c == 'B')) {
+                base     = 2;
+                readBase = false;
+                break;
+            }
+            goto fail;
+        }
         case 'a':
         case 'A': {
             if(base >= 16) break;
@@ -576,14 +583,7 @@ TokType getOperator(ModuleId moduleId, StringRef data, size_t &i, size_t line, s
             }
         }
         SET_OP_TYPE_BRK(BOR);
-    case '~':
-        if(i < len - 1) {
-            if(NEXT == '=') {
-                ++i;
-                SET_OP_TYPE_BRK(BNOT_ASSN);
-            }
-        }
-        SET_OP_TYPE_BRK(BNOT);
+    case '~': SET_OP_TYPE_BRK(BNOT);
     case '=':
         if(i < len - 1) {
             if(NEXT == '=') {

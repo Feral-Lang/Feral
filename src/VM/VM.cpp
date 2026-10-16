@@ -7,11 +7,6 @@
 #include "VM/CoreFuncs.hpp"
 #include "VM/DynLib.hpp"
 
-#if defined(FER_OS_WINDOWS)
-#include <chrono>    // because MSVC complains about missing header while Linux doesn't :shrug:
-#include <Windows.h> // for libloaderapi.h, which contains AddDllDirectory() and RemoveDllDirectory()
-#endif
-
 namespace fer
 {
 
@@ -66,9 +61,7 @@ VirtualMachine::~VirtualMachine()
 }
 
 VirtualMachine *VirtualMachine::createVM(StringRef name, VarFn *errHandler)
-{
-    return gs->mem->allocInit<VirtualMachine>(gs, name, errHandler);
-}
+{ return gs->mem->allocInit<VirtualMachine>(gs, name, errHandler); }
 void VirtualMachine::destroyVM(VirtualMachine *vm) { gs->mem->freeDeinit(vm); }
 
 int VirtualMachine::runFile(ModuleLoc loc, const char *file, StringRef threadName)
@@ -265,9 +258,7 @@ void VirtualMachine::addGlobal(StringRef name, StringRef doc, Var *val, bool ire
     gs->globals->setAttr(*this, name, val, iref);
 }
 void VirtualMachine::addGlobal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
-{
-    addGlobal(name, "", makeFn(loc, fnObj));
-}
+{ addGlobal(name, "", makeFn(loc, fnObj)); }
 Var *VirtualMachine::getGlobal(StringRef name) { return gs->globals->getAttr(name); }
 
 void VirtualMachine::addLocal(StringRef name, StringRef doc, Var *val, bool iref)
@@ -277,9 +268,7 @@ void VirtualMachine::addLocal(StringRef name, StringRef doc, Var *val, bool iref
     mod->setAttr(*this, name, val, iref);
 }
 void VirtualMachine::addLocal(ModuleLoc loc, StringRef name, const FeralNativeFnDesc &fnObj)
-{
-    addLocal(name, "", makeFn(loc, fnObj));
-}
+{ addLocal(name, "", makeFn(loc, fnObj)); }
 
 void VirtualMachine::addTypeFn(size_t _typeid, StringRef name, Var *callable, bool iref)
 {
@@ -451,7 +440,7 @@ Var *VirtualMachine::loadDll(ModuleLoc loc, const String &dllpath, StringRef dll
 #if defined(FER_OS_WINDOWS)
     // append the parent dir to dll search paths
     String parentdir = Path(dllpath).parent_path().string();
-    if(!addDLLDirectory(parentdir)) {
+    if(!addDLLDirectory(parentdir.c_str())) {
         fail(loc, "unable to add dir: ", parentdir,
              " as a DLL directory while loading module: ", dllpath);
         return nullptr;
@@ -549,13 +538,11 @@ Var *VirtualMachine::eval(ModuleLoc loc, StringRef code, bool isExpr)
     Var *tmpRet = nullptr;
     int ec      = execute(tmpRet, nullptr);
     popModule();
-    if(tmpRet) {
-        decVarRef(tmpRet);
-        fail(loc, "internal error: VirtualMachine::eval() must not generate a return value "
-                  "from execute()");
+    if(ec) {
+        if(tmpRet) decVarRef(tmpRet);
         return nullptr;
     }
-    if(ec) return nullptr;
+    if(tmpRet) return tmpRet;
     return execstack->empty() ? incVarRef(getNil()) : execstack->pop(false);
 }
 

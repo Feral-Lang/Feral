@@ -82,7 +82,6 @@ escape_seq   = '\' any_char ;
    await  wait  continue  break  true  false  nil
    or  defer  inline
 
-   Note: 'void' is NOT a keyword — it is treated as a regular identifier.
    The '@' token is recognized by the lexer but is not currently used by the parser. *)
 
 
@@ -243,8 +242,8 @@ expr15   = expr14 { compound_assign_op expr14 } [ or_block ] ;
 
 compound_assign_op = '+=' | '-=' | '*=' | '/=' | '%='
                    | '<<=' | '>>='
-                   | '&=' | '|=' | '~=' | '^=' ;
-(* '~=' is bitwise-NOT assign; '^=' is bitwise-XOR assign *)
+                   | '&=' | '|=' | '^=' ;
+(* '^=' is bitwise-XOR assign *)
 
 or_block = 'or' [ IDENTIFIER ] braced_block ;
 (* Provides an error-handling clause.  The block is wrapped in an
@@ -308,7 +307,7 @@ expr05   = expr04 { ( '+' | '-' ) expr04 } ;
 (* --- Level 4: Multiplicative --- left-associative *)
 
 expr04   = expr03 { ( '*' | '/' | '%' | '**' | '//' ) expr03 } ;
-(* '**' = exponentiation;  '//' = integer square-root *)
+(* '**' = exponentiation;  '//' = integer root *)
 
 
 (* --- Level 3: Unary prefix --- right-associative (zero or more, applied innermost-first) *)
@@ -339,8 +338,7 @@ postfix_op = '++'    (* post-increment              *)
 
 (* --- Level 1: Primary expressions and suffix chains --- left-associative *)
 
-expr01   = prefixed_suffixed_literal
-         | '(' expr ')' { suffix }
+expr01   = '(' expr ')' { suffix }
          | primary { suffix }
          | fn_def { suffix }
          | await_expr { suffix }
@@ -351,7 +349,6 @@ primary  = IDENTIFIER
          | ATOM
          | INT_LITERAL
          | FLT_LITERAL
-         | 'void'
          | 'true'
          | 'false'
          | 'nil' ;
@@ -371,21 +368,6 @@ call_arg = ( IDENTIFIER | STR_LITERAL | ATOM ) '=' expr17  (* named argument  *)
 (* A named argument uses the identifier/string as the argument name; the
    '...' postfix on expr17 (via expr02) marks an argument for variadic unpack.
    IDENTIFIER names in named call positions are coerced to STR tokens.        *)
-
-
-(* --- Prefixed / suffixed literal --- *)
-
-prefixed_suffixed_literal
-         = IDENTIFIER ( INT_LITERAL | FLT_LITERAL | STR_LITERAL )
-         | ( INT_LITERAL | FLT_LITERAL | STR_LITERAL ) IDENTIFIER ;
-(* Desugared to a function call:  IDEN(LIT)
-   Examples:  9h     -> h(9)
-              2.5i   -> i(2.5)
-              ref"x" -> ref("x")
-   There must be no whitespace between the identifier and the literal;
-   they must be adjacent tokens.
-   Postfix suffix chains (. [] ()) are NOT available on this form directly. *)
-
 
 (* --- Await / wait expression --- *)
 

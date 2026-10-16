@@ -26,7 +26,7 @@ FERAL_FUNC(strMul, 1, false,
     StringRef lhs = as<VarStr>(args[0])->getVal();
     int64_t rhs   = as<VarInt>(args[1])->getVal();
     VarStr *res   = vm.makeVar<VarStr>(loc, "");
-    for(int64_t i = 1; i < rhs; ++i) res->append(lhs);
+    for(int64_t i = 0; i < rhs; ++i) res->append(lhs);
     return res;
 }
 
@@ -62,7 +62,8 @@ FERAL_FUNC(strAssnMul, 1, false,
     VarStr lhs{loc, as<VarStr>(args[0])->getVal()};
     int64_t rhs   = as<VarInt>(args[1])->getVal();
     VarStr *self  = as<VarStr>(args[0]);
-    for(int64_t i = 1; i < rhs; ++i) self->append(lhs.getVal());
+    self->setVal("");
+    for(int64_t i = 0; i < rhs; ++i) self->append(lhs.getVal());
     return args[0];
 }
 
@@ -408,7 +409,7 @@ FERAL_FUNC(strSplitNative, 3, false, "")
         start = end + delim.length();
         end   = str.find(delim, start);
     }
-    StringRef tmp(str.substr(start, end - start));
+    StringRef tmp(str.substr(start, String::npos));
     while(!tmp.empty() && tmp.front() == ' ') tmp = StringRef(tmp.data() + 1, tmp.length() - 1);
     while(!tmp.empty() && tmp.back() == ' ') tmp = StringRef(tmp.data(), tmp.length() - 1);
     if(!tmp.empty() || !ignoreEmpty) res->push(vm, vm.makeVar<VarStr>(loc, tmp), true);

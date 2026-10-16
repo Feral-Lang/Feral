@@ -40,7 +40,7 @@ FERAL_FUNC(timeFormat, 2, false,
     auto tzTime = utc ? std::chrono::zoned_time{"UTC", tpSec}
                       : std::chrono::zoned_time{std::chrono::current_zone(), tpSec};
     char fmt[128];
-    sprintf(fmt, "{:%s}", fmtStr);
+    snprintf(fmt, FER_ARRAY_SIZE(fmt), "{:%s}", fmtStr);
     auto res = std::vformat(fmt, std::make_format_args(tzTime));
     return vm.makeVar<VarStr>(loc, res);
 }

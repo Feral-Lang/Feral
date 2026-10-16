@@ -163,12 +163,14 @@ int VirtualMachine::execute(Var *&ret, size_t *currentlyAt, size_t begin, size_t
             assert(!execstack->empty());
             Var *var = execstack->back();
             bool res = false;
-            if(var->is<VarInt>()) {
+            if(var->is<VarBool>()) {
+                res = as<VarBool>(var)->getVal();
+            } else if(var->is<VarInt>()) {
                 res = as<VarInt>(var)->getVal();
             } else if(var->is<VarFlt>()) {
                 res = as<VarFlt>(var)->getVal();
-            } else if(var->is<VarBool>()) {
-                res = as<VarBool>(var)->getVal();
+            } else if(var->is<VarStr>()) {
+                res = !as<VarStr>(var)->getVal().empty();
             } else if(var->is<VarNil>()) {
                 res = false;
             } else {

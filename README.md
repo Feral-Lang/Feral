@@ -50,7 +50,7 @@ let io = import('std/io');
 
 let facto = fn(num) {
     let fact = 1;
-    for i in range(num, 1, -1) {
+    for i in irange(num, 1, -1) {
         fact *= i;
     }
     return fact;

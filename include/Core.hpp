@@ -29,6 +29,8 @@
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
+#define FER_ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
+
 #if defined(NDEBUG)
 #define FER_BUILD_RELEASE
 #else

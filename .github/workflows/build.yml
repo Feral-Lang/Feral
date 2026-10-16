@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["main"]
 
+env:
+  AUTOMATION_RUN: true
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -13,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-26.04, macos-26, windows-latest]
-        build_type: [Release]
+        build_type: [Debug, Release]
         c_compiler: [gcc, clang, cl]
         include:
           - os: windows-latest
@@ -69,7 +72,7 @@ jobs:
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
       - name: Test Valgrind
-        if: runner.os != 'Windows' && runner.os != 'macOS'
+        if: runner.os != 'Windows' && runner.os != 'macOS' && matrix.build_type == 'Debug'
         working-directory: ${{ github.workspace }}
         # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail

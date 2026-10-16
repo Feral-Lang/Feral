@@ -6,11 +6,21 @@ namespace fer::ast
 bool parse(ManagedList &allocator, ManagedList &toks, Stmt *&s, bool exprOnly)
 {
     Parser parser(allocator, toks);
-    return exprOnly ? parser.parseExpr(s) : parser.parseBlock((StmtBlock *&)s, false);
+    return (exprOnly ? parser.parseExpr(s) : parser.parseBlock((StmtBlock *&)s, false)) &&
+           parser.ensureTokensConsumed();
 }
 void dumpTree(OStream &os, Stmt *tree) { tree->disp(false); }
 
 Parser::Parser(ManagedList &allocator, ManagedList &toks) : allocator(allocator), p(toks) {}
+
+bool Parser::ensureTokensConsumed()
+{
+    if(p.isValid()) {
+        err.fail(p.peek()->getLoc(), "dangling token found: ", p.peek()->getTok().cStr());
+        return false;
+    }
+    return true;
+}
 
 // on successful parse, returns true, and tree is allocated
 // if withBrace is true, it will attempt to find the beginning and ending brace for each block
@@ -118,35 +128,6 @@ bool Parser::parseSimple(Stmt *&data)
     return true;
 }
 
-// ref"Ref of this"
-// 9h
-// 2.5i
-bool Parser::parsePrefixedSuffixedLiteral(Stmt *&expr)
-{
-    lex::Lexeme *iden = p.peekt() == lex::IDEN ? p.peek() : p.peek(1);
-    lex::Lexeme *lit  = p.peekt() == lex::IDEN ? p.peek(1) : p.peek();
-
-    p.next();
-    p.next();
-
-    StmtSimple *arg = nullptr;
-    if(lit->getTokVal() == lex::STR) {
-        arg = StmtSimple::create(allocator, lit->getLoc(), lex::STR, lit->getDataStr());
-    } else if(lit->getTokVal() == lex::INT) {
-        arg = StmtSimple::create(allocator, lit->getLoc(), lex::INT, lit->getDataInt());
-    } else if(lit->getTokVal() == lex::FLT) {
-        arg = StmtSimple::create(allocator, lit->getLoc(), lex::FLT, lit->getDataFlt());
-    } else {
-        err.fail(lit->getLoc(), "unexpected literal type here, found: ", lit->getTok().cStr());
-        return false;
-    }
-    StmtSimple *fn = StmtSimple::create(allocator, iden->getLoc(), lex::IDEN, iden->getDataStr());
-    StmtFnArgs *finfo = StmtFnArgs::create(allocator, arg->getLoc(), {arg}, {false});
-    expr = StmtExpr::create(allocator, iden->getLoc(), fn, lex::TokType::FNCALL, finfo);
-
-    return true;
-}
-
 bool Parser::parseExpr(Stmt *&expr) { return parseExpr18(expr); }
 
 // Left Associative
@@ -242,7 +223,7 @@ bool Parser::parseExpr16(Stmt *&expr)
 // += -= *=
 // /= %= <<=
 // >>= &= |=
-// ~= ^=
+// ^=
 // or-block
 bool Parser::parseExpr15(Stmt *&expr)
 {
@@ -257,8 +238,7 @@ bool Parser::parseExpr15(Stmt *&expr)
 
     while(p.accept(lex::ADD_ASSN, lex::SUB_ASSN, lex::MUL_ASSN) ||
           p.accept(lex::DIV_ASSN, lex::MOD_ASSN, lex::LSHIFT_ASSN) ||
-          p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) ||
-          p.accept(lex::BNOT_ASSN, lex::BXOR_ASSN))
+          p.accept(lex::RSHIFT_ASSN, lex::BAND_ASSN, lex::BOR_ASSN) || p.accept(lex::BXOR_ASSN))
     {
         lex::TokType oper = p.peekt();
         p.next();
@@ -671,13 +651,6 @@ bool Parser::parseExpr01(Stmt *&expr)
     Vector<Stmt *> args;
     Stmt *arg = nullptr;
     Vector<bool> unpackVector; // works for variadic as well
-
-    // prefixed/suffixed literals
-    if(p.accept(lex::IDEN) && p.peek(1)->getTok().isLiteral() ||
-       p.peek()->getTok().isLiteral() && p.peekt(1) == lex::IDEN)
-    {
-        return parsePrefixedSuffixedLiteral(expr);
-    }
 
     if(p.acceptn(lex::LPAREN)) {
         if(!parseExpr(lhs)) { return false; }

@@ -176,14 +176,6 @@ FERAL_FUNC(intBNot, 0, false,
     return vm.makeVar<VarInt>(loc, ~as<VarInt>(args[0])->getVal());
 }
 
-FERAL_FUNC(intAssnBNot, 0, false,
-           "  var.fn() -> var\n"
-           "Applies the bitwise not operation on `var` and returns the updated `var`.")
-{
-    as<VarInt>(args[0])->setVal(~as<VarInt>(args[0])->getVal());
-    return args[0];
-}
-
 FERAL_FUNC(intPopCnt, 0, false,
            "  var.fn() -> Int\n"
            "Returns the number of set (1) bits in `var`.")
@@ -229,18 +221,50 @@ FERAL_FUNC(intAssnRShift, 1, false,
 
 FERAL_FUNC(intPow, 1, false,
            "  var.fn(exponent) -> Int\n"
-           "Returns the value of `var` raised to the power of `exponent`.")
+           "Returns the value of `var` raised to the power of `exponent`.\n"
+           "The `exponent` can be a floating number < 1.0 to get the root of `var`.")
 {
-    EXPECT(VarInt, args[1], "int power");
+    EXPECT2(VarInt, VarFlt, args[1], "int/float exponent");
     int64_t base = as<VarInt>(args[0])->getVal();
-    int64_t exp  = as<VarInt>(args[1])->getVal();
-    int64_t res  = 1;
-    if(exp < 0) {
+    if(args[1]->is<VarInt>()) {
+        int64_t exp  = as<VarInt>(args[1])->getVal();
+        if(exp < 0) {
+            vm.fail(loc, "int power only works with positive exponents, found: ", exp);
+            return nullptr;
+        }
+        return vm.makeVar<VarInt>(loc, std::pow(base, exp));
+    }
+    // floating point exponent
+    double exp = as<VarFlt>(args[1])->getVal();
+    if(exp < 0.0) {
         vm.fail(loc, "int power only works with positive exponents, found: ", exp);
         return nullptr;
     }
-    while(exp-- > 0) res *= base;
-    return vm.makeVar<VarInt>(loc, res);
+    return vm.makeVar<VarFlt>(loc, std::pow(base, exp));
+}
+
+FERAL_FUNC(intRoot, 1, false,
+           "  var.fn(exponent) -> Int\n"
+           "Returns the value of `var` as a root of `exponent`.\n"
+           "The `exponent` can be a floating number < 1.0 to get the power of `var`.")
+{
+    EXPECT2(VarInt, VarFlt, args[1], "int/float exponent");
+    int64_t base = as<VarInt>(args[0])->getVal();
+    if(args[1]->is<VarInt>()) {
+        int64_t exp  = as<VarInt>(args[1])->getVal();
+        if(exp < 0) {
+            vm.fail(loc, "int root only works with positive exponents, found: ", exp);
+            return nullptr;
+        }
+        return vm.makeVar<VarInt>(loc, std::pow(base, 1.0 / (double)exp));
+    }
+    // floating point exponent
+    double exp = as<VarFlt>(args[1])->getVal();
+    if(exp < 0.0) {
+        vm.fail(loc, "int root only works with positive exponents, found: ", exp);
+        return nullptr;
+    }
+    return vm.makeVar<VarFlt>(loc, std::pow(base, 1.0 / exp));
 }
 
 FERAL_FUNC(intSqRoot, 0, false,

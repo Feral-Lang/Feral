@@ -14,8 +14,8 @@ ModuleLoc::ModuleLoc(ModuleId id, uint64_t offStart, uint64_t offEnd)
 
 void ErrorHandler::addFile(ModuleId id, File *f)
 {
-    auto pair = files.emplace(id, f);
-    paths.emplace(id, pair.first->second->getPath());
+    auto pair = files.insert_or_assign(id, f);
+    paths.insert_or_assign(id, pair.first->second->getPath());
 }
 
 File *ErrorHandler::getFileForId(ModuleId id)

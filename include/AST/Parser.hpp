@@ -23,6 +23,8 @@ class Parser
 public:
     Parser(ManagedList &allocator, ManagedList &toks);
 
+    bool ensureTokensConsumed();
+
     // On successful parse, returns true, and tree is allocated
     // If withBrace is true, it will attempt to find the beginning and ending brace for each
     // block
@@ -30,7 +32,6 @@ public:
 
     bool parseSimple(Stmt *&data);
 
-    bool parsePrefixedSuffixedLiteral(Stmt *&expr);
     bool parseExpr(Stmt *&expr);
     bool parseExpr18(Stmt *&expr);
     bool parseExpr17(Stmt *&expr);

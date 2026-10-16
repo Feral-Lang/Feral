@@ -775,6 +775,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarInt>(loc, ">>=", intAssnRShift);
 
     vm.addTypeFn<VarInt>(loc, "**", intPow);
+    vm.addTypeFn<VarInt>(loc, "//", intRoot);
     vm.addTypeFn<VarInt>(loc, "++x", intPreInc);
     vm.addTypeFn<VarInt>(loc, "x++", intPostInc);
     vm.addTypeFn<VarInt>(loc, "--x", intPreDec);

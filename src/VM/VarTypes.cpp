@@ -1,6 +1,7 @@
 #include "VM/VarTypes.hpp"
 
 #include <cassert>
+#include <cinttypes>
 
 #include "VM/VM.hpp"
 
@@ -364,30 +365,30 @@ void VarStr::append(char data) { return append(StringRef(&data, 1)); }
 void VarStr::append(size_t data)
 {
     char tmp[64];
-    int count = sprintf(tmp, "%zu", data);
+    int count = snprintf(tmp, FER_ARRAY_SIZE(tmp), "%zu", data);
     return append(StringRef(tmp, count));
 }
 
 void VarStr::append(int64_t data)
 {
     char tmp[64];
-    int count = sprintf(tmp, "%ld", data);
+    int count = snprintf(tmp, FER_ARRAY_SIZE(tmp), "%" PRId64, data);
     return append(StringRef(tmp, count));
 }
 
 void VarStr::append(double data)
 {
     char tmp[64];
-    int count = sprintf(tmp, "%lf", data);
+    int count = snprintf(tmp, FER_ARRAY_SIZE(tmp), "%lf", data);
     return append(StringRef(tmp, count));
 }
 
 void VarStr::insert(size_t pos, StringRef data)
 {
     if(data.empty()) return;
-    reserve(len + data.length() + 1, false, false);
+    reserve(len + data.length() + 1, false, true);
     char *s = this->data();
-    if(len > 0) memmove(s + pos + data.length(), s + pos, len);
+    if(len > 0) memmove(s + pos + data.length(), s + pos, len - pos);
     memcpy(s + pos, data.data(), data.length());
     len += data.length();
     assert(len >= 0 && len <= cap && "len cannot be below zero");
@@ -719,6 +720,11 @@ VarFn::VarFn(ModuleLoc loc, VarModule *mod, Vector<String> &&params,
 void VarFn::onDestroy(VirtualMachine &vm)
 {
     for(auto &a : defaultParams) vm.decVarRef(a.second);
+}
+bool VarFn::onSet(VirtualMachine &vm, Var *from)
+{
+    // changing a function to another is never valid.
+    return false;
 }
 Var *VarFn::onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                    VarVec *stack, size_t *currentlyAt)

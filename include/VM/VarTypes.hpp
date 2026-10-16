@@ -487,6 +487,7 @@ class FER_API VarFn : public Var
     bool isvirtual;
 
     void onDestroy(VirtualMachine &vm) override;
+    bool onSet(VirtualMachine &vm, Var *from) override;
 
     Var *onCall(VirtualMachine &vm, ModuleLoc loc, Span<Var *> args, VarMap *assnArgs,
                 VarVec *stack = nullptr, size_t *currentlyAt = nullptr) override;

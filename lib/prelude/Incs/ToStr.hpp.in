@@ -1,5 +1,7 @@
 #include "VM/VM.hpp"
 
+#include <cinttypes>
+
 namespace fer
 {
 
@@ -41,7 +43,7 @@ FERAL_FUNC(typeIDToStr, 0, false,
            "`'typeid<number>'`.")
 {
     char tmp[24];
-    snprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), "%ld", as<VarTypeID>(args[0])->getVal());
+    snprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), "%zu", as<VarTypeID>(args[0])->getVal());
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     res->setVal({"typeid<", tmp, ">"});
     return res;
@@ -56,7 +58,7 @@ FERAL_FUNC(intToStr, 0, false,
     char fmt[256] = {0};
     int base      = 10;
     if(assnArgs) {
-        if(Var *baseVar = assnArgs->getAttr("precision")) {
+        if(Var *baseVar = assnArgs->getAttr("base")) {
             EXPECT(VarInt, baseVar, "base");
             base = as<VarInt>(baseVar)->getVal();
         }
@@ -70,7 +72,7 @@ FERAL_FUNC(intToStr, 0, false,
 }
 
 FERAL_FUNC(fltToStr, 0, false,
-           "  var.fn(precision = 2) -> Str\n"
+           "  var.fn(.kw) -> Str\n"
            "Converts the float `var` into a string and returns it.\n"
            "Takes the following optional arguments:\n"
            "* `precision = <int>` - number of precision digits. (default: 2)")
@@ -146,7 +148,7 @@ FERAL_FUNC(errorToStr, 0, false,
 {
     VarError *e = as<VarError>(args[0]);
     char tmp[32];
-    sprintf(tmp, "%ld", e->getCode());
+    snprintf(tmp, FER_ARRAY_SIZE(tmp), "%" PRId64, e->getCode());
     VarStr *res = vm.makeVar<VarStr>(loc, "");
     res->setVal({"Error<", tmp, ": ", e->getMsg(), ">"});
     return res;

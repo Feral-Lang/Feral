@@ -86,6 +86,7 @@ if args.has('valgrind') {
         io.cprintln('could {r}not{0} find valgrind in {y}$PATH{0}');
         feral.exit(1);
     }
+    os.setEnv('VALGRIND_ENABLED', 'true');
     # --log-fd=1 to pour the valgrind output on stdout so that we
     # don't have to redirect entire stderr to io.null
     valgrindCmd.push(valgrindExec);
@@ -124,7 +125,9 @@ let clean = fn(file) {
     let res = os.exec(cmd...);
 };
 
-let tpool = thread.newPool();
+let concurrency = args.has('valgrind') && os.getEnv('AUTOMATION_RUN') ? 1 : thread.getConcurrency();
+
+let tpool = thread.newPool(concurrency);
 
 tpool.start();
 

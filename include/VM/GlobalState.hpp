@@ -73,7 +73,7 @@ public:
 
 #if defined(FER_OS_WINDOWS)
 extern StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
-bool addDLLDirectory(const String &dir);
+bool addDLLDirectory(const char *dir);
 void remDLLDirectories();
 #endif
 

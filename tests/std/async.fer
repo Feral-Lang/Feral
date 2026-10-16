@@ -5,6 +5,14 @@ let os = import('std/os');
 let time = import('std/time');
 let async = import('std/async');
 
+let atime = 10, btime = 20, expected = 22;
+# valgrind is slowwwwwwwwwww
+if os.getEnv('VALGRIND_ENABLED') {
+    atime = 40;
+    btime = 50;
+    expected = 200;
+}
+
 let func = fn(id, sleepFor) {
     io.println('hello ', id);
     await os.sleepAsync(sleepFor);
@@ -12,10 +20,10 @@ let func = fn(id, sleepFor) {
 };
 
 let runner = async.newRunner();
-runner.push(func, 'a', 10);
-runner.push(func, 'b', 20);
+runner.push(func, 'a', atime);
+runner.push(func, 'b', btime);
 
 let timeBegin = time.now();
 runner.run();
 let timeTotal = time.now() - timeBegin;
-assert.le(time.resolve(timeTotal, time.milli).round(), 30); # 30 to provide a little headroom (for valgrind run)
+assert.le(time.resolve(timeTotal, time.milli).round(), expected);

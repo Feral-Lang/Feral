@@ -46,7 +46,7 @@ bool GlobalState::init(VirtualMachine &vm)
     const char *userName = env::get("USER");
 #endif
     char tempPathUser[128];
-    sprintf(tempPathUser, "feral.%s", userName);
+    snprintf(tempPathUser, FER_ARRAY_SIZE(tempPathUser), "feral.%s", userName);
     tempPath->append(tempPathUser);
     binaryPath        = vm.incVarRef(vm.makeVar<VarPath>({}, env::getProcPath()));
     installPath       = vm.incVarRef(vm.makeVar<VarPath>({}, binaryPath->parent().parent_path()));
@@ -93,7 +93,9 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.tryAddModulePathsFromDir(libPath->toStr().c_str());
 
 #if defined(FER_OS_WINDOWS)
-    for(auto &modDir : moduleDirs->getVal()) { addDLLDirectory(as<VarStr>(modDir)->getVal()); }
+    for(auto &modDir : moduleDirs->getVal()) {
+        addDLLDirectory(as<VarPath>(modDir)->toStr().c_str());
+    }
 #endif
 
     vm.addGlobalType<VarAll>({}, "All", "Base type for all types.");
@@ -161,10 +163,10 @@ bool GlobalState::deinit(VirtualMachine &vm)
 #if defined(FER_OS_WINDOWS)
 StringMap<DLL_DIRECTORY_COOKIE> dllDirectories;
 
-bool addDLLDirectory(const String &dir)
+bool addDLLDirectory(const char *dir)
 {
     if(dllDirectories.find(dir) != dllDirectories.end()) return true;
-    DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::sToWString(dir.c_str()).c_str());
+    DLL_DIRECTORY_COOKIE dlldir = AddDllDirectory(utils::sToWString(dir).c_str());
     if(!dlldir) return false;
     dllDirectories.insert({String(dir), dlldir});
     return true;

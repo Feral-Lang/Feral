@@ -78,7 +78,6 @@ enum TokType
     BXOR,
     BAND_ASSN,
     BOR_ASSN,
-    BNOT_ASSN,
     BXOR_ASSN,
     // Others
     LSHIFT,
@@ -159,7 +158,7 @@ public:
     {
         return (val == ASSN || val == ADD_ASSN || val == SUB_ASSN || val == MUL_ASSN ||
                 val == DIV_ASSN || val == MOD_ASSN || val == BAND_ASSN || val == BOR_ASSN ||
-                val == BNOT_ASSN || val == BXOR_ASSN || val == LSHIFT_ASSN || val == RSHIFT_ASSN);
+                val == BXOR_ASSN || val == LSHIFT_ASSN || val == RSHIFT_ASSN);
     }
 
     inline bool isValid() const { return val != INVALID && val != FEOF; }

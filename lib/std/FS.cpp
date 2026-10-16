@@ -120,8 +120,12 @@ FERAL_FUNC(fsLastWriteTime, 1, false,
                 "`: ", ec.message());
         return nullptr;
     }
+#if defined(FER_OS_APPLE)
+    auto sysftime = ftime.time_since_epoch();
+#else
     auto sysftime = std::chrono::clock_cast<std::chrono::system_clock>(ftime).time_since_epoch();
-    int64_t sec   = std::chrono::duration_cast<std::chrono::seconds>(sysftime).count();
+#endif
+    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(sysftime).count();
     return vm.makeVar<VarInt>(loc, sec);
 }
 
