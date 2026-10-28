@@ -63,3 +63,16 @@ assert.eq(!fs.exists(cpfile), true);
 let suavePath = 'C:\\Users\\Some/file/../here/and/a/double//here'.path();
 let normiePath = suavePath.normal();
 assert.eq(normiePath.str(), 'C:/Users/Some/here/and/a/double/here');
+
+# ---------------------------------------------------------------
+# Raw file-descriptor API with defer-close (was tests/defer.fer)
+# ---------------------------------------------------------------
+
+let bytebuffer = import('std/bytebuffer');
+
+let fd = fs.fdOpen(srcPath);
+defer fs.fdClose(fd);
+
+let bbuf = bytebuffer.new(200); # 200 bytes capacity
+let count = fs.fdRead(fd, bbuf);
+assert.gt(count, 0);

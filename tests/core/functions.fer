@@ -1,0 +1,264 @@
+let assert = import('std/assert');
+
+let os = import('std/os');
+let vec = import('std/vec');
+
+# ---------------------------------------------------------------
+# Functions are ordinary values
+# ---------------------------------------------------------------
+
+let add = fn(a, b) { return a + b; };
+let sub = fn(a, b) { return a - b; };
+
+let choose = fn(which) {
+    if which == 'add' { return add; }
+    return sub;
+};
+
+assert.eq(choose('add')(7, 3), 10);
+assert.eq(choose('sub')(7, 3), 4);
+
+# stored in containers
+let fns = vec.new(add, sub);
+assert.eq(fns[0](2, 3), 5);
+
+# apply / higher-order
+let applyTwice = fn(f, x) {
+    return f(f(x));
+};
+let inc = fn(x) { return x + 1; };
+assert.eq(applyTwice(inc, 1), 3);
+
+# ---------------------------------------------------------------
+# Immediately-invoked function definitions
+# ---------------------------------------------------------------
+
+assert.eq(fn(x) { return x * x; }(9), 81);
+
+# ---------------------------------------------------------------
+# Anonymous recursion through the bound variable
+# ---------------------------------------------------------------
+
+let fact = fn(n) {
+    if n <= 1 { return 1; }
+    return n * fact(n - 1);
+};
+assert.eq(fact(6), 720);
+
+# NOTE: reassigning a variable that holds a function is now a hard
+# error (VarFn::onSet rejects it), so late-binding of free names is
+# not possible. Recursion through the variable still works, as
+# `fact` above shows.
+let g = fn() { return 1; };
+let reassigned = (g = fn() { return 2; }) or e {
+    return e.str().find('failed to assign') >= 0;
+};
+assert.eq(reassigned, true);
+
+# ---------------------------------------------------------------
+# Closures see global scope, but do NOT capture enclosing function
+# locals (they are gone by the time the closure runs) — this is a
+# language limitation worth knowing about
+# ---------------------------------------------------------------
+
+let globalCounter = 0;
+let bump = fn() {
+    ++globalCounter;
+    return globalCounter;
+};
+assert.eq(bump(), 1);
+assert.eq(bump(), 2);
+
+let makeCounter = fn() {
+    let count = 0;
+    return fn() { ++count; return count; };
+};
+let counterFn = makeCounter();
+let broken = counterFn() or e {
+    return e.str().find('does not exist') >= 0;
+};
+assert.eq(broken, true); # enclosing local was not captured
+
+# ---------------------------------------------------------------
+# Variadic unpacking in calls
+# ---------------------------------------------------------------
+
+let sum3 = fn(a, b, c) { return a + b + c; };
+let args = vec.new(1, 2, 3);
+assert.eq(sum3(args...), 6);
+
+let varargs = fn(first, rest...) {
+    let total = first;
+    for r in rest.each() { total += r; }
+    return total;
+};
+assert.eq(varargs(1, 2, 3, 4), 10);
+assert.eq(varargs(1), 1);
+assert.eq(varargs(args...), 6);
+
+# ---------------------------------------------------------------
+# Default arguments
+# ---------------------------------------------------------------
+
+let defaults = fn(a, b = 2, c = 'c') {
+    return a.str() + '-' + b.str() + '-' + c;
+};
+assert.eq(defaults(1), '1-2-c');
+assert.eq(defaults(1, 3), '1-3-c');
+assert.eq(defaults(1, 3, 'z'), '1-3-z');
+# NOTE: named call arguments do NOT bind to declared parameters
+# (they are silently ignored unless the function has a keyword
+# bundle parameter `.kw` — see the `func1 in SomeTy` tests below for that); so we
+# only verify positional/default behavior here
+assert.eq(defaults(1, 3, 'z'), '1-3-z');
+
+# ---------------------------------------------------------------
+# Modules (imports) are values too
+# ---------------------------------------------------------------
+
+let m1 = import('std/vec');
+let m2 = m1; # aliasing a module variable
+assert.eq(m2.new(1, 2), m1.new(1, 2));
+
+let f = fn(m) {
+    return m.new(1, 2);
+};
+
+assert.eq(f(m1), m1.new(1, 2));
+
+# ---------------------------------------------------------------
+# Type functions and various arguments
+# ---------------------------------------------------------------
+
+let SomeTy = struct(a = 10, b = 20);
+
+let initCtr = 0;
+
+let _init_ in SomeTy = fn() {
+    ++initCtr;
+};
+let _deinit_ in SomeTy = fn() {
+    --initCtr;
+};
+
+let func1 in SomeTy = fn(x, y = 10, .kw, va...) {
+    assert.eq(self.a, 100);
+    assert.eq(self.b, 200);
+    assert.eq(x, 1);
+    assert.eq(y, 2);
+    assert.eq(kw['a'], 10);
+    assert.eq(kw['b'], 20);
+    assert.eq(kw['c'], 30);
+    assert.eq(va, feral.vecNew(3, 4));
+};
+
+let func2 in SomeTy = fn(x, y = 10, .kw, va...) {
+    assert.eq(self.a, 100);
+    assert.eq(self.b, 200);
+    assert.eq(x, 1);
+    assert.eq(y, 10);
+    assert.eq(kw['d'], 10);
+    assert.eq(kw['e'], 20);
+    assert.eq(va.empty(), true);
+};
+
+# pass the kw arg along
+let func3 in SomeTy = fn(.kw) {
+    self.func1(1, 2, 3, 4, kw...);
+    self.func2(1, kw...);
+};
+
+{
+    let test = SomeTy(a = 100, b = 200);
+    assert.eq(initCtr, 1);
+
+    test.func1(1, a = 10, b = 20, c = 30, 2, 3, 4);
+    test.func2(1, d = 10, e = 20);
+    test.func3(a = 10, b = 20, c = 30, d = 10, e = 20);
+    test.func3(a = 10, b = 20, c = 30, d = 10, e = 15, e = 20);
+}
+assert.eq(initCtr, 0);
+
+# Copy test
+
+let i = 5;
+
+assert.eq(i, 5);
+
+let func in IntTy = fn() {
+    return ref(self);
+};
+
+let p = i.func();
+p = 10;
+
+assert.eq(p, 10);
+assert.eq(i, 10);
+
+let copyCtr = 0;
+
+let _copy_ in IntTy = fn() {
+    ++copyCtr;
+    let res = 0;
+    res = self;
+    return res;
+};
+
+let b = p;
+assert.eq(copyCtr, 1);
+
+# ---------------------------------------------------------------
+# Call stacks
+# ---------------------------------------------------------------
+
+let f = fn() {
+    ++i;
+    f();
+};
+
+let i = 1; # first element in function call (execution) stack is the global scope itself
+
+let expectErr1 = "stack overflow, current max: " + feral.getMaxRecursion().str();
+
+f() or err {
+    assert.eq(err.str(), expectErr1);
+};
+
+assert.eq(i, feral.getMaxRecursion() - 1); # 1 to max - 1 = max (since 1 is included)
+
+inline if os.name == 'windows' {
+# windows seems like it has a much smaller stack size.
+let newmax = 200;
+} else {
+let newmax = 1000;
+}
+
+feral.setMaxRecursion(newmax);
+assert.eq(feral.getMaxRecursion(), newmax);
+
+i = 1;
+
+let expectErr2 = "stack overflow, current max: " + feral.getMaxRecursion().str();
+
+f() or err {
+    assert.eq(err.str(), expectErr2);
+};
+
+assert.eq(i, feral.getMaxRecursion() - 1); # 1 to max - 1 = max (since 1 is included)
+
+# reset call stack max to default
+feral.setMaxRecursion();
+
+i = 1;
+
+f() or err {
+    assert.eq(err.str(), expectErr1);
+};
+
+fx() or err {
+    assert.eq(err.str(), expectErr1) or err {
+        assert.eq(err.str(), 'Raised: assertion `variable \'fx\' does not exist` == `stack overflow, current max: ' + feral.getMaxRecursion().str() + '` failed');
+    };
+};
+
+assert.eq(i, feral.getMaxRecursion() - 1); # 1 to max - 1 = max (since 1 is included)

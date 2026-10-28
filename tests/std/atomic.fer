@@ -1,0 +1,57 @@
+let assert = import('std/assert');
+
+let atomic = import('std/atomic');
+let thread = import('std/thread');
+let vec = import('std/vec');
+let os = import('std/os');
+
+# ---------------------------------------------------------------
+# AtomicBool
+# ---------------------------------------------------------------
+
+let flag = atomic.newBool(false);
+assert.eq(flag.get(), false);
+flag.set(true);
+assert.eq(flag.get(), true);
+
+# _copy_ produces an independent atomic with the same value
+let flagCopy = flag._copy_();
+assert.eq(flagCopy.get(), true);
+flagCopy.set(false);
+assert.eq(flag.get(), true);
+assert.eq(flagCopy.get(), false);
+
+# ---------------------------------------------------------------
+# AtomicInt
+# ---------------------------------------------------------------
+
+let num = atomic.newInt(10);
+assert.eq(num.get(), 10);
+num.set(42);
+assert.eq(num.get(), 42);
+
+let numCopy = num._copy_();
+assert.eq(numCopy.get(), 42);
+numCopy.set(0);
+assert.eq(num.get(), 42);
+
+# ---------------------------------------------------------------
+# AtomicBool as a cross-thread stop signal
+# ---------------------------------------------------------------
+
+let stop = atomic.newBool(false);
+let loops = atomic.newInt(0);
+
+let spin = fn() {
+    while !stop.get() {
+        loops.set(loops.get() + 1);
+    }
+};
+
+let t = thread.new(name = 'spinner', spin);
+# let it spin a bit, then stop it (sleep takes milliseconds)
+os.sleep(50);
+stop.set(true);
+t.join();
+
+assert.gt(loops.get(), 0);

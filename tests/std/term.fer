@@ -1,0 +1,43 @@
+let assert = import('std/assert');
+let term = import('std/term');
+
+# ---------------------------------------------------------------
+# Terminal size queries return non-negative integers
+# ---------------------------------------------------------------
+
+assert.ge(term.getWidth(), 0);
+assert.ge(term.getHeight(), 0);
+
+# ---------------------------------------------------------------
+# isTTY returns a boolean (and accepts a file descriptor)
+# ---------------------------------------------------------------
+
+let fs = import('std/fs');
+assert.eq(term.isTTY().bool() == term.isTTY(), true);
+assert.eq(term.isTTY(fs.stdin).bool() == term.isTTY().bool(), true);
+
+# ---------------------------------------------------------------
+# ANSI sequence constants are non-empty strings starting with ESC
+# ---------------------------------------------------------------
+
+let esc = 27.chr();
+assert.eq(term.reset.isChAt(0, esc), true);
+assert.eq(term.red.isChAt(0, esc), true);
+assert.eq(term.bold.isChAt(0, esc), true);
+assert.ne(term.red, term.green);
+assert.ne(term.boldRed, term.red);
+
+# constants are const-bound: reassignment must fail
+let reassignFails = feral.evalCode('term.red = "nope";') or e {
+    return true;
+};
+assert.eq(reassignFails, true);
+
+# ---------------------------------------------------------------
+# link() builds an OSC-8 hyperlink sequence "anchor:link"
+# ---------------------------------------------------------------
+
+let l = term.link('site', 'https://example.com');
+assert.eq(l.isChAt(0, esc), true);
+assert.eq(l.find('https://example.com') >= 0, true);
+assert.eq(l.find('site') >= 0, true);

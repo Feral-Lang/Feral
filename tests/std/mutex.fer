@@ -1,0 +1,64 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+let mutex = import('std/mutex');
+let thread = import('std/thread');
+
+# ---------------------------------------------------------------
+# Basic lock / unlock
+# ---------------------------------------------------------------
+
+let m = mutex.new();
+m.lock();
+m.unlock();
+
+# tryLock succeeds when unlocked
+assert.eq(m.tryLock(), true);
+m.unlock();
+
+# ---------------------------------------------------------------
+# Recursive mutex can be locked multiple times by the same thread
+# ---------------------------------------------------------------
+
+let rm = mutex.newRecursive();
+rm.lock();
+rm.lock();
+rm.unlock();
+rm.unlock();
+
+# ---------------------------------------------------------------
+# Lock guard locks on creation and unlocks when it goes out of scope
+# ---------------------------------------------------------------
+
+{
+    let g = mutex.newGuard(m);
+    # still usable data-protected region here
+}
+# guard destroyed at block end -> mutex unlocked again
+assert.eq(m.tryLock(), true);
+m.unlock();
+
+# ---------------------------------------------------------------
+# Multithreaded counter protected by a mutex
+# ---------------------------------------------------------------
+
+let counter = vec.new(0); # single-element vec shared between threads
+let cm = mutex.new();
+
+let worker = fn(iterations) {
+    for let i = 0; i < iterations; ++i {
+        cm.lock();
+        counter[0] += 1;
+        cm.unlock();
+    }
+};
+
+let threads = vec.new(refs = true);
+for let t = 0; t < 4; ++t {
+    threads.push(thread.new(name = 'worker-' + t.str(), worker, 100));
+}
+for th in threads.each() {
+    th.join();
+}
+
+assert.eq(counter[0], 400);

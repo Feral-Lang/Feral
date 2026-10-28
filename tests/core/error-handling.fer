@@ -1,0 +1,157 @@
+let assert = import('std/assert');
+
+# ---------------------------------------------------------------
+# raise + or-block: error object exposes .str(), .msg(), .code()
+# ---------------------------------------------------------------
+
+let fail = fn() {
+    raise('boom');
+};
+
+let e1Str = '';
+fail() or e {
+    e1Str = e.str();
+};
+assert.eq(e1Str, 'Raised: boom');
+
+# ---------------------------------------------------------------
+# or-blocks chain: inner handler's return value becomes the result
+# ---------------------------------------------------------------
+
+let inner = fn() { raise('inner'); };
+let outer = fn() {
+    return inner() or { return 'recovered'; };
+};
+assert.eq(outer(), 'recovered');
+
+# an or-block that does not handle (returns nothing) yields nil
+let unhandled = fn() {
+    return inner() or {};
+};
+assert.eq(unhandled(), nil);
+
+# nested or-blocks
+let nested = fn() {
+    let zero = 0;
+    return (1 / zero) or e {
+        return (zero / zero) or e2 {
+            return e2.str();
+        };
+    };
+};
+assert.eq(nested().find('division by zero') >= 0, true);
+
+# ---------------------------------------------------------------
+# or-block on method calls and complex expressions
+# ---------------------------------------------------------------
+
+let Num = struct(v = 1);
+let safeDiv in Num = fn(d) {
+    if d == 0 { raise('cannot divide'); }
+    return self.v / d;
+};
+let n = Num();
+assert.eq(n.safeDiv(2), 0);
+assert.eq(n.safeDiv(0) or { return -1; }, -1);
+
+# the default error variable name (when `or` is not given an explicit
+# `e`) is `_`
+n.safeDiv(0) or {
+    assert.eq(_.str(), 'Raised: cannot divide');
+};
+
+# ---------------------------------------------------------------
+# `.?` propagates errors out of nested calls
+# ---------------------------------------------------------------
+
+let level1 = fn() { return feral.err(7, 'deep failure'); };
+let level2 = fn() { return level1().?; };
+let level3 = fn() { return level2().?; };
+
+let res = level3();
+assert.eq(res.isErr(), true);
+assert.eq(res.val().msg(), 'deep failure');
+assert.eq(res.val().code(), 7);
+
+# `.?` on a success unwraps the value
+let okLevel2 = fn() {
+    let x = feral.ok(41).?;
+    return feral.ok(x + 1);
+};
+assert.eq(okLevel2().val(), 42);
+
+# ---------------------------------------------------------------
+# feral.ok / feral.err result basics
+# ---------------------------------------------------------------
+
+let okv = feral.ok('value');
+assert.eq(okv.isOk(), true);
+assert.eq(okv.isErr(), false);
+assert.eq(okv.val(), 'value');
+
+let errv = feral.err(-3, 'msg part 1 ', 'part 2');
+assert.eq(errv.isErr(), true);
+assert.eq(errv.val().msg(), 'msg part 1 part 2');
+
+# ---------------------------------------------------------------
+# parse / runtime errors can be caught around eval calls
+# ---------------------------------------------------------------
+
+let parseErr = feral.evalCode('let x = ;') or e {
+    return e.str().find('parse') >= 0 || e.str().len() > 0;
+};
+assert.eq(parseErr, true);
+
+let lexErr = feral.evalCode('let y = "unterminated;') or e {
+    return e.str().len() > 0;
+};
+assert.eq(lexErr, true);
+
+let runtimeErr = feral.evalCode('undefinedFunction();') or e {
+    return e.str().find('does not exist') >= 0;
+};
+assert.eq(runtimeErr, true);
+
+# evalExpr returns a Result-like data/error pair as well
+let evalFail = feral.evalExpr('1 +') or e {
+    return e.str().len() > 0;
+};
+assert.eq(evalFail, true);
+
+# ---------------------------------------------------------------
+# Consecutive failed evals must reference distinct eval modules
+# (regression: failed modules used to leave their ModuleId
+# unconsumed, so the next module reused it and error reporting
+# attributed the wrong source file)
+# ---------------------------------------------------------------
+
+let errPath1 = feral.evalCode('let a1 = ;') or e { return e.str(); };
+let errPath2 = feral.evalCode('let a2 = @;') or e { return e.str(); };
+assert.ne(errPath1, errPath2);
+assert.ge(errPath1.find('<eval.'), 0);
+assert.ge(errPath2.find('<eval.'), 0);
+
+# ---------------------------------------------------------------
+# Div by zero error handling
+# ---------------------------------------------------------------
+
+let div = fn(x, y) {
+    if y == 0 {
+        raise('div by zero');
+    }
+    return x / y;
+};
+
+let x = div(5, 0) or e {
+    let p = 0; # to prevent const folding
+    return 10 / p or e2 {
+        assert.eq(e.str(), 'Raised: div by zero');
+        assert.eq(e2.str(), 'division by zero');
+        return 20; # set 20 as the value
+    };
+};
+let y = div(div(12, 0) or { return 10; }, 10);
+assert.eq(x, 20);
+assert.eq(y, 1);
+assert.eq(feral.varExists('e2'), false);
+assert.eq(feral.varExists('e'), false);

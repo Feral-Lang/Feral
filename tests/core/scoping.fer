@@ -1,0 +1,115 @@
+let assert = import('std/assert');
+
+# ---------------------------------------------------------------
+# Bare blocks introduce a scope
+# ---------------------------------------------------------------
+
+{
+    let inBlock = 1;
+    assert.eq(inBlock, 1);
+}
+assert.eq(feral.varExists('inBlock'), false);
+
+# nested bare blocks
+{
+    let a = 1;
+    {
+        let b = 2;
+        assert.eq(a + b, 3);
+    }
+    assert.eq(feral.varExists('b'), false);
+}
+
+# ---------------------------------------------------------------
+# if / elif / else blocks introduce a scope (PUSH_BLOCK)
+# ---------------------------------------------------------------
+
+if true {
+    let inIf = 1;
+}
+assert.eq(feral.varExists('inIf'), false);
+
+if false {
+    let notReached = 1;
+} elif true {
+    let inElif = 1;
+} else {
+    let notReached2 = 1;
+}
+assert.eq(feral.varExists('inElif'), false);
+assert.eq(feral.varExists('notReached'), false);
+assert.eq(feral.varExists('notReached2'), false);
+
+# ---------------------------------------------------------------
+# `inline if` merges the block scope with the enclosing scope
+# ---------------------------------------------------------------
+
+inline if true {
+    let inlined = 42;
+}
+assert.eq(feral.varExists('inlined'), true);
+assert.eq(inlined, 42);
+
+inline if false {
+    let notInlined = 1;
+}
+assert.eq(feral.varExists('notInlined'), false);
+
+# ---------------------------------------------------------------
+# Shadowing in an inner scope does not affect the outer variable
+# ---------------------------------------------------------------
+
+let x = 'outer';
+{
+    let x = 'inner';
+    assert.eq(x, 'inner');
+}
+assert.eq(x, 'outer');
+
+# ---------------------------------------------------------------
+# Functions have their own scope; parameters and locals vanish
+# ---------------------------------------------------------------
+
+let fnScope = fn(param) {
+    let local = param * 2;
+    return local;
+};
+assert.eq(fnScope(21), 42);
+assert.eq(feral.varExists('param'), false);
+assert.eq(feral.varExists('local'), false);
+
+# a block inside a function still sees (and can modify) function locals
+let blockSeesFnLocals = fn() {
+    let counter = 0;
+    {
+        counter += 1;
+    }
+    return counter;
+};
+assert.eq(blockSeesFnLocals(), 1);
+
+# ---------------------------------------------------------------
+# `let` with multiple bindings in one declaration
+# ---------------------------------------------------------------
+
+let p = 1, q = 2, r = 3;
+assert.eq(p + q + r, 6);
+
+# later bindings may use earlier ones
+let s = 1, t = s + 1;
+assert.eq(t, 2);
+
+# ---------------------------------------------------------------
+# `in` on let declarations attaches a keyed member to a type
+# ---------------------------------------------------------------
+
+let Widget = struct(size = 1);
+
+let describe in Widget = fn() {
+    return 'size: ' + self.size.str();
+};
+let doubled in Widget = 42;
+
+let w = Widget(size = 7);
+assert.eq(w.describe(), 'size: 7');
+assert.eq(w.doubled, 42);

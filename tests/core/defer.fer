@@ -1,0 +1,81 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+
+# ---------------------------------------------------------------
+# Function-level defers run in LIFO order at return
+# ---------------------------------------------------------------
+
+let order = vec.new();
+
+let f = fn() {
+    defer order.push(1);
+    defer order.push(2);
+    defer order.push(3);
+    return 'ret';
+};
+
+assert.eq(f(), 'ret');
+assert.eq(order, vec.new(3, 2, 1));
+
+# ---------------------------------------------------------------
+# Defers inside nested blocks/loops run at the end of that block,
+# before the enclosing function's defers
+# ---------------------------------------------------------------
+
+let order2 = vec.new();
+
+let g = fn() {
+    defer order2.push('fn');
+    for let i = 0; i < 2; ++i {
+        defer order2.push('loop' + i.str());
+    }
+    {
+        defer order2.push('block');
+    }
+};
+
+g();
+assert.eq(order2, vec.new('loop0', 'loop1', 'block', 'fn'));
+
+# ---------------------------------------------------------------
+# Defers see (and can modify) variables captured by reference
+# ---------------------------------------------------------------
+
+let counter = 0;
+let h = fn() {
+    defer counter += 10;
+    counter += 1;
+};
+h();
+assert.eq(counter, 11);
+
+# ---------------------------------------------------------------
+# Defers run even when the function returns from inside a loop
+# ---------------------------------------------------------------
+
+let order3 = vec.new();
+let k = fn() {
+    defer order3.push('outer');
+    for ;; {
+        defer order3.push('inner');
+        break;
+    }
+    return 0;
+};
+k();
+assert.eq(order3, vec.new('inner', 'outer'));
+
+# ---------------------------------------------------------------
+# Top-level defers run at the end of the program
+# ---------------------------------------------------------------
+
+let toplevelRan = vec.new();
+# defers are LIFO: this assert is registered first so it runs last,
+# after the push defer below has run
+defer assert.eq(toplevelRan, vec.new('first', 'last'));
+toplevelRan.push('first');
+
+# checked before the deferred code runs
+assert.eq(toplevelRan, vec.new('first'));
+defer toplevelRan.push('last');

@@ -1,0 +1,166 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+let map = import('std/map');
+
+# ---------------------------------------------------------------
+# Multi loops
+# ---------------------------------------------------------------
+
+for let i = 0; i < 10; ++i {
+    if i == 1 { continue; }
+    if i == 5 { break; }
+
+    for let j = 0; j < 10; ++j {
+        if j == 1 { continue; }
+        if j == 5 { break; }
+        assert.eq(feral.varExists('i'), true);
+        assert.eq(feral.varExists('j'), true);
+    }
+    assert.eq(feral.varExists('i'), true);
+    assert.eq(!feral.varExists('j'), true);
+}
+assert.eq(!feral.varExists('i'), true);
+assert.eq(!feral.varExists('j'), true);
+
+# ---------------------------------------------------------------
+# Multi loops (range)
+# ---------------------------------------------------------------
+
+for i in irange(0, 10) {
+    if i == 1 { continue; }
+    if i == 5 { break; }
+
+    for j in irange(0, 10) {
+        if j == 1 { continue; }
+        if j == 5 { break; }
+        assert.eq(feral.varExists('i'), true);
+        assert.eq(feral.varExists('j'), true);
+    }
+    assert.eq(feral.varExists('i'), true);
+    assert.eq(!feral.varExists('j'), true);
+}
+assert.eq(!feral.varExists('i'), true);
+assert.eq(!feral.varExists('j'), true);
+
+# ---------------------------------------------------------------
+# While loop
+# ---------------------------------------------------------------
+
+let v1 = vec.new(1, 2, 3, 4, 5);
+let v2 = vec.new();
+
+while !v1.empty() {
+    v2.push(v1.back());
+    v1.pop();
+}
+
+assert.eq(v2, vec.new(5, 4, 3, 2, 1));
+
+# ---------------------------------------------------------------
+# C-style for loops: all three clauses are optional
+# ---------------------------------------------------------------
+
+let i = 0;
+for ;; {
+    ++i;
+    if i == 3 { break; }
+}
+assert.eq(i, 3);
+
+# no init (i is already 3), no increment
+for ; i < 6; {
+    ++i;
+}
+assert.eq(i, 6);
+
+# only increment clause
+let j = 0;
+for j = 0; ; j += 2 {
+    if j >= 4 { break; }
+}
+assert.eq(j, 4);
+
+# for with expression (non-declaration) init
+let n = 0;
+for n = 1; n < 4; ++n {}
+assert.eq(n, 4);
+
+# ---------------------------------------------------------------
+# break / continue only affect the innermost loop
+# ---------------------------------------------------------------
+
+let seen = vec.new();
+for let a = 0; a < 3; ++a {
+    for let b = 0; b < 3; ++b {
+        if b == 1 { continue; }
+        if b == 2 { break; }
+        seen.push(a * 10 + b);
+    }
+    # `break` above only broke the inner loop; outer continues
+    if a == 2 { break; }
+}
+assert.eq(seen, vec.new(0, 10, 20));
+
+# while with break and continue
+let w = 0, wc = 0;
+while true {
+    ++w;
+    if w == 1 { continue; }
+    if w == 4 { break; }
+    ++wc;
+}
+assert.eq(w, 4);
+assert.eq(wc, 2);
+
+# ---------------------------------------------------------------
+# for-in loops over built-in iterables
+# ---------------------------------------------------------------
+
+# irange(n) counts 0..n-1
+let sum = 0;
+for x in irange(5) { sum += x; }
+assert.eq(sum, 10);
+
+# irange(start, stop, step)
+let desc = vec.new();
+for x in irange(6, 0, -2) { desc.push(x); }
+assert.eq(desc, vec.new(6, 4, 2));
+
+# strings are not iterable (`next`/`each` do not exist for Str);
+# iterate over characters via indexing instead
+let chars = '';
+for idx in irange('abc'.len()) { chars += 'abc'[idx]; }
+assert.eq(chars, 'abc');
+
+# vectors (iterate with .each() which returns an iterator)
+let vsum = 0;
+for v in vec.new(1, 2, 3).each() { vsum += v; }
+assert.eq(vsum, 6);
+
+# maps iterate over key/value pairs
+let mm = map.new('a', 1, 'b', 2);
+let msum = 0;
+for pair in mm.each() { msum += pair.1; }
+assert.eq(msum, 3);
+
+# ---------------------------------------------------------------
+# for-in over a custom iterator (next() protocol)
+# ---------------------------------------------------------------
+
+let Countdown = struct(n = 3);
+let next in Countdown = fn() {
+    if self.n <= 0 { return nil; }
+    return self.n--;
+};
+let counted = vec.new();
+for c in Countdown(n = 3) { counted.push(c); }
+assert.eq(counted, vec.new(3, 2, 1));
+
+# ---------------------------------------------------------------
+# loop variable scoping: for-in body shadows outer variable
+# ---------------------------------------------------------------
+
+let outer = 'outer';
+for outer in irange(2) { assert.eq(outer != 'outer', true); }
+assert.eq(outer, 'outer');

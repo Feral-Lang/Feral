@@ -1,4 +1,0 @@
-let io = import('std/io');
-
-io.println(__SRC_DIR__);
-io.println(__SRC_PATH__);

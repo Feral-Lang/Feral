@@ -1,0 +1,536 @@
+let assert = import('std/assert');
+
+let vec = import('std/vec');
+
+assert.eq(feral.varExists('feral'), true);
+
+let y = 5;
+assert.eq(feral.varReplace('y', 'hello'), true);
+
+assert.eq(y, 'hello');
+
+feral.args;
+feral.installPath;
+feral.binaryPath;
+feral.libPath;
+feral.globalModulesPath;
+
+feral.versionMajor;
+feral.versionMinor;
+feral.versionPatch;
+
+feral.buildDate;
+feral.buildCompiler;
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Integer
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# logical
+assert.lt(1, 2);
+assert.gt(1, 0);
+assert.le(1, 1);
+assert.ge(1, 1);
+assert.eq(1, 1);
+assert.ne(1, 2);
+
+# arithmetic
+assert.eq(4 << 1, 8);
+assert.eq(4 >> 1, 2);
+assert.eq(5 + 1, 6);
+assert.eq(5 - 1, 4);
+assert.eq(5 * 2, 10);
+assert.eq(5 / 2, 2);
+assert.eq(5 % 2, 1);
+
+let a = 4, b = 2;
+assert.eq((a <<= b), 16);
+assert.eq((a >>= b), 4);
+assert.eq((a += b), 6);
+assert.eq((a -= b), 4);
+assert.eq((a *= b), 8);
+assert.eq((a /= b), 4);
+assert.eq((a %= b), 0);
+
+# others
+assert.eq(4 ** 3, 64);
+assert.eq((64).sqrt(), 8);
+assert.eq(++4, 5);
+assert.eq(4++, 4);
+assert.eq(--4, 3);
+assert.eq(4--, 4);
+
+assert.ne(-5, -(-5));
+
+# bitwise
+assert.eq((5 & 2), 0);
+assert.eq((5 & 4), 4);
+assert.eq((5 | 2), 7);
+assert.eq((5 | 4), 5);
+assert.eq((5 ^ 2), 7);
+assert.eq((5 ^ 4), 1);
+assert.eq(~5, -6);
+assert.eq(~0, -1);
+
+assert.eq(((a = 5) &= b), 0);
+assert.eq(((a = 5) |= b), 7);
+assert.eq(((a = 5) ^= b), 7);
+
+assert.eq(5.popcnt(), 2);
+assert.eq(0.popcnt(), 0);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Floating-point
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# logical
+assert.lt(0.1, 1.0);
+assert.gt(0.1, 0.01);
+assert.le(0.1, 0.1);
+assert.ge(0.1, 0.1);
+assert.eq(0.1, 0.1);
+assert.ne(0.1, 0.01);
+
+# arithmetic
+assert.eq(5.0 + 0.1, 5.1);
+assert.eq(5.2 - 0.2, 5.0);
+assert.eq(5.2 * 2.0, 10.4);
+assert.eq(5.2 / 2.0, 2.6);
+
+let a = 5.0, b = 2.0;
+assert.eq((a += b), 7.0);
+assert.eq((a -= b), 5.0);
+assert.eq((a *= b), 10.0);
+assert.eq((a /= b), 5.0);
+
+# others
+assert.eq(++4.0, 5.0);
+assert.eq(4.0++, 4.0);
+assert.eq(--4.0, 3.0);
+assert.eq(4.0--, 4.0);
+
+assert.eq(2.5 ** 2, 6.25);
+assert.eq((6.25).sqrt(), 2.5);
+
+assert.eq((5.2).round(), 5);
+assert.eq((5.5).round(), 6);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# String
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# logical
+assert.lt('hello', 'ifmmp');
+assert.gt('hello', 'gdkkn');
+assert.le('hello', 'hello');
+assert.ge('hello', 'hello');
+assert.eq('hello', 'hello');
+assert.ne('hello', 'world');
+
+# arithmetic
+assert.eq('hello ' + 'world', 'hello world');
+
+let ab = 'ab', cd = 'cd';
+
+assert.eq(ab * 3, 'ababab');
+assert.eq((ab += cd), 'abcd');
+assert.eq((ab *= 2), 'abcdabcd');
+
+assert.eq(ab[0], 'a');
+assert.eq(ab[10], nil);
+assert.eq('a'[0], 'a');
+
+let s = '12345';
+
+assert.eq('12445'.replace('445', '345'), '12345');
+assert.eq(s.len(), 5);
+assert.eq(!s.empty(), true);
+assert.eq(s.front(), '1');
+assert.eq(s.back(), '5');
+assert.eq(s.push('a'), '12345a');
+assert.eq(s.pop(), '12345');
+assert.eq(s.set(0, '0'), '02345');
+assert.eq(s.insert(1, '1'), '012345');
+assert.eq(s.erase(0), '12345');
+assert.eq(s.len() - 1, 4);
+assert.ge(s.find('123'), 0);
+assert.lt(s.find('0'), 0);
+
+assert.eq(s.split('3'), vec.new('12', '45'));
+
+assert.eq(s.startsWith('12'), true);
+assert.eq(s.endsWith('45'), true);
+
+assert.eq('A'.byt(), 65);
+assert.eq(66.chr(), 'B');
+
+let template = '1 + 2 = {1 + 2}; 4 + 5 = {4 + 5}; 10 + 11 = {10 + 11}; \\{ignore this}{\'but not this\'}{\' or this\'}';
+
+assert.eq(template.fmt('{', '}'), '1 + 2 = 3; 4 + 5 = 9; 10 + 11 = 21; {ignore this}but not this or this');
+
+# ---------------------------------------------------------------
+# Conversions
+# ---------------------------------------------------------------
+
+assert.eq('42'.int(), 42);
+assert.eq('101'.int(2), 5);
+assert.eq('ff'.int(16), 255); # fixed: base is now applied before digit validation
+assert.eq('10'.int(16), 16);
+assert.eq('3.5'.flt(), 3.5);
+assert.eq(''.bool(), false);
+assert.eq('x'.bool(), true);
+assert.eq(5.str(), '5');
+assert.eq('abc'.str(), 'abc');
+
+# ---------------------------------------------------------------
+# Character classification
+# ---------------------------------------------------------------
+
+# (these are intended for single-character strings)
+assert.eq('a'.isAlpha(), true);
+assert.eq('1'.isAlpha(), false);
+assert.eq('1'.isDigit(), true);
+assert.eq('a'.isDigit(), false);
+assert.eq(' '.isSpace(), true);
+assert.eq('\t'.isSpace(), true);
+assert.eq('x'.isSpace(), false);
+
+# ---------------------------------------------------------------
+# sub / rfind / at / append / fit
+# ---------------------------------------------------------------
+
+let s = 'hello world';
+assert.eq(s.sub(6), 'world');
+assert.eq(s.sub(0, 5), 'hello');
+assert.eq(s.at(2), 'l');
+assert.eq(s.rfind('o'), 7);
+assert.eq(s.rfind('z'), -1);
+let s2 = 'hello world';
+assert.eq(s2.append('!'), nil); # append mutates in place and returns nil
+assert.eq(s2, 'hello world!');
+assert.eq(s.len(), 11); # the original string is untouched
+
+# fit right-aligns to the requested length, truncating with '...'
+assert.eq('hello'.fit(3), '...');
+assert.eq('hello'.fit(4), 'h...');
+assert.eq('hi'.fit(4), '  hi');
+assert.eq('hello'.fit(7), '  hello');
+
+# ---------------------------------------------------------------
+# lower / upper / trim
+# ---------------------------------------------------------------
+
+assert.eq('ABC'.lower(), 'abc');
+assert.eq('aBc'.lower(), 'abc');
+assert.eq('  pad  '.trim(), 'pad');
+
+# ---------------------------------------------------------------
+# split options: maxDelimCount and ignoreEmpty
+# ---------------------------------------------------------------
+
+# maxDelimCount = 1 keeps the remainder in the last element
+# (fixed: it used to drop it)
+assert.eq('a,b,c'.split(',', 1), vec.new('a', 'b,c'));
+assert.eq('a,b,c,d'.split(',', 2), vec.new('a', 'b', 'c,d'));
+assert.eq('a,b,c'.split(',', 2), vec.new('a', 'b', 'c'));
+assert.eq('a,,b'.split(','), vec.new('a', '', 'b'));
+assert.eq('a,,b'.split(',', -1, true), vec.new('a', 'b'));
+
+# ---------------------------------------------------------------
+# Path join via `/`
+# ---------------------------------------------------------------
+
+assert.eq(('dir' / 'file').str(), 'dir/file');
+assert.eq(('dir' / 'file')._typeName_(), 'Path');
+
+# ---------------------------------------------------------------
+# Runtime string multiplication (fixed, including the `* 0` and
+# `* -1` edge cases, which both yield '')
+# ---------------------------------------------------------------
+
+let zero = 0;
+let neg = -1;
+assert.eq('ab' * zero, '');
+assert.eq('ab' * neg, '');
+
+# ---------------------------------------------------------------
+# Flt.str precision keyword argument
+# (NOTE: Int.str documents `base = <int>` but the implementation
+# looks up the keyword `precision` instead, so `(255).str(base = 16)
+# silently returns '255' — not asserted here)
+# ---------------------------------------------------------------
+
+assert.eq((3.14159).str(precision = 3), '3.142');
+assert.eq((2.5).str(precision = 4), '2.5000');
+assert.eq((3.14159).str(), '3.14'); # default precision is 2
+
+# ---------------------------------------------------------------
+# Int.str base keyword argument (fixed: it used to look up the
+# keyword `precision` instead of `base`)
+# ---------------------------------------------------------------
+
+assert.eq((255).str(base = 16), 'ff');
+assert.eq((10).str(base = 2), '1010');
+
+# NOTE: `Str.intNative` validates hex digits for ANY base but now
+# correctly checks `from_chars`' error code, so base-mismatched and
+# out-of-range inputs raise instead of returning garbage
+let badBase = ('ff'.int()) or e { return e.str().find('not a number') >= 0; };
+assert.eq(badBase, true);
+let tooBig = ('99999999999999999999'.int()) or e {
+    return e.str().find("can't fit") >= 0;
+};
+assert.eq(tooBig, true);
+let badOct = ('8'.int(8)) or e { return e.str().find('not a number') >= 0; };
+assert.eq(badOct, true);
+assert.eq('-5'.int(), -5);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Enum
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+let ExitCode = enum(
+    .OK,
+    .FAIL,
+    .IO_ERR,
+    .LEX_FAIL,
+    .PARSE_FAIL,
+    .SOME_ERR = 20
+);
+
+assert.eq(ExitCode.PARSE_FAIL, 4);
+assert.eq(ExitCode.SOME_ERR, 20);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Struct
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# ---------------------------------------------------------------
+# Struct creation and instantiation forms
+# ---------------------------------------------------------------
+
+let Point = struct(x = 0, y = 0);
+
+let p1 = Point();
+assert.eq(p1.x, 0);
+assert.eq(p1.y, 0);
+
+# positional: overrides fields in declaration order
+let p2 = Point(3);
+assert.eq(p2.x, 3);
+assert.eq(p2.y, 0);
+
+# named
+let p3 = Point(y = 5);
+assert.eq(p3.x, 0);
+assert.eq(p3.y, 5);
+
+# mixed: positional first, then named
+let p4 = Point(1, y = 9);
+assert.eq(p4.x, 1);
+assert.eq(p4.y, 9);
+
+# ---------------------------------------------------------------
+# Member read/write and nested structs
+# ---------------------------------------------------------------
+
+p1.x = 7;
+assert.eq(p1.x, 7);
+
+let Inner = struct(v = 1);
+let Outer = struct(inner = Inner(), tag = 'o');
+let o = Outer();
+assert.eq(o.inner.v, 1);
+o.inner.v = 10;
+assert.eq(Inner().v, 1); # the default was not mutated
+
+# ---------------------------------------------------------------
+# Struct `==` only compares type identity (a quirk), so compare
+# fields individually
+# ---------------------------------------------------------------
+
+let a1 = Point(1, 2);
+let a2 = Point(1, 3);
+assert.eq(a1.x == a2.x && a1.y != a2.y, true);
+
+# ---------------------------------------------------------------
+# Member functions receive `self`; chained calls work
+# ---------------------------------------------------------------
+
+let Counter = struct(n = 0);
+let inc in Counter = fn(steps = 1) {
+    self.n += steps;
+    return self;
+};
+let c = Counter();
+c.inc().inc(4);
+assert.eq(c.n, 5);
+
+# suffix chains: obj.method()[0]-style access on returned values
+let Holder = struct(items = nil);
+let get in Holder = fn() { return import('std/vec').new(1, 2, 3); };
+let hd = Holder();
+assert.eq(hd.get()[1], 2);
+
+# ---------------------------------------------------------------
+# Type names and identity (struct types need explicit setTypeName)
+# ---------------------------------------------------------------
+
+Point.setTypeName('Point');
+assert.eq(p1._typeName_(), 'Point');
+assert.eq(p1._type_(), p2._type_());
+assert.eq(p1._isType_(p1._type_()), true);
+
+# ---------------------------------------------------------------
+# Enums: mixing implicit and explicit values
+# ---------------------------------------------------------------
+
+# implicit values are the member's position among the *positional*
+# (unnamed) enum args, starting at 0; explicit values are independent
+let Mixed = enum(.a = 5, .b, .c = 100, .d);
+assert.eq(Mixed.a, 5);
+assert.eq(Mixed.b, 0);
+assert.eq(Mixed.c, 100);
+assert.eq(Mixed.d, 1);
+
+# ---------------------------------------------------------------
+# Struct passed to a function is passed by reference
+# ---------------------------------------------------------------
+
+let bump = fn(obj) { obj.n += 1; };
+let bn = Counter(n = 0);
+bump(bn);
+assert.eq(bn.n, 1);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Anonymous function
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+let St = struct(a = 5);
+
+assert.eq(fn(p) { return St(p); }(5).a, 5);
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# Operators
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# ---------------------------------------------------------------
+# Ternary operator
+# ---------------------------------------------------------------
+
+assert.eq(true ? 1 : 2, 1);
+assert.eq(false ? 1 : 2, 2);
+assert.eq(1 < 2 ? 'a' : 'b', 'a');
+# ternaries do not nest (branches are parsed at expr15 level)
+let c = 5;
+assert.eq(c < 7 ? 'medium' : 'large', 'medium');
+# ternary combined with other operators
+assert.eq((c == 5 ? 10 : 20) + 1, 11);
+
+# ---------------------------------------------------------------
+# `->` is an alias for `.` member access
+# ---------------------------------------------------------------
+
+let Point = struct(x = 0, y = 0);
+let p = Point(x = 1, y = 2);
+assert.eq(p->x, 1);
+assert.eq(p->y, p.y);
+assert.eq(p->x + p->y, 3);
+p->x = 10;
+assert.eq(p.x, 10);
+
+# ---------------------------------------------------------------
+# `**` power and `//` root (both now implemented; `//` is the n-th
+# root: `x // n` = n-th root of x; float exponents work on both and
+# produce a Flt result)
+# ---------------------------------------------------------------
+
+assert.eq(2 ** 10, 1024);
+assert.eq(2 ** 0, 1);
+assert.eq((9).sqrt(), 3);
+assert.eq((16.0).sqrt(), 4.0);
+assert.eq(2 ** 3 ** 2, 64); # left-associative: (2**3)**2
+assert.eq(64 // 2, 8);      # square root
+assert.eq(27 // 3, 3);      # cube root
+assert.eq(64 // 1, 64);     # 1st root is identity
+assert.eq(2 ** 3.0, 8.0);   # float exponent -> Flt result
+assert.eq(8 // 3.0, 2.0);
+
+# ---------------------------------------------------------------
+# `~=` is not an operator (removed)
+# ---------------------------------------------------------------
+
+# NOTE: `~=` was removed from the lexer/parser/prelude (bitwise-NOT
+# has no meaningful compound form); it is now a parse error, even
+# though Grammar.ebnf still lists it
+let bnotAssn = (feral.evalCode('let q = 5; q ~= 0;') or e {
+    return e.str().find('failed to parse') >= 0;
+});
+assert.eq(bnotAssn, true);
+
+# ---------------------------------------------------------------
+# Nil coalescing `??`
+# ---------------------------------------------------------------
+
+assert.eq(nil ?? 1, 1);
+assert.eq(0 ?? 1, 0);
+assert.eq('' ?? 1, '');
+assert.eq(nil ?? nil ?? 3, 3);
+let nz = 5;
+assert.eq(nz ?? 1, 5);
+let nv = nil;
+assert.eq(nv ?? 1, 1); # first operand is a nil-valued variable, not a literal
+
+# ---------------------------------------------------------------
+# Unary operators
+# ---------------------------------------------------------------
+
+assert.eq(!0, true);
+assert.eq(!nil, true);
+assert.eq(!2.5, false);
+assert.eq(!1, false);
+assert.eq(!true, false);
+assert.eq(!false, true);
+# NOTE: the `!` callable is still not defined for Str even though
+# empty strings are falsy in conditions (new truthiness support):
+let notStr = (!'') or e { return e.str().find("does not exist") >= 0; };
+assert.eq(notStr, true);
+if '' { assert.eq('empty str falsy in condition', 'not reached'); }
+if 'x' { assert.eq(1, 1); }
+assert.eq(+5, 5);
+assert.eq(-5, -5);
+assert.eq(- -5, 5);
+assert.eq(~(~5), 5);
+
+let u = 5;
+assert.eq(-u, -5);
+assert.eq(u, 5); # unary minus must not modify the operand
+
+# ---------------------------------------------------------------
+# Precedence sanity checks
+# ---------------------------------------------------------------
+
+assert.eq(1 + 2 * 3, 7);
+assert.eq((1 + 2) * 3, 9);
+assert.eq(1 | 2 ^ 3 & 4, 3);  # & > ^ > |
+assert.eq(2 << 1 + 1, 8);     # + binds tighter than << : 2 << (1+1)
+assert.eq(1 < 2 == true, true);
+assert.eq(true && false || true, true);
+assert.eq(10 - 3 - 2, 5);     # left associative
+assert.eq(8 / 2 / 2, 2);      # left associative
+
+feral.exit(0);

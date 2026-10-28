@@ -1,0 +1,106 @@
+let assert = import('std/assert');
+
+# ---------------------------------------------------------------
+# Nil literal
+# ---------------------------------------------------------------
+
+assert.eq(nil, nil);
+assert.ne(nil, 1);
+assert.ne(1, nil);
+
+# ---------------------------------------------------------------
+# Integer literals: decimal, hex (0x/0X, upper & lower digits),
+# octal (leading 0), binary (0b/0B — now supported by the lexer)
+# ---------------------------------------------------------------
+
+assert.eq(0, 0);
+assert.eq(10, 10);
+assert.eq(0x0, 0);
+assert.eq(0xff, 255);
+assert.eq(0xFF, 255);
+assert.eq(0xAbCd, 43981);
+assert.eq(0X1F, 31);
+assert.eq(0b0, 0);
+assert.eq(0b1010, 10);
+assert.eq(0B11, 3);
+assert.eq(07, 7);
+assert.eq(0755, 493);
+assert.eq(010, 8);
+
+# ---------------------------------------------------------------
+# Float literals (no scientific notation)
+# ---------------------------------------------------------------
+
+assert.eq(2.5, 2.5);
+assert.eq(0.0, 0.0);
+assert.eq(123.456, 123.456);
+assert.eq(2.5 + 2.5, 5.0);
+assert.eq((2.5)._typeName_(), 'Flt');
+
+# ---------------------------------------------------------------
+# String literals: three quote styles, escapes,
+# leading/trailing newline stripping in multi-line strings
+# ---------------------------------------------------------------
+
+assert.eq("double", 'double');
+assert.eq(`back`, "back");
+assert.eq('tab\there', 'tab\there');
+assert.eq('nl\nhere', 'nl\nhere');
+assert.eq('quote\'inside', "quote'inside");
+assert.eq("dquote\"inside", 'dquote"inside');
+assert.eq('back\\slash', 'back\\slash');
+assert.eq('\`not-escape', '`not-escape');
+assert.eq('some string'._typeName_(), 'Str');
+
+let multiline = `
+line1
+line2
+`;
+assert.eq(multiline, 'line1\nline2');
+
+let keepExtraNewlines = `
+
+a
+`;
+assert.eq(keepExtraNewlines, '\na');
+
+# Interpreter defined runtime constants
+assert.eq(__SRC_DIR__.empty(), false);
+assert.eq(__SRC_PATH__.empty(), false);
+
+# ---------------------------------------------------------------
+# Atoms: dot-prefixed identifiers; the dot is not part of the value
+# ---------------------------------------------------------------
+
+assert.eq(.ok._typeName_(), 'Str');
+assert.eq(.ok, 'ok');
+assert.eq(.error_msg, 'error_msg');
+assert.ne(.ok, .error);
+
+# an atom only starts at a '.' not preceded by ident chars or )]'"
+# so `s.ok` below is a member access, not an atom literal
+let S = struct(ok = 1);
+let s = S();
+assert.eq(s.ok, 1);
+
+# ---------------------------------------------------------------
+# Prefixed/suffixed literal sugar has been REMOVED from the grammar
+# and parser: `ref"x"` and `9 h` are now parse errors in statement
+# context (the old hazard where `let a = 9` <newline> `h;` silently
+# became `h(9)` is gone)
+# ---------------------------------------------------------------
+
+let tightPrefix = (feral.evalCode('let a = ref"x";') or e {
+    return e.str().find('failed to parse') >= 0;
+});
+assert.eq(tightPrefix, true);
+let spacedPostfix = (feral.evalCode('let a = 9 h;') or e {
+    return e.str().find('failed to parse') >= 0;
+});
+assert.eq(spacedPostfix, true);
+# NOTE: feral.evalExpr now rejects dangling tokens too:
+let dangling = (feral.evalExpr('1 2') or e {
+    return e.str().find('failed to parse') >= 0;
+});
+assert.eq(dangling, true);
+assert.eq(feral.evalExpr('1 + 2'), 3); # valid single expression still fine

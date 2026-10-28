@@ -13,8 +13,8 @@ let customModuleFinder = fn(moduleName, isimport) {
 
 feral.moduleFinders.push(customModuleFinder);
 
-# import the test 'int.fer' in the current directory
-let intTest = import('int');
+# import the test 'const.fer' in the current directory
+let constTest = import('const');
 
-assert.eq(feral.varExists("intTest"), true);
+assert.eq(feral.varExists("constTest"), true);
 assert.eq(feral.moduleFinders.len(), 2);
