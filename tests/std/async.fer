@@ -5,7 +5,8 @@ let os = import('std/os');
 let time = import('std/time');
 let async = import('std/async');
 
-let atime = 10, btime = 20, expected = 22;
+# 25 to accommodate for debug builds
+let atime = 10, btime = 20, expected = 25;
 # valgrind is slowwwwwwwwwww
 if os.getEnv('VALGRIND_ENABLED') {
     atime = 40;

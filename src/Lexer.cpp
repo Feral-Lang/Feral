@@ -489,7 +489,7 @@ bool getConstStr(ModuleId moduleId, StringRef data, char &quoteType, size_t &i, 
         ++i;
         continuousBackslash = 0;
     }
-    if(CURR != quoteType) {
+    if(i >= len || CURR != quoteType) {
         err.fail(ModuleLoc(moduleId, startsAt, i), "no matching quote for '", quoteType, "' found");
         return false;
     }

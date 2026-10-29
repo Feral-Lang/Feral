@@ -1,9 +1,10 @@
 let assert = import('std/assert');
 let io = import('std/io');
 let fs = import('std/fs');
+let time = import('std/time');
 let logging = import('std/logging');
 
-let logPath = __SRC_DIR__.path() / 'logging-test-output.log';
+let logPath = __SRC_DIR__.path() / ('logging-test-output-' + time.now().str() + '.log');
 
 # ---------------------------------------------------------------
 # File target with level filtering
