@@ -8,6 +8,7 @@
 #include "VM/VM.hpp"
 
 #if defined(FER_OS_WINDOWS)
+#include <Windows.h>
 // Windows doesn't have peopen/pclose, but it does have an underscore version!
 #define popen _popen
 #define pclose _pclose
@@ -28,6 +29,18 @@ int execInternal(const String &file);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// Functions /////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FERAL_FUNC(getPID, 0, false,
+           "  fn() -> Int\n"
+           "Returns the process ID of the current program (Feral interpreter) as an integer.")
+{
+#if defined(FER_OS_WINDOWS)
+    int64_t procId = GetCurrentProcessId();
+#else
+    int64_t procId = getpid();
+#endif
+    return vm.makeVar<VarInt>(loc, procId);
+}
 
 FERAL_FUNC(sleepCustom, 1, false,
            "  fn(duration) -> Nil\n"
@@ -236,6 +249,7 @@ FERAL_FUNC(
 
 INIT_DLL(OS)
 {
+    vm.addLocal(loc, "getPID", getPID);
     vm.addLocal(loc, "sleep", sleepCustom);
 
     vm.addLocal(loc, "getEnv", getEnv);

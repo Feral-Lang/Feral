@@ -22,9 +22,7 @@ struct FER_API ModuleLoc
     ModuleLoc(ModuleId id, uint64_t offStart, uint64_t offEnd);
 
     inline bool operator==(const ModuleLoc &other) const
-    {
-        return id == other.id && offStart == other.offStart && offEnd == other.offEnd;
-    }
+    { return id == other.id && offStart == other.offStart && offEnd == other.offEnd; }
     inline bool operator!=(const ModuleLoc &other) const { return !(*this == other); }
 };
 
@@ -46,9 +44,7 @@ public:
     ///////////////////////////// Actual error related functions. /////////////////////////////
 
     inline void outStr(ModuleLoc loc, StringRef data = "")
-    {
-        utils::output(std::cerr, getFileForId(loc.id), loc.offStart, loc.offEnd, data);
-    }
+    { utils::output(std::cerr, getFileForId(loc.id), loc.offStart, loc.offEnd, data); }
 
     template<typename... Args> void fail(ModuleLoc loc, Args &&...args)
     {

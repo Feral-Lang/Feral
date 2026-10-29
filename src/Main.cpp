@@ -85,7 +85,7 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
     // this function - because this function is supposed to generate IR for the VM to consume.
     ManagedList tokens(mem.getManager(), "TokensList");
     if(!lex::tokenize(moduleId, path, data, tokens)) {
-        std::cout << "Failed to tokenize file: " << path << "\n";
+        std::cerr << "Failed to tokenize file: " << path << "\n";
         return false;
     }
 
@@ -101,7 +101,7 @@ bool ParseSource(VirtualMachine &vm, Bytecode &bc, ModuleId moduleId, StringRef 
     ManagedList astallocator(mem.getManager(), utils::toString("AST(", path, ")"));
     ast::Stmt *ptree = nullptr;
     if(!ast::parse(astallocator, tokens, ptree, exprOnly)) {
-        std::cout << "Failed to parse tokens for file: " << path << "\n";
+        std::cerr << "Failed to parse tokens for file: " << path << "\n";
         return false;
     }
     if(args.has("parse")) {

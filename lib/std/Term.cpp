@@ -24,7 +24,10 @@ FERAL_FUNC(getTermSize, 2, false,
     EXPECT(VarInt, args[2], "terminal height");
 #if defined(FER_OS_WINDOWS)
     CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    if(!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+        vm.fail(loc, "failed to get console screen buffer info");
+        return nullptr;
+    }
     as<VarInt>(args[1])->setVal(csbi.srWindow.Right - csbi.srWindow.Left + 1);
     as<VarInt>(args[2])->setVal(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
 #else

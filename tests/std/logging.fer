@@ -1,59 +1,64 @@
 let assert = import('std/assert');
+
 let io = import('std/io');
 let fs = import('std/fs');
-let time = import('std/time');
+let os = import('std/os');
 let logging = import('std/logging');
 
-let logPath = __SRC_DIR__.path() / ('logging-test-output-' + time.now().str() + '.log');
+let logPath = __SRC_DIR__.path() / ('logging-test-output-' + os.getPID().str() + '.log');
 
 # ---------------------------------------------------------------
 # File target with level filtering
 # ---------------------------------------------------------------
 
-let logger = logging.newLogger();
-logger.addTargetByPath(logPath, level = logging.Levels.WARN);
+{
+    let logger = logging.newLogger();
+    logger.addTargetByPath(logPath, level = logging.Levels.WARN);
 
-logger.fatal('fatal message');
-logger.warn('warn message');
-logger.info('info message');    # below WARN level: must be filtered
-logger.debug('debug message');  # filtered
-logger.trace('trace message');  # filtered
-io.fflush(logger.targets[0].f);
+    logger.fatal('fatal message');
+    logger.warn('warn message');
+    logger.info('info message');    # below WARN level: must be filtered
+    logger.debug('debug message');  # filtered
+    logger.trace('trace message');  # filtered
+    io.fflush(logger.targets[0].f);
 
-let lines = fs.fopen(logPath).lines();
-assert.eq(lines.len(), 2);
-assert.eq(lines[0].find('fatal message') >= 0, true);
-assert.eq(lines[0].find('FATAL') >= 0, true);
-assert.eq(lines[1].find('warn message') >= 0, true);
-assert.eq(lines[1].find('WARN') >= 0, true);
+    let lines = fs.fopen(logPath).lines();
+    assert.eq(lines.len(), 2);
+    assert.eq(lines[0].find('fatal message') >= 0, true);
+    assert.eq(lines[0].find('FATAL') >= 0, true);
+    assert.eq(lines[1].find('warn message') >= 0, true);
+    assert.eq(lines[1].find('WARN') >= 0, true);
+}
 
 # ---------------------------------------------------------------
 # Tags appear in the prefix; scoped tag pushes/pops automatically
 # ---------------------------------------------------------------
 
-let logger2 = logging.newLogger();
-logger2.addTargetByPath(logPath, level = logging.Levels.TRACE, prefix = '[$<<tag>>]');
-
-logger2.pushTag('mytag');
-logger2.warn('tagged');
-logger2.popTag();
-
 {
-    let st = logger2.scopedTag('scoped');
-    logger2.warn('inside scoped');
-}
-logger2.warn('after scoped');
-io.fflush(logger2.targets[0].f);
+    let logger2 = logging.newLogger();
+    logger2.addTargetByPath(logPath, level = logging.Levels.TRACE, prefix = '[$<<tag>>]');
 
-let lines2 = fs.fopen(logPath).lines();
-assert.eq(lines2.len(), 3);
-# tags are padded with `fit` to maxTagLen - 2, so only check containment
-assert.eq(lines2[0].find('mytag') >= 0, true);
-assert.eq(lines2[1].find('scoped') >= 0, true);
-# with an empty tag stack the tag placeholder expands to nothing
-# (strMul's `s * 0` edge case was fixed, so the depth prefix renders
-# as '' at depth 0)
-assert.eq(lines2[2], '[] after scoped');
+    logger2.pushTag('mytag');
+    logger2.warn('tagged');
+    logger2.popTag();
+
+    {
+        let st = logger2.scopedTag('scoped');
+        logger2.warn('inside scoped');
+    }
+    logger2.warn('after scoped');
+    io.fflush(logger2.targets[0].f);
+
+    let lines2 = fs.fopen(logPath).lines();
+    assert.eq(lines2.len(), 3);
+    # tags are padded with `fit` to maxTagLen - 2, so only check containment
+    assert.eq(lines2[0].find('mytag') >= 0, true);
+    assert.eq(lines2[1].find('scoped') >= 0, true);
+    # with an empty tag stack the tag placeholder expands to nothing
+    # (strMul's `s * 0` edge case was fixed, so the depth prefix renders
+    # as '' at depth 0)
+    assert.eq(lines2[2], '[] after scoped');
+}
 
 # ---------------------------------------------------------------
 # Depth prefix increases with pushDepth / scopedDepth
@@ -61,26 +66,28 @@ assert.eq(lines2[2], '[] after scoped');
 # depends on tag/depth padding, so only the counter is asserted)
 # ---------------------------------------------------------------
 
-let logger3 = logging.newLogger();
-logger3.addTargetByPath(logPath, level = logging.Levels.TRACE, depthPrefix = '#');
-
-assert.eq(logger3.depth, 0);
-logger3.pushDepth();
-assert.eq(logger3.depth, 1);
-logger3.popDepth();
-assert.eq(logger3.depth, 0);
-
 {
-    let sd = logger3.scopedDepth();
+    let logger3 = logging.newLogger();
+    logger3.addTargetByPath(logPath, level = logging.Levels.TRACE, depthPrefix = '#');
+
+    assert.eq(logger3.depth, 0);
+    logger3.pushDepth();
     assert.eq(logger3.depth, 1);
-    logger3.warn('depth1');
+    logger3.popDepth();
+    assert.eq(logger3.depth, 0);
+
+    {
+        let sd = logger3.scopedDepth();
+        assert.eq(logger3.depth, 1);
+        logger3.warn('depth1');
+    }
+    assert.eq(logger3.depth, 0);
+
+    io.fflush(logger3.targets[0].f);
+
+    let lines3 = fs.fopen(logPath).lines();
+    assert.eq(lines3.len(), 1);
+    assert.eq(lines3[0].find('depth1') >= 0, true);
 }
-assert.eq(logger3.depth, 0);
-
-io.fflush(logger3.targets[0].f);
-
-let lines3 = fs.fopen(logPath).lines();
-assert.eq(lines3.len(), 1);
-assert.eq(lines3[0].find('depth1') >= 0, true);
 
 fs.remove(logPath);

@@ -5,8 +5,10 @@ let term = import('std/term');
 # Terminal size queries return non-negative integers
 # ---------------------------------------------------------------
 
-assert.ge(term.getWidth(), 0);
-assert.ge(term.getHeight(), 0);
+if term.isTTY() {
+    assert.ge(term.getWidth(), 0);
+    assert.ge(term.getHeight(), 0);
+}
 
 # ---------------------------------------------------------------
 # isTTY returns a boolean (and accepts a file descriptor)

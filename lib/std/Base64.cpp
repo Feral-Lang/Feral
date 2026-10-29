@@ -137,7 +137,6 @@ FERAL_FUNC(feralBase64Encode, 1, false,
     if(url) {
         while(!res->empty() && res->back() == '=') res->pop();
     }
-    std::cout << "encoded to: " << res->getVal() << "\n";
     return res;
 }
 

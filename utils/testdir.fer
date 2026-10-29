@@ -99,19 +99,31 @@ if args.has('valgrind') {
 }
 
 let exec = fn(file) {
+    counterMtx.lock();
+    let i = ++counter;
+    counterMtx.unlock();
+    let errPath = feral.tempPath / ('test-' + i.str() + '.err');
+    defer fs.remove(errPath);
     let cmd = valgrindCmd;
     cmd.append(fmtWithPath(file, execCmd));
     cmd.push('^>' + io.null);
-    counterMtx.lock();
+    cmd.push('^2>' + errPath.str());
     if !valgrindCmd.empty() {
-        io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}) ({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
+        io.cprintln('{c}test{0} ({m}', i, '{0}/{m}', totalTests, '{0}) ({g}valgrind{0}): {y}', cmd.join(' '), '{0} ...');
     } else {
-        io.cprintln('{c}test{0} ({m}', ++counter, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
+        io.cprintln('{c}test{0} ({m}', i, '{0}/{m}', totalTests, '{0}): {y}', cmd.join(' '), '{0} ...');
     }
     io.fflush(io.stdout);
-    counterMtx.unlock();
     let res = os.exec(cmd...);
-    return res == 0 ? feral.ok() : feral.err(res, file);
+    if res != 0 {
+        let errData = '{y}' + file.str() + '{0}:\n';
+        let errLines = fs.fopen(errPath).lines();
+        for l in errLines.each() {
+            errData += '-- ' + l + '\n';
+        }
+        return feral.err(res, errData);
+    }
+    return feral.ok();
 };
 
 let clean = fn(file) {
