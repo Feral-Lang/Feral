@@ -20,12 +20,13 @@ endif()
 
 if("${ENABLE_ASAN}" STREQUAL "true")
     message("-- Address sanitizer is now enabled")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_link_options(-fsanitize=address)
 endif()
 
 if("${ENABLE_TSAN}" STREQUAL "true")
     message("-- Thread sanitizer is now enabled")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+    add_compile_options(-fsanitize=thread)
 endif()
 
 # Add external path
