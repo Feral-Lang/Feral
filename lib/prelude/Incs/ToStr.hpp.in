@@ -1,6 +1,6 @@
-#include "VM/VM.hpp"
-
 #include <cinttypes>
+
+#include "VM/VM.hpp"
 
 namespace fer
 {
@@ -166,6 +166,91 @@ FERAL_FUNC(resultToStr, 0, false,
     res->setVal({"Result.", r->isOk() ? "Ok" : "Err", "<", as<VarStr>(v)->getVal(), ">"});
     vm.decVarRef(v);
     return res;
+}
+
+FERAL_FUNC(timePointToStrNative, 1, false,
+           "  var.fn(formatStr) -> Str\n"
+           "Formats the TimePoint `var` using the format string `formatStr`.\n"
+           "Returns the resulting string.")
+{
+    EXPECT(VarStr, args[1], "format");
+    auto &tp           = as<VarTimePoint>(args[0])->getVal();
+    const char *fmtStr = as<VarStr>(args[1])->cStr();
+    char fmt[128];
+    snprintf(fmt, FER_ARRAY_SIZE(fmt), "{:%s}", fmtStr);
+    auto res = std::vformat(fmt, std::make_format_args(tp));
+    return vm.makeVar<VarStr>(loc, res);
+}
+
+FERAL_FUNC(durationToStr, 0, false,
+           "  var.fn() -> Str\n"
+           "Returns a string representation of the duration `var`.")
+{
+    using namespace std;
+    auto &dur = as<VarDuration>(args[0])->getVal();
+    int64_t n = dur.count();
+
+    static constexpr int64_t ONE_WEEK = 604800000000;
+    static constexpr int64_t ONE_DAY  = 86400000000;
+    static constexpr int64_t ONE_HOUR = 3600000000;
+    static constexpr int64_t ONE_MIN  = 60000000;
+    static constexpr int64_t ONE_SEC  = 1000000;
+    static constexpr int64_t ONE_MS   = 1000;
+    static constexpr int64_t ONE_US   = 1;
+
+    int64_t weeks = n / ONE_WEEK;
+    n %= ONE_WEEK;
+    int64_t days = n / ONE_DAY;
+    n %= ONE_DAY;
+    int64_t hours = n / ONE_HOUR;
+    n %= ONE_HOUR;
+    int64_t mins = n / ONE_MIN;
+    n %= ONE_MIN;
+    int64_t secs = n / ONE_SEC;
+    n %= ONE_SEC;
+    int64_t ms = n / ONE_MS;
+    n %= ONE_MS;
+    int64_t us = n;
+
+    VarStr *s = vm.makeVar<VarStr>(loc, "");
+    if(weeks > 0) {
+        s->append(weeks);
+        s->append("w");
+    }
+    if(days > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(days);
+        s->append("d");
+    }
+    if(hours > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(hours);
+        s->append("h");
+    }
+    if(mins > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(mins);
+        s->append("m");
+    }
+    if(secs > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(secs);
+        s->append("s");
+    }
+    if(ms > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(ms);
+        s->append("ms");
+    }
+    if(us > 0) {
+        if(!s->empty()) s->append(" ");
+        s->append(us);
+        s->append("μs");
+    }
+
+    if(s->empty()) s->append("0 μs");
+
+    return s;
 }
 
 } // namespace fer

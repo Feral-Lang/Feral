@@ -7,6 +7,7 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <cstring>
 #include <deque>
 #include <filesystem>
@@ -106,10 +107,12 @@ using IStream        = std::istream;
 using OStream        = std::ostream;
 using FStream        = std::fstream;
 using Nullptr        = std::nullptr_t;
+using Duration       = std::chrono::microseconds;
 using IOStream       = std::iostream;
 using IFStream       = std::ifstream;
 using OFStream       = std::ofstream;
 using StringRef      = std::string_view;
+using TimePoint      = std::chrono::time_point<std::chrono::system_clock>;
 using RecursiveMutex = std::recursive_mutex;
 
 #if defined(FER_OS_WINDOWS)

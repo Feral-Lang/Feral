@@ -84,7 +84,7 @@ let log in Logger = fn(lvl, data...) {
     if self.targets.empty() { return; }
     let levelColor = levelColorToStr(lvl);
     let levelStr = levelToStr(lvl);
-    let timeStr = time.format(time.now());
+    let timeStr = time.now().str();
     let tag = self.tagStack.empty() ? '' : '[' + self.tagStack.back().fit(self.maxTagLen - 2) + ']';
     for t in self.targets.each() {
         if t.level < lvl { continue; }

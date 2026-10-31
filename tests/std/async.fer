@@ -26,4 +26,4 @@ runner.push(func, 'b', btime);
 let timeBegin = time.now();
 runner.run();
 let timeTotal = time.now() - timeBegin;
-assert.le(time.resolve(timeTotal, time.milli).round(), expected);
+assert.le(timeTotal.int() / 1000, expected);

@@ -16,7 +16,11 @@ Clang.setTypeName('Clang');
 let new = fn() {
     let clangExe = os.findExec('clang');
     let clangxxExe = os.findExec('clang++');
+    inline if os.name == 'macos' {
+    let arExe = os.findExec('ar');
+    } else {
     let arExe = os.findExec('llvm-ar');
+    }
     let tc = Clang();
     if clangExe == nil && clangxxExe == nil {
         return feral.err(-1, 'could not find clang/clang++ toolchain in $PATH');
@@ -26,7 +30,7 @@ let new = fn() {
         return feral.err(-1, 'found clang at `', clangExe, '`, but could not find clang++');
     }
     if arExe == nil {
-        return feral.err(-1, 'could not find gcc\'s archive utility in $PATH');
+        return feral.err(-1, 'could not find clang\'s archive utility in $PATH');
     }
     tc.c = clangExe;
     tc.cxx = clangxxExe;

@@ -14,6 +14,7 @@
 #include "Incs/Async.hpp.in"
 #include "Incs/Bool.hpp.in"
 #include "Incs/Bytebuffer.hpp.in"
+#include "Incs/Duration.hpp.in"
 #include "Incs/Enum.hpp.in"
 #include "Incs/Error.hpp.in"
 #include "Incs/File.hpp.in"
@@ -26,6 +27,7 @@
 #include "Incs/Result.hpp.in"
 #include "Incs/Str.hpp.in"
 #include "Incs/Struct.hpp.in"
+#include "Incs/TimePoint.hpp.in"
 #include "Incs/TypeID.hpp.in"
 #include "Incs/Vec.hpp.in"
 
@@ -709,6 +711,8 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarFlt>(loc, "int", fltToInt);
     vm.addTypeFn<VarStr>(loc, "intNative", strToIntNative);
     vm.addTypeFn<VarTypeID>(loc, "int", typeIDToInt);
+    vm.addTypeFn<VarTimePoint>(loc, "int", timePointToInt);
+    vm.addTypeFn<VarDuration>(loc, "int", durationToInt);
 
     // to float
     vm.addTypeFn<VarNil>(loc, "flt", nilToFlt);
@@ -727,8 +731,12 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarPath>(loc, "str", pathToStr);
     vm.addTypeFn<VarTypeID>(loc, "str", typeIDToStr);
     vm.addTypeFn<VarFailure>(loc, "str", failureToStr);
+    vm.addTypeFn<VarStruct>(loc, "str", structToStr);
+    vm.addTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
     vm.addTypeFn<VarError>(loc, "str", errorToStr);
     vm.addTypeFn<VarResult>(loc, "str", resultToStr);
+    vm.addTypeFn<VarTimePoint>(loc, "strNative", timePointToStrNative);
+    vm.addTypeFn<VarDuration>(loc, "str", durationToStr);
 
     // to bytebuffer
     vm.addTypeFn<VarStr>(loc, "bytes", strToBytes);
@@ -742,22 +750,22 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarAsync>(loc, "done", asyncDone);
     vm.addTypeFn<VarAsync>(loc, "result", asyncResult);
 
-    // nil
+    // Nil
     vm.addTypeFn<VarNil>(loc, "==", nilEQ);
     vm.addTypeFn<VarNil>(loc, "!=", nilNE);
     vm.addTypeFn<VarNil>(loc, "!", nilNot);
 
-    // typeID
+    // TypeID
     vm.addTypeFn<VarTypeID>(loc, "==", typeIDEq);
     vm.addTypeFn<VarTypeID>(loc, "!=", typeIDNe);
 
-    // bool
+    // Bool
     vm.addTypeFn<VarBool>(loc, "==", boolEQ);
     vm.addTypeFn<VarBool>(loc, "!=", boolNE);
 
     vm.addTypeFn<VarBool>(loc, "!", boolNot);
 
-    // int
+    // Int
     vm.addTypeFn<VarInt>(loc, "+", intAdd);
     vm.addTypeFn<VarInt>(loc, "-", intSub);
     vm.addTypeFn<VarInt>(loc, "*", intMul);
@@ -802,10 +810,10 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarInt>(loc, "sqrt", intSqRoot);
     vm.addTypeFn<VarInt>(loc, "popcnt", intPopCnt);
 
-    // int iterator
+    // Int iterator
     vm.addTypeFn<VarIntIterator>(loc, "next", getIntIteratorNext);
 
-    // flt
+    // Flt
     vm.addTypeFn<VarFlt>(loc, "+", fltAdd);
     vm.addTypeFn<VarFlt>(loc, "-", fltSub);
     vm.addTypeFn<VarFlt>(loc, "*", fltMul);
@@ -835,7 +843,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarFlt>(loc, "round", fltRound);
     vm.addTypeFn<VarFlt>(loc, "sqrt", fltSqRoot);
 
-    // string
+    // String
     vm.addTypeFn<VarStr>(loc, "+", strAdd);
     vm.addTypeFn<VarStr>(loc, "*", strMul);
     vm.addTypeFn<VarStr>(loc, "/", strDiv);
@@ -881,7 +889,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarStr>(loc, "byt", byt);
     vm.addTypeFn<VarInt>(loc, "chr", chr);
 
-    // vec
+    // Vec
 
     vm.addTypeFn<VarVec>(loc, "len", vecSize);
     vm.addTypeFn<VarVec>(loc, "capacity", vecCapacity);
@@ -907,7 +915,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarVec>(loc, "each", vecEach);
     vm.addTypeFn<VarVecIterator>(loc, "next", vecIteratorNext);
 
-    // map
+    // Map
 
     vm.addTypeFn<VarMap>(loc, "len", mapSize);
     vm.addTypeFn<VarMap>(loc, "isOrdered", mapIsOrdered);
@@ -923,16 +931,15 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarMap>(loc, "each", mapEach);
     vm.addTypeFn<VarMapIterator>(loc, "next", mapIteratorNext);
 
-    // struct
+    // Struct
 
     vm.addTypeFn<VarStructDef>(loc, "setTypeName", structDefSetTypeName);
     vm.addTypeFn<VarStructDef>(loc, "len", structDefLen);
 
     vm.addTypeFn<VarStruct>(loc, "setTypeName", structSetTypeName);
-    vm.addTypeFn<VarStruct>(loc, "str", structToStr);
     vm.addTypeFn<VarStruct>(loc, "len", structLen);
 
-    // bytebuffer
+    // Bytebuffer
 
     vm.addTypeFn<VarBytebuffer>(loc, "==", bytebufferEQ);
     vm.addTypeFn<VarBytebuffer>(loc, "!=", bytebufferNE);
@@ -940,9 +947,8 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarBytebuffer>(loc, "[]", byteBufferAt);
     vm.addTypeFn<VarBytebuffer>(loc, "len", bytebufferLen);
     vm.addTypeFn<VarBytebuffer>(loc, "capacity", bytebufferCapacity);
-    vm.addTypeFn<VarBytebuffer>(loc, "str", bytebufferToStr);
 
-    // path
+    // Path
 
     vm.addTypeFn<VarPath>(loc, "_copy_", pathCopy);
     vm.addTypeFn<VarPath>(loc, "==", pathEQ);
@@ -978,7 +984,7 @@ INIT_DLL(Prelude)
     vm.addTypeFn<VarPath>(loc, "fileName", pathFileName);
     vm.addTypeFn<VarPath>(loc, "fileExt", pathFileExt);
 
-    // file
+    // File
 
     vm.addTypeFn<VarFile>(loc, "open", fileOpen);
     vm.addTypeFn<VarFile>(loc, "close", fileClose);
@@ -993,20 +999,57 @@ INIT_DLL(Prelude)
 
     vm.addTypeFn<VarFileIterator>(loc, "next", fileIteratorNext);
 
-    // module
+    // Module
 
     vm.addTypeFn<VarModule>(loc, "_path_", moduleGetPath);
 
-    // error
+    // Error
 
     vm.addTypeFn<VarError>(loc, "code", errorGetCode);
     vm.addTypeFn<VarError>(loc, "msg", errorGetMsg);
 
-    // result
+    // Result
 
     vm.addTypeFn<VarResult>(loc, "val", resultGetVal);
     vm.addTypeFn<VarResult>(loc, "isOk", resultIsOk);
     vm.addTypeFn<VarResult>(loc, "isErr", resultIsErr);
+
+    // TimePoint
+
+    vm.addTypeFn<VarTimePoint>(loc, "_copy_", timePointCopy);
+    vm.addTypeFn<VarTimePoint>(loc, "==", timePointEQ);
+    vm.addTypeFn<VarTimePoint>(loc, "!=", timePointNE);
+    vm.addTypeFn<VarTimePoint>(loc, ">", timePointGT);
+    vm.addTypeFn<VarTimePoint>(loc, "<", timePointLT);
+    vm.addTypeFn<VarTimePoint>(loc, ">=", timePointGE);
+    vm.addTypeFn<VarTimePoint>(loc, "<=", timePointLE);
+    vm.addTypeFn<VarTimePoint>(loc, "+", timePointAdd);
+    vm.addTypeFn<VarTimePoint>(loc, "-", timePointSub);
+    vm.addTypeFn<VarTimePoint>(loc, "+=", timePointAssnAdd);
+    vm.addTypeFn<VarTimePoint>(loc, "-=", timePointAssnSub);
+
+    // Duration
+
+    vm.addTypeFn<VarDuration>(loc, "_copy_", durationCopy);
+    vm.addTypeFn<VarDuration>(loc, "==", durationEQ);
+    vm.addTypeFn<VarDuration>(loc, "!=", durationNE);
+    vm.addTypeFn<VarDuration>(loc, ">", durationGT);
+    vm.addTypeFn<VarDuration>(loc, "<", durationLT);
+    vm.addTypeFn<VarDuration>(loc, ">=", durationGE);
+    vm.addTypeFn<VarDuration>(loc, "<=", durationLE);
+    vm.addTypeFn<VarDuration>(loc, "+", durationAdd);
+    vm.addTypeFn<VarDuration>(loc, "*", durationMul);
+    vm.addTypeFn<VarDuration>(loc, "/", durationDiv);
+    vm.addTypeFn<VarDuration>(loc, "+=", durationAssnAdd);
+    vm.addTypeFn<VarDuration>(loc, "*=", durationAssnMul);
+    vm.addTypeFn<VarDuration>(loc, "/=", durationAssnDiv);
+    vm.addTypeFn<VarDuration>(loc, "weeks", durationToWeeks);
+    vm.addTypeFn<VarDuration>(loc, "days", durationToDays);
+    vm.addTypeFn<VarDuration>(loc, "hours", durationToHours);
+    vm.addTypeFn<VarDuration>(loc, "minutes", durationToMinutes);
+    vm.addTypeFn<VarDuration>(loc, "seconds", durationToSeconds);
+    vm.addTypeFn<VarDuration>(loc, "milliseconds", durationToMilliseconds);
+    vm.addTypeFn<VarDuration>(loc, "microseconds", durationToMicroseconds);
 
     return true;
 }

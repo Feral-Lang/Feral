@@ -939,4 +939,28 @@ public:
     inline bool isOk() { return isok; }
 };
 
+class FER_API VarTimePoint : public Var
+{
+    TimePoint val;
+
+    bool onSet(VirtualMachine &vm, Var *from) override;
+
+public:
+    VarTimePoint(ModuleLoc loc, TimePoint val);
+
+    inline TimePoint &getVal() { return val; }
+};
+
+class FER_API VarDuration : public Var
+{
+    Duration val;
+
+    bool onSet(VirtualMachine &vm, Var *from) override;
+
+public:
+    VarDuration(ModuleLoc loc, Duration val);
+
+    inline Duration &getVal() { return val; }
+};
+
 } // namespace fer

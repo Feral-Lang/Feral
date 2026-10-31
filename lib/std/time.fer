@@ -1,67 +1,19 @@
-# by default, {stdclk,sysclk}Now() provide nanosecond resolution
-
 loadlib('std/Time');
 
-let micro = 1.0; # equivalent to what *Now() provides
-let milli = micro / 1000;
-let second = milli / 1000;
-let minute = second / 60;
-let hour = minute / 60;
-let day = hour / 24;
-let week = day / 7;
-
-let resolution = micro; # set to micro by default
-let timeFormat = '%FT%T%z'; # %Y-%m-%dT%H:%M:%S+0000
-let setResolution = fn(num) {
-    resolution = num;
-};
-
-let resolve = fn(time, resol = nil) {
-    let res = 0.0;
-    if resol == nil {
-        res = resolution;
-    } else {
-        res = resol;
-    }
-    return to(res, micro = time);
-};
-
-let hours = fn(num) {
-    return num.flt() / hour;
-};
-
-let mins = fn(num) {
-    return num.flt() / minute;
-};
-
-let seconds = fn(num) {
-    return num.flt() / second;
-};
-
+"
+  fn(newFormat) -> Nil
+Sets the default TimePoint.str() and time.parse() format string to `newFormat`.
+Returns nil.
+"
 let setFormat = fn(newFormat) {
-    timeFormat = newFormat;
-};
-
-let format = fn(.kw, time, fmt = timeFormat) {
-    return formatNative(time, fmt, kw...);
-};
-
-let parse = fn(timeStr, fmt = timeFormat) {
-    return parseNative(timeStr, fmt);
+    feral.defaultTimeFormat = newFormat;
 };
 
 "
-  fn(conversionRatio, ...) -> Int
-Example: time.to(time.second, days = 1); # => 86400.0
+  fn(timeStr, formatStr = feral.defaultTimeFormat) -> TimePoint
+Parses the time given as `timeStr` using the format given by `formatStr`.
+Returns the TimePoint as described by the `timeStr`.
 "
-let to = fn(ratio, .kwArgs) {
-    let totalMicro = 0.0;
-    if kwArgs['weeks'] != nil { totalMicro = kwArgs['weeks'].flt() / week; }
-    if kwArgs['days'] != nil { totalMicro += kwArgs['days'].flt() / day; }
-    if kwArgs['hours'] != nil { totalMicro += kwArgs['hours'].flt() / hour; }
-    if kwArgs['minutes'] != nil { totalMicro += kwArgs['minutes'].flt() / minute; }
-    if kwArgs['seconds'] != nil { totalMicro += kwArgs['seconds'].flt() / second; }
-    if kwArgs['milli'] != nil { totalMicro += kwArgs['milli'].flt() / milli; }
-    if kwArgs['micro'] != nil { totalMicro += kwArgs['micro'].flt() / micro; }
-    return totalMicro * ratio;
+let parse = fn(timeStr, formatStr = feral.defaultTimeFormat) {
+    return parseNative(timeStr, formatStr);
 };

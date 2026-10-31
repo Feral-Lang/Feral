@@ -116,7 +116,7 @@ let exec = fn(file) {
     io.fflush(io.stdout);
     let res = os.exec(cmd...);
     if res != 0 {
-        let errData = '{y}' + file.str() + '{0}:\n';
+        let errData = '{y}' + file.str() + '{0} ({y}code {r}' + res.str() + '{0}):\n';
         let errLines = fs.fopen(errPath).lines();
         for l in errLines.each() {
             errData += '-- ' + l + '\n';
@@ -172,9 +172,9 @@ for t in tasks.each() {
     ++failed;
     let res = t.result().val();
     if !valgrindCmd.empty() {
-        io.cprintln('{r}failed {y}', res.msg(), '{c} with valgrind{0}, {y}code{0}: {r}', res.code(),'{0}');
+        io.cprintln('{r}failed with valgrind {0}', res.msg(), '{0}');
     } else {
-        io.cprintln('{r}failed {y}', res.msg(), '{0}, {y}code{0}: {r}', res.code(),'{0}');
+        io.cprintln('{r}failed {0}', res.msg(), '{0}');
     }
 }
 io.fflush(io.stdout);
@@ -182,7 +182,7 @@ io.fflush(io.stdout);
 io.cprintln('total: {y}', totalTests,
         '{0}, passed: {g}', totalTests - failed,
         '{0}, failed: {r}', failed,
-        '{0}, time: {b}', time.resolve(totalTime, time.milli).round(),
-        '{0} ms');
+        '{0}, time: {b}', totalTime,
+        '{0}');
 
 feral.exit(failed);

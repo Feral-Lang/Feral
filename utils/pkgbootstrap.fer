@@ -7,9 +7,16 @@ let package = import('std/package');
 
 let pkgRepo = 'https://github.com/Feral-Lang/Pkg';
 let pkgIndexRepo = 'https://github.com/Feral-Lang/PkgIndex';
-let pkgVersion = '0.2.0';
+let pkgVersion = '0.3.0';
 
 let pkgExePath = feral.libPath / 'bin' / 'pkg.fer';
+
+# config vars
+let pkgVersionSplit = pkgVersion.split('.');
+let PACKAGE_NAME = 'Pkg';
+let PACKAGE_VERSION_MAJOR = pkgVersionSplit[0];
+let PACKAGE_VERSION_MINOR = pkgVersionSplit[1];
+let PACKAGE_VERSION_PATCH = pkgVersionSplit[2];
 
 if !fs.exists(feral.tempPath) { fs.mkdir(feral.tempPath); }
 
@@ -82,6 +89,19 @@ logging.trace('-- ', srcBinPath, ' -> ', destBinPath);
 fs.copy(srcBinPath, destBinPath);
 logging.trace('-- ', srcLibPath, ' -> ', destLibPath);
 fs.copy(srcLibPath, destLibPath);
+# Setup all config (.in) files
+let cfgs = fs.walkDir(destLibPath, fs.WALK_FILES, '(.*).in');
+logging.info('Configuring files ...');
+for cfg in cfgs.each() {
+    let data = fs.fopen(cfg, 'r').readAll().fmt();
+    let dest = cfg.str().replace('.in', '').path();
+    logging.trace('-- configuring ', cfg, ' -> ', dest);
+    let f = fs.fopen(dest, 'w+');
+    io.fprint(f, data);
+    f.close();
+    logging.trace('-- removing ', cfg);
+    fs.remove(cfg);
+}
 # Don't setup configs - let pkg itself take care of that when it's run for the first time.
 # Create the binary hook
 let pkgBinaryPath = destBinPath / 'pkg.fer';

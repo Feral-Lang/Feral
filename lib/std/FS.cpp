@@ -101,8 +101,8 @@ FERAL_FUNC(fsStatus, 1, false,
 }
 
 FERAL_FUNC(fsLastWriteTime, 1, false,
-           "  fn(path, .kw) -> Int\n"
-           "Returns the last write time of `path` as number of seconds since epoch.\n"
+           "  fn(path, .kw) -> TimePoint\n"
+           "Returns the last write time of `path` as a TimePoint.\n"
            "Takes the following keyword arguments:\n"
            "* `err = true/false` - if true, a failure is generated if there is an error fetching "
            "the last write time for the `path`. (default: true)")
@@ -120,13 +120,16 @@ FERAL_FUNC(fsLastWriteTime, 1, false,
                 "`: ", ec.message());
         return nullptr;
     }
-#if defined(FER_OS_APPLE)
-    auto sysftime = ftime.time_since_epoch();
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L // C++20: clock_cast
+    auto sysftime = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
 #else
-    auto sysftime = std::chrono::clock_cast<std::chrono::system_clock>(ftime).time_since_epoch();
+    // Pre-C++20 fallback: assume both clocks tick at the same rate (true on
+    // MSVC STL, libstdc++, libc++).
+    using ftt     = std::filesystem::file_time_type;
+    auto sysftime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        ftime - ftt::clock::now() + std::chrono::system_clock::now());
 #endif
-    int64_t sec = std::chrono::duration_cast<std::chrono::seconds>(sysftime).count();
-    return vm.makeVar<VarInt>(loc, sec);
+    return vm.makeVar<VarTimePoint>(loc, sysftime);
 }
 
 FERAL_FUNC(fsMkdir, 1, true,

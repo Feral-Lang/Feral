@@ -1,0 +1,70 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(timePointCopy, 0, false,
+           "  var.fn() -> TimePoint\n"
+           "Creates and returns a new instance of TimePoint using `var`.")
+{ return vm.makeVar<VarTimePoint>(loc, as<VarTimePoint>(args[0])->getVal()); }
+
+#define TIMEPOINT_LOGICAL_FUNC(fn, sym)                               \
+    FERAL_FUNC(timePoint##fn, 1, false,                               \
+               "  var.fn(other) -> Bool\n"                            \
+               "Returns `true` if `var` " STRINGIFY(sym) " `other`.") \
+    {                                                                 \
+        if(!args[1]->is<VarTimePoint>()) return vm.getFalse();        \
+        TimePoint &lhs = as<VarTimePoint>(args[0])->getVal();         \
+        TimePoint &rhs = as<VarTimePoint>(args[1])->getVal();         \
+        return lhs sym rhs ? vm.getTrue() : vm.getFalse();            \
+    }
+
+#define TIMEPOINT_ARITH_ASSN_FUNC(fn, sym)                              \
+    FERAL_FUNC(timePointAssn##fn, 1, false,                             \
+               "  var.fn(duration) -> var\n"                            \
+               "Returns `var` " STRINGIFY(sym) " `duration` as `var`.") \
+    {                                                                   \
+        EXPECT(VarDuration, args[1], STRINGIFY(fn) "assn operand");     \
+        TimePoint &lhs = as<VarTimePoint>(args[0])->getVal();           \
+        Duration &rhs  = as<VarDuration>(args[1])->getVal();            \
+        lhs sym rhs;                                                    \
+        return args[0];                                                 \
+    }
+
+TIMEPOINT_LOGICAL_FUNC(EQ, ==)
+TIMEPOINT_LOGICAL_FUNC(NE, !=)
+TIMEPOINT_LOGICAL_FUNC(GT, >)
+TIMEPOINT_LOGICAL_FUNC(LT, <)
+TIMEPOINT_LOGICAL_FUNC(GE, >=)
+TIMEPOINT_LOGICAL_FUNC(LE, <=)
+
+TIMEPOINT_ARITH_ASSN_FUNC(Add, +=)
+TIMEPOINT_ARITH_ASSN_FUNC(Sub, -=)
+
+FERAL_FUNC(timePointAdd, 1, false,
+           "  var.fn(duration) -> TimePoint\n"
+           "Returns `var` + `duration` as a new TimePoint.")
+{
+    EXPECT(VarDuration, args[1], "add operand");
+    TimePoint &lhs = as<VarTimePoint>(args[0])->getVal();
+    Duration &rhs  = as<VarDuration>(args[1])->getVal();
+    return vm.makeVar<VarTimePoint>(loc, lhs + rhs);
+}
+
+FERAL_FUNC(
+    timePointSub, 1, false,
+    "  var.fn(duration | timePoint) -> TimePoint | Duration\n"
+    "Returns `var` - `duration` as a new TimePoint, or `var` - `timePoint` as a new Duration.")
+{
+    EXPECT2(VarDuration, VarTimePoint, args[1], "sub operand");
+    TimePoint &lhs = as<VarTimePoint>(args[0])->getVal();
+    if(args[1]->is<VarDuration>()) {
+        Duration &rhs = as<VarDuration>(args[1])->getVal();
+        return vm.makeVar<VarTimePoint>(loc, lhs - rhs);
+    }
+    TimePoint &rhs = as<VarTimePoint>(args[1])->getVal();
+    return vm.makeVar<VarDuration>(
+        loc, std::chrono::duration_cast<std::chrono::microseconds>(lhs - rhs));
+}
+
+} // namespace fer

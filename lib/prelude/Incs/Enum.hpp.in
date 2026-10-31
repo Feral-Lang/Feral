@@ -3,7 +3,7 @@
 namespace fer
 {
 
-FERAL_FUNC(enumNew, 1, true,
+FERAL_FUNC(enumNew, 0, true,
            " fn(values...) -> Enum\n"
            "Creates and returns an Enum using the given values")
 {

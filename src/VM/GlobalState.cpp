@@ -121,6 +121,8 @@ bool GlobalState::init(VirtualMachine &vm)
     vm.addGlobalType<VarStack>({}, "Stack", "Builtin type.");
     vm.addGlobalType<VarError>({}, "Error", "Builtin type.");
     vm.addGlobalType<VarResult>({}, "Result", "Builtin type.");
+    vm.addGlobalType<VarTimePoint>({}, "TimePoint", "Builtin type.");
+    vm.addGlobalType<VarDuration>({}, "Duration", "Builtin type.");
     vm.addGlobalType<VarBytebuffer>({}, "Bytebuffer", "Builtin type.");
     vm.addGlobalType<VarIntIterator>({}, "IntIterator", "Builtin type.");
     vm.addGlobalType<VarVecIterator>({}, "VecIterator", "Builtin type.");

@@ -1,0 +1,149 @@
+#include "VM/VM.hpp"
+
+namespace fer
+{
+
+FERAL_FUNC(durationCopy, 0, false,
+           "  var.fn() -> Duration\n"
+           "Creates and returns a new instance of Duration using `var`.")
+{ return vm.makeVar<VarDuration>(loc, as<VarDuration>(args[0])->getVal()); }
+
+#define DURATION_LOGICAL_FUNC(fn, sym)                                \
+    FERAL_FUNC(duration##fn, 1, false,                                \
+               "  var.fn(other) -> Bool\n"                            \
+               "Returns `true` if `var` " STRINGIFY(sym) " `other`.") \
+    {                                                                 \
+        if(!args[1]->is<VarDuration>()) return vm.getFalse();         \
+        Duration &lhs = as<VarDuration>(args[0])->getVal();           \
+        Duration &rhs = as<VarDuration>(args[1])->getVal();           \
+        return lhs sym rhs ? vm.getTrue() : vm.getFalse();            \
+    }
+
+#define DURATION_ARITH_FUNC(fn, sym)                                        \
+    FERAL_FUNC(duration##fn, 1, false,                                      \
+               "  var.fn(num) -> Duration\n"                                \
+               "Returns `var` " STRINGIFY(sym) " `num` as a new Duration.") \
+    {                                                                       \
+        EXPECT(VarInt, args[1], STRINGIFY(fn) " operand");                  \
+        Duration &lhs = as<VarDuration>(args[0])->getVal();                 \
+        int64_t rhs   = as<VarInt>(args[1])->getVal();                      \
+        return vm.makeVar<VarDuration>(loc, lhs sym rhs);                   \
+    }
+
+#define DURATION_ARITH_ASSN_FUNC(fn, sym)                          \
+    FERAL_FUNC(durationAssn##fn, 1, false,                         \
+               "  var.fn(num) -> var\n"                            \
+               "Returns `var` " STRINGIFY(sym) " `num` as `var`.") \
+    {                                                              \
+        EXPECT(VarInt, args[1], STRINGIFY(fn) "assn operand");     \
+        Duration &lhs = as<VarDuration>(args[0])->getVal();        \
+        int64_t rhs   = as<VarInt>(args[1])->getVal();             \
+        lhs sym rhs;                                               \
+        return args[0];                                            \
+    }
+
+DURATION_LOGICAL_FUNC(EQ, ==)
+DURATION_LOGICAL_FUNC(NE, !=)
+DURATION_LOGICAL_FUNC(GT, >)
+DURATION_LOGICAL_FUNC(LT, <)
+DURATION_LOGICAL_FUNC(GE, >=)
+DURATION_LOGICAL_FUNC(LE, <=)
+
+DURATION_ARITH_FUNC(Mul, *)
+DURATION_ARITH_FUNC(Div, /)
+
+DURATION_ARITH_ASSN_FUNC(Mul, *=)
+DURATION_ARITH_ASSN_FUNC(Div, /=)
+
+FERAL_FUNC(durationAdd, 1, false,
+           "  var.fn(duration) -> Duration\n"
+           "Returns `var` + `duration` as a new Duration.")
+{
+    EXPECT(VarDuration, args[1], "add operand");
+    Duration &lhs = as<VarDuration>(args[0])->getVal();
+    Duration &rhs = as<VarDuration>(args[1])->getVal();
+    return vm.makeVar<VarDuration>(loc, lhs + rhs);
+}
+
+FERAL_FUNC(durationAssnAdd, 1, false,
+           "  var.fn(duration) -> var\n"
+           "Returns `var` += `num` as `var`.")
+{
+    EXPECT(VarDuration, args[1], "add operand");
+    Duration &lhs = as<VarDuration>(args[0])->getVal();
+    Duration &rhs = as<VarDuration>(args[1])->getVal();
+    lhs += rhs;
+    return args[0];
+}
+
+FERAL_FUNC(durationToWeeks, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-week as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::weeks(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToDays, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-day as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::days(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToHours, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-an-hour as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::hours(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToMinutes, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-minute as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::minutes(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToSeconds, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-second as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::seconds(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToMilliseconds, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-millisecond as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::milliseconds(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+FERAL_FUNC(durationToMicroseconds, 1, false,
+           "  var.fn() -> Float\n"
+           "Returns `var` / duration-in-a-microsecond as a new Float.")
+{
+    using namespace std;
+    double dur = as<VarDuration>(args[0])->getVal().count();
+    double prec = chrono::duration_cast<Duration>(chrono::microseconds(1)).count();
+    return vm.makeVar<VarFlt>(loc, dur / prec);
+}
+
+} // namespace fer

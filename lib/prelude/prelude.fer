@@ -411,6 +411,19 @@ let err in ResultTy = fn() {
     return self.val();
 };
 
+# TimePoint
+
+let defaultTimeFormat = '%FT%T%z'; # %Y-%m-%dT%H:%M:%S+0000
+
+"
+  var.fn(formatStr = defaultTimeFormat) -> Str
+Formats the TimePoint `var` using the format string `formatStr` (default: variable `defaultTimeFormat`).
+Returns the resulting string.
+"
+let str in TimePointTy = fn(fmt = defaultTimeFormat) {
+    return self.strNative(fmt);
+};
+
 # Sorting helpers
 
 let sortCmp = fn(a, b) { return a < b; };

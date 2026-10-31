@@ -2,4 +2,4 @@ let assert = import('std/assert');
 
 let time = import('std/time');
 
-assert.eq(time.to(time.second, days = 1), 86400.0);
+assert.eq(time.days(1).int(), 86400000000);

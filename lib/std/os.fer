@@ -31,8 +31,8 @@ let distro = feral.getOSDistro();
 Waits asynchronously for `duration` milliseconds.
 "
 let sleepAsync = fn(duration) {
-    let end = time.now() / 1000 + duration;
-    while time.now() / 1000 < end {
+    let end = time.now().int() / 1000 + duration;
+    while time.now().int() / 1000 < end {
         yield;
     }
 };
