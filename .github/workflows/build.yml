@@ -15,8 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-26.04, macos-27, windows-latest]
-        build_type: [Debug, Release]
+        os: [ubuntu-26.04, macos-26, windows-latest]
+        build_type: [Debug, Release, RelWithDebInfo]
         c_compiler: [gcc, clang, cl]
         sanity: [valgrind, sanitizer, none]
         include:
@@ -29,7 +29,7 @@ jobs:
           - os: ubuntu-26.04
             c_compiler: clang
             cpp_compiler: clang++
-          - os: macos-27
+          - os: macos-26
             c_compiler: clang
             cpp_compiler: clang++
         exclude:
@@ -39,18 +39,28 @@ jobs:
             c_compiler: clang
           - os: ubuntu-26.04
             c_compiler: cl
-          - os: macos-27
+          - os: macos-26
             c_compiler: gcc
-          - os: macos-27
+          - os: macos-26
             c_compiler: cl
           - os: windows-latest
-            sanity: valgrind
+            sanity: sanitizer
           - os: windows-latest
-            sanity: sanitizer
-          - os: macos-27
             sanity: valgrind
-          - os: macos-27
+          - os: macos-26
             sanity: sanitizer
+          - os: macos-26
+            sanity: valgrind
+          - build_type: Debug
+            sanity: sanitizer
+          - build_type: Release
+            sanity: sanitizer
+          - build_type: Debug
+            sanity: valgrind
+          - build_type: Release
+            sanity: valgrind
+          - build_type: RelWithDebInfo
+            sanity: none
 
     steps:
       - uses: actions/checkout@v6

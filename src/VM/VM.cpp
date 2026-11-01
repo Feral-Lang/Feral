@@ -25,7 +25,7 @@ VirtualMachine::VirtualMachine(args::ArgParser &argparser, ParseSourceFn parseSo
     if(ownsGlobalState && !gs->init(*this)) throw "Failed to initialize GlobalState";
     modulestack.reserve(10);
     refVars.reserve(20);
-    vars      = makeVar<VarStack>({});
+    vars      = incVarRef(makeVar<VarStack>({}));
     failstack = mem->allocInit<FailStack>(*this);
     execstack = mem->allocInit<ExecStack>(*this);
     // -1 => i will be popLoc - 1, so when ++i happens, with -1 it will be max(size_t)
@@ -38,7 +38,7 @@ VirtualMachine::VirtualMachine(GlobalState *gs, StringRef name, VarFn *errHandle
     : gs(gs), mem(new MemoryAllocator(gs->mgr)), name(name), recurseCount(0), exitcode(0),
       recurseExceeded(false), exitCalled(false), ownsGlobalState(false), ready(false)
 {
-    vars      = makeVar<VarStack>({});
+    vars      = incVarRef(makeVar<VarStack>({}));
     failstack = mem->allocInit<FailStack>(*this);
     execstack = mem->allocInit<ExecStack>(*this);
     if(!errHandler) errHandler = gs->basicErrHandler;

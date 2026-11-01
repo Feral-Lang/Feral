@@ -185,18 +185,21 @@ void *MemoryAllocator::allocRaw(size_t size)
 
     totalPoolAlloc += allocSz;
     size_t poolIndex = getIndexForAllocSize(allocSz);
-    // there is a free chunk available in the chunk list
-    size_t &addrSz = freechunks[poolIndex];
-    if(addrSz != 0) {
-        char *loc      = (char *)addrSz;
-        size_t nextTmp = getAllocDetail(addrSz, AllocDetails::NEXT);
-        setAllocDetail(addrSz, AllocDetails::NEXT, 0);
-        addrSz = nextTmp;
-        ++chunkReuseCount;
-        LOG_TRACE("[Allocator] Allocated ", allocSz, " using chunk list");
-        // No need to size size bytes here because they would have already been set
-        // when they were taken from the pool.
-        return loc;
+    {
+        LockGuard<RecursiveMutex> _(mtx);
+        size_t &addrSz = freechunks[poolIndex];
+        if(addrSz != 0) {
+            // there is a free chunk available in the chunk list
+            char *loc      = (char *)addrSz;
+            size_t nextTmp = getAllocDetail(addrSz, AllocDetails::NEXT);
+            setAllocDetail(addrSz, AllocDetails::NEXT, 0);
+            addrSz = nextTmp;
+            ++chunkReuseCount;
+            LOG_TRACE("[Allocator] Allocated ", allocSz, " using chunk list");
+            // No need to size size bytes here because they would have already been set
+            // when they were taken from the pool.
+            return loc;
+        }
     }
     return mgr.alloc(allocSz);
 }
@@ -210,7 +213,8 @@ void MemoryAllocator::freeRaw(void *data)
         AlignedFree(loc - ALLOC_DETAIL_BYTES);
         return;
     }
-    size_t idx     = getIndexForAllocSize(sz);
+    size_t idx = getIndexForAllocSize(sz);
+    LockGuard<RecursiveMutex> _(mtx);
     size_t &addrSz = freechunks[idx];
     setAllocDetail((size_t)loc, AllocDetails::NEXT, addrSz);
     addrSz = (size_t)loc;

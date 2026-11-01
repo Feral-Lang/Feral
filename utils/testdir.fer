@@ -137,7 +137,8 @@ let clean = fn(file) {
     let res = os.exec(cmd...);
 };
 
-let concurrency = args.has('valgrind') && os.getEnv('AUTOMATION_RUN') ? 1 : thread.getConcurrency();
+let concurrency = args.has('valgrind') && os.getEnv('AUTOMATION_RUN') ? 1 : thread.getConcurrency() - 1;
+if concurrency == 0 { concurrency = 1; }
 
 let tpool = thread.newPool(concurrency);
 

@@ -126,6 +126,7 @@ class FER_API MemoryAllocator
     // The size_t at freechunks[sz] is an address which holds an allocation.
     // This address is after ALLOC_DETAIL_BYTES bytes.
     Array<size_t, std::countr_zero(MAX_ROUNDUP)> freechunks;
+    RecursiveMutex mtx;
     MemoryManager &mgr;
 
 public:
